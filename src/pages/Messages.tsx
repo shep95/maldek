@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useMessages, useMessageRequests } from "@/components/messages/useMessages";
 import { useMessageActions } from "@/components/messages/useMessageActions";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MessageCircle } from "lucide-react";
 
 const Messages = () => {
   const { toast } = useToast();
@@ -51,6 +53,34 @@ const Messages = () => {
     fetchUser();
   }, []);
 
+  const EmptyState = ({ type }: { type: 'messages' | 'requests' }) => (
+    <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
+      <MessageCircle className="h-12 w-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold mb-2">
+        {type === 'messages' ? "No messages yet" : "No message requests"}
+      </h3>
+      <p className="text-muted-foreground max-w-sm">
+        {type === 'messages' 
+          ? "When you receive messages, they'll appear here" 
+          : "When you receive message requests, they'll appear here"}
+      </p>
+    </div>
+  );
+
+  const LoadingState = () => (
+    <div className="space-y-4 animate-fade-in">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="flex items-start space-x-4 p-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-1/4" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar setIsCreatingPost={() => {}} />
@@ -59,9 +89,9 @@ const Messages = () => {
           <h1 className="text-3xl font-bold mb-8">Messages</h1>
           
           <Tabs defaultValue="inbox" className="w-full">
-            <TabsList className="w-full mb-6">
-              <TabsTrigger value="inbox" className="flex-1">Inbox</TabsTrigger>
-              <TabsTrigger value="requests" className="flex-1">
+            <TabsList className="w-full mb-6 p-1">
+              <TabsTrigger value="inbox" className="flex-1 py-3">Inbox</TabsTrigger>
+              <TabsTrigger value="requests" className="flex-1 py-3">
                 Message Requests
                 {requestsQuery.data && requestsQuery.data.length > 0 && (
                   <span className="ml-2 bg-accent text-white px-2 py-0.5 rounded-full text-xs">
@@ -73,9 +103,11 @@ const Messages = () => {
             
             <TabsContent value="inbox" className="mt-0">
               {messagesQuery.isLoading ? (
-                <div>Loading messages...</div>
+                <LoadingState />
               ) : messagesQuery.error ? (
-                <div>Error loading messages</div>
+                <div className="text-center py-8 text-destructive">Error loading messages</div>
+              ) : !messagesQuery.data?.length ? (
+                <EmptyState type="messages" />
               ) : (
                 <MessageList 
                   messages={messagesQuery.data?.map(msg => ({
@@ -95,9 +127,11 @@ const Messages = () => {
               <ScrollArea className="h-[calc(100vh-16rem)]">
                 <div className="space-y-4 pr-4">
                   {requestsQuery.isLoading ? (
-                    <div>Loading requests...</div>
+                    <LoadingState />
                   ) : requestsQuery.error ? (
-                    <div>Error loading requests</div>
+                    <div className="text-center py-8 text-destructive">Error loading requests</div>
+                  ) : !requestsQuery.data?.length ? (
+                    <EmptyState type="requests" />
                   ) : (
                     requestsQuery.data?.map((request) => (
                       <MessageRequestCard
