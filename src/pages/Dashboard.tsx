@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
 import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
+import { RightSidebar } from "@/components/dashboard/RightSidebar";
 import { usePosts } from "@/hooks/usePosts";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
@@ -81,51 +82,54 @@ const Dashboard = () => {
         onClose={() => setSelectedMedia(null)}
       />
 
-      <main className="max-w-3xl mx-auto px-4 py-6 md:py-8 animate-fade-in">
-        <h1 className="text-3xl font-bold mb-8 text-foreground">Home</h1>
-        
-        {isLoading ? (
-          <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
+      <div className="flex">
+        <main className="flex-1 max-w-3xl mx-auto px-4 py-6 md:py-8 animate-fade-in">
+          <h1 className="text-3xl font-bold mb-8 text-foreground">Home</h1>
+          
+          {isLoading ? (
+            <div className="space-y-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-24 w-full" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-8 w-24" />
                   </div>
                 </div>
-                <Skeleton className="h-24 w-full" />
-                <div className="flex justify-between">
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-8 w-24" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : posts.length > 0 ? (
-          <div className="space-y-6">
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                currentUserId={currentUser.id}
-                onPostAction={handlePostAction}
-                onMediaClick={setSelectedMedia}
-                onUpdatePost={handleUpdatePost}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-lg border border-muted">
-            <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
-            <p className="text-muted-foreground">
-              Be the first to share something with your network!
-            </p>
-          </div>
-        )}
-      </main>
+              ))}
+            </div>
+          ) : posts.length > 0 ? (
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={currentUser.id}
+                  onPostAction={handlePostAction}
+                  onMediaClick={setSelectedMedia}
+                  onUpdatePost={handleUpdatePost}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-lg border border-muted">
+              <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
+              <p className="text-muted-foreground">
+                Be the first to share something with your network!
+              </p>
+            </div>
+          )}
+        </main>
+        <RightSidebar />
+      </div>
     </div>
   );
 };

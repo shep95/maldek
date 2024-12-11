@@ -1,44 +1,37 @@
 import { useState, useEffect } from "react";
 import { Post } from "@/utils/postUtils";
-import { toast } from "sonner";
-
-const POSTS_STORAGE_KEY = 'maldek_posts_v1';
 
 export const usePosts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load posts from localStorage
   useEffect(() => {
-    try {
-      const savedPosts = localStorage.getItem(POSTS_STORAGE_KEY);
-      if (savedPosts) {
-        const parsedPosts = JSON.parse(savedPosts).map((post: any) => ({
-          ...post,
-          timestamp: new Date(post.timestamp)
-        }));
-        console.log('Loading posts from localStorage:', parsedPosts);
-        setPosts(parsedPosts);
+    const loadPosts = () => {
+      setIsLoading(true);
+      try {
+        const savedPosts = localStorage.getItem("posts");
+        console.log("Loading posts from localStorage:", savedPosts);
+        if (savedPosts) {
+          setPosts(JSON.parse(savedPosts));
+        }
+      } catch (error) {
+        console.error("Error loading posts:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading posts from localStorage:', error);
-      toast.error('Error loading saved posts');
-    }
+    };
+
+    loadPosts();
   }, []);
 
-  // Save posts to localStorage whenever they change
   useEffect(() => {
     try {
-      const postsToSave = posts.map(post => ({
-        ...post,
-        timestamp: post.timestamp.toISOString() // Convert Date to string for storage
-      }));
-      localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(postsToSave));
-      console.log('Saved posts to localStorage:', postsToSave);
+      console.log("Saving posts to localStorage:", posts);
+      localStorage.setItem("posts", JSON.stringify(posts));
     } catch (error) {
-      console.error('Error saving posts to localStorage:', error);
-      toast.error('Error saving posts');
+      console.error("Error saving posts:", error);
     }
   }, [posts]);
 
-  return { posts, setPosts };
+  return { posts, setPosts, isLoading };
 };
