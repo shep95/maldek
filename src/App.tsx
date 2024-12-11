@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { createClient } from '@supabase/supabase-js';
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +13,7 @@ import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
 import Videos from "./pages/Videos";
 import Profile from "./pages/Profile";
+import PostDetail from "./pages/PostDetail";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 
 const queryClient = new QueryClient();
@@ -90,6 +90,7 @@ const App = () => {
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/videos" element={<Videos />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/post/:postId" element={<PostDetail />} />
               </Route>
             </Routes>
             <Toaster />

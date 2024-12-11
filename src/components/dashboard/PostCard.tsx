@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
   post: Post;
@@ -24,6 +25,7 @@ export const PostCard = ({
   onMediaClick,
   onUpdatePost 
 }: PostCardProps) => {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [canEdit, setCanEdit] = useState(false);
@@ -53,8 +55,24 @@ export const PostCard = ({
     toast.success("Post updated successfully");
   };
 
+  const handlePostClick = (e: React.MouseEvent) => {
+    // Prevent navigation if clicking on buttons or links
+    if (
+      (e.target as HTMLElement).tagName === 'BUTTON' ||
+      (e.target as HTMLElement).tagName === 'A' ||
+      (e.target as HTMLElement).closest('button') ||
+      (e.target as HTMLElement).closest('a')
+    ) {
+      return;
+    }
+    navigate(`/post/${post.id}`);
+  };
+
   return (
-    <Card className="border border-muted bg-card/50 backdrop-blur-sm p-6">
+    <Card 
+      className="border border-muted bg-card/50 backdrop-blur-sm p-6 cursor-pointer hover:bg-accent/5"
+      onClick={handlePostClick}
+    >
       <div className="space-y-4">
         <PostHeader author={post.author} timestamp={post.timestamp} />
         
