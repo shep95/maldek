@@ -32,7 +32,6 @@ const Auth = () => {
         return;
       }
 
-      // If data exists and has entries, username is taken
       setIsUsernameTaken(data && data.length > 0);
     } finally {
       setIsCheckingUsername(false);
@@ -57,10 +56,47 @@ const Auth = () => {
       return;
     }
 
-    if (!isLogin) {
-      navigate("/onboarding");
-    } else {
-      navigate("/dashboard");
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        
+        navigate("/dashboard");
+      } else {
+        const { error: signUpError, data } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (signUpError) throw signUpError;
+
+        if (data.user) {
+          // Create profile entry
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                username: username,
+              }
+            ]);
+
+          if (profileError) throw profileError;
+        }
+
+        navigate("/onboarding");
+      }
+    } catch (error: any) {
+      console.error('Auth error:', error);
+      toast({
+        title: "Authentication error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
