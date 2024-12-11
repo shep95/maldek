@@ -11,6 +11,7 @@ interface PostMediaProps {
 
 export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   const [loadError, setLoadError] = useState<Record<string, boolean>>({});
+  const [videoLoaded, setVideoLoaded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     console.log('Media URLs to display:', mediaUrls);
@@ -19,6 +20,21 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   const handleMediaError = (url: string) => {
     console.error(`Error loading media from URL: ${url}`);
     setLoadError(prev => ({ ...prev, [url]: true }));
+  };
+
+  const handleVideoLoad = (url: string, video: HTMLVideoElement) => {
+    console.log(`Video loaded successfully: ${url}`);
+    setVideoLoaded(prev => ({ ...prev, [url]: true }));
+    
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      video.poster = canvas.toDataURL('image/jpeg');
+    } catch (error) {
+      console.error('Error creating video thumbnail:', error);
+    }
   };
 
   return (
@@ -35,16 +51,10 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                 loop
                 playsInline
                 onError={() => handleMediaError(url)}
-                onLoadedData={(e) => {
-                  console.log(`Video loaded successfully: ${url}`);
-                  const video = e.target as HTMLVideoElement;
-                  const canvas = document.createElement('canvas');
-                  canvas.width = video.videoWidth;
-                  canvas.height = video.videoHeight;
-                  canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
-                  video.poster = canvas.toDataURL('image/jpeg');
-                }}
-                className="w-full h-full object-cover rounded-lg"
+                onLoadedData={(e) => handleVideoLoad(url, e.target as HTMLVideoElement)}
+                className={`w-full h-full object-cover rounded-lg ${
+                  loadError[url] ? 'opacity-50' : ''
+                }`}
                 style={{ borderRadius: '0.5rem' }}
               />
             </AspectRatio>
