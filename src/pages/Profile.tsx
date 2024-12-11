@@ -12,8 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface ProfileData {
   username: string;
-  bio: string;
-  avatar_url: string;
+  bio: string | null;
+  avatar_url: string | null;
   created_at: string;
   follower_count: number;
 }
