@@ -15,7 +15,6 @@ const Auth = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted:", { email, password, username, confirmPassword });
-    // TODO: Implement auth logic
     if (!isLogin) {
       navigate("/onboarding");
     } else {
@@ -26,14 +25,14 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8 animate-fade-in">
-        <div className="text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-accent">Maldek</h2>
+        <div className="text-center px-4">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-accent">Maldek</h2>
           <p className="mt-2 text-sm text-muted-foreground">Next generation of social media</p>
         </div>
 
-        <Card className="border border-muted bg-card/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle>{isLogin ? "Welcome back" : "Create account"}</CardTitle>
+        <Card className="mx-4 border border-muted bg-card/50 backdrop-blur-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl md:text-3xl">{isLogin ? "Welcome back" : "Create account"}</CardTitle>
             <CardDescription>
               {isLogin ? "Enter your credentials to continue" : "Fill in your details to get started"}
             </CardDescription>
