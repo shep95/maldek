@@ -10,6 +10,7 @@ import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
 import Videos from "./pages/Videos";
 import Profile from "./pages/Profile";
+import DashboardLayout from "./components/dashboard/DashboardLayout";
 
 const queryClient = new QueryClient();
 
@@ -20,12 +21,14 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/auth" replace />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/notifications" element={<Notifications />} />
           <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/videos" element={<Videos />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/videos" element={<Videos />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
         </Routes>
         <Toaster />
         <Sonner />
