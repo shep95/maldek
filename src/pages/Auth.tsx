@@ -7,21 +7,28 @@ import { useNavigate } from "react-router-dom";
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submitted:", { email, password, username, confirmPassword });
     // TODO: Implement auth logic
-    navigate("/dashboard");
+    if (!isLogin) {
+      navigate("/onboarding");
+    } else {
+      navigate("/dashboard");
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8 animate-fade-in">
         <div className="text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-accent">Social</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Connect with the world</p>
+          <h2 className="text-4xl font-bold tracking-tight text-accent">Maldek</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Next generation of social media</p>
         </div>
 
         <Card className="border border-muted bg-card/50 backdrop-blur-sm">
@@ -42,6 +49,17 @@ const Auth = () => {
                   className="bg-muted/50"
                 />
               </div>
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Input
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Input
                   type="password"
@@ -51,6 +69,17 @@ const Auth = () => {
                   className="bg-muted/50"
                 />
               </div>
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+              )}
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-white">
@@ -59,7 +88,7 @@ const Auth = () => {
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full text-muted-foreground hover:text-accent"
+                className="w-full text-muted-foreground hover:text-white hover:border hover:border-white"
                 onClick={() => setIsLogin(!isLogin)}
               >
                 {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
