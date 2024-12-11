@@ -42,13 +42,27 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
       <style>
         {`
           video::-webkit-media-controls-timeline {
-            background: linear-gradient(to right, #FFFFFF, #F97316);
-            border-radius: 25px;
+            margin: 0 10px;
+          }
+          video::-webkit-media-controls-play-button {
+            margin: 0 5px;
+          }
+          video::-webkit-media-controls-current-time-display,
+          video::-webkit-media-controls-time-remaining-display {
+            margin: 0 5px;
+          }
+          video::-webkit-media-controls-progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
             height: 3px;
           }
-          video::-webkit-media-controls-play-button:hover,
-          video::-webkit-media-controls-timeline:hover {
-            opacity: 0.8;
+          video::-webkit-media-controls-progress-inner-element {
+            border-radius: 2px;
+          }
+          video::-webkit-media-controls-progress {
+            background: linear-gradient(to right, #FFFFFF, #F97316);
+            border-radius: 2px;
+            height: 3px;
           }
         `}
       </style>
