@@ -41,9 +41,6 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
       onClick: () => setIsCreatingPost(true),
       className: "border-2 border-white hover:bg-accent/90 text-white"
     },
-  ];
-
-  const bottomNavItems: NavItem[] = [
     { icon: Settings, label: "Settings" },
     { 
       icon: LogOut, 
@@ -91,22 +88,6 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
             </nav>
           </ScrollArea>
         </div>
-        
-        <ScrollArea className="p-4 border-t border-muted">
-          <nav className="space-y-2">
-            {bottomNavItems.map((item) => (
-              <Button
-                key={item.label}
-                variant="ghost"
-                onClick={item.onClick}
-                className="w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all"
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Button>
-            ))}
-          </nav>
-        </ScrollArea>
       </Card>
     </div>
   );
