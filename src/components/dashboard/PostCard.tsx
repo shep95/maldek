@@ -75,6 +75,17 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
                     muted
                     loop
                     playsInline
+                    poster={url}
+                    onLoadedData={(e) => {
+                      const video = e.target as HTMLVideoElement;
+                      // Create a canvas to capture the first frame
+                      const canvas = document.createElement('canvas');
+                      canvas.width = video.videoWidth;
+                      canvas.height = video.videoHeight;
+                      canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+                      // Set the poster attribute to the canvas data URL
+                      video.poster = canvas.toDataURL('image/jpeg');
+                    }}
                     className="w-full h-full object-cover rounded-lg"
                     style={{ borderRadius: '0.5rem' }}
                   />
