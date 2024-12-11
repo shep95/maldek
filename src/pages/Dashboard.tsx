@@ -1,4 +1,4 @@
-import { Image, FileVideo, Send } from "lucide-react";
+import { Image, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerFooter } from "@/components/ui/drawer";
@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { RightSidebar } from "@/components/dashboard/RightSidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [postContent, setPostContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [posts, setPosts] = useState<Array<{ content: string; timestamp: Date }>>([]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -29,6 +31,12 @@ const Dashboard = () => {
       return;
     }
     
+    const newPost = {
+      content: postContent,
+      timestamp: new Date(),
+    };
+    
+    setPosts(prevPosts => [newPost, ...prevPosts]);
     console.log("Creating post with content:", postContent);
     console.log("Media files:", mediaFiles);
     
@@ -40,7 +48,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="min-h-screen bg-background flex">
       <Sidebar setIsCreatingPost={setIsCreatingPost} />
 
       {/* Create Post Drawer */}
@@ -90,15 +98,29 @@ const Dashboard = () => {
       </Drawer>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:ml-72 md:p-8 pb-20 md:pb-8">
+      <main className="flex-1 p-4 md:ml-72 lg:mr-96 md:p-8 pb-20 md:pb-8">
         <div className="max-w-3xl mx-auto animate-fade-in">
           <h1 className="text-3xl font-bold mb-8">Home</h1>
-          <Card className="border border-muted bg-card/50 backdrop-blur-sm p-6">
-            <p className="text-muted-foreground">Your feed will appear here...</p>
-          </Card>
+          {posts.length > 0 ? (
+            <div className="space-y-4">
+              {posts.map((post, index) => (
+                <Card key={index} className="border border-muted bg-card/50 backdrop-blur-sm p-6">
+                  <p className="text-foreground">{post.content}</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {post.timestamp.toLocaleString()}
+                  </p>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border border-muted bg-card/50 backdrop-blur-sm p-6">
+              <p className="text-muted-foreground">Your feed will appear here...</p>
+            </Card>
+          )}
         </div>
       </main>
 
+      <RightSidebar />
       <MobileNav />
     </div>
   );
