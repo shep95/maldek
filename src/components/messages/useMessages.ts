@@ -16,7 +16,8 @@ export const useMessages = (currentUserId: string | null) => {
           created_at,
           read_at,
           status,
-          sender:sender_id(
+          sender:sender_id (
+            id,
             username,
             avatar_url,
             follower_count
@@ -27,7 +28,9 @@ export const useMessages = (currentUserId: string | null) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Message[];
+      
+      // Type assertion to ensure the response matches our Message type
+      return data as unknown as Message[];
     },
     enabled: !!currentUserId,
   });
@@ -46,7 +49,9 @@ export const useMessageRequests = (currentUserId: string | null) => {
           content,
           created_at,
           status,
-          sender:sender_id(
+          read_at,
+          sender:sender_id (
+            id,
             username,
             avatar_url,
             follower_count
@@ -57,7 +62,9 @@ export const useMessageRequests = (currentUserId: string | null) => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Message[];
+      
+      // Type assertion to ensure the response matches our Message type
+      return data as unknown as Message[];
     },
     enabled: !!currentUserId,
   });
