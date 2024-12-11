@@ -6,6 +6,7 @@ import { PostCard } from "@/components/dashboard/PostCard";
 import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
 import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
 import { usePosts } from "@/hooks/usePosts";
+import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
 
 const Dashboard = () => {
