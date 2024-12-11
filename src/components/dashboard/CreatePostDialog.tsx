@@ -6,6 +6,7 @@ import { Image, Send, AtSign } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createNewPost } from "@/utils/postUtils";
+import { useSession } from '@supabase/auth-helpers-react';
 import type { Author } from "@/utils/postUtils";
 
 interface CreatePostDialogProps {
@@ -24,6 +25,7 @@ export const CreatePostDialog = ({
   const [postContent, setPostContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mentionedUser, setMentionedUser] = useState("");
+  const session = useSession();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -44,6 +46,11 @@ export const CreatePostDialog = ({
   };
 
   const handleCreatePost = async () => {
+    if (!session) {
+      toast.error("Please sign in to create a post");
+      return;
+    }
+
     if (!postContent.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content to your post");
       return;
