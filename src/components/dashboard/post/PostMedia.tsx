@@ -38,9 +38,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   };
 
   return (
-    <div className="mt-4 grid gap-2 grid-cols-1 sm:grid-cols-2">
+    <div className="mt-4 grid gap-2 grid-cols-1">
       {mediaUrls.map((url, i) => (
-        <div key={i} className="relative rounded-lg overflow-hidden">
+        <div key={i} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
           {isVideoFile(url) ? (
             <AspectRatio ratio={16 / 9}>
               <video
@@ -52,10 +52,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                 playsInline
                 onError={() => handleMediaError(url)}
                 onLoadedData={(e) => handleVideoLoad(url, e.target as HTMLVideoElement)}
-                className={`w-full h-full object-cover rounded-lg ${
+                className={`w-full h-full object-contain bg-black rounded-lg ${
                   loadError[url] ? 'opacity-50' : ''
                 }`}
-                style={{ borderRadius: '0.5rem' }}
               />
             </AspectRatio>
           ) : (
