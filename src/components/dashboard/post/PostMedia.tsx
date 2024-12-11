@@ -47,7 +47,6 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                 src={url}
                 controls
                 autoPlay
-                muted
                 loop
                 playsInline
                 onError={() => handleMediaError(url)}
