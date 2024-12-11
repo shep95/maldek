@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
+import Videos from "./pages/Videos";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/videos" element={<Videos />} />
         </Routes>
         <Toaster />
         <Sonner />

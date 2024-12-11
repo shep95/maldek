@@ -156,6 +156,47 @@ export type Database = {
         }
         Relationships: []
       }
+      videos: {
+        Row: {
+          created_at: string
+          description: string
+          duration: number
+          id: string
+          thumbnail_url: string
+          title: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          duration: number
+          id?: string
+          thumbnail_url: string
+          title: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          duration?: number
+          id?: string
+          thumbnail_url?: string
+          title?: string
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
