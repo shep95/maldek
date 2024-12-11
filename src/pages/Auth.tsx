@@ -88,7 +88,7 @@ const Auth = () => {
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full text-muted-foreground hover:text-white hover:border hover:border-white"
+                className="w-full text-muted-foreground hover:text-white hover:border hover:border-white hover:bg-transparent"
                 onClick={() => setIsLogin(!isLogin)}
               >
                 {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
