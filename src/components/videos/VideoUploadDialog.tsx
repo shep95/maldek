@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,8 +67,11 @@ export const VideoUploadDialog = ({
     setIsUploading(true);
 
     try {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) throw new Error("User not authenticated");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to upload videos");
+        return;
+      }
 
       // Upload video
       const videoPath = `${user.id}/${Date.now()}_${videoFile.name}`;
@@ -120,6 +123,9 @@ export const VideoUploadDialog = ({
       <DialogContent className="sm:max-w-[525px] bg-card">
         <DialogHeader>
           <DialogTitle>Upload Video</DialogTitle>
+          <DialogDescription>
+            Upload a video that's at least 1 minute long with a thumbnail image.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Input

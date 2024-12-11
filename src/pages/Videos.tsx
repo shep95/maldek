@@ -17,7 +17,7 @@ const Videos = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('videos')
-        .select('*')
+        .select('*, profiles:user_id(username)')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -55,24 +55,27 @@ const Videos = () => {
           {isLoading ? (
             <div className="text-center text-muted-foreground">Loading videos...</div>
           ) : videos && videos.length > 0 ? (
-            <div className="grid gap-6">
-              {videos.map((video) => (
+            <div className="grid gap-6 md:grid-cols-2">
+              {videos.map((video: any) => (
                 <div
                   key={video.id}
-                  className="bg-card rounded-lg overflow-hidden shadow-lg"
+                  className="bg-card rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
                 >
-                  <div className="aspect-video relative">
+                  <div className="aspect-video relative group cursor-pointer">
                     <img
                       src={video.thumbnail_url}
                       alt={video.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Video className="h-12 w-12 text-white" />
                     </div>
                   </div>
                   <div className="p-4">
                     <h3 className="text-lg font-semibold mb-2">{video.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      By {video.profiles?.username || 'Unknown user'}
+                    </p>
                     <p className="text-muted-foreground line-clamp-2">
                       {video.description}
                     </p>
