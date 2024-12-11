@@ -38,7 +38,6 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const timeAgo = formatDistanceToNow(new Date(post.timestamp), { addSuffix: true });
   
   const isVideoFile = (url: string) => {
-    // Check for common video file extensions
     const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
     return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
   };
@@ -72,6 +71,10 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
                   <video
                     src={url}
                     controls
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
                     className="w-full h-full object-cover rounded-lg"
                     style={{ borderRadius: '0.5rem' }}
                   />
