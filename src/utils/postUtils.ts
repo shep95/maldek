@@ -1,17 +1,18 @@
 export interface Author {
   id: string;
-  name: string;
   username: string;
-  profilePicture: string;
+  avatar_url: string | null;
+  name?: string;
+  profilePicture?: string;
 }
 
 export interface Post {
   id: string;
   content: string;
-  authorId: string;
+  user_id: string;
   author: Author;
   timestamp: Date;
-  mediaUrls: string[];
+  media_urls: string[];
   likes: number;
   comments: number;
   reposts: number;
@@ -32,10 +33,10 @@ export const createNewPost = async (content: string, mediaFiles: File[], author:
   return {
     id: crypto.randomUUID(),
     content,
-    authorId: author.id,
+    user_id: author.id,
     author,
     timestamp: new Date(),
-    mediaUrls,
+    media_urls: mediaUrls,
     likes: 0,
     comments: 0,
     reposts: 0,

@@ -49,7 +49,15 @@ const PostDetail = () => {
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Transform the data to match our expected format
+      return {
+        ...data,
+        isLiked: false, // You might want to fetch this from a likes table
+        isBookmarked: false, // You might want to fetch this from a bookmarks table
+        timestamp: new Date(data.created_at),
+        mediaUrls: data.media_urls || []
+      };
     },
   });
 
@@ -113,10 +121,18 @@ const PostDetail = () => {
       </Button>
 
       <Card className="mb-6 p-6">
-        <PostHeader author={post.author} timestamp={new Date(post.created_at)} />
+        <PostHeader 
+          author={{
+            id: post.author.id,
+            username: post.author.username,
+            profilePicture: post.author.avatar_url || '',
+            name: post.author.username
+          }} 
+          timestamp={post.timestamp} 
+        />
         <p className="mt-4 text-foreground whitespace-pre-wrap">{post.content}</p>
-        {post.mediaUrls && post.mediaUrls.length > 0 && (
-          <PostMedia mediaUrls={post.mediaUrls} onMediaClick={() => {}} />
+        {post.media_urls && post.media_urls.length > 0 && (
+          <PostMedia mediaUrls={post.media_urls} onMediaClick={() => {}} />
         )}
         <PostActions
           postId={post.id}
@@ -125,7 +141,7 @@ const PostDetail = () => {
           reposts={post.reposts}
           isLiked={post.isLiked}
           isBookmarked={post.isBookmarked}
-          authorId={post.author_id}
+          authorId={post.user_id}
           currentUserId={currentUserId || ''}
           onPostAction={() => {}}
         />
