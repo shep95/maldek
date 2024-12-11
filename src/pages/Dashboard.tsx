@@ -1,6 +1,5 @@
-import { Image, Send, AtSign, Heart, MessageSquare, Share2, Trash2, Bookmark, Maximize, X } from "lucide-react";
+import { Image, Send, AtSign, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,14 @@ import { toast } from "sonner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { RightSidebar } from "@/components/dashboard/RightSidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { PostCard } from "@/components/dashboard/PostCard";
+
+interface Author {
+  id: string;
+  name: string;
+  username: string;
+  profilePicture?: string;
+}
 
 interface Post {
   id: string;
@@ -22,7 +28,8 @@ interface Post {
   reposts: number;
   isLiked: boolean;
   isBookmarked: boolean;
-  authorId: string; // To check if current user is author
+  authorId: string;
+  author: Author;
 }
 
 const Dashboard = () => {
@@ -33,8 +40,13 @@ const Dashboard = () => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
 
-  // Mock current user ID - in real app would come from auth
-  const currentUserId = "user123";
+  // Mock current user data - in real app would come from auth
+  const currentUser: Author = {
+    id: "user123",
+    name: "John Doe",
+    username: "johndoe",
+    profilePicture: "https://github.com/shadcn.png"
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -72,7 +84,8 @@ const Dashboard = () => {
       reposts: 0,
       isLiked: false,
       isBookmarked: false,
-      authorId: currentUserId,
+      authorId: currentUser.id,
+      author: currentUser,
     };
     
     setPosts(prevPosts => [newPost, ...prevPosts]);
@@ -210,98 +223,19 @@ const Dashboard = () => {
           {posts.length > 0 ? (
             <div className="space-y-4">
               {posts.map((post) => (
-                <Card key={post.id} className="border border-muted bg-card/50 backdrop-blur-sm p-6">
-                  <p className="text-foreground whitespace-pre-wrap mb-4">{post.content}</p>
-                  {post.mediaUrls && post.mediaUrls.length > 0 && (
-                    <div className="mt-4 grid gap-2 grid-cols-1 sm:grid-cols-2">
-                      {post.mediaUrls.map((url, i) => (
-                        <div key={i} className="relative rounded-lg overflow-hidden cursor-pointer" onClick={() => setSelectedMedia(url)}>
-                          {url.endsWith('.mp4') ? (
-                            <AspectRatio ratio={16 / 9}>
-                              <video
-                                src={url}
-                                controls
-                                className="w-full h-full object-cover rounded-lg"
-                              />
-                            </AspectRatio>
-                          ) : (
-                            <AspectRatio ratio={16 / 9}>
-                              <img
-                                src={url}
-                                alt={`Post media ${i + 1}`}
-                                className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
-                              >
-                                <Maximize className="h-4 w-4 text-white" />
-                              </Button>
-                            </AspectRatio>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="flex gap-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`gap-2 ${post.isLiked ? 'text-red-500' : ''}`}
-                        onClick={() => handlePostAction(post.id, 'like')}
-                      >
-                        <Heart className={`h-4 w-4 ${post.isLiked ? 'fill-current' : ''}`} />
-                        {post.likes}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2"
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        {post.comments}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => handlePostAction(post.id, 'repost')}
-                      >
-                        <Share2 className="h-4 w-4" />
-                        {post.reposts}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`gap-2 ${post.isBookmarked ? 'text-blue-500' : ''}`}
-                        onClick={() => handlePostAction(post.id, 'bookmark')}
-                      >
-                        <Bookmark className={`h-4 w-4 ${post.isBookmarked ? 'fill-current' : ''}`} />
-                      </Button>
-                    </div>
-                    {post.authorId === currentUserId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-600"
-                        onClick={() => handlePostAction(post.id, 'delete')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {post.timestamp.toLocaleString()}
-                  </p>
-                </Card>
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={currentUser.id}
+                  onPostAction={handlePostAction}
+                  onMediaClick={setSelectedMedia}
+                />
               ))}
             </div>
           ) : (
-            <Card className="border border-muted bg-card/50 backdrop-blur-sm p-6">
-              <p className="text-muted-foreground">Your feed will appear here...</p>
-            </Card>
+            <div className="text-center text-muted-foreground p-8">
+              No posts yet. Be the first to share something!
+            </div>
           )}
         </div>
       </main>
