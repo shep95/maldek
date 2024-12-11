@@ -15,9 +15,9 @@ const Dashboard = () => {
 
   const currentUser: Author = {
     id: "user123",
-    name: "John Doe",
     username: "johndoe",
-    profilePicture: "https://github.com/shadcn.png"
+    avatar_url: "https://github.com/shadcn.png",
+    name: "John Doe"
   };
 
   const handlePostAction = (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {

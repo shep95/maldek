@@ -35,14 +35,14 @@ export const PostCard = ({
       const now = new Date();
       const postTime = new Date(post.timestamp);
       const diffInMinutes = (now.getTime() - postTime.getTime()) / (1000 * 60);
-      setCanEdit(diffInMinutes <= 5 && post.authorId === currentUserId);
+      setCanEdit(diffInMinutes <= 5 && post.user_id === currentUserId);
     };
 
     checkEditability();
     const timer = setInterval(checkEditability, 10000); // Check every 10 seconds
 
     return () => clearInterval(timer);
-  }, [post.timestamp, post.authorId, currentUserId]);
+  }, [post.timestamp, post.user_id, currentUserId]);
 
   const handleSaveEdit = () => {
     if (editedContent.trim() === '') {
@@ -117,8 +117,8 @@ export const PostCard = ({
           <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
         )}
 
-        {post.mediaUrls && post.mediaUrls.length > 0 && (
-          <PostMedia mediaUrls={post.mediaUrls} onMediaClick={onMediaClick} />
+        {post.media_urls && post.media_urls.length > 0 && (
+          <PostMedia mediaUrls={post.media_urls} onMediaClick={onMediaClick} />
         )}
 
         <PostActions
@@ -128,7 +128,7 @@ export const PostCard = ({
           reposts={post.reposts}
           isLiked={post.isLiked}
           isBookmarked={post.isBookmarked}
-          authorId={post.authorId}
+          authorId={post.user_id}
           currentUserId={currentUserId}
           onPostAction={onPostAction}
         />
