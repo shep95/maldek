@@ -25,10 +25,30 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
   const userInitials = "CN";
 
   const navItems: NavItem[] = [
-    { icon: Home, label: "Home", path: "/dashboard", active: location.pathname === "/dashboard" },
-    { icon: MessageCircle, label: "Messages", path: "/messages", active: location.pathname === "/messages" },
-    { icon: Bell, label: "Notifications" },
-    { icon: Video, label: "Videos" },
+    { 
+      icon: Home, 
+      label: "Home", 
+      path: "/dashboard", 
+      active: location.pathname === "/dashboard" 
+    },
+    { 
+      icon: MessageCircle, 
+      label: "Messages", 
+      path: "/messages", 
+      active: location.pathname === "/messages" 
+    },
+    { 
+      icon: Bell, 
+      label: "Notifications", 
+      path: "/notifications", 
+      active: location.pathname === "/notifications" 
+    },
+    { 
+      icon: Video, 
+      label: "Videos", 
+      path: "/videos", 
+      active: location.pathname === "/videos" 
+    },
     { icon: User, label: "Profile" },
     { icon: TrendingUp, label: "Analytics" },
     { 
