@@ -55,8 +55,9 @@ export const PostCard = ({
 
   return (
     <Card className="border border-muted bg-card/50 backdrop-blur-sm p-6">
-      <div className="flex justify-between items-start mb-4">
+      <div className="space-y-4">
         <PostHeader author={post.author} timestamp={post.timestamp} />
+        
         {canEdit && !isEditing && (
           <Button
             variant="ghost"
@@ -67,53 +68,53 @@ export const PostCard = ({
             <Pencil className="h-4 w-4" />
           </Button>
         )}
-      </div>
 
-      {isEditing ? (
-        <div className="space-y-2 mb-4">
-          <Textarea
-            value={editedContent}
-            onChange={(e) => setEditedContent(e.target.value)}
-            className="min-h-[100px]"
-          />
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsEditing(false);
-                setEditedContent(post.content);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSaveEdit}
-            >
-              Save
-            </Button>
+        {isEditing ? (
+          <div className="space-y-2">
+            <Textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              className="min-h-[100px]"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditedContent(post.content);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEdit}
+              >
+                Save
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <p className="text-foreground whitespace-pre-wrap mb-4">{post.content}</p>
-      )}
+        ) : (
+          <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
+        )}
 
-      {post.mediaUrls && post.mediaUrls.length > 0 && (
-        <PostMedia mediaUrls={post.mediaUrls} onMediaClick={onMediaClick} />
-      )}
+        {post.mediaUrls && post.mediaUrls.length > 0 && (
+          <PostMedia mediaUrls={post.mediaUrls} onMediaClick={onMediaClick} />
+        )}
 
-      <PostActions
-        postId={post.id}
-        likes={post.likes}
-        comments={post.comments}
-        reposts={post.reposts}
-        isLiked={post.isLiked}
-        isBookmarked={post.isBookmarked}
-        authorId={post.authorId}
-        currentUserId={currentUserId}
-        onPostAction={onPostAction}
-      />
+        <PostActions
+          postId={post.id}
+          likes={post.likes}
+          comments={post.comments}
+          reposts={post.reposts}
+          isLiked={post.isLiked}
+          isBookmarked={post.isBookmarked}
+          authorId={post.authorId}
+          currentUserId={currentUserId}
+          onPostAction={onPostAction}
+        />
+      </div>
     </Card>
   );
 };

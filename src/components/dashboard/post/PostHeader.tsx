@@ -57,14 +57,14 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
         <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
-        <div className="flex items-baseline justify-between">
+        <div className="flex items-baseline gap-2">
           <div>
             <h3 className="font-semibold">{author.name}</h3>
             <p className="text-sm text-muted-foreground">@{author.username}</p>
           </div>
-          <span className="text-sm text-muted-foreground">{timeAgo}</span>
         </div>
       </div>
+      <span className="text-sm text-muted-foreground">{timeAgo}</span>
     </div>
   );
 };
