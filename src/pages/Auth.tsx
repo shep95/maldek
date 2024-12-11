@@ -25,15 +25,15 @@ const Auth = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('username')
-        .eq('username', username)
-        .single();
+        .eq('username', username);
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error checking username:', error);
         return;
       }
 
-      setIsUsernameTaken(!!data);
+      // If data exists and has entries, username is taken
+      setIsUsernameTaken(data && data.length > 0);
     } finally {
       setIsCheckingUsername(false);
     }
