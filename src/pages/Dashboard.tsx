@@ -1,105 +1,23 @@
-import { Image, Send, AtSign, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { RightSidebar } from "@/components/dashboard/RightSidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { PostCard } from "@/components/dashboard/PostCard";
-import { createNewPost, type Post, type Author } from "@/utils/postUtils";
-import { isVideoFile } from "@/utils/mediaUtils";
-
-const POSTS_STORAGE_KEY = 'maldek_posts_v1';
+import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
+import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
+import { usePosts } from "@/hooks/usePosts";
+import type { Author } from "@/utils/postUtils";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
-  const [postContent, setPostContent] = useState("");
-  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const [mentionedUser, setMentionedUser] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
+  const { posts, setPosts } = usePosts();
 
   const currentUser: Author = {
     id: "user123",
     name: "John Doe",
     username: "johndoe",
     profilePicture: "https://github.com/shadcn.png"
-  };
-
-  // Load posts from localStorage
-  useEffect(() => {
-    try {
-      const savedPosts = localStorage.getItem(POSTS_STORAGE_KEY);
-      if (savedPosts) {
-        const parsedPosts = JSON.parse(savedPosts).map((post: any) => ({
-          ...post,
-          timestamp: new Date(post.timestamp)
-        }));
-        console.log('Loading posts from localStorage:', parsedPosts);
-        setPosts(parsedPosts);
-      }
-    } catch (error) {
-      console.error('Error loading posts from localStorage:', error);
-      toast.error('Error loading saved posts');
-    }
-  }, []);
-
-  // Save posts to localStorage whenever they change
-  useEffect(() => {
-    try {
-      const postsToSave = posts.map(post => ({
-        ...post,
-        timestamp: post.timestamp.toISOString() // Convert Date to string for storage
-      }));
-      localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(postsToSave));
-      console.log('Saved posts to localStorage:', postsToSave);
-    } catch (error) {
-      console.error('Error saving posts to localStorage:', error);
-      toast.error('Error saving posts');
-    }
-  }, [posts]);
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const fileArray = Array.from(files);
-      setMediaFiles(fileArray);
-      console.log("Files selected:", fileArray);
-      toast.success("Media added to post");
-    }
-  };
-
-  const handleMentionUser = () => {
-    if (mentionedUser) {
-      setPostContent((prev) => `${prev} @${mentionedUser} `);
-      setMentionedUser("");
-      console.log("Mentioned user:", mentionedUser);
-    }
-  };
-
-  const handleCreatePost = async () => {
-    if (!postContent.trim() && mediaFiles.length === 0) {
-      toast.error("Please add some content to your post");
-      return;
-    }
-
-    try {
-      const newPost = await createNewPost(postContent, mediaFiles, currentUser);
-      setPosts(prevPosts => [newPost, ...prevPosts]);
-      console.log("Creating post:", newPost);
-      
-      setPostContent("");
-      setMediaFiles([]);
-      setIsCreatingPost(false);
-      
-      toast.success("Post created successfully!");
-    } catch (error) {
-      console.error("Error creating post:", error);
-      toast.error("Failed to create post");
-    }
   };
 
   const handlePostAction = (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
@@ -154,90 +72,17 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background flex">
       <Sidebar setIsCreatingPost={setIsCreatingPost} />
 
-      <Dialog open={isCreatingPost} onOpenChange={setIsCreatingPost}>
-        <DialogContent className="sm:max-w-[525px] bg-card">
-          <DialogHeader>
-            <DialogTitle>Create a New Post</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="What's on your mind?"
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              className="min-h-[120px] bg-background"
-            />
-            <div className="flex gap-2 items-center">
-              <Input
-                placeholder="Mention a user"
-                value={mentionedUser}
-                onChange={(e) => setMentionedUser(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleMentionUser}
-                className="shrink-0"
-              >
-                <AtSign className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex gap-2 items-center">
-              <Input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                onChange={handleFileUpload}
-                className="hidden"
-                id="media-upload"
-              />
-              <Button
-                variant="outline"
-                onClick={() => document.getElementById("media-upload")?.click()}
-                className="gap-2"
-              >
-                <Image className="h-4 w-4" />
-                Add Media
-              </Button>
-              {mediaFiles.length > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  {mediaFiles.length} file(s) selected
-                </span>
-              )}
-            </div>
-            <Button onClick={handleCreatePost} className="w-full gap-2">
-              <Send className="h-4 w-4" />
-              Create Post
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <CreatePostDialog
+        isOpen={isCreatingPost}
+        onOpenChange={setIsCreatingPost}
+        currentUser={currentUser}
+        onPostCreated={(newPost) => setPosts(prevPosts => [newPost, ...prevPosts])}
+      />
 
-      <Dialog open={!!selectedMedia} onOpenChange={() => setSelectedMedia(null)}>
-        <DialogContent className="sm:max-w-[90vw] h-[90vh] flex items-center justify-center bg-black/90">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4 text-white"
-            onClick={() => setSelectedMedia(null)}
-          >
-            <X className="h-6 w-6" />
-          </Button>
-          {selectedMedia && isVideoFile(selectedMedia) ? (
-            <video
-              src={selectedMedia}
-              controls
-              className="max-h-full max-w-full rounded-lg"
-            />
-          ) : (
-            <img
-              src={selectedMedia}
-              alt="Full size preview"
-              className="max-h-full max-w-full rounded-lg object-contain"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <MediaPreviewDialog
+        selectedMedia={selectedMedia}
+        onClose={() => setSelectedMedia(null)}
+      />
 
       <main className="flex-1 p-4 md:ml-72 lg:mr-96 md:p-8 pb-20 md:pb-8">
         <div className="max-w-3xl mx-auto animate-fade-in">
