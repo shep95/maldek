@@ -12,6 +12,8 @@ import { PostCard } from "@/components/dashboard/PostCard";
 import { createNewPost, type Post, type Author } from "@/utils/postUtils";
 import { isVideoFile } from "@/utils/mediaUtils";
 
+const POSTS_STORAGE_KEY = 'maldek_posts_v1';
+
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [postContent, setPostContent] = useState("");
@@ -27,27 +29,33 @@ const Dashboard = () => {
     profilePicture: "https://github.com/shadcn.png"
   };
 
+  // Load posts from localStorage
   useEffect(() => {
-    const savedPosts = localStorage.getItem('posts');
-    if (savedPosts) {
-      try {
+    try {
+      const savedPosts = localStorage.getItem(POSTS_STORAGE_KEY);
+      if (savedPosts) {
         const parsedPosts = JSON.parse(savedPosts).map((post: any) => ({
           ...post,
           timestamp: new Date(post.timestamp)
         }));
+        console.log('Loading posts from localStorage:', parsedPosts);
         setPosts(parsedPosts);
-        console.log('Loaded posts from localStorage:', parsedPosts);
-      } catch (error) {
-        console.error('Error loading posts from localStorage:', error);
-        toast.error('Error loading saved posts');
       }
+    } catch (error) {
+      console.error('Error loading posts from localStorage:', error);
+      toast.error('Error loading saved posts');
     }
   }, []);
 
+  // Save posts to localStorage whenever they change
   useEffect(() => {
     try {
-      localStorage.setItem('posts', JSON.stringify(posts));
-      console.log('Saved posts to localStorage:', posts);
+      const postsToSave = posts.map(post => ({
+        ...post,
+        timestamp: post.timestamp.toISOString() // Convert Date to string for storage
+      }));
+      localStorage.setItem(POSTS_STORAGE_KEY, JSON.stringify(postsToSave));
+      console.log('Saved posts to localStorage:', postsToSave);
     } catch (error) {
       console.error('Error saving posts to localStorage:', error);
       toast.error('Error saving posts');
