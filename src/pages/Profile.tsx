@@ -6,9 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProfileData {
   username: string;
@@ -19,43 +20,35 @@ interface ProfileData {
 }
 
 const Profile = () => {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
   const { toast } = useToast();
   const [isCurrentUser, setIsCurrentUser] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load profile data",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        if (data) {
-          setProfile(data);
-          setEditBio(data.bio || "");
-          setIsCurrentUser(true);
-        }
+      if (!user) {
+        throw new Error('Not authenticated');
       }
-    };
 
-    fetchProfile();
-  }, [toast]);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setIsCurrentUser(true);
+      setEditBio(data.bio || "");
+      return data as ProfileData;
+    }
+  });
 
   const handleUpdateProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -82,17 +75,15 @@ const Profile = () => {
       });
       return;
     }
-
-    setProfile(prev => prev ? { ...prev, bio: editBio } : null);
-    setIsEditing(false);
     
+    setIsEditing(false);
     toast({
       title: "Success",
       description: "Profile updated successfully",
     });
   };
 
-  if (!profile) {
+  if (isLoading || !profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p>Loading profile...</p>
