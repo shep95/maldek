@@ -9,28 +9,8 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { RightSidebar } from "@/components/dashboard/RightSidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { PostCard } from "@/components/dashboard/PostCard";
-
-interface Author {
-  id: string;
-  name: string;
-  username: string;
-  profilePicture?: string;
-}
-
-interface Post {
-  id: string;
-  content: string;
-  timestamp: Date;
-  mentions?: string[];
-  mediaUrls?: string[];
-  likes: number;
-  comments: number;
-  reposts: number;
-  isLiked: boolean;
-  isBookmarked: boolean;
-  authorId: string;
-  author: Author;
-}
+import { createNewPost, type Post, type Author } from "@/utils/postUtils";
+import { isVideoFile } from "@/utils/mediaUtils";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
@@ -74,23 +54,12 @@ const Dashboard = () => {
     }
   }, [posts]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const fileArray = Array.from(files);
       setMediaFiles(fileArray);
-      
-      const persistentUrls = fileArray.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve(reader.result as string);
-          };
-          reader.readAsDataURL(file);
-        });
-      });
-
-      console.log("Files selected:", files);
+      console.log("Files selected:", fileArray);
       toast.success("Media added to post");
     }
   };
@@ -108,44 +77,21 @@ const Dashboard = () => {
       toast.error("Please add some content to your post");
       return;
     }
-    
-    const mentions = postContent.match(/@(\w+)/g)?.map(m => m.slice(1)) || [];
-    
-    const mediaUrls = await Promise.all(
-      mediaFiles.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve(reader.result as string);
-          };
-          reader.readAsDataURL(file);
-        });
-      })
-    );
-    
-    const newPost: Post = {
-      id: Date.now().toString(),
-      content: postContent,
-      timestamp: new Date(),
-      mentions,
-      mediaUrls,
-      likes: 0,
-      comments: 0,
-      reposts: 0,
-      isLiked: false,
-      isBookmarked: false,
-      authorId: currentUser.id,
-      author: currentUser,
-    };
-    
-    setPosts(prevPosts => [newPost, ...prevPosts]);
-    console.log("Creating post:", newPost);
-    
-    setPostContent("");
-    setMediaFiles([]);
-    setIsCreatingPost(false);
-    
-    toast.success("Post created successfully!");
+
+    try {
+      const newPost = await createNewPost(postContent, mediaFiles, currentUser);
+      setPosts(prevPosts => [newPost, ...prevPosts]);
+      console.log("Creating post:", newPost);
+      
+      setPostContent("");
+      setMediaFiles([]);
+      setIsCreatingPost(false);
+      
+      toast.success("Post created successfully!");
+    } catch (error) {
+      console.error("Error creating post:", error);
+      toast.error("Failed to create post");
+    }
   };
 
   const handlePostAction = (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
@@ -254,7 +200,7 @@ const Dashboard = () => {
           >
             <X className="h-6 w-6" />
           </Button>
-          {selectedMedia?.endsWith('.mp4') ? (
+          {selectedMedia && isVideoFile(selectedMedia) ? (
             <video
               src={selectedMedia}
               controls
