@@ -56,7 +56,6 @@ const Dashboard = () => {
     console.log("Creating post with content:", postContent);
     console.log("Media files:", mediaFiles);
     
-    // Reset form
     setPostContent("");
     setMediaFiles([]);
     setIsCreatingPost(false);
@@ -64,10 +63,32 @@ const Dashboard = () => {
     toast.success("Post created successfully!");
   };
 
+  // Mobile Bottom Navigation
+  const MobileNav = () => (
+    <nav className="fixed bottom-0 left-0 right-0 bg-[#0d0d0d] border-t border-muted p-2 md:hidden">
+      <div className="flex justify-around items-center">
+        {navItems.slice(0, 5).map((item) => (
+          <Button
+            key={item.label}
+            variant="ghost"
+            size="icon"
+            onClick={item.onClick}
+            className={cn(
+              "text-muted-foreground",
+              item.active && "text-accent"
+            )}
+          >
+            <item.icon className="h-5 w-5" />
+          </Button>
+        ))}
+      </div>
+    </nav>
+  );
+
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Floating Sidebar */}
-      <div className="fixed left-0 h-screen p-4 flex items-center animate-slide-in">
+    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+      {/* Sidebar - Hidden on mobile */}
+      <div className="hidden md:block fixed left-0 h-screen p-4">
         <Card className="h-[90vh] w-64 flex flex-col justify-between border-muted bg-[#0d0d0d] backdrop-blur-sm">
           <div className="p-4">
             <div className="flex items-center gap-3 mb-8">
@@ -97,7 +118,6 @@ const Dashboard = () => {
             </nav>
           </div>
           
-          {/* Bottom navigation items */}
           <div className="p-4 mt-auto border-t border-muted">
             <nav className="space-y-2">
               {bottomNavItems.map((item) => (
@@ -163,7 +183,7 @@ const Dashboard = () => {
       </Drawer>
 
       {/* Main Content */}
-      <main className="flex-1 ml-72 p-8">
+      <main className="flex-1 p-4 md:ml-72 md:p-8 pb-20 md:pb-8">
         <div className="max-w-3xl mx-auto animate-fade-in">
           <h1 className="text-3xl font-bold mb-8">Home</h1>
           {/* Content placeholder */}
@@ -172,6 +192,9 @@ const Dashboard = () => {
           </Card>
         </div>
       </main>
+
+      {/* Mobile Navigation */}
+      <MobileNav />
     </div>
   );
 };
