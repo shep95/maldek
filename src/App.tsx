@@ -10,8 +10,8 @@ import Onboarding from "./pages/Onboarding";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
       <TooltipProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/auth" replace />} />
@@ -22,8 +22,8 @@ const App = () => (
         <Toaster />
         <Sonner />
       </TooltipProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
+    </BrowserRouter>
+  </QueryClientProvider>
 );
 
 export default App;
