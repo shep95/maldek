@@ -25,15 +25,19 @@ const Profile = () => {
   const { toast } = useToast();
   const [isCurrentUser, setIsCurrentUser] = useState(false);
 
-  const { data: profile, isLoading } = useQuery({
+  // First, check if user is authenticated
+  const { data: profile, isLoading, error, refetch } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      console.log("Fetching profile data...");
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (authError || !user) {
+        console.error("Auth error:", authError);
         throw new Error('Not authenticated');
       }
 
+      console.log("User authenticated, fetching profile...");
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -41,14 +45,29 @@ const Profile = () => {
         .single();
 
       if (error) {
+        console.error("Profile fetch error:", error);
         throw error;
       }
 
+      console.log("Profile data fetched:", data);
       setIsCurrentUser(true);
       setEditBio(data.bio || "");
       return data as ProfileData;
-    }
+    },
+    retry: 1,
+    refetchOnWindowFocus: false
   });
+
+  useEffect(() => {
+    if (error) {
+      console.error("Query error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   const handleUpdateProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -77,16 +96,27 @@ const Profile = () => {
     }
     
     setIsEditing(false);
+    refetch(); // Refresh the profile data after update
     toast({
       title: "Success",
       description: "Profile updated successfully",
     });
   };
 
-  if (isLoading || !profile) {
+  if (isLoading) {
+    console.log("Profile is loading...");
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p>Loading profile...</p>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    console.log("Profile error or no data:", error);
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p>Error loading profile. Please refresh the page.</p>
       </div>
     );
   }
