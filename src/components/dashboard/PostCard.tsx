@@ -37,6 +37,12 @@ interface PostCardProps {
 export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: PostCardProps) => {
   const timeAgo = formatDistanceToNow(new Date(post.timestamp), { addSuffix: true });
   
+  const isVideoFile = (url: string) => {
+    // Check for common video file extensions
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
+    return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
+  };
+
   return (
     <Card className="border border-muted bg-card/50 backdrop-blur-sm p-6">
       <div className="flex items-start gap-3 mb-4">
@@ -60,30 +66,36 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
       {post.mediaUrls && post.mediaUrls.length > 0 && (
         <div className="mt-4 grid gap-2 grid-cols-1 sm:grid-cols-2">
           {post.mediaUrls.map((url, i) => (
-            <div key={i} className="relative rounded-lg overflow-hidden cursor-pointer" onClick={() => onMediaClick(url)}>
-              {url.endsWith('.mp4') ? (
+            <div key={i} className="relative rounded-lg overflow-hidden">
+              {isVideoFile(url) ? (
                 <AspectRatio ratio={16 / 9}>
                   <video
                     src={url}
                     controls
                     className="w-full h-full object-cover rounded-lg"
+                    style={{ borderRadius: '0.5rem' }}
                   />
                 </AspectRatio>
               ) : (
-                <AspectRatio ratio={16 / 9}>
-                  <img
-                    src={url}
-                    alt={`Post media ${i + 1}`}
-                    className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
-                  >
-                    <Maximize className="h-4 w-4 text-white" />
-                  </Button>
-                </AspectRatio>
+                <div 
+                  className="cursor-pointer" 
+                  onClick={() => onMediaClick(url)}
+                >
+                  <AspectRatio ratio={16 / 9}>
+                    <img
+                      src={url}
+                      alt={`Post media ${i + 1}`}
+                      className="w-full h-full object-cover rounded-lg hover:opacity-90 transition-opacity"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
+                    >
+                      <Maximize className="h-4 w-4 text-white" />
+                    </Button>
+                  </AspectRatio>
+                </div>
               )}
             </div>
           ))}
