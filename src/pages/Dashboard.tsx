@@ -127,6 +127,21 @@ const Dashboard = () => {
     });
   };
 
+  const handleUpdatePost = (postId: string, newContent: string) => {
+    setPosts(prevPosts => {
+      const updatedPosts = prevPosts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            content: newContent
+          };
+        }
+        return post;
+      });
+      return updatedPosts;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar setIsCreatingPost={setIsCreatingPost} />
@@ -228,6 +243,7 @@ const Dashboard = () => {
                   currentUserId={currentUser.id}
                   onPostAction={handlePostAction}
                   onMediaClick={setSelectedMedia}
+                  onUpdatePost={handleUpdatePost}
                 />
               ))}
             </div>

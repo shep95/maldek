@@ -1,51 +1,40 @@
-import { createPersistentMediaUrl } from './mediaUtils';
-
-export interface Author {
-  id: string;
-  name: string;
-  username: string;
-  profilePicture?: string;
-}
+import { Author } from "@/utils/postUtils";
 
 export interface Post {
   id: string;
   content: string;
+  authorId: string;
+  author: Author;
   timestamp: Date;
-  mentions?: string[];
-  mediaUrls?: string[];
+  mediaUrls: string[];
   likes: number;
   comments: number;
   reposts: number;
   isLiked: boolean;
   isBookmarked: boolean;
-  authorId: string;
-  author: Author;
 }
 
-export const createNewPost = async (
-  content: string,
-  mediaFiles: File[],
-  author: Author
-): Promise<Post> => {
-  const mentions = content.match(/@(\w+)/g)?.map(m => m.slice(1)) || [];
-  
-  // Create persistent URLs for all media files
+export const createNewPost = async (content: string, mediaFiles: File[], author: Author): Promise<Post> => {
   const mediaUrls = await Promise.all(
-    mediaFiles.map(file => createPersistentMediaUrl(file))
+    mediaFiles.map(async (file) => {
+      if (file.type.startsWith('video/')) {
+        return URL.createObjectURL(file);
+      }
+      return URL.createObjectURL(file);
+    })
   );
 
   return {
-    id: Date.now().toString(),
+    id: crypto.randomUUID(),
     content,
+    authorId: author.id,
+    author,
     timestamp: new Date(),
-    mentions,
     mediaUrls,
     likes: 0,
     comments: 0,
     reposts: 0,
     isLiked: false,
-    isBookmarked: false,
-    authorId: author.id,
-    author,
+    isBookmarked: false
   };
 };
