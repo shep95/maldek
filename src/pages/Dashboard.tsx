@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { Sidebar } from "@/components/dashboard/Sidebar";
-import { RightSidebar } from "@/components/dashboard/RightSidebar";
-import { MobileNav } from "@/components/dashboard/MobileNav";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
 import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
 import { usePosts } from "@/hooks/usePosts";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const { posts, setPosts } = usePosts();
+  const { posts, setPosts, isLoading } = usePosts();
 
   const currentUser: Author = {
     id: "user123",
@@ -70,9 +68,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <Sidebar setIsCreatingPost={setIsCreatingPost} />
-
+    <div className="min-h-screen bg-background">
       <CreatePostDialog
         isOpen={isCreatingPost}
         onOpenChange={setIsCreatingPost}
@@ -85,32 +81,51 @@ const Dashboard = () => {
         onClose={() => setSelectedMedia(null)}
       />
 
-      <main className="flex-1 p-4 md:ml-72 lg:mr-96 md:p-8 pb-20 md:pb-8">
-        <div className="max-w-3xl mx-auto animate-fade-in">
-          <h1 className="text-3xl font-bold mb-8">Home</h1>
-          {posts.length > 0 ? (
-            <div className="space-y-4">
-              {posts.map((post) => (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  currentUserId={currentUser.id}
-                  onPostAction={handlePostAction}
-                  onMediaClick={setSelectedMedia}
-                  onUpdatePost={handleUpdatePost}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-muted-foreground p-8">
-              No posts yet. Be the first to share something!
-            </div>
-          )}
-        </div>
+      <main className="max-w-3xl mx-auto px-4 py-6 md:py-8 animate-fade-in">
+        <h1 className="text-3xl font-bold mb-8 text-foreground">Home</h1>
+        
+        {isLoading ? (
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="h-24 w-full" />
+                <div className="flex justify-between">
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : posts.length > 0 ? (
+          <div className="space-y-6">
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={currentUser.id}
+                onPostAction={handlePostAction}
+                onMediaClick={setSelectedMedia}
+                onUpdatePost={handleUpdatePost}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-lg border border-muted">
+            <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
+            <p className="text-muted-foreground">
+              Be the first to share something with your network!
+            </p>
+          </div>
+        )}
       </main>
-
-      <RightSidebar />
-      <MobileNav />
     </div>
   );
 };
