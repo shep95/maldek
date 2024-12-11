@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageList } from "@/components/messages/MessageList";
 import { MessageRequestCard } from "@/components/messages/MessageRequestCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sidebar } from "@/components/dashboard/Sidebar";
 
 // Mock data - In a real app, this would come from your backend
 const mockMessages = [
@@ -43,37 +44,40 @@ const mockRequests = [
 
 const Messages = () => {
   return (
-    <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 md:ml-72 lg:mr-96">
-      <div className="max-w-3xl mx-auto animate-fade-in">
-        <h1 className="text-3xl font-bold mb-8">Messages</h1>
-        
-        <Tabs defaultValue="inbox" className="w-full">
-          <TabsList className="w-full mb-6">
-            <TabsTrigger value="inbox" className="flex-1">Inbox</TabsTrigger>
-            <TabsTrigger value="requests" className="flex-1">
-              Message Requests
-              {mockRequests.length > 0 && (
-                <span className="ml-2 bg-accent text-white px-2 py-0.5 rounded-full text-xs">
-                  {mockRequests.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar setIsCreatingPost={() => {}} />
+      <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 md:ml-72 lg:mr-96">
+        <div className="max-w-3xl mx-auto animate-fade-in">
+          <h1 className="text-3xl font-bold mb-8">Messages</h1>
           
-          <TabsContent value="inbox" className="mt-0">
-            <MessageList messages={mockMessages} />
-          </TabsContent>
-          
-          <TabsContent value="requests" className="mt-0">
-            <ScrollArea className="h-[calc(100vh-16rem)]">
-              <div className="space-y-4 pr-4">
-                {mockRequests.map((request) => (
-                  <MessageRequestCard key={request.id} request={request} />
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+          <Tabs defaultValue="inbox" className="w-full">
+            <TabsList className="w-full mb-6">
+              <TabsTrigger value="inbox" className="flex-1">Inbox</TabsTrigger>
+              <TabsTrigger value="requests" className="flex-1">
+                Message Requests
+                {mockRequests.length > 0 && (
+                  <span className="ml-2 bg-accent text-white px-2 py-0.5 rounded-full text-xs">
+                    {mockRequests.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="inbox" className="mt-0">
+              <MessageList messages={mockMessages} />
+            </TabsContent>
+            
+            <TabsContent value="requests" className="mt-0">
+              <ScrollArea className="h-[calc(100vh-16rem)]">
+                <div className="space-y-4 pr-4">
+                  {mockRequests.map((request) => (
+                    <MessageRequestCard key={request.id} request={request} />
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
