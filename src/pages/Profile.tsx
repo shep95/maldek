@@ -38,25 +38,50 @@ const Profile = () => {
         }
 
         console.log("User authenticated, fetching profile...");
-        const { data, error: profileError } = await supabase
+        const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .single();
+
+        // If no profile exists, create one
+        if (profileError && profileError.message.includes('JSON object requested, multiple (or no) rows returned')) {
+          console.log("No profile found, creating new profile...");
+          
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: user.id,
+                username: `user_${user.id.slice(0, 8)}`,
+                bio: '',
+                avatar_url: null,
+                follower_count: 0
+              }
+            ])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Profile creation error:", createError);
+            throw createError;
+          }
+
+          console.log("New profile created:", newProfile);
+          setIsCurrentUser(true);
+          setEditBio(newProfile.bio || "");
+          return newProfile as ProfileData;
+        }
 
         if (profileError) {
           console.error("Profile fetch error:", profileError);
           throw profileError;
         }
 
-        if (!data) {
-          throw new Error('No profile data found');
-        }
-
-        console.log("Profile data fetched:", data);
+        console.log("Profile data fetched:", existingProfile);
         setIsCurrentUser(true);
-        setEditBio(data.bio || "");
-        return data as ProfileData;
+        setEditBio(existingProfile.bio || "");
+        return existingProfile as ProfileData;
       } catch (error) {
         console.error("Profile fetch error:", error);
         throw error;
