@@ -92,7 +92,7 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
           </ScrollArea>
         </div>
         
-        <div className="p-4 mt-auto border-t border-muted">
+        <ScrollArea className="p-4 border-t border-muted">
           <nav className="space-y-2">
             {bottomNavItems.map((item) => (
               <Button
@@ -106,7 +106,7 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
               </Button>
             ))}
           </nav>
-        </div>
+        </ScrollArea>
       </Card>
     </div>
   );
