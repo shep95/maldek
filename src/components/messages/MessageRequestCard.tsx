@@ -7,17 +7,23 @@ interface MessageRequest {
   id: string;
   username: string;
   name: string;
-  avatar?: string;
+  avatar?: string | null;
   message: string;
   followers: number;
 }
 
-export const MessageRequestCard = ({ request }: { request: MessageRequest }) => {
+interface MessageRequestCardProps {
+  request: MessageRequest;
+  onAccept: () => void;
+  onDecline: () => void;
+}
+
+export const MessageRequestCard = ({ request, onAccept, onDecline }: MessageRequestCardProps) => {
   return (
     <Card className="p-4 bg-card/50 backdrop-blur-sm border-muted hover:bg-card/80 transition-colors">
       <div className="flex gap-4">
         <Avatar>
-          <AvatarImage src={request.avatar} alt={request.name} />
+          <AvatarImage src={request.avatar || undefined} alt={request.name} />
           <AvatarFallback>{request.name[0]}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
@@ -30,11 +36,11 @@ export const MessageRequestCard = ({ request }: { request: MessageRequest }) => 
           </div>
           <p className="text-sm text-muted-foreground mb-3">{request.message}</p>
           <div className="flex gap-2">
-            <Button size="sm" className="w-full gap-2">
+            <Button size="sm" className="w-full gap-2" onClick={onAccept}>
               <Check className="h-4 w-4" />
               Accept
             </Button>
-            <Button size="sm" variant="outline" className="w-full gap-2">
+            <Button size="sm" variant="outline" className="w-full gap-2" onClick={onDecline}>
               <X className="h-4 w-4" />
               Decline
             </Button>
