@@ -1,38 +1,59 @@
 import { useState, useEffect } from "react";
-import { Sidebar } from "@/components/dashboard/Sidebar";
-import { RightSidebar } from "@/components/dashboard/RightSidebar";
-import { MobileNav } from "@/components/dashboard/MobileNav";
 import { NotificationList } from "@/components/notifications/NotificationList";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const NotificationsSkeleton = () => (
+  <div className="space-y-3">
+    {[1, 2, 3].map((i) => (
+      <Card key={i} className="p-4">
+        <div className="flex items-start gap-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+        </div>
+      </Card>
+    ))}
+  </div>
+);
 
 const Notifications = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { notifications } = useNotifications(currentUserId);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id || null);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchUser();
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar setIsCreatingPost={() => {}} />
-      
-      <main className="flex-1 p-4 md:ml-72 lg:mr-96 md:p-8 pb-20 md:pb-8">
-        <div className="max-w-3xl mx-auto animate-fade-in">
-          <h1 className="text-3xl font-bold mb-8">Notifications</h1>
-          <NotificationList notifications={notifications} />
-        </div>
-      </main>
+    <div className="container max-w-4xl mx-auto px-4 py-8 animate-fade-in">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Notifications</h1>
+        <p className="text-muted-foreground mt-2">
+          Stay updated with interactions on your content
+        </p>
+      </div>
 
-      <RightSidebar />
-      <MobileNav />
+      {isLoading ? (
+        <NotificationsSkeleton />
+      ) : (
+        <NotificationList notifications={notifications} />
+      )}
     </div>
   );
 };

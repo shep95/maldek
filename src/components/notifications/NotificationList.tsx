@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { Bell, Heart, MessageSquare, Share2, Bookmark, Repeat } from "lucide-react";
 import type { Notification } from "@/hooks/useNotifications";
+import { Card } from "@/components/ui/card";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -45,40 +46,46 @@ interface NotificationListProps {
 export const NotificationList = ({ notifications }: NotificationListProps) => {
   if (notifications.length === 0) {
     return (
-      <div className="text-center text-muted-foreground p-8">
-        No notifications yet
-      </div>
+      <Card className="flex flex-col items-center justify-center p-8 mt-4 bg-card/50 border-dashed">
+        <Bell className="h-12 w-12 text-muted-foreground mb-4" />
+        <p className="text-lg font-medium text-muted-foreground">No notifications yet</p>
+        <p className="text-sm text-muted-foreground/60">
+          When someone interacts with your content, you'll see it here
+        </p>
+      </Card>
     );
   }
 
   return (
     <ScrollArea className="h-[calc(100vh-16rem)]">
-      <div className="space-y-4 pr-4">
+      <div className="space-y-3 pr-4">
         {notifications.map((notification) => (
-          <div
+          <Card
             key={notification.id}
-            className={`flex items-start gap-4 p-4 rounded-lg transition-colors ${
-              notification.read ? 'bg-background/50' : 'bg-accent/5'
+            className={`p-4 transition-all duration-200 hover:bg-accent/5 ${
+              notification.read ? 'bg-background' : 'bg-accent/5'
             }`}
           >
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={notification.actor.avatar_url || undefined} />
-              <AvatarFallback>
-                {notification.actor.username.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                {getNotificationIcon(notification.type)}
-                <p className="text-sm">
-                  {getNotificationText(notification.type, notification.actor.username)}
+            <div className="flex items-start gap-4">
+              <Avatar className="h-10 w-10 border-2 border-background">
+                <AvatarImage src={notification.actor.avatar_url || undefined} />
+                <AvatarFallback className="bg-accent text-accent-foreground">
+                  {notification.actor.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  {getNotificationIcon(notification.type)}
+                  <p className="text-sm font-medium">
+                    {getNotificationText(notification.type, notification.actor.username)}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-              </p>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </ScrollArea>
