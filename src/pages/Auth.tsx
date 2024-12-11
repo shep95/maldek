@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,11 +12,51 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const checkUsername = async (username: string) => {
+    if (username.length < 3) return;
+    
+    setIsCheckingUsername(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking username:', error);
+        return;
+      }
+
+      setIsUsernameTaken(!!data);
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUsername = e.target.value;
+    setUsername(newUsername);
+    checkUsername(newUsername);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", { email, password, username, confirmPassword });
+    
+    if (!isLogin && isUsernameTaken) {
+      toast({
+        title: "Username taken",
+        description: "Please choose a different username",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!isLogin) {
       navigate("/onboarding");
     } else {
@@ -54,9 +96,20 @@ const Auth = () => {
                     type="text"
                     placeholder="Username"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="bg-muted/50"
+                    onChange={handleUsernameChange}
+                    className={`bg-muted/50 ${
+                      isUsernameTaken ? "border-red-500" : username.length >= 3 ? "border-green-500" : ""
+                    }`}
                   />
+                  {username.length >= 3 && (
+                    <p className={`text-sm ${isUsernameTaken ? "text-red-500" : "text-green-500"}`}>
+                      {isCheckingUsername
+                        ? "Checking username..."
+                        : isUsernameTaken
+                        ? "Username is already taken"
+                        : "Username is available"}
+                    </p>
+                  )}
                 </div>
               )}
               <div className="space-y-2">
@@ -81,7 +134,11 @@ const Auth = () => {
               )}
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-white">
+              <Button 
+                type="submit" 
+                className="w-full bg-accent hover:bg-accent/90 text-white"
+                disabled={!isLogin && isUsernameTaken}
+              >
                 {isLogin ? "Sign in" : "Sign up"}
               </Button>
               <Button
