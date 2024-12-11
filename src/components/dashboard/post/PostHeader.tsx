@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
 import { Author } from "@/utils/postUtils";
 
 interface PostHeaderProps {
@@ -52,7 +51,7 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
   const timeAgo = getTimeAgo(new Date(timestamp));
 
   return (
-    <div className="flex items-start gap-3 mb-4">
+    <div className="flex items-start gap-3">
       <Avatar className="h-10 w-10">
         <AvatarImage src={author.profilePicture} alt={author.name} />
         <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
@@ -63,7 +62,7 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
             <h3 className="font-semibold">{author.name}</h3>
             <p className="text-sm text-muted-foreground">@{author.username}</p>
           </div>
-          <span className="text-sm text-muted-foreground">{timeAgo}</span>
+          <span className="text-sm text-muted-foreground ml-auto">{timeAgo}</span>
         </div>
       </div>
     </div>
