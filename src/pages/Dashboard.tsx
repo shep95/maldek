@@ -57,10 +57,7 @@ const Dashboard = () => {
     setPosts(prevPosts => {
       const updatedPosts = prevPosts.map(post => {
         if (post.id === postId) {
-          return {
-            ...post,
-            content: newContent
-          };
+          return { ...post, content: newContent };
         }
         return post;
       });

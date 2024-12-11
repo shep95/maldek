@@ -10,53 +10,42 @@ import { debounce } from "lodash";
 export const RightSidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch trending topics
-  const { data: trendingTopics, isLoading: isLoadingTrending } = useQuery({
-    queryKey: ['trending-topics'],
-    queryFn: async () => {
-      console.log("Fetching trending topics...");
-      const { data: posts, error } = await supabase
-        .from('posts')
-        .select('topic, count(*)')
-        .not('topic', 'is', null)
-        .group('topic')
-        .order('count', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      return posts || [];
-    },
-    refetchInterval: 60000 // Refetch every minute
-  });
-
-  // Search users and posts
+  // Search users
   const { data: searchResults, isLoading: isLoadingSearch } = useQuery({
     queryKey: ['search', searchQuery],
     queryFn: async () => {
-      if (!searchQuery) return { users: [], posts: [] };
+      if (!searchQuery) return { users: [] };
 
       console.log("Searching for:", searchQuery);
       
-      const [usersResponse, postsResponse] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, username, avatar_url')
-          .ilike('username', `%${searchQuery}%`)
-          .limit(5),
-        
-        supabase
-          .from('posts')
-          .select('id, content')
-          .ilike('content', `%${searchQuery}%`)
-          .limit(5)
-      ]);
+      const usersResponse = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .ilike('username', `%${searchQuery}%`)
+        .limit(5);
 
       return {
-        users: usersResponse.data || [],
-        posts: postsResponse.data || []
+        users: usersResponse.data || []
       };
     },
     enabled: searchQuery.length > 0
+  });
+
+  // Fetch trending topics (for now just showing most followed users)
+  const { data: trendingUsers, isLoading: isLoadingTrending } = useQuery({
+    queryKey: ['trending-users'],
+    queryFn: async () => {
+      console.log("Fetching trending users...");
+      const { data: users, error } = await supabase
+        .from('profiles')
+        .select('username, follower_count, avatar_url')
+        .order('follower_count', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return users || [];
+    },
+    refetchInterval: 60000 // Refetch every minute
   });
 
   const handleSearch = debounce((value: string) => {
@@ -68,7 +57,7 @@ export const RightSidebar = () => {
       <Card className="h-[90vh] flex flex-col border-muted bg-[#0d0d0d] backdrop-blur-sm p-4">
         <div className="relative mb-6">
           <Input 
-            placeholder="Search @users or posts" 
+            placeholder="Search @users" 
             className="pl-10 border-accent focus:ring-accent"
             onChange={(e) => handleSearch(e.target.value)}
           />
@@ -84,7 +73,7 @@ export const RightSidebar = () => {
                   <div key={i} className="h-12 bg-muted rounded-md" />
                 ))}
               </div>
-            ) : searchResults?.users.length === 0 && searchResults?.posts.length === 0 ? (
+            ) : searchResults?.users.length === 0 ? (
               <p className="text-muted-foreground">No results found</p>
             ) : (
               <div className="space-y-2">
@@ -97,35 +86,36 @@ export const RightSidebar = () => {
                     <span>@{user.username}</span>
                   </div>
                 ))}
-                {searchResults?.posts.map((post) => (
-                  <div key={post.id} className="p-2 hover:bg-accent/10 rounded-md cursor-pointer">
-                    <p className="line-clamp-2 text-sm">{post.content}</p>
-                  </div>
-                ))}
               </div>
             )}
           </div>
         )}
 
         <div className="flex flex-col gap-4">
-          <h3 className="font-semibold text-lg">Trending Topics</h3>
+          <h3 className="font-semibold text-lg">Trending Users</h3>
           {isLoadingTrending ? (
             <div className="animate-pulse space-y-2">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="h-10 bg-muted rounded-md" />
               ))}
             </div>
-          ) : trendingTopics?.length === 0 ? (
-            <p className="text-muted-foreground">No trending topics yet</p>
+          ) : trendingUsers?.length === 0 ? (
+            <p className="text-muted-foreground">No trending users yet</p>
           ) : (
             <div className="space-y-2">
-              {trendingTopics?.map((item) => (
+              {trendingUsers?.map((user) => (
                 <div 
-                  key={item.topic} 
+                  key={user.username} 
                   className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md cursor-pointer transition-colors"
                 >
-                  <span className="font-medium">#{item.topic}</span>
-                  <span className="text-sm text-muted-foreground">{item.count} posts</span>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback>{user.username[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">@{user.username}</span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{user.follower_count} followers</span>
                 </div>
               ))}
             </div>
