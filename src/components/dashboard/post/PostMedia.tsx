@@ -39,6 +39,19 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
 
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
+      <style>
+        {`
+          video::-webkit-media-controls-timeline {
+            background: linear-gradient(to right, #FFFFFF, #F97316);
+            border-radius: 25px;
+            height: 3px;
+          }
+          video::-webkit-media-controls-play-button:hover,
+          video::-webkit-media-controls-timeline:hover {
+            opacity: 0.8;
+          }
+        `}
+      </style>
       {mediaUrls.map((url, i) => (
         <div key={i} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
           {isVideoFile(url) ? (
