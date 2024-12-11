@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface NavItem {
   icon: any;
@@ -23,6 +25,21 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
   // In a real app, this would come from your auth context/state
   const userProfilePic = "https://github.com/shadcn.png";
   const userInitials = "CN";
+
+  const handleLogout = async () => {
+    try {
+      console.log("Attempting to log out...");
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      console.log("Logout successful");
+      toast.success("Logged out successfully");
+      navigate("/auth");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out");
+    }
+  };
 
   const navItems: NavItem[] = [
     { 
@@ -72,10 +89,7 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
     { 
       icon: LogOut, 
       label: "Logout", 
-      onClick: () => {
-        console.log("Logging out...");
-        navigate("/auth");
-      }
+      onClick: handleLogout
     },
   ];
 
