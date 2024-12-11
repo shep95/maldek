@@ -9,6 +9,7 @@ import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Onboarding from "./pages/Onboarding";
 import Videos from "./pages/Videos";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/videos" element={<Videos />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
         <Toaster />
         <Sonner />
