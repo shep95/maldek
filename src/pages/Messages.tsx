@@ -5,32 +5,22 @@ import { MessageRequestCard } from "@/components/messages/MessageRequestCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
-
-interface Message {
-  id: string;
-  sender: {
-    username: string;
-    avatar_url: string | null;
-  };
-  content: string;
-  created_at: string;
-  read_at: string | null;
-  status: string;
-}
+import { useMessages, useMessageRequests } from "@/components/messages/useMessages";
+import { useMessageActions } from "@/components/messages/useMessageActions";
 
 const Messages = () => {
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { acceptRequest, declineRequest } = useMessageActions();
+  const messagesQuery = useMessages(currentUserId);
+  const requestsQuery = useMessageRequests(currentUserId);
 
-  // Fetch current user
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUserId(user.id);
-        // Subscribe to real-time messages
         const channel = supabase
           .channel('messages')
           .on(
@@ -47,7 +37,6 @@ const Messages = () => {
                 title: "New Message",
                 description: "You have received a new message",
               });
-              // React Query will automatically refresh the messages
               messagesQuery.refetch();
               requestsQuery.refetch();
             }
@@ -61,100 +50,6 @@ const Messages = () => {
     };
     fetchUser();
   }, []);
-
-  // Fetch messages
-  const messagesQuery = useQuery({
-    queryKey: ['messages', currentUserId],
-    queryFn: async () => {
-      if (!currentUserId) return [];
-      
-      const { data: messages, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          read_at,
-          status,
-          sender:sender_id(username, avatar_url, follower_count)
-        `)
-        .eq('recipient_id', currentUserId)
-        .eq('status', 'accepted')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return messages;
-    },
-    enabled: !!currentUserId,
-  });
-
-  // Fetch message requests
-  const requestsQuery = useQuery({
-    queryKey: ['message_requests', currentUserId],
-    queryFn: async () => {
-      if (!currentUserId) return [];
-      
-      const { data: requests, error } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          status,
-          sender:sender_id(username, avatar_url, follower_count)
-        `)
-        .eq('recipient_id', currentUserId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return requests;
-    },
-    enabled: !!currentUserId,
-  });
-
-  const handleAcceptRequest = async (messageId: string) => {
-    const { error } = await supabase
-      .from('messages')
-      .update({ status: 'accepted' })
-      .eq('id', messageId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to accept message request",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Message request accepted",
-      });
-      messagesQuery.refetch();
-      requestsQuery.refetch();
-    }
-  };
-
-  const handleDeclineRequest = async (messageId: string) => {
-    const { error } = await supabase
-      .from('messages')
-      .update({ status: 'rejected' })
-      .eq('id', messageId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to decline message request",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Message request declined",
-      });
-      requestsQuery.refetch();
-    }
-  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -213,10 +108,10 @@ const Messages = () => {
                           name: request.sender.username,
                           avatar: request.sender.avatar_url,
                           message: request.content,
-                          followers: request.sender.follower_count || 0
+                          followers: request.sender.follower_count
                         }}
-                        onAccept={() => handleAcceptRequest(request.id)}
-                        onDecline={() => handleDeclineRequest(request.id)}
+                        onAccept={() => acceptRequest(request.id)}
+                        onDecline={() => declineRequest(request.id)}
                       />
                     ))
                   )}
