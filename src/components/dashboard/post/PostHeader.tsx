@@ -62,7 +62,7 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
             <h3 className="font-semibold">{author.name}</h3>
             <p className="text-sm text-muted-foreground">@{author.username}</p>
           </div>
-          <span className="text-sm text-muted-foreground ml-auto">{timeAgo}</span>
+          <span className="text-sm text-muted-foreground">{timeAgo}</span>
         </div>
       </div>
     </div>
