@@ -10,7 +10,6 @@ import { RightSidebar } from "@/components/dashboard/RightSidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { PostCard } from "@/components/dashboard/PostCard";
 
-// Move interfaces to a separate types file
 interface Author {
   id: string;
   name: string;
@@ -41,7 +40,6 @@ const Dashboard = () => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
 
-  // Mock current user data - in real app would come from auth
   const currentUser: Author = {
     id: "user123",
     name: "John Doe",
@@ -49,12 +47,10 @@ const Dashboard = () => {
     profilePicture: "https://github.com/shadcn.png"
   };
 
-  // Load posts from localStorage on component mount
   useEffect(() => {
     const savedPosts = localStorage.getItem('posts');
     if (savedPosts) {
       try {
-        // Parse the saved posts and convert timestamp strings back to Date objects
         const parsedPosts = JSON.parse(savedPosts).map((post: any) => ({
           ...post,
           timestamp: new Date(post.timestamp)
@@ -68,7 +64,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  // Save posts to localStorage whenever they change
   useEffect(() => {
     try {
       localStorage.setItem('posts', JSON.stringify(posts));
@@ -79,10 +74,22 @@ const Dashboard = () => {
     }
   }, [posts]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      setMediaFiles(Array.from(files));
+      const fileArray = Array.from(files);
+      setMediaFiles(fileArray);
+      
+      const persistentUrls = fileArray.map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
       console.log("Files selected:", files);
       toast.success("Media added to post");
     }
@@ -96,7 +103,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreatePost = () => {
+  const handleCreatePost = async () => {
     if (!postContent.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content to your post");
       return;
@@ -104,12 +111,24 @@ const Dashboard = () => {
     
     const mentions = postContent.match(/@(\w+)/g)?.map(m => m.slice(1)) || [];
     
+    const mediaUrls = await Promise.all(
+      mediaFiles.map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      })
+    );
+    
     const newPost: Post = {
       id: Date.now().toString(),
       content: postContent,
       timestamp: new Date(),
       mentions,
-      mediaUrls: mediaFiles.map(file => URL.createObjectURL(file)),
+      mediaUrls,
       likes: 0,
       comments: 0,
       reposts: 0,
@@ -225,7 +244,6 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Media Preview Dialog */}
       <Dialog open={!!selectedMedia} onOpenChange={() => setSelectedMedia(null)}>
         <DialogContent className="sm:max-w-[90vw] h-[90vh] flex items-center justify-center bg-black/90">
           <Button
@@ -252,7 +270,6 @@ const Dashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Main Content */}
       <main className="flex-1 p-4 md:ml-72 lg:mr-96 md:p-8 pb-20 md:pb-8">
         <div className="max-w-3xl mx-auto animate-fade-in">
           <h1 className="text-3xl font-bold mb-8">Home</h1>
