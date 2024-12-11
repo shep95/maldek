@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { RightSidebar } from "@/components/dashboard/RightSidebar";
 import { MobileNav } from "@/components/dashboard/MobileNav";
 import { PostCard } from "@/components/dashboard/PostCard";
 
+// Move interfaces to a separate types file
 interface Author {
   id: string;
   name: string;
@@ -47,6 +48,36 @@ const Dashboard = () => {
     username: "johndoe",
     profilePicture: "https://github.com/shadcn.png"
   };
+
+  // Load posts from localStorage on component mount
+  useEffect(() => {
+    const savedPosts = localStorage.getItem('posts');
+    if (savedPosts) {
+      try {
+        // Parse the saved posts and convert timestamp strings back to Date objects
+        const parsedPosts = JSON.parse(savedPosts).map((post: any) => ({
+          ...post,
+          timestamp: new Date(post.timestamp)
+        }));
+        setPosts(parsedPosts);
+        console.log('Loaded posts from localStorage:', parsedPosts);
+      } catch (error) {
+        console.error('Error loading posts from localStorage:', error);
+        toast.error('Error loading saved posts');
+      }
+    }
+  }, []);
+
+  // Save posts to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('posts', JSON.stringify(posts));
+      console.log('Saved posts to localStorage:', posts);
+    } catch (error) {
+      console.error('Error saving posts to localStorage:', error);
+      toast.error('Error saving posts');
+    }
+  }, [posts]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -99,37 +130,42 @@ const Dashboard = () => {
   };
 
   const handlePostAction = (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
-    setPosts(prevPosts => prevPosts.map(post => {
-      if (post.id === postId) {
-        switch (action) {
-          case 'like':
-            return {
-              ...post,
-              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-              isLiked: !post.isLiked
-            };
-          case 'bookmark':
-            return { ...post, isBookmarked: !post.isBookmarked };
-          case 'repost':
-            return { ...post, reposts: post.reposts + 1 };
-          default:
-            return post;
-        }
+    setPosts(prevPosts => {
+      let updatedPosts = prevPosts;
+      
+      if (action === 'delete') {
+        updatedPosts = prevPosts.filter(post => post.id !== postId);
+        toast.success("Post deleted successfully!");
+      } else {
+        updatedPosts = prevPosts.map(post => {
+          if (post.id === postId) {
+            switch (action) {
+              case 'like':
+                return {
+                  ...post,
+                  likes: post.isLiked ? post.likes - 1 : post.likes + 1,
+                  isLiked: !post.isLiked
+                };
+              case 'bookmark':
+                return { ...post, isBookmarked: !post.isBookmarked };
+              case 'repost':
+                return { ...post, reposts: post.reposts + 1 };
+              default:
+                return post;
+            }
+          }
+          return post;
+        });
       }
-      return post;
-    }));
-
-    if (action === 'delete') {
-      setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
-      toast.success("Post deleted successfully!");
-    }
+      
+      return updatedPosts;
+    });
   };
 
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar setIsCreatingPost={setIsCreatingPost} />
 
-      {/* Create Post Dialog */}
       <Dialog open={isCreatingPost} onOpenChange={setIsCreatingPost}>
         <DialogContent className="sm:max-w-[525px] bg-card">
           <DialogHeader>
