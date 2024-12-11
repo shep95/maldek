@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +22,12 @@ const Dashboard = () => {
     { icon: Bell, label: "Notifications" },
     { icon: Video, label: "Videos" },
     { icon: User, label: "Profile" },
+    { 
+      icon: Plus, 
+      label: "Create Post",
+      onClick: () => setIsCreatingPost(true),
+      className: "bg-accent hover:bg-accent/90 text-white"
+    },
   ];
 
   const bottomNavItems = [
@@ -63,70 +70,24 @@ const Dashboard = () => {
       <div className="fixed left-0 h-screen p-4 flex items-center animate-slide-in">
         <Card className="h-[90vh] w-64 flex flex-col justify-between border-muted bg-[#0d0d0d] backdrop-blur-sm">
           <div className="p-4">
-            <h2 className="text-2xl font-bold text-accent mb-8">Maldek</h2>
-            
-            {/* Create Post Button */}
-            <Drawer open={isCreatingPost} onOpenChange={setIsCreatingPost}>
-              <DrawerTrigger asChild>
-                <Button 
-                  className="w-full mb-6 bg-accent hover:bg-accent/90 text-white gap-2"
-                >
-                  <Plus className="h-5 w-5" />
-                  Create Post
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader>
-                  <DrawerTitle>Create a New Post</DrawerTitle>
-                </DrawerHeader>
-                <div className="p-4 space-y-4">
-                  <Textarea
-                    placeholder="What's on your mind?"
-                    value={postContent}
-                    onChange={(e) => setPostContent(e.target.value)}
-                    className="min-h-[120px]"
-                  />
-                  <div className="flex gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*,video/*"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="media-upload"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => document.getElementById("media-upload")?.click()}
-                      className="gap-2"
-                    >
-                      <Image className="h-4 w-4" />
-                      Add Media
-                    </Button>
-                    {mediaFiles.length > 0 && (
-                      <span className="text-sm text-muted-foreground py-2">
-                        {mediaFiles.length} file(s) selected
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <DrawerFooter>
-                  <Button onClick={handleCreatePost} className="gap-2">
-                    <Send className="h-4 w-4" />
-                    Create Post
-                  </Button>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
+            <div className="flex items-center gap-3 mb-8">
+              <h2 className="text-2xl font-bold text-accent">Maldek</h2>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="https://github.com/shadcn.png" alt="Profile" />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
+            </div>
 
             <nav className="space-y-2">
               {navItems.map((item) => (
                 <Button
                   key={item.label}
                   variant="ghost"
+                  onClick={item.onClick}
                   className={cn(
                     "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
-                    item.active && "bg-accent/10 text-accent"
+                    item.active && "bg-accent/10 text-accent",
+                    item.className
                   )}
                 >
                   <item.icon className="h-5 w-5" />
@@ -154,6 +115,52 @@ const Dashboard = () => {
           </div>
         </Card>
       </div>
+
+      {/* Create Post Drawer */}
+      <Drawer open={isCreatingPost} onOpenChange={setIsCreatingPost}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Create a New Post</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 space-y-4">
+            <Textarea
+              placeholder="What's on your mind?"
+              value={postContent}
+              onChange={(e) => setPostContent(e.target.value)}
+              className="min-h-[120px]"
+            />
+            <div className="flex gap-2">
+              <Input
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                onChange={handleFileUpload}
+                className="hidden"
+                id="media-upload"
+              />
+              <Button
+                variant="outline"
+                onClick={() => document.getElementById("media-upload")?.click()}
+                className="gap-2"
+              >
+                <Image className="h-4 w-4" />
+                Add Media
+              </Button>
+              {mediaFiles.length > 0 && (
+                <span className="text-sm text-muted-foreground py-2">
+                  {mediaFiles.length} file(s) selected
+                </span>
+              )}
+            </div>
+          </div>
+          <DrawerFooter>
+            <Button onClick={handleCreatePost} className="gap-2">
+              <Send className="h-4 w-4" />
+              Create Post
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* Main Content */}
       <main className="flex-1 ml-72 p-8">
