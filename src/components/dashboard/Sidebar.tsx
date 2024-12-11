@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface NavItem {
   icon: any;
   label: string;
+  path?: string;
   active?: boolean;
   onClick?: () => void;
   className?: string;
@@ -17,14 +18,15 @@ interface NavItem {
 
 export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: boolean) => void }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   // In a real app, this would come from your auth context/state
   const userProfilePic = "https://github.com/shadcn.png";
   const userInitials = "CN";
 
   const navItems: NavItem[] = [
-    { icon: Home, label: "Home", active: true },
-    { icon: MessageCircle, label: "Messages" },
+    { icon: Home, label: "Home", path: "/dashboard", active: location.pathname === "/dashboard" },
+    { icon: MessageCircle, label: "Messages", path: "/messages", active: location.pathname === "/messages" },
     { icon: Bell, label: "Notifications" },
     { icon: Video, label: "Videos" },
     { icon: User, label: "Profile" },
@@ -52,6 +54,14 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
     },
   ];
 
+  const handleNavigation = (item: NavItem) => {
+    if (item.onClick) {
+      item.onClick();
+    } else if (item.path) {
+      navigate(item.path);
+    }
+  };
+
   return (
     <div className="hidden md:block fixed left-0 h-screen p-4">
       <Card className="h-[90vh] w-64 flex flex-col justify-between border-muted bg-[#0d0d0d] backdrop-blur-sm">
@@ -70,7 +80,7 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
                 <Button
                   key={item.label}
                   variant="ghost"
-                  onClick={item.onClick}
+                  onClick={() => handleNavigation(item)}
                   className={cn(
                     "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
                     item.active && "bg-accent/10 text-accent",
