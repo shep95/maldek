@@ -25,82 +25,83 @@ const Profile = () => {
   const { toast } = useToast();
   const [isCurrentUser, setIsCurrentUser] = useState(false);
 
-  // First, check if user is authenticated
   const { data: profile, isLoading, error, refetch } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
-      console.log("Fetching profile data...");
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        console.error("Auth error:", authError);
-        throw new Error('Not authenticated');
-      }
+      try {
+        console.log("Fetching profile data...");
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.error("Auth error:", authError);
+          throw new Error('Not authenticated');
+        }
 
-      console.log("User authenticated, fetching profile...");
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+        console.log("User authenticated, fetching profile...");
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-      if (error) {
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          throw profileError;
+        }
+
+        if (!data) {
+          throw new Error('No profile data found');
+        }
+
+        console.log("Profile data fetched:", data);
+        setIsCurrentUser(true);
+        setEditBio(data.bio || "");
+        return data as ProfileData;
+      } catch (error) {
         console.error("Profile fetch error:", error);
         throw error;
       }
-
-      console.log("Profile data fetched:", data);
-      setIsCurrentUser(true);
-      setEditBio(data.bio || "");
-      return data as ProfileData;
     },
     retry: 1,
     refetchOnWindowFocus: false
   });
 
-  useEffect(() => {
-    if (error) {
-      console.error("Query error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile data. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [error, toast]);
-
   const handleUpdateProfile = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to update your profile",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ bio: editBio })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+      
+      setIsEditing(false);
+      refetch();
       toast({
-        title: "Error",
-        description: "You must be logged in to update your profile",
-        variant: "destructive",
+        title: "Success",
+        description: "Profile updated successfully",
       });
-      return;
-    }
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({ bio: editBio })
-      .eq('id', user.id);
-
-    if (error) {
+    } catch (error) {
+      console.error("Update profile error:", error);
       toast({
         title: "Error",
         description: "Failed to update profile",
         variant: "destructive",
       });
-      return;
     }
-    
-    setIsEditing(false);
-    refetch(); // Refresh the profile data after update
-    toast({
-      title: "Success",
-      description: "Profile updated successfully",
-    });
   };
 
   if (isLoading) {
