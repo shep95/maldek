@@ -3,7 +3,6 @@ export interface Author {
   username: string;
   avatar_url: string | null;
   name?: string;
-  profilePicture?: string;
 }
 
 export interface Post {

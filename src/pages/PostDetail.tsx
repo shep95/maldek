@@ -125,7 +125,7 @@ const PostDetail = () => {
           author={{
             id: post.author.id,
             username: post.author.username,
-            profilePicture: post.author.avatar_url || '',
+            avatar_url: post.author.avatar_url,
             name: post.author.username
           }} 
           timestamp={post.timestamp} 
