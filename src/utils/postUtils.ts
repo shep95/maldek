@@ -1,4 +1,9 @@
-import { Author } from "@/utils/postUtils";
+export interface Author {
+  id: string;
+  name: string;
+  username: string;
+  profilePicture: string;
+}
 
 export interface Post {
   id: string;
