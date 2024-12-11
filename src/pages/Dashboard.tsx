@@ -1,11 +1,19 @@
-import { Home, MessageCircle, Bell, Video, User, Settings, LogOut } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, Image, FileVideo, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerFooter } from "@/components/ui/drawer";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [postContent, setPostContent] = useState("");
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
 
   const navItems = [
     { icon: Home, label: "Home", active: true },
@@ -23,6 +31,32 @@ const Dashboard = () => {
     }},
   ];
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      setMediaFiles(Array.from(files));
+      console.log("Files selected:", files);
+      toast.success("Media added to post");
+    }
+  };
+
+  const handleCreatePost = () => {
+    if (!postContent.trim() && mediaFiles.length === 0) {
+      toast.error("Please add some content to your post");
+      return;
+    }
+    
+    console.log("Creating post with content:", postContent);
+    console.log("Media files:", mediaFiles);
+    
+    // Reset form
+    setPostContent("");
+    setMediaFiles([]);
+    setIsCreatingPost(false);
+    
+    toast.success("Post created successfully!");
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Floating Sidebar */}
@@ -30,6 +64,61 @@ const Dashboard = () => {
         <Card className="h-[90vh] w-64 flex flex-col justify-between border-muted bg-[#0d0d0d] backdrop-blur-sm">
           <div className="p-4">
             <h2 className="text-2xl font-bold text-accent mb-8">Maldek</h2>
+            
+            {/* Create Post Button */}
+            <Drawer open={isCreatingPost} onOpenChange={setIsCreatingPost}>
+              <DrawerTrigger asChild>
+                <Button 
+                  className="w-full mb-6 bg-accent hover:bg-accent/90 text-white gap-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  Create Post
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Create a New Post</DrawerTitle>
+                </DrawerHeader>
+                <div className="p-4 space-y-4">
+                  <Textarea
+                    placeholder="What's on your mind?"
+                    value={postContent}
+                    onChange={(e) => setPostContent(e.target.value)}
+                    className="min-h-[120px]"
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="media-upload"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => document.getElementById("media-upload")?.click()}
+                      className="gap-2"
+                    >
+                      <Image className="h-4 w-4" />
+                      Add Media
+                    </Button>
+                    {mediaFiles.length > 0 && (
+                      <span className="text-sm text-muted-foreground py-2">
+                        {mediaFiles.length} file(s) selected
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <DrawerFooter>
+                  <Button onClick={handleCreatePost} className="gap-2">
+                    <Send className="h-4 w-4" />
+                    Create Post
+                  </Button>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+
             <nav className="space-y-2">
               {navItems.map((item) => (
                 <Button
