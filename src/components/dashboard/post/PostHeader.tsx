@@ -53,8 +53,8 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
   return (
     <div className="flex items-start gap-3">
       <Avatar className="h-10 w-10">
-        <AvatarImage src={author.profilePicture} alt={author.name} />
-        <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+        <AvatarImage src={author.avatar_url || ''} alt={author.name} />
+        <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
         <div className="flex items-baseline gap-2">
