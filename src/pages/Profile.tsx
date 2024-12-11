@@ -5,31 +5,100 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProfileData {
   username: string;
-  displayName: string;
   bio: string;
-  location: string;
-  joinedDate: string;
-  following: number;
-  followers: number;
-  isVerified: boolean;
-  avatarUrl: string;
+  avatar_url: string;
+  created_at: string;
+  follower_count: number;
 }
 
 const Profile = () => {
-  const [profile, setProfile] = useState<ProfileData>({
-    username: "asher_united",
-    displayName: "shepherd newton",
-    bio: "Entrepreneur",
-    location: "Lee County, FL",
-    joinedDate: "August 2023",
-    following: 86,
-    followers: 954,
-    isVerified: true,
-    avatarUrl: "/lovable-uploads/77fcff77-e620-4c3e-8219-425f6b1a6018.png"
-  });
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editBio, setEditBio] = useState("");
+  const { toast } = useToast();
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load profile data",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data) {
+          setProfile(data);
+          setEditBio(data.bio || "");
+          setIsCurrentUser(true);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [toast]);
+
+  const handleUpdateProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to update your profile",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ bio: editBio })
+      .eq('id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProfile(prev => prev ? { ...prev, bio: editBio } : null);
+    setIsEditing(false);
+    
+    toast({
+      title: "Success",
+      description: "Profile updated successfully",
+    });
+  };
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,19 +106,26 @@ const Profile = () => {
       <div className="relative h-48 bg-gradient-to-r from-gray-900 to-black">
         <div className="absolute -bottom-16 left-6">
           <Avatar className="h-32 w-32 border-4 border-background">
-            <AvatarImage src={profile.avatarUrl} alt={profile.displayName} />
-            <AvatarFallback>{profile.displayName[0]}</AvatarFallback>
+            <AvatarImage src={profile.avatar_url} alt={profile.username} />
+            <AvatarFallback>{profile.username[0]}</AvatarFallback>
           </Avatar>
         </div>
-        <div className="absolute right-4 top-4 flex gap-2">
-          <Button variant="outline" size="sm" className="bg-background/10 backdrop-blur">
-            <Camera className="h-4 w-4 mr-2" />
-            Add banner
-          </Button>
-          <Button variant="outline" size="sm" className="bg-background/10 backdrop-blur">
-            Edit profile
-          </Button>
-        </div>
+        {isCurrentUser && (
+          <div className="absolute right-4 top-4 flex gap-2">
+            <Button variant="outline" size="sm" className="bg-background/10 backdrop-blur">
+              <Camera className="h-4 w-4 mr-2" />
+              Add banner
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="bg-background/10 backdrop-blur"
+              onClick={() => setIsEditing(!isEditing)}
+            >
+              {isEditing ? "Cancel" : "Edit profile"}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Profile Info */}
@@ -58,38 +134,45 @@ const Profile = () => {
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{profile.displayName}</h1>
-                {profile.isVerified && (
-                  <CheckCircle className="h-5 w-5 text-accent fill-accent" />
-                )}
+                <h1 className="text-2xl font-bold">@{profile.username}</h1>
               </div>
-              <p className="text-muted-foreground">@{profile.username}</p>
             </div>
-            <Button variant="outline" className="bg-accent text-white hover:bg-accent/90">
-              Get verified
-            </Button>
+            {isCurrentUser && (
+              <Button variant="outline" className="bg-accent text-white hover:bg-accent/90">
+                Get verified
+              </Button>
+            )}
           </div>
 
-          <p className="mt-4 text-lg">{profile.bio}</p>
+          {isEditing ? (
+            <div className="mt-4">
+              <Textarea
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
+                placeholder="Tell us about yourself..."
+                className="min-h-[100px]"
+              />
+              <Button 
+                onClick={handleUpdateProfile}
+                className="mt-2 bg-accent hover:bg-accent/90"
+              >
+                Save Changes
+              </Button>
+            </div>
+          ) : (
+            <p className="mt-4 text-lg">{profile.bio || "No bio yet"}</p>
+          )}
 
           <div className="mt-4 flex flex-wrap gap-4 text-muted-foreground">
             <div className="flex items-center">
-              <MapPin className="mr-1 h-4 w-4" />
-              {profile.location}
-            </div>
-            <div className="flex items-center">
               <Calendar className="mr-1 h-4 w-4" />
-              Joined {profile.joinedDate}
+              Joined {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </div>
           </div>
 
           <div className="mt-4 flex gap-4">
             <button className="hover:underline">
-              <span className="font-bold text-foreground">{profile.following}</span>{" "}
-              <span className="text-muted-foreground">Following</span>
-            </button>
-            <button className="hover:underline">
-              <span className="font-bold text-foreground">{profile.followers}</span>{" "}
+              <span className="font-bold text-foreground">{profile.follower_count}</span>{" "}
               <span className="text-muted-foreground">Followers</span>
             </button>
           </div>

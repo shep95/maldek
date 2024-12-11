@@ -49,7 +49,12 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
       path: "/videos", 
       active: location.pathname === "/videos" 
     },
-    { icon: User, label: "Profile" },
+    { 
+      icon: User, 
+      label: "Profile", 
+      path: "/profile",
+      active: location.pathname === "/profile"
+    },
     { icon: TrendingUp, label: "Analytics" },
     { 
       icon: DollarSign, 
