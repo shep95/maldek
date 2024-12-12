@@ -94,15 +94,14 @@ const Auth = () => {
           if (uploadError) {
             console.error('Profile picture upload error:', uploadError);
             toast.error("Failed to upload profile picture");
-            return;
+          } else {
+            console.log('Profile picture uploaded successfully');
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+            
+            avatarUrl = publicUrl;
           }
-
-          console.log('Profile picture uploaded successfully');
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-          
-          avatarUrl = publicUrl;
         }
 
         console.log('Creating profile entry...');
