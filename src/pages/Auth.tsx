@@ -138,13 +138,19 @@ const Auth = () => {
         if (signInError) {
           console.error("Sign in error:", signInError);
           
-          if (signInError.message === 'Invalid login credentials') {
-            toast.error("Invalid email or password");
-          } else if (signInError.message.includes('Email not confirmed')) {
-            toast.error("Please confirm your email before signing in");
-          } else {
-            toast.error(signInError.message);
+          // Parse the error message from the response body if available
+          let errorMessage = "Invalid email or password";
+          try {
+            const errorBody = JSON.parse(signInError.message);
+            if (errorBody.message) {
+              errorMessage = errorBody.message;
+            }
+          } catch (e) {
+            // If parsing fails, use the original error message
+            errorMessage = signInError.message;
           }
+          
+          toast.error(errorMessage);
           return;
         }
 
@@ -156,7 +162,7 @@ const Auth = () => {
 
         console.log("Sign in successful");
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
