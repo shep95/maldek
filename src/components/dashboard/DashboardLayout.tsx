@@ -2,9 +2,25 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
+import { CreatePostDialog } from "./CreatePostDialog";
+import { useSession } from '@supabase/auth-helpers-react';
+import { Author } from "@/utils/postUtils";
 
 const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const session = useSession();
+
+  const currentUser: Author = {
+    id: session?.user?.id || '',
+    username: '',
+    avatar_url: '',
+    name: ''
+  };
+
+  const handlePostCreated = (newPost: any) => {
+    console.log('New post created:', newPost);
+    setIsCreatingPost(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -16,6 +32,12 @@ const DashboardLayout = () => {
           </div>
         </main>
       </div>
+      <CreatePostDialog
+        isOpen={isCreatingPost}
+        onOpenChange={setIsCreatingPost}
+        currentUser={currentUser}
+        onPostCreated={handlePostCreated}
+      />
       <MobileNav />
     </div>
   );

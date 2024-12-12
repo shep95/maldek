@@ -25,7 +25,10 @@ export const CreatePostDialog = ({
   const [postContent, setPostContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mentionedUser, setMentionedUser] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const session = useSession();
+
+  console.log('CreatePostDialog rendered:', { isOpen, currentUser });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -33,7 +36,7 @@ export const CreatePostDialog = ({
       const fileArray = Array.from(files);
       setMediaFiles(fileArray);
       console.log("Files selected:", fileArray);
-      toast.success("Media added to post");
+      toast.success(`${fileArray.length} media file(s) added to post`);
     }
   };
 
@@ -52,14 +55,17 @@ export const CreatePostDialog = ({
     }
 
     if (!postContent.trim() && mediaFiles.length === 0) {
-      toast.error("Please add some content to your post");
+      toast.error("Please add some content or media to your post");
       return;
     }
 
     try {
+      setIsSubmitting(true);
+      console.log("Creating post with content:", postContent);
+      console.log("Media files:", mediaFiles);
+      
       const newPost = await createNewPost(postContent, mediaFiles, currentUser);
       onPostCreated(newPost);
-      console.log("Creating post:", newPost);
       
       setPostContent("");
       setMediaFiles([]);
@@ -68,7 +74,9 @@ export const CreatePostDialog = ({
       toast.success("Post created successfully!");
     } catch (error) {
       console.error("Error creating post:", error);
-      toast.error("Failed to create post");
+      toast.error("Failed to create post. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -124,9 +132,13 @@ export const CreatePostDialog = ({
               </span>
             )}
           </div>
-          <Button onClick={handleCreatePost} className="w-full gap-2">
+          <Button 
+            onClick={handleCreatePost} 
+            className="w-full gap-2"
+            disabled={isSubmitting}
+          >
             <Send className="h-4 w-4" />
-            Create Post
+            {isSubmitting ? 'Creating...' : 'Create Post'}
           </Button>
         </div>
       </DialogContent>
