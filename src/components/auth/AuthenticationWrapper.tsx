@@ -54,7 +54,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
   };
 
   useEffect(() => {
-    let isMounted = true;
+    let mounted = true;
     let timeoutId: NodeJS.Timeout;
 
     const checkAuth = async () => {
@@ -62,7 +62,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
       try {
         console.log("Starting authentication check...");
-        if (isMounted) setIsLoading(true);
+        if (mounted) setIsLoading(true);
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
@@ -74,7 +74,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
         if (!session) {
           console.log("No active session found");
-          if (isMounted) {
+          if (mounted) {
             setIsAuthenticated(false);
             setIsLoading(false);
           }
@@ -91,7 +91,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           return;
         }
 
-        if (isMounted) {
+        if (mounted) {
           setIsAuthenticated(true);
           setIsLoading(false);
         }
@@ -99,22 +99,19 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       } catch (error) {
         console.error("Auth check error:", error);
         await clearAuthState();
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-          // Set a timeout to force clear auth state if loading persists
-          timeoutId = setTimeout(() => {
-            if (isLoading) {
-              console.log("Forcing auth state clear due to timeout");
-              clearAuthState();
-            }
-          }, 5000); // 5 second timeout
-        }
       }
     };
 
     // Initial auth check
     checkAuth();
+
+    // Set up timeout to clear auth state if loading persists
+    timeoutId = setTimeout(() => {
+      if (isLoading && mounted) {
+        console.log("Forcing auth state clear due to timeout");
+        clearAuthState();
+      }
+    }, 5000); // 5 second timeout
 
     const {
       data: { subscription },
@@ -134,7 +131,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
     });
 
     return () => {
-      isMounted = false;
+      mounted = false;
       subscription.unsubscribe();
       if (timeoutId) clearTimeout(timeoutId);
     };
