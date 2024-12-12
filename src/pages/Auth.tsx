@@ -6,11 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
+import { toast } from "sonner";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const handleSubmit = async (formData: {
     email: string;
@@ -21,80 +21,108 @@ const Auth = () => {
   }) => {
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
         
-        if (error) throw error;
-        
+        if (signInError) {
+          console.error("Sign in error:", signInError);
+          toast.error(signInError.message);
+          return;
+        }
+
+        console.log("Sign in successful");
+        toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
         console.log('Starting signup process...');
+        
+        // Check if username is taken
+        if (formData.username) {
+          const { data: existingUser } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('username', formData.username)
+            .single();
+
+          if (existingUser) {
+            toast.error("Username is already taken");
+            return;
+          }
+        }
+
         const { error: signUpError, data } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
         
-        if (signUpError) throw signUpError;
-
-        if (data.user) {
-          console.log('User created successfully, uploading profile picture...');
-          let avatarUrl = null;
-
-          if (formData.profilePicture) {
-            const fileExt = formData.profilePicture.name.split('.').pop();
-            const filePath = `${data.user.id}.${fileExt}`;
-
-            console.log('Uploading profile picture to storage...');
-            const { error: uploadError } = await supabase.storage
-              .from('avatars')
-              .upload(filePath, formData.profilePicture, {
-                upsert: true
-              });
-
-            if (uploadError) {
-              console.error('Profile picture upload error:', uploadError);
-              throw uploadError;
-            }
-
-            console.log('Profile picture uploaded successfully');
-            const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(filePath);
-            
-            avatarUrl = publicUrl;
-          }
-
-          console.log('Creating profile entry...');
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: data.user.id,
-                username: formData.username,
-                bio: formData.bio,
-                avatar_url: avatarUrl,
-                follower_count: 0
-              }
-            ]);
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            throw profileError;
-          }
-
-          console.log('Profile created successfully');
-          navigate("/onboarding");
+        if (signUpError) {
+          console.error("Sign up error:", signUpError);
+          toast.error(signUpError.message);
+          return;
         }
+
+        if (!data.user) {
+          console.error("No user data returned");
+          toast.error("Sign up failed");
+          return;
+        }
+
+        console.log('User created successfully, uploading profile picture...');
+        let avatarUrl = null;
+
+        if (formData.profilePicture) {
+          const fileExt = formData.profilePicture.name.split('.').pop();
+          const filePath = `${data.user.id}.${fileExt}`;
+
+          console.log('Uploading profile picture to storage...');
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, formData.profilePicture, {
+              upsert: true
+            });
+
+          if (uploadError) {
+            console.error('Profile picture upload error:', uploadError);
+            toast.error("Failed to upload profile picture");
+            return;
+          }
+
+          console.log('Profile picture uploaded successfully');
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+          
+          avatarUrl = publicUrl;
+        }
+
+        console.log('Creating profile entry...');
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: data.user.id,
+              username: formData.username,
+              bio: formData.bio,
+              avatar_url: avatarUrl,
+              follower_count: 0
+            }
+          ]);
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          toast.error("Failed to create profile");
+          return;
+        }
+
+        console.log('Profile created successfully');
+        toast.success("Account created successfully!");
+        navigate("/onboarding");
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      toast({
-        title: "Authentication error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || "Authentication failed");
     }
   };
 
