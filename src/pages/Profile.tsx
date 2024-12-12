@@ -125,25 +125,23 @@ const Profile = () => {
   };
 
   if (isLoading) {
-    console.log("Profile is loading...");
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background p-4 md:pl-72">
         <div className="animate-pulse text-accent">Loading profile...</div>
       </div>
     );
   }
 
   if (error || !profile) {
-    console.log("Profile error or no data:", error);
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background p-4 md:pl-72">
         <div className="text-destructive">Error loading profile. Please refresh the page.</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background p-4 md:pl-72">
       <Card className="border-none bg-transparent shadow-none overflow-hidden">
         <ProfileHeader
           username={profile.username}
