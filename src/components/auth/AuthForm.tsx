@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthFormProps {
   isLogin: boolean;
@@ -24,18 +25,62 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
-  const { toast } = useToast();
+
+  useEffect(() => {
+    const checkUsername = async () => {
+      if (!username || username.length < 3) {
+        setIsUsernameTaken(false);
+        return;
+      }
+
+      setIsCheckingUsername(true);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', username)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Username check error:', error);
+          return;
+        }
+
+        setIsUsernameTaken(!!data);
+      } catch (error) {
+        console.error('Username check error:', error);
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(checkUsername, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [username]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isLogin && isUsernameTaken) {
-      toast({
-        title: "Username taken",
-        description: "Please choose a different username",
-        variant: "destructive",
-      });
+    if (!email || !password) {
+      toast.error("Please fill in all required fields");
       return;
+    }
+
+    if (!isLogin) {
+      if (!username) {
+        toast.error("Username is required");
+        return;
+      }
+
+      if (username.length < 3) {
+        toast.error("Username must be at least 3 characters long");
+        return;
+      }
+
+      if (isUsernameTaken) {
+        toast.error("Username is already taken");
+        return;
+      }
     }
 
     onSubmit({
@@ -49,8 +94,13 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      console.log('Profile picture selected:', e.target.files[0].name);
-      setProfilePicture(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error("Profile picture must be less than 5MB");
+        return;
+      }
+      console.log('Profile picture selected:', file.name);
+      setProfilePicture(file);
     }
   };
 
@@ -63,17 +113,21 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="bg-muted/50"
+          required
         />
         {!isLogin && (
           <>
             <Input
               type="text"
-              placeholder="Username"
+              placeholder="Username (minimum 3 characters)"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className={`bg-muted/50 ${
-                isUsernameTaken ? "border-red-500" : username.length >= 3 ? "border-green-500" : ""
+                isUsernameTaken ? "border-red-500" : 
+                username.length >= 3 ? "border-green-500" : ""
               }`}
+              required
+              minLength={3}
             />
             <div className="relative">
               <Input
@@ -109,11 +163,13 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="bg-muted/50"
+          required
+          minLength={6}
         />
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={!isLogin && isUsernameTaken}
+          disabled={!isLogin && (isUsernameTaken || isCheckingUsername)}
         >
           {isLogin ? "Sign in" : "Sign up"}
         </Button>

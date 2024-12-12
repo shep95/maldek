@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { toast } from "sonner";
@@ -20,63 +19,61 @@ const Auth = () => {
     profilePicture?: File | null;
   }) => {
     try {
-      if (isLogin) {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-        
-        if (signInError) {
-          console.error("Sign in error:", signInError);
-          toast.error(signInError.message);
+      console.log('Starting authentication process:', isLogin ? 'login' : 'signup');
+      
+      if (!isLogin) {
+        // Signup process
+        console.log('Checking username availability...');
+        if (!formData.username) {
+          toast.error("Username is required");
           return;
         }
 
-        console.log("Sign in successful");
-        toast.success("Welcome back!");
-        navigate("/dashboard");
-      } else {
-        console.log('Starting signup process...');
-        
-        // Check if username is taken
-        if (formData.username) {
-          const { data: existingUser } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('username', formData.username)
-            .single();
+        // Check if username exists
+        const { data: existingUser, error: usernameError } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', formData.username)
+          .single();
 
-          if (existingUser) {
-            toast.error("Username is already taken");
-            return;
-          }
+        if (usernameError && usernameError.code !== 'PGRST116') {
+          console.error('Username check error:', usernameError);
+          toast.error("Error checking username availability");
+          return;
         }
 
-        const { error: signUpError, data } = await supabase.auth.signUp({
+        if (existingUser) {
+          console.log('Username is taken:', formData.username);
+          toast.error("Username is already taken");
+          return;
+        }
+
+        console.log('Creating new user account...');
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
-        
+
         if (signUpError) {
-          console.error("Sign up error:", signUpError);
+          console.error('Signup error:', signUpError);
           toast.error(signUpError.message);
           return;
         }
 
         if (!data.user) {
-          console.error("No user data returned");
+          console.error('No user data returned from signup');
           toast.error("Sign up failed");
           return;
         }
 
-        console.log('User created successfully, uploading profile picture...');
+        console.log('User created successfully, handling profile picture...');
         let avatarUrl = null;
 
         if (formData.profilePicture) {
           const fileExt = formData.profilePicture.name.split('.').pop();
           const filePath = `${data.user.id}.${fileExt}`;
 
-          console.log('Uploading profile picture to storage...');
+          console.log('Uploading profile picture...');
           const { error: uploadError } = await supabase.storage
             .from('avatars')
             .upload(filePath, formData.profilePicture, {
@@ -104,7 +101,7 @@ const Auth = () => {
             {
               id: data.user.id,
               username: formData.username,
-              bio: formData.bio,
+              bio: formData.bio || '',
               avatar_url: avatarUrl,
               follower_count: 0
             }
@@ -119,9 +116,26 @@ const Auth = () => {
         console.log('Profile created successfully');
         toast.success("Account created successfully!");
         navigate("/onboarding");
+      } else {
+        // Login process
+        console.log('Attempting login...');
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+        
+        if (signInError) {
+          console.error("Sign in error:", signInError);
+          toast.error(signInError.message);
+          return;
+        }
+
+        console.log("Sign in successful");
+        toast.success("Welcome back!");
+        navigate("/dashboard");
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
+      console.error('Authentication error:', error);
       toast.error(error.message || "Authentication failed");
     }
   };
