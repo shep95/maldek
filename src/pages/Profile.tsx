@@ -40,6 +40,34 @@ const Profile = () => {
           .eq('id', user.id)
           .single();
 
+        if (profileError && profileError.message.includes('JSON object requested, multiple (or no) rows returned')) {
+          console.log("No profile found, creating new profile...");
+          
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: user.id,
+                username: `user_${user.id.slice(0, 8)}`,
+                bio: '',
+                avatar_url: null,
+                follower_count: 0
+              }
+            ])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Profile creation error:", createError);
+            throw createError;
+          }
+
+          console.log("New profile created:", newProfile);
+          setIsCurrentUser(true);
+          setEditBio(newProfile.bio || "");
+          return newProfile as ProfileData;
+        }
+
         if (profileError) {
           console.error("Profile fetch error:", profileError);
           throw profileError;

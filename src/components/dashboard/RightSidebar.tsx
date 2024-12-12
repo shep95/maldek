@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { debounce } from "lodash";
-import { toast } from "sonner";
 
 export const RightSidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,26 +18,11 @@ export const RightSidebar = () => {
 
       console.log("Searching for:", searchQuery);
       
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        console.log("No active session, skipping search");
-        return { users: [] };
-      }
-      
       const usersResponse = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
         .ilike('username', `%${searchQuery}%`)
         .limit(5);
-
-      if (usersResponse.error) {
-        console.error("Search error:", usersResponse.error);
-        if (usersResponse.error.message?.includes('user_not_found') || usersResponse.error.code === '403') {
-          toast.error("Please sign in again to continue");
-          return { users: [] };
-        }
-        throw usersResponse.error;
-      }
 
       return {
         users: usersResponse.data || []
@@ -47,36 +31,21 @@ export const RightSidebar = () => {
     enabled: searchQuery.length > 0
   });
 
-  // Fetch trending topics
+  // Fetch trending topics (for now just showing most followed users)
   const { data: trendingUsers, isLoading: isLoadingTrending } = useQuery({
     queryKey: ['trending-users'],
     queryFn: async () => {
       console.log("Fetching trending users...");
-      
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        console.log("No active session, skipping trending users fetch");
-        return [];
-      }
-
       const { data: users, error } = await supabase
         .from('profiles')
         .select('username, follower_count, avatar_url')
         .order('follower_count', { ascending: false })
         .limit(5);
 
-      if (error) {
-        console.error("Trending users error:", error);
-        if (error.message?.includes('user_not_found') || error.code === '403') {
-          toast.error("Please sign in again to continue");
-          return [];
-        }
-        throw error;
-      }
-
+      if (error) throw error;
       return users || [];
     },
-    refetchInterval: 60000
+    refetchInterval: 60000 // Refetch every minute
   });
 
   const handleSearch = debounce((value: string) => {

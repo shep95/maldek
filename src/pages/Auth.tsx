@@ -1,188 +1,264 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthForm } from "@/components/auth/AuthForm";
-import { AuthHeader } from "@/components/auth/AuthHeader";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
+import { Upload } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [bio, setBio] = useState("");
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = async (formData: {
-    email: string;
-    password: string;
-    username?: string;
-    bio?: string;
-    profilePicture?: File | null;
-  }) => {
+  const checkUsername = async (username: string) => {
+    if (username.length < 3) return;
+    
+    setIsCheckingUsername(true);
     try {
-      console.log('Starting authentication process:', isLogin ? 'login' : 'signup');
-      
-      if (!isLogin) {
-        // Signup process
-        console.log('Checking username availability...');
-        if (!formData.username) {
-          toast.error("Username is required");
-          return;
-        }
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username);
 
-        // Check if username exists
-        const { data: existingUser, error: usernameError } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', formData.username)
-          .maybeSingle();
+      if (error) {
+        console.error('Error checking username:', error);
+        return;
+      }
 
-        if (usernameError) {
-          console.error('Username check error:', usernameError);
-          toast.error("Error checking username availability");
-          return;
-        }
+      setIsUsernameTaken(data && data.length > 0);
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
 
-        if (existingUser) {
-          console.log('Username is taken:', formData.username);
-          toast.error("Username is already taken");
-          return;
-        }
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUsername = e.target.value;
+    setUsername(newUsername);
+    checkUsername(newUsername);
+  };
 
-        console.log('Creating new user account...');
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              username: formData.username,
-            }
-          }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfilePicture(e.target.files[0]);
+    }
+  };
+
+  const uploadProfilePicture = async (userId: string) => {
+    if (!profilePicture) return null;
+
+    const fileExt = profilePicture.name.split('.').pop();
+    const filePath = `${userId}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, profilePicture, {
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Error uploading profile picture:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isLogin && isUsernameTaken) {
+      toast({
+        title: "Username taken",
+        description: "Please choose a different username",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
-
-        if (signUpError) {
-          console.error('Signup error:', signUpError);
-          if (signUpError.message.includes('Email')) {
-            toast.error("Invalid email format");
-          } else if (signUpError.message.includes('Password')) {
-            toast.error("Password must be at least 6 characters");
-          } else {
-            toast.error(signUpError.message);
-          }
-          return;
-        }
-
-        if (!data.user) {
-          console.error('No user data returned from signup');
-          toast.error("Sign up failed");
-          return;
-        }
-
-        console.log('User created successfully, handling profile picture...');
-        let avatarUrl = null;
-
-        if (formData.profilePicture) {
-          const fileExt = formData.profilePicture.name.split('.').pop();
-          const filePath = `${data.user.id}.${fileExt}`;
-
-          console.log('Uploading profile picture...');
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, formData.profilePicture, {
-              upsert: true
-            });
-
-          if (uploadError) {
-            console.error('Profile picture upload error:', uploadError);
-            toast.error("Failed to upload profile picture");
-            return;
-          }
-
-          console.log('Profile picture uploaded successfully');
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-          
-          avatarUrl = publicUrl;
-        }
-
-        console.log('Creating profile entry...');
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              username: formData.username,
-              bio: formData.bio || '',
-              avatar_url: avatarUrl,
-              follower_count: 0
-            }
-          ]);
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          toast.error("Failed to create profile");
-          return;
-        }
-
-        console.log('Profile created successfully');
-        toast.success("Account created successfully! Please sign in.");
-        setIsLogin(true);
-      } else {
-        // Login process
-        console.log('Attempting login...', { email: formData.email });
         
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (signInError) {
-          console.error("Sign in error:", signInError);
-          
-          if (signInError.message === 'Invalid login credentials') {
-            toast.error("Invalid email or password");
-          } else if (signInError.message.includes('Email not confirmed')) {
-            toast.error("Please confirm your email before signing in");
-          } else {
-            toast.error(signInError.message);
-          }
-          return;
-        }
-
-        if (!data.user) {
-          console.error("No user data returned from login");
-          toast.error("Login failed");
-          return;
-        }
-
-        console.log("Sign in successful");
-        toast.success("Welcome back!");
+        if (error) throw error;
+        
         navigate("/dashboard");
+      } else {
+        const { error: signUpError, data } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (signUpError) throw signUpError;
+
+        if (data.user) {
+          // Upload profile picture if provided
+          const avatarUrl = await uploadProfilePicture(data.user.id);
+          console.log('Profile picture uploaded, URL:', avatarUrl);
+
+          // Create profile entry with username, bio, and avatar_url
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                username: username,
+                bio: bio,
+                avatar_url: avatarUrl
+              }
+            ]);
+
+          if (profileError) throw profileError;
+        }
+
+        navigate("/onboarding");
       }
     } catch (error: any) {
-      console.error('Authentication error:', error);
-      toast.error(error.message || "Authentication failed");
+      console.error('Auth error:', error);
+      toast({
+        title: "Authentication error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8 animate-fade-in">
-        <AuthHeader isLogin={isLogin} />
+        <div className="text-center px-4">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-accent">Maldek</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Next generation of social media</p>
+        </div>
+
         <Card className="mx-4 border border-muted bg-card/50 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <AuthForm isLogin={isLogin} onSubmit={handleSubmit} />
-          </CardContent>
-          <CardFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full text-muted-foreground hover:text-white hover:border hover:border-white hover:bg-transparent"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
-            </Button>
-          </CardFooter>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl md:text-3xl">{isLogin ? "Welcome back" : "Create account"}</CardTitle>
+            <CardDescription>
+              {isLogin ? "Enter your credentials to continue" : "Fill in your details to get started"}
+            </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-muted/50"
+                />
+              </div>
+              {!isLogin && (
+                <>
+                  <div className="space-y-2">
+                    <Input
+                      type="text"
+                      placeholder="Username"
+                      value={username}
+                      onChange={handleUsernameChange}
+                      className={`bg-muted/50 ${
+                        isUsernameTaken ? "border-red-500" : username.length >= 3 ? "border-green-500" : ""
+                      }`}
+                    />
+                    {username.length >= 3 && (
+                      <p className={`text-sm ${isUsernameTaken ? "text-red-500" : "text-green-500"}`}>
+                        {isCheckingUsername
+                          ? "Checking username..."
+                          : isUsernameTaken
+                          ? "Username is already taken"
+                          : "Username is available"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="profile-picture"
+                      />
+                      <label
+                        htmlFor="profile-picture"
+                        className="flex items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-accent/50 transition-colors"
+                      >
+                        <div className="flex flex-col items-center space-y-2">
+                          <Upload className="w-8 h-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {profilePicture ? profilePicture.name : "Upload profile picture"}
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Tell us about yourself..."
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      className="bg-muted/50 min-h-[100px]"
+                    />
+                  </div>
+                </>
+              )}
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-muted/50"
+                />
+              </div>
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-4">
+              <Button 
+                type="submit" 
+                className="w-full bg-accent hover:bg-accent/90 text-white"
+                disabled={!isLogin && isUsernameTaken}
+              >
+                {isLogin ? "Sign in" : "Sign up"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full text-muted-foreground hover:text-white hover:border hover:border-white hover:bg-transparent"
+                onClick={() => setIsLogin(!isLogin)}
+              >
+                {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
+              </Button>
+            </CardFooter>
+          </form>
         </Card>
       </div>
     </div>
