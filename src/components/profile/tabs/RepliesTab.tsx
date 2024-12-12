@@ -42,9 +42,9 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
         .from('comments')
         .select(`
           *,
-          posts (
+          posts!inner (
             *,
-            profiles (
+            profiles!inner (
               id,
               username,
               avatar_url
@@ -59,7 +59,7 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
         throw error;
       }
       console.log('Fetched replies:', data);
-      return data as ReplyWithPost[];
+      return data as unknown as ReplyWithPost[];
     },
     enabled: !!userId
   });
