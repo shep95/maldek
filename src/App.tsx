@@ -35,66 +35,56 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log("Checking authentication state...");
         
-        // Clear any stale auth data first
-        const authKeys = Object.keys(localStorage).filter(key => 
-          key.startsWith('supabase.auth.')
-        );
-        
-        if (authKeys.length === 0) {
-          console.log("No auth data found in localStorage");
-          setIsAuthenticated(false);
-          navigate('/auth');
-          toast.error("Please sign in to continue");
-          return;
-        }
-
-        // Check initial auth state
+        // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Session error:", sessionError);
-          authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
           navigate('/auth');
-          toast.error("Please sign in to continue");
           return;
         }
 
         if (!session) {
           console.log("No active session found");
-          authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
           navigate('/auth');
-          toast.error("Please sign in to continue");
           return;
         }
 
-        // Verify the user still exists
+        // Verify the user still exists and has a profile
         const { error: userError } = await supabase.auth.getUser();
         if (userError) {
           console.error("User verification error:", userError);
           if (userError.status === 403 || userError.message?.includes('user_not_found')) {
             console.log("User not found in database, clearing session...");
-            authKeys.forEach(key => localStorage.removeItem(key));
             await supabase.auth.signOut();
             setIsAuthenticated(false);
             navigate('/auth');
-            toast.error("Please sign in to continue");
             return;
           }
+        }
+
+        // Check if user has a profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("Profile error or not found:", profileError);
+          setIsAuthenticated(false);
+          navigate('/auth');
+          return;
         }
 
         setIsAuthenticated(true);
         console.log("Authentication check complete - user is authenticated");
       } catch (error: any) {
         console.error("Auth check error:", error);
-        // Clear all auth data on error
-        Object.keys(localStorage)
-          .filter(key => key.startsWith('supabase.auth.'))
-          .forEach(key => localStorage.removeItem(key));
         setIsAuthenticated(false);
         navigate('/auth');
-        toast.error("Please sign in to continue");
       }
     };
 
@@ -102,15 +92,10 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      console.log("Auth state changed:", !!session);
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, !!session);
       if (!session) {
-        // Clear auth data when session ends
-        Object.keys(localStorage)
-          .filter(key => key.startsWith('supabase.auth.'))
-          .forEach(key => localStorage.removeItem(key));
         navigate('/auth');
-        toast.error("Please sign in to continue");
       }
       setIsAuthenticated(!!session);
     });

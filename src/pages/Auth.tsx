@@ -52,6 +52,11 @@ const Auth = () => {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
+          options: {
+            data: {
+              username: formData.username,
+            }
+          }
         });
 
         if (signUpError) {
@@ -120,12 +125,11 @@ const Auth = () => {
         }
 
         console.log('Profile created successfully');
-        toast.success("Account created successfully!");
-        navigate("/onboarding");
+        toast.success("Account created successfully! Please sign in.");
+        setIsLogin(true);
       } else {
         // Login process
-        console.log('Attempting login...');
-        console.log('Login credentials:', { email: formData.email, passwordLength: formData.password.length });
+        console.log('Attempting login...', { email: formData.email });
         
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
@@ -134,14 +138,11 @@ const Auth = () => {
 
         if (signInError) {
           console.error("Sign in error:", signInError);
-          console.error("Sign in error details:", {
-            message: signInError.message,
-            status: signInError.status,
-            name: signInError.name
-          });
           
           if (signInError.message === 'Invalid login credentials') {
             toast.error("Invalid email or password");
+          } else if (signInError.message.includes('Email not confirmed')) {
+            toast.error("Please confirm your email before signing in");
           } else {
             toast.error(signInError.message);
           }
