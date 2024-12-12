@@ -3,9 +3,32 @@ import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Post } from "@/utils/postUtils";
 
 interface RepliesTabProps {
   userId: string;
+}
+
+interface ReplyWithPost {
+  content: string;
+  created_at: string;
+  id: string;
+  post_id: string;
+  user_id: string;
+  posts: {
+    id: string;
+    content: string;
+    created_at: string;
+    user_id: string;
+    media_urls: string[];
+    likes: number;
+    reposts: number;
+    profiles: {
+      id: string;
+      username: string;
+      avatar_url: string | null;
+    };
+  };
 }
 
 export const RepliesTab = ({ userId }: RepliesTabProps) => {
@@ -36,7 +59,7 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
         throw error;
       }
       console.log('Fetched replies:', data);
-      return data;
+      return data as ReplyWithPost[];
     },
     enabled: !!userId
   });
@@ -67,7 +90,9 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
           <p className="text-muted-foreground mb-2">Replied to:</p>
           <PostCard
             post={{
-              ...reply.posts,
+              id: reply.posts.id,
+              content: reply.posts.content,
+              user_id: reply.posts.user_id,
               author: {
                 id: reply.posts.profiles.id,
                 username: reply.posts.profiles.username,
@@ -75,7 +100,10 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
                 name: reply.posts.profiles.username
               },
               timestamp: new Date(reply.posts.created_at),
+              media_urls: reply.posts.media_urls || [],
+              likes: reply.posts.likes || 0,
               comments: 0,
+              reposts: reply.posts.reposts || 0,
               isLiked: false,
               isBookmarked: false
             }}
