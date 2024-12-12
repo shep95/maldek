@@ -8,6 +8,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
+interface PostWithProfile {
+  id: string;
+  content: string;
+  created_at: string;
+  media_urls: string[];
+  user_id: string;
+  likes: number;
+  reposts: number;
+  profiles: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
 const Dashboard = () => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const session = useSession();
@@ -31,7 +46,7 @@ const Dashboard = () => {
       }
 
       console.log('Posts fetched:', data);
-      return data;
+      return data as PostWithProfile[];
     }
   });
 
@@ -97,7 +112,7 @@ const Dashboard = () => {
                       avatar_url: post.profiles.avatar_url,
                       name: post.profiles.username
                     },
-                    timestamp: post.created_at,
+                    timestamp: new Date(post.created_at),
                     comments: 0,
                     isLiked: false,
                     isBookmarked: false
