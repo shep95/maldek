@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +13,7 @@ const Auth = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [bio, setBio] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const navigate = useNavigate();
@@ -75,13 +77,14 @@ const Auth = () => {
         if (signUpError) throw signUpError;
 
         if (data.user) {
-          // Create profile entry
+          // Create profile entry with username and bio
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
               {
                 id: data.user.id,
                 username: username,
+                bio: bio,
               }
             ]);
 
@@ -127,26 +130,36 @@ const Auth = () => {
                 />
               </div>
               {!isLogin && (
-                <div className="space-y-2">
-                  <Input
-                    type="text"
-                    placeholder="Username"
-                    value={username}
-                    onChange={handleUsernameChange}
-                    className={`bg-muted/50 ${
-                      isUsernameTaken ? "border-red-500" : username.length >= 3 ? "border-green-500" : ""
-                    }`}
-                  />
-                  {username.length >= 3 && (
-                    <p className={`text-sm ${isUsernameTaken ? "text-red-500" : "text-green-500"}`}>
-                      {isCheckingUsername
-                        ? "Checking username..."
-                        : isUsernameTaken
-                        ? "Username is already taken"
-                        : "Username is available"}
-                    </p>
-                  )}
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Input
+                      type="text"
+                      placeholder="Username"
+                      value={username}
+                      onChange={handleUsernameChange}
+                      className={`bg-muted/50 ${
+                        isUsernameTaken ? "border-red-500" : username.length >= 3 ? "border-green-500" : ""
+                      }`}
+                    />
+                    {username.length >= 3 && (
+                      <p className={`text-sm ${isUsernameTaken ? "text-red-500" : "text-green-500"}`}>
+                        {isCheckingUsername
+                          ? "Checking username..."
+                          : isUsernameTaken
+                          ? "Username is already taken"
+                          : "Username is available"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder="Tell us about yourself..."
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      className="bg-muted/50 min-h-[100px]"
+                    />
+                  </div>
+                </>
               )}
               <div className="space-y-2">
                 <Input
