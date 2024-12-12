@@ -34,9 +34,9 @@ const Auth = () => {
           .from('profiles')
           .select('username')
           .eq('username', formData.username)
-          .single();
+          .maybeSingle();
 
-        if (usernameError && usernameError.code !== 'PGRST116') {
+        if (usernameError) {
           console.error('Username check error:', usernameError);
           toast.error("Error checking username availability");
           return;
@@ -56,7 +56,13 @@ const Auth = () => {
 
         if (signUpError) {
           console.error('Signup error:', signUpError);
-          toast.error(signUpError.message);
+          if (signUpError.message.includes('Email')) {
+            toast.error("Invalid email format");
+          } else if (signUpError.message.includes('Password')) {
+            toast.error("Password must be at least 6 characters");
+          } else {
+            toast.error(signUpError.message);
+          }
           return;
         }
 
@@ -126,7 +132,11 @@ const Auth = () => {
         
         if (signInError) {
           console.error("Sign in error:", signInError);
-          toast.error(signInError.message);
+          if (signInError.message === 'Invalid login credentials') {
+            toast.error("Invalid email or password");
+          } else {
+            toast.error(signInError.message);
+          }
           return;
         }
 
