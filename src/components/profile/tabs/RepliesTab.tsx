@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Post } from "@/utils/postUtils";
 
 interface RepliesTabProps {
   userId: string;
