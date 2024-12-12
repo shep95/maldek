@@ -13,8 +13,8 @@ const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
 
-  const { data: profile } = useQuery({
-    queryKey: ['profile'],
+  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+    queryKey: ['profile', session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) {
         console.log('No session user ID found');
@@ -50,8 +50,11 @@ const DashboardLayout = () => {
   const handlePostCreated = (newPost: any) => {
     console.log('New post created:', newPost);
     setIsCreatingPost(false);
-    toast.success('Post created successfully!');
   };
+
+  if (isLoadingProfile) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -2,10 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Image, Send, AtSign } from "lucide-react";
+import { Image, Send, AtSign, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createNewPost } from "@/utils/postUtils";
+import { supabase } from "@/integrations/supabase/client";
 import { useSession } from '@supabase/auth-helpers-react';
 import type { Author } from "@/utils/postUtils";
 
@@ -26,18 +26,32 @@ export const CreatePostDialog = ({
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [mentionedUser, setMentionedUser] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
   const session = useSession();
 
-  console.log('CreatePostDialog rendered:', { isOpen, currentUser });
+  console.log('CreatePostDialog rendered:', { isOpen, currentUser, mediaFiles });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const fileArray = Array.from(files);
-      setMediaFiles(fileArray);
+      setMediaFiles(prev => [...prev, ...fileArray]);
+      
+      // Create preview URLs for the new files
+      fileArray.forEach(file => {
+        const previewUrl = URL.createObjectURL(file);
+        setMediaPreviewUrls(prev => [...prev, previewUrl]);
+      });
+      
       console.log("Files selected:", fileArray);
       toast.success(`${fileArray.length} media file(s) added to post`);
     }
+  };
+
+  const removeMedia = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    URL.revokeObjectURL(mediaPreviewUrls[index]);
+    setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleMentionUser = () => {
@@ -61,13 +75,55 @@ export const CreatePostDialog = ({
 
     try {
       setIsSubmitting(true);
-      console.log("Creating post with content:", postContent);
-      console.log("Media files:", mediaFiles);
+      console.log("Starting post creation with:", { postContent, mediaFiles });
+
+      const mediaUrls: string[] = [];
+
+      // Upload each media file to Supabase storage
+      for (const file of mediaFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${currentUser.id}/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('posts')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Error uploading file:', uploadError);
+          toast.error(`Failed to upload ${file.name}`);
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('posts')
+          .getPublicUrl(filePath);
+
+        mediaUrls.push(publicUrl);
+      }
+
+      // Create the post in the database
+      const { data: post, error: postError } = await supabase
+        .from('posts')
+        .insert({
+          content: postContent,
+          user_id: currentUser.id,
+          media_urls: mediaUrls
+        })
+        .select('*, profiles:user_id(*)')
+        .single();
+
+      if (postError) {
+        throw postError;
+      }
+
+      console.log("Post created successfully:", post);
+      onPostCreated(post);
       
-      const newPost = await createNewPost(postContent, mediaFiles, currentUser);
-      onPostCreated(newPost);
-      
+      // Cleanup
       setPostContent("");
+      mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      setMediaPreviewUrls([]);
       setMediaFiles([]);
       onOpenChange(false);
       
@@ -132,6 +188,38 @@ export const CreatePostDialog = ({
               </span>
             )}
           </div>
+          
+          {/* Media Previews */}
+          {mediaPreviewUrls.length > 0 && (
+            <div className="grid grid-cols-2 gap-2">
+              {mediaPreviewUrls.map((url, index) => (
+                <div key={url} className="relative">
+                  {mediaFiles[index]?.type.startsWith('video/') ? (
+                    <video 
+                      src={url} 
+                      className="w-full h-32 object-cover rounded-md"
+                      controls
+                    />
+                  ) : (
+                    <img 
+                      src={url} 
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-md"
+                    />
+                  )}
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6"
+                    onClick={() => removeMedia(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <Button 
             onClick={handleCreatePost} 
             className="w-full gap-2"
