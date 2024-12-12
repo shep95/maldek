@@ -107,10 +107,12 @@ export const Sidebar = ({ setIsCreatingPost }: { setIsCreatingPost: (value: bool
         <div className="p-4">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-accent">Maldek</h2>
-            <Avatar className="h-8 w-8 ring-2 ring-accent/50 ring-offset-2 ring-offset-background">
-              <AvatarImage src={userProfilePic} alt="Profile" />
-              <AvatarFallback>{userInitials}</AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-8 w-8 ring-2 ring-accent/50 ring-offset-2 ring-offset-background translate-y-1/2">
+                <AvatarImage src={userProfilePic} alt="Profile" />
+                <AvatarFallback>{userInitials}</AvatarFallback>
+              </Avatar>
+            </div>
           </div>
 
           <ScrollArea className="h-[calc(100vh-12rem)]">
