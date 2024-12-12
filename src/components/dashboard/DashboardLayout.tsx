@@ -8,6 +8,7 @@ import { Author } from "@/utils/postUtils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RightSidebar } from "./RightSidebar";
 
 const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
@@ -58,13 +59,16 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar setIsCreatingPost={setIsCreatingPost} />
-      <div className="md:pl-64">
-        <main className="min-h-screen pb-20 md:pb-0 px-4">
-          <div className="max-w-3xl mx-auto">
-            <Outlet />
-          </div>
-        </main>
+      <div className="flex">
+        <Sidebar setIsCreatingPost={setIsCreatingPost} />
+        <div className="flex-1 md:ml-64 lg:mr-80">
+          <main className="min-h-screen pb-20 md:pb-0">
+            <div className="max-w-3xl mx-auto">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+        <RightSidebar />
       </div>
       <CreatePostDialog
         isOpen={isCreatingPost}

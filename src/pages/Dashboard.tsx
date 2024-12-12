@@ -79,8 +79,8 @@ const Dashboard = () => {
         onClose={() => setSelectedMedia(null)}
       />
 
-      <div className="flex">
-        <main className="flex-1 max-w-3xl mx-auto px-4 py-6 md:py-8 animate-fade-in">
+      <div className="flex justify-center">
+        <main className="w-full max-w-3xl px-4 py-6 md:py-8 animate-fade-in">
           <h1 className="text-3xl font-bold mb-8 text-foreground">Home</h1>
           
           {isLoading ? (
@@ -125,7 +125,6 @@ const Dashboard = () => {
             </div>
           )}
         </main>
-        <RightSidebar />
       </div>
     </div>
   );
