@@ -33,7 +33,7 @@ export const RightSidebar = () => {
 
       if (usersResponse.error) {
         console.error("Search error:", usersResponse.error);
-        if (usersResponse.error.message?.includes('user_not_found') || usersResponse.error.status === 403) {
+        if (usersResponse.error.message?.includes('user_not_found') || usersResponse.error.code === '403') {
           toast.error("Please sign in again to continue");
           return { users: [] };
         }
@@ -67,7 +67,7 @@ export const RightSidebar = () => {
 
       if (error) {
         console.error("Trending users error:", error);
-        if (error.message?.includes('user_not_found') || error.status === 403) {
+        if (error.message?.includes('user_not_found') || error.code === '403') {
           toast.error("Please sign in again to continue");
           return [];
         }
