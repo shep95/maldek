@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { PostCard } from "@/components/dashboard/PostCard";
-import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
 import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -86,7 +85,7 @@ const Dashboard = () => {
       />
 
       <div className="flex justify-center">
-        <main className="w-full max-w-3xl px-4 py-6 md:py-8 animate-fade-in">
+        <main className="w-full max-w-3xl px-4 py-6 md:py-8 md:pl-24 animate-fade-in">
           <h1 className="text-3xl font-bold mb-8 text-foreground">Home</h1>
           
           {isLoading ? (
