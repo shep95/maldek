@@ -35,6 +35,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
       setIsCheckingUsername(true);
       try {
+        console.log("Checking username availability:", username);
         const { data, error } = await supabase
           .from('profiles')
           .select('username')
@@ -47,6 +48,9 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         }
 
         setIsUsernameTaken(!!data);
+        if (!!data) {
+          toast.error("This username is already taken");
+        }
       } catch (error) {
         console.error('Username check error:', error);
       } finally {
@@ -117,18 +121,31 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         />
         {!isLogin && (
           <>
-            <Input
-              type="text"
-              placeholder="Username (minimum 3 characters)"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className={`bg-muted/50 ${
-                isUsernameTaken ? "border-red-500" : 
-                username.length >= 3 ? "border-green-500" : ""
-              }`}
-              required
-              minLength={3}
-            />
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Username (minimum 3 characters)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={`bg-muted/50 ${
+                  isUsernameTaken ? "border-red-500" : 
+                  username.length >= 3 && !isUsernameTaken ? "border-green-500" : ""
+                }`}
+                required
+                minLength={3}
+              />
+              {username.length >= 3 && (
+                <div className="absolute right-3 top-3 text-sm">
+                  {isCheckingUsername ? (
+                    <span className="text-muted-foreground">Checking...</span>
+                  ) : isUsernameTaken ? (
+                    <span className="text-red-500">Username taken</span>
+                  ) : (
+                    <span className="text-green-500">Username available</span>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="relative">
               <Input
                 type="file"
