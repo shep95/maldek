@@ -52,6 +52,7 @@ const App = () => {
           console.error("Session error:", sessionError);
           authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
+          toast.error("Please sign in to continue");
           return;
         }
 
@@ -59,6 +60,7 @@ const App = () => {
           console.log("No active session found");
           authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
+          toast.error("Please sign in to continue");
           return;
         }
 
@@ -71,7 +73,7 @@ const App = () => {
             authKeys.forEach(key => localStorage.removeItem(key));
             await supabase.auth.signOut();
             setIsAuthenticated(false);
-            toast.error("Your session has expired. Please sign in again.");
+            toast.error("Please sign in to continue");
             return;
           }
         }
@@ -85,6 +87,7 @@ const App = () => {
           .filter(key => key.startsWith('supabase.auth.'))
           .forEach(key => localStorage.removeItem(key));
         setIsAuthenticated(false);
+        toast.error("Please sign in to continue");
       }
     };
 
@@ -99,6 +102,7 @@ const App = () => {
         Object.keys(localStorage)
           .filter(key => key.startsWith('supabase.auth.'))
           .forEach(key => localStorage.removeItem(key));
+        toast.error("Please sign in to continue");
       }
       setIsAuthenticated(!!session);
     });
