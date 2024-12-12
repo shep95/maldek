@@ -18,14 +18,8 @@ export const ProfileTabs = () => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          id,
-          content,
-          created_at,
-          media_urls,
-          user_id,
-          likes,
-          reposts,
-          profiles!inner (
+          *,
+          profiles (
             id,
             username,
             avatar_url

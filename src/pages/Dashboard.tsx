@@ -29,18 +29,12 @@ const Dashboard = () => {
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
-      console.log('Fetching posts...');
+      console.log('Fetching all posts...');
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          id,
-          content,
-          created_at,
-          media_urls,
-          user_id,
-          likes,
-          reposts,
-          profiles!inner (
+          *,
+          profiles (
             id,
             username,
             avatar_url
@@ -70,7 +64,6 @@ const Dashboard = () => {
         if (error) throw error;
         toast.success('Post deleted successfully');
       }
-      // Implement other actions as needed
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
       toast.error(`Failed to ${action} post`);
