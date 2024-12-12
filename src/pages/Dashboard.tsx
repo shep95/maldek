@@ -2,78 +2,59 @@ import { useState } from "react";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
 import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
-import { RightSidebar } from "@/components/dashboard/RightSidebar";
-import { usePosts } from "@/hooks/usePosts";
-import { toast } from "sonner";
-import type { Author } from "@/utils/postUtils";
+import { useSession } from '@supabase/auth-helpers-react';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const Dashboard = () => {
-  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const { posts, setPosts, isLoading } = usePosts();
+  const session = useSession();
 
-  const currentUser: Author = {
-    id: "user123",
-    username: "johndoe",
-    avatar_url: "https://github.com/shadcn.png",
-    name: "John Doe"
-  };
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ['posts'],
+    queryFn: async () => {
+      console.log('Fetching posts...');
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (*)
+        `)
+        .order('created_at', { ascending: false });
 
-  const handlePostAction = (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
-    setPosts(prevPosts => {
-      let updatedPosts = prevPosts;
-      
-      if (action === 'delete') {
-        updatedPosts = prevPosts.filter(post => post.id !== postId);
-        toast.success("Post deleted successfully!");
-      } else {
-        updatedPosts = prevPosts.map(post => {
-          if (post.id === postId) {
-            switch (action) {
-              case 'like':
-                return {
-                  ...post,
-                  likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-                  isLiked: !post.isLiked
-                };
-              case 'bookmark':
-                return { ...post, isBookmarked: !post.isBookmarked };
-              case 'repost':
-                return { ...post, reposts: post.reposts + 1 };
-              default:
-                return post;
-            }
-          }
-          return post;
-        });
+      if (error) {
+        console.error('Error fetching posts:', error);
+        toast.error('Failed to load posts');
+        throw error;
       }
-      
-      return updatedPosts;
-    });
-  };
 
-  const handleUpdatePost = (postId: string, newContent: string) => {
-    setPosts(prevPosts => {
-      const updatedPosts = prevPosts.map(post => {
-        if (post.id === postId) {
-          return { ...post, content: newContent };
-        }
-        return post;
-      });
-      return updatedPosts;
-    });
+      console.log('Posts fetched:', data);
+      return data;
+    }
+  });
+
+  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
+    try {
+      if (action === 'delete') {
+        const { error } = await supabase
+          .from('posts')
+          .delete()
+          .eq('id', postId);
+
+        if (error) throw error;
+        toast.success('Post deleted successfully');
+      }
+      // Implement other actions as needed
+    } catch (error) {
+      console.error(`Error performing ${action}:`, error);
+      toast.error(`Failed to ${action} post`);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <CreatePostDialog
-        isOpen={isCreatingPost}
-        onOpenChange={setIsCreatingPost}
-        currentUser={currentUser}
-        onPostCreated={(newPost) => setPosts(prevPosts => [newPost, ...prevPosts])}
-      />
-
       <MediaPreviewDialog
         selectedMedia={selectedMedia}
         onClose={() => setSelectedMedia(null)}
@@ -103,16 +84,27 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-          ) : posts.length > 0 ? (
+          ) : posts && posts.length > 0 ? (
             <div className="space-y-6">
               {posts.map((post) => (
                 <PostCard
                   key={post.id}
-                  post={post}
-                  currentUserId={currentUser.id}
+                  post={{
+                    ...post,
+                    author: {
+                      id: post.profiles.id,
+                      username: post.profiles.username,
+                      avatar_url: post.profiles.avatar_url,
+                      name: post.profiles.username
+                    },
+                    timestamp: post.created_at,
+                    comments: 0,
+                    isLiked: false,
+                    isBookmarked: false
+                  }}
+                  currentUserId={session?.user?.id || ''}
                   onPostAction={handlePostAction}
                   onMediaClick={setSelectedMedia}
-                  onUpdatePost={handleUpdatePost}
                 />
               ))}
             </div>

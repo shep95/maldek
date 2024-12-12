@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
 import { CreatePostDialog } from "./CreatePostDialog";
@@ -13,6 +13,7 @@ import { RightSidebar } from "./RightSidebar";
 const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
+  const location = useLocation();
 
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ['profile', session?.user?.id],
@@ -57,18 +58,20 @@ const DashboardLayout = () => {
     return <div>Loading...</div>;
   }
 
+  const showRightSidebar = location.pathname === '/dashboard';
+
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
         <Sidebar setIsCreatingPost={setIsCreatingPost} />
-        <div className="flex-1 md:ml-64 lg:mr-80">
+        <div className={`flex-1 md:ml-64 ${showRightSidebar ? 'lg:mr-80' : ''}`}>
           <main className="min-h-screen pb-20 md:pb-0">
             <div className="max-w-3xl mx-auto">
               <Outlet />
             </div>
           </main>
         </div>
-        <RightSidebar />
+        {showRightSidebar && <RightSidebar />}
       </div>
       <CreatePostDialog
         isOpen={isCreatingPost}
