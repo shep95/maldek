@@ -164,6 +164,57 @@ export type Database = {
           },
         ]
       }
+      post_analytics: {
+        Row: {
+          comment_count: number | null
+          created_at: string | null
+          date: string
+          id: string
+          like_count: number | null
+          post_id: string | null
+          user_id: string | null
+          view_count: number | null
+          watch_time_seconds: number | null
+        }
+        Insert: {
+          comment_count?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          like_count?: number | null
+          post_id?: string | null
+          user_id?: string | null
+          view_count?: number | null
+          watch_time_seconds?: number | null
+        }
+        Update: {
+          comment_count?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          like_count?: number | null
+          post_id?: string | null
+          user_id?: string | null
+          view_count?: number | null
+          watch_time_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_analytics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -205,28 +256,37 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          is_pinned: boolean | null
           likes: number | null
           media_urls: string[] | null
+          pinned_at: string | null
           reposts: number | null
           user_id: string
+          view_count: number | null
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
           likes?: number | null
           media_urls?: string[] | null
+          pinned_at?: string | null
           reposts?: number | null
           user_id: string
+          view_count?: number | null
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
           likes?: number | null
           media_urls?: string[] | null
+          pinned_at?: string | null
           reposts?: number | null
           user_id?: string
+          view_count?: number | null
         }
         Relationships: [
           {
@@ -311,7 +371,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_post_view: {
+        Args: {
+          post_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
