@@ -13,20 +13,13 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
+    // Reset loading state when media changes
+    if (selectedMedia) {
+      setIsLoading(true);
+    }
   }, [selectedMedia]);
 
   if (!selectedMedia) return null;
-
-  const handleImageLoad = () => {
-    console.log("Image loaded successfully");
-    setIsLoading(false);
-  };
-
-  const handleVideoLoad = () => {
-    console.log("Video loaded successfully");
-    setIsLoading(false);
-  };
 
   return (
     <Dialog open={!!selectedMedia} onOpenChange={onClose}>
@@ -53,7 +46,7 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
               controls
               className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
               style={{ opacity: isLoading ? 0 : 1 }}
-              onLoadedData={handleVideoLoad}
+              onLoadedData={() => setIsLoading(false)}
             />
           ) : (
             <img
@@ -61,7 +54,7 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
               alt="Full size preview"
               className="max-h-full max-w-full rounded-lg object-contain transition-opacity duration-300"
               style={{ opacity: isLoading ? 0 : 1 }}
-              onLoad={handleImageLoad}
+              onLoad={() => setIsLoading(false)}
             />
           )}
         </div>
