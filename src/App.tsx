@@ -30,10 +30,14 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClearing, setIsClearing] = useState(false);
 
   const clearAuthState = async () => {
+    if (isClearing) return; // Prevent multiple simultaneous clear operations
+    
     try {
       console.log("Clearing auth state...");
+      setIsClearing(true);
       setIsLoading(true);
       
       // Clear all Supabase-related items from localStorage
@@ -60,17 +64,19 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       navigate('/auth');
     } finally {
       setIsLoading(false);
+      setIsClearing(false);
     }
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
+      if (isClearing) return; // Don't check auth while clearing
+
       try {
         console.log("Starting authentication check...");
-        setIsLoading(true);
-        
-        // First clear any existing error states
-        setIsAuthenticated(null);
+        if (isMounted) setIsLoading(true);
         
         // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -83,23 +89,18 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
 
         if (!session) {
           console.log("No active session found");
-          setIsAuthenticated(false);
-          setIsLoading(false);
+          if (isMounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
           return;
         }
 
         // Verify the user exists
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        if (userError) {
+        if (userError || !user) {
           console.error("User verification error:", userError);
-          await clearAuthState();
-          toast.error("Session expired. Please sign in again.");
-          return;
-        }
-
-        if (!user) {
-          console.log("No user found");
           await clearAuthState();
           return;
         }
@@ -114,18 +115,19 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
         if (profileError || !profile) {
           console.error("Profile error or not found:", profileError);
           await clearAuthState();
-          toast.error("Account not found. Please sign up.");
           return;
         }
 
-        setIsAuthenticated(true);
+        if (isMounted) {
+          setIsAuthenticated(true);
+          setIsLoading(false);
+        }
         console.log("Authentication check complete - user is authenticated");
       } catch (error) {
         console.error("Auth check error:", error);
         await clearAuthState();
-        toast.error("An error occurred. Please sign in again.");
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -137,7 +139,9 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       console.log("Auth state changed:", event, !!session);
       
       if (event === 'SIGNED_OUT') {
-        await clearAuthState();
+        if (!isClearing) {
+          await clearAuthState();
+        }
         return;
       }
       
@@ -146,7 +150,10 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (isLoading) {
