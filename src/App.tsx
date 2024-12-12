@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Messages from "./pages/Messages";
@@ -22,16 +23,40 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check initial auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
-      console.log("Initial auth state:", !!session);
-    });
+    const checkAuth = async () => {
+      try {
+        // Check initial auth state
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          // Clear any invalid session data
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+          return;
+        }
+
+        setIsAuthenticated(!!session);
+        console.log("Initial auth state:", !!session);
+      } catch (error: any) {
+        console.error("Auth check error:", error);
+        // If we get a 403/user not found error, clear the session
+        if (error.status === 403 || error.message?.includes('user_not_found')) {
+          console.log("Invalid session detected, clearing...");
+          await supabase.auth.signOut();
+          localStorage.removeItem('supabase.auth.token');
+          setIsAuthenticated(false);
+          toast.error("Your session has expired. Please sign in again.");
+        }
+      }
+    };
+
+    checkAuth();
 
     // Subscribe to auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setIsAuthenticated(!!session);
       console.log("Auth state changed:", !!session);
     });
