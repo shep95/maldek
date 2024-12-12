@@ -40,15 +40,18 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           .from('profiles')
           .select('username')
           .eq('username', username)
-          .single();
+          .maybeSingle();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Username check error:', error);
           return;
         }
 
-        setIsUsernameTaken(!!data);
-        if (!!data) {
+        const isTaken = !!data;
+        console.log('Username check result:', { username, isTaken });
+        setIsUsernameTaken(isTaken);
+        
+        if (isTaken) {
           toast.error("This username is already taken");
         }
       } catch (error) {
