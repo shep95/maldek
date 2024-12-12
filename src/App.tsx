@@ -30,6 +30,22 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  const clearAuthState = async () => {
+    try {
+      // Clear any stored session data
+      localStorage.removeItem('supabase.auth.token');
+      // Force clear the session
+      await supabase.auth.signOut({ scope: 'local' });
+      setIsAuthenticated(false);
+      navigate('/auth');
+    } catch (error) {
+      console.error("Error clearing auth state:", error);
+      // Even if there's an error, we want to reset the state
+      setIsAuthenticated(false);
+      navigate('/auth');
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -43,9 +59,7 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
         
         if (sessionError) {
           console.error("Session error:", sessionError);
-          await supabase.auth.signOut();
-          setIsAuthenticated(false);
-          navigate('/auth');
+          await clearAuthState();
           return;
         }
 
@@ -61,19 +75,14 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
         
         if (userError) {
           console.error("User verification error:", userError);
-          // If user doesn't exist, clear the session
-          await supabase.auth.signOut();
-          setIsAuthenticated(false);
-          navigate('/auth');
+          await clearAuthState();
           toast.error("Session expired. Please sign in again.");
           return;
         }
 
         if (!user) {
           console.log("No user found");
-          await supabase.auth.signOut();
-          setIsAuthenticated(false);
-          navigate('/auth');
+          await clearAuthState();
           return;
         }
 
@@ -86,10 +95,7 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
 
         if (profileError || !profile) {
           console.error("Profile error or not found:", profileError);
-          // If no profile exists, sign out and redirect to auth
-          await supabase.auth.signOut();
-          setIsAuthenticated(false);
-          navigate('/auth');
+          await clearAuthState();
           toast.error("Account not found. Please sign up.");
           return;
         }
@@ -98,10 +104,7 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
         console.log("Authentication check complete - user is authenticated");
       } catch (error) {
         console.error("Auth check error:", error);
-        // On any error, clear the session and redirect to auth
-        await supabase.auth.signOut();
-        setIsAuthenticated(false);
-        navigate('/auth');
+        await clearAuthState();
         toast.error("An error occurred. Please sign in again.");
       }
     };
@@ -114,8 +117,7 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       console.log("Auth state changed:", event, !!session);
       
       if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-        navigate('/auth');
+        await clearAuthState();
         return;
       }
       
