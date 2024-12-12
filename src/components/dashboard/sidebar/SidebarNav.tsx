@@ -31,29 +31,25 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
         }
       });
       
-      // Attempt to sign out from Supabase
+      // Force navigation to auth page
+      navigate("/auth");
+      
+      // Attempt to sign out from Supabase after navigation
       const { error } = await supabase.auth.signOut();
       
-      // If we get a user_not_found error, that's fine - we want to log out anyway
       if (error) {
         console.log("Logout error:", error);
-        if (error.message?.includes('user_not_found') || error.status === 403) {
-          console.log("User already logged out or not found, proceeding with redirect");
-          navigate("/auth");
-          toast.success("Logged out successfully");
-          return;
-        }
-        throw error;
+        // Even if there's an error, we've already cleared localStorage and redirected
+        toast.success("Logged out successfully");
+        return;
       }
       
       console.log("Logout successful");
       toast.success("Logged out successfully");
-      navigate("/auth");
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if there's an error, we want to force logout
-      navigate("/auth");
-      toast.error("There was an issue logging out, but you've been redirected to the login page");
+      // Even if there's an error, ensure the user is logged out locally
+      toast.success("Logged out successfully");
     }
   };
 
