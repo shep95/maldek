@@ -17,7 +17,14 @@ import Profile from "./pages/Profile";
 import PostDetail from "./pages/PostDetail";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -28,24 +35,29 @@ const App = () => {
         console.log("Checking authentication state...");
         
         // Clear any stale auth data first
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('supabase.auth.') && key.includes('expired')) {
-            localStorage.removeItem(key);
-          }
-        });
+        const authKeys = Object.keys(localStorage).filter(key => 
+          key.startsWith('supabase.auth.')
+        );
+        
+        if (authKeys.length === 0) {
+          console.log("No auth data found in localStorage");
+          setIsAuthenticated(false);
+          return;
+        }
 
         // Check initial auth state
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Session error:", sessionError);
-          await supabase.auth.signOut();
+          authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
           return;
         }
 
         if (!session) {
           console.log("No active session found");
+          authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
           return;
         }
@@ -56,11 +68,7 @@ const App = () => {
           console.error("User verification error:", userError);
           if (userError.status === 403 || userError.message?.includes('user_not_found')) {
             console.log("User not found in database, clearing session...");
-            Object.keys(localStorage).forEach(key => {
-              if (key.startsWith('supabase.auth.')) {
-                localStorage.removeItem(key);
-              }
-            });
+            authKeys.forEach(key => localStorage.removeItem(key));
             await supabase.auth.signOut();
             setIsAuthenticated(false);
             toast.error("Your session has expired. Please sign in again.");
@@ -72,6 +80,10 @@ const App = () => {
         console.log("Authentication check complete - user is authenticated");
       } catch (error: any) {
         console.error("Auth check error:", error);
+        // Clear all auth data on error
+        Object.keys(localStorage)
+          .filter(key => key.startsWith('supabase.auth.'))
+          .forEach(key => localStorage.removeItem(key));
         setIsAuthenticated(false);
       }
     };
@@ -82,6 +94,12 @@ const App = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log("Auth state changed:", !!session);
+      if (!session) {
+        // Clear auth data when session ends
+        Object.keys(localStorage)
+          .filter(key => key.startsWith('supabase.auth.'))
+          .forEach(key => localStorage.removeItem(key));
+      }
       setIsAuthenticated(!!session);
     });
 
