@@ -15,7 +15,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
   const [isClearing, setIsClearing] = useState(false);
 
   const clearAuthState = async () => {
-    if (isClearing) return; // Prevent multiple simultaneous clear operations
+    if (isClearing) return;
     
     try {
       console.log("Clearing auth state...");
@@ -54,13 +54,12 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
     let isMounted = true;
 
     const checkAuth = async () => {
-      if (isClearing) return; // Don't check auth while clearing
+      if (isClearing) return;
 
       try {
         console.log("Starting authentication check...");
         if (isMounted) setIsLoading(true);
         
-        // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -87,19 +86,6 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           return;
         }
 
-        // Check if user has a profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.error("Profile error or not found:", profileError);
-          await clearAuthState();
-          return;
-        }
-
         if (isMounted) {
           setIsAuthenticated(true);
           setIsLoading(false);
@@ -113,6 +99,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       }
     };
 
+    // Initial auth check
     checkAuth();
 
     const {
