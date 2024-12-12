@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,8 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -42,6 +43,8 @@ const App = () => {
         if (authKeys.length === 0) {
           console.log("No auth data found in localStorage");
           setIsAuthenticated(false);
+          navigate('/auth');
+          toast.error("Please sign in to continue");
           return;
         }
 
@@ -52,6 +55,8 @@ const App = () => {
           console.error("Session error:", sessionError);
           authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
+          navigate('/auth');
+          toast.error("Please sign in to continue");
           return;
         }
 
@@ -59,6 +64,8 @@ const App = () => {
           console.log("No active session found");
           authKeys.forEach(key => localStorage.removeItem(key));
           setIsAuthenticated(false);
+          navigate('/auth');
+          toast.error("Please sign in to continue");
           return;
         }
 
@@ -71,6 +78,8 @@ const App = () => {
             authKeys.forEach(key => localStorage.removeItem(key));
             await supabase.auth.signOut();
             setIsAuthenticated(false);
+            navigate('/auth');
+            toast.error("Please sign in to continue");
             return;
           }
         }
@@ -84,6 +93,8 @@ const App = () => {
           .filter(key => key.startsWith('supabase.auth.'))
           .forEach(key => localStorage.removeItem(key));
         setIsAuthenticated(false);
+        navigate('/auth');
+        toast.error("Please sign in to continue");
       }
     };
 
@@ -98,67 +109,55 @@ const App = () => {
         Object.keys(localStorage)
           .filter(key => key.startsWith('supabase.auth.'))
           .forEach(key => localStorage.removeItem(key));
+        navigate('/auth');
+        toast.error("Please sign in to continue");
       }
       setIsAuthenticated(!!session);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   // Show loading state while checking auth
   if (isAuthenticated === null) {
     return <div>Loading...</div>;
   }
 
+  return children;
+};
+
+const App = () => {
   return (
     <SessionContextProvider supabaseClient={supabase}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <TooltipProvider>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  isAuthenticated ? (
-                    <Navigate to="/dashboard" replace />
-                  ) : (
-                    <Navigate to="/auth" replace />
-                  )
-                }
-              />
-              <Route
-                path="/auth"
-                element={
-                  isAuthenticated ? (
-                    <Navigate to="/dashboard" replace />
-                  ) : (
-                    <Auth />
-                  )
-                }
-              />
-              <Route
-                path="/onboarding"
-                element={
-                  isAuthenticated ? <Onboarding /> : <Navigate to="/auth" replace />
-                }
-              />
-              <Route
-                element={
-                  isAuthenticated ? (
-                    <DashboardLayout />
-                  ) : (
-                    <Navigate to="/auth" replace />
-                  )
-                }
-              >
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/messages" element={<Messages />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/videos" element={<Videos />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/post/:postId" element={<PostDetail />} />
-              </Route>
-            </Routes>
+            <AuthenticationWrapper>
+              <Routes>
+                <Route
+                  path="/"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+                <Route
+                  path="/auth"
+                  element={<Auth />}
+                />
+                <Route
+                  path="/onboarding"
+                  element={<Onboarding />}
+                />
+                <Route
+                  element={<DashboardLayout />}
+                >
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/messages" element={<Messages />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/videos" element={<Videos />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/post/:postId" element={<PostDetail />} />
+                </Route>
+              </Routes>
+            </AuthenticationWrapper>
             <Toaster />
             <Sonner />
           </TooltipProvider>
