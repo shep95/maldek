@@ -9,9 +9,11 @@ const DashboardLayout = () => {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar setIsCreatingPost={setIsCreatingPost} />
-      <div className="md:pl-64 min-h-screen">
-        <main className="min-h-screen pb-20 md:pb-0 max-w-5xl mx-auto">
-          <Outlet />
+      <div className="md:pl-64">
+        <main className="min-h-screen pb-20 md:pb-0">
+          <div className="max-w-4xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
       <MobileNav />
