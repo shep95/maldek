@@ -126,22 +126,22 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="animate-fade-in">
-        <div className="animate-pulse text-accent p-4">Loading profile...</div>
+      <div className="animate-fade-in py-4">
+        <div className="animate-pulse text-accent">Loading profile...</div>
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="animate-fade-in p-4">
+      <div className="animate-fade-in py-4">
         <div className="text-destructive">Error loading profile. Please refresh the page.</div>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in w-full">
       <Card className="border-none bg-transparent shadow-none overflow-hidden">
         <ProfileHeader
           username={profile.username}

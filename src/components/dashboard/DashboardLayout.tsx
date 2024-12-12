@@ -10,8 +10,8 @@ const DashboardLayout = () => {
     <div className="min-h-screen bg-background">
       <Sidebar setIsCreatingPost={setIsCreatingPost} />
       <div className="md:pl-64">
-        <main className="min-h-screen pb-20 md:pb-0">
-          <div className="max-w-4xl mx-auto">
+        <main className="min-h-screen pb-20 md:pb-0 px-4">
+          <div className="max-w-3xl mx-auto">
             <Outlet />
           </div>
         </main>
