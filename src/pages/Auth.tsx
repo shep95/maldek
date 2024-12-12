@@ -125,18 +125,32 @@ const Auth = () => {
       } else {
         // Login process
         console.log('Attempting login...');
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        console.log('Login credentials:', { email: formData.email, passwordLength: formData.password.length });
+        
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
-        
+
         if (signInError) {
           console.error("Sign in error:", signInError);
+          console.error("Sign in error details:", {
+            message: signInError.message,
+            status: signInError.status,
+            name: signInError.name
+          });
+          
           if (signInError.message === 'Invalid login credentials') {
             toast.error("Invalid email or password");
           } else {
             toast.error(signInError.message);
           }
+          return;
+        }
+
+        if (!data.user) {
+          console.error("No user data returned from login");
+          toast.error("Login failed");
           return;
         }
 
