@@ -29,10 +29,12 @@ const queryClient = new QueryClient({
 const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const clearAuthState = async () => {
     try {
       console.log("Clearing auth state...");
+      setIsLoading(true);
       
       // Clear all Supabase-related items from localStorage
       Object.keys(localStorage).forEach(key => {
@@ -56,13 +58,16 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       // Even if there's an error, we want to reset the state
       setIsAuthenticated(false);
       navigate('/auth');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("Checking authentication state...");
+        console.log("Starting authentication check...");
+        setIsLoading(true);
         
         // First clear any existing error states
         setIsAuthenticated(null);
@@ -79,6 +84,7 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
         if (!session) {
           console.log("No active session found");
           setIsAuthenticated(false);
+          setIsLoading(false);
           return;
         }
 
@@ -118,6 +124,8 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
         console.error("Auth check error:", error);
         await clearAuthState();
         toast.error("An error occurred. Please sign in again.");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -141,9 +149,15 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Show loading state while checking auth
-  if (isAuthenticated === null) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
   }
 
   return children;
