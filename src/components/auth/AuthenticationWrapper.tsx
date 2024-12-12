@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ interface AuthenticationWrapperProps {
 
 export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationWrapperProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isClearing, setIsClearing] = useState(false);
@@ -23,30 +24,25 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       setIsClearing(true);
       setIsLoading(true);
       
-      // Clear all Supabase-related items from localStorage
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('supabase.auth.')) {
           localStorage.removeItem(key);
         }
       });
 
-      // Force clear the session with global scope
       await supabase.auth.signOut({ scope: 'global' });
-      
-      // Clear React Query cache
       queryClient.clear();
       
       setIsAuthenticated(false);
-      navigate('/auth');
+      navigate('/auth', { replace: true });
       
       console.log("Auth state cleared successfully");
       toast.success("Session cleared. Please sign in again.");
     } catch (error) {
       console.error("Error clearing auth state:", error);
       toast.error("Error clearing session. Please refresh the page.");
-      // Even if there's an error, we want to reset the state
       setIsAuthenticated(false);
-      navigate('/auth');
+      navigate('/auth', { replace: true });
     } finally {
       setIsLoading(false);
       setIsClearing(false);
@@ -55,7 +51,6 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
 
     const checkAuth = async () => {
       if (isClearing) return;
@@ -78,11 +73,12 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
             setIsAuthenticated(false);
             setIsLoading(false);
           }
-          navigate('/auth');
+          if (!location.pathname.startsWith('/auth')) {
+            navigate('/auth', { replace: true });
+          }
           return;
         }
 
-        // Verify the user exists
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError || !user) {
@@ -102,16 +98,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       }
     };
 
-    // Initial auth check
     checkAuth();
-
-    // Set up timeout to clear auth state if loading persists
-    timeoutId = setTimeout(() => {
-      if (isLoading && mounted) {
-        console.log("Forcing auth state clear due to timeout");
-        clearAuthState();
-      }
-    }, 5000); // 5 second timeout
 
     const {
       data: { subscription },
@@ -133,9 +120,8 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   if (isLoading) {
     return (
@@ -145,12 +131,6 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           <p className="text-muted-foreground">
             {isClearing ? "Clearing session..." : "Loading your profile..."}
           </p>
-          <button
-            onClick={clearAuthState}
-            className="text-sm text-accent hover:text-accent/80 transition-colors"
-          >
-            Click here if loading takes too long
-          </button>
         </div>
       </div>
     );
