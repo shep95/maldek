@@ -126,7 +126,7 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background p-4 md:pl-72">
+      <div className="p-4 md:pl-0">
         <div className="animate-pulse text-accent">Loading profile...</div>
       </div>
     );
@@ -134,14 +134,14 @@ const Profile = () => {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-background p-4 md:pl-72">
+      <div className="p-4 md:pl-0">
         <div className="text-destructive">Error loading profile. Please refresh the page.</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:pl-72">
+    <div className="p-4 md:pl-0">
       <Card className="border-none bg-transparent shadow-none overflow-hidden">
         <ProfileHeader
           username={profile.username}
