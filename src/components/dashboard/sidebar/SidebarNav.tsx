@@ -22,16 +22,23 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
 
   const handleLogout = async () => {
     try {
-      console.log("Attempting to log out...");
+      console.log("Starting logout process...");
       
-      // Clear any stored auth data from localStorage
-      localStorage.removeItem('supabase.auth.token');
+      // First clear all auth data from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth.')) {
+          localStorage.removeItem(key);
+        }
+      });
       
+      // Attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
+      
+      // If we get a user_not_found error, that's fine - we want to log out anyway
       if (error) {
-        // If we get a 403/user not found error, we can ignore it since we want to log out anyway
-        if (error.message.includes('user_not_found') || error.status === 403) {
-          console.log("User already logged out or not found, redirecting...");
+        console.log("Logout error:", error);
+        if (error.message?.includes('user_not_found') || error.status === 403) {
+          console.log("User already logged out or not found, proceeding with redirect");
           navigate("/auth");
           toast.success("Logged out successfully");
           return;
@@ -44,7 +51,7 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       navigate("/auth");
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if there's an error, redirect to auth page since we want to force logout
+      // Even if there's an error, we want to force logout
       navigate("/auth");
       toast.error("There was an issue logging out, but you've been redirected to the login page");
     }

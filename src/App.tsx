@@ -25,40 +25,64 @@ const App = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log("Checking authentication state...");
+        
+        // Clear any stale auth data first
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.auth.') && key.includes('expired')) {
+            localStorage.removeItem(key);
+          }
+        });
+
         // Check initial auth state
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Session error:", sessionError);
-          // Clear any invalid session data
           await supabase.auth.signOut();
           setIsAuthenticated(false);
           return;
         }
 
-        setIsAuthenticated(!!session);
-        console.log("Initial auth state:", !!session);
+        if (!session) {
+          console.log("No active session found");
+          setIsAuthenticated(false);
+          return;
+        }
+
+        // Verify the user still exists
+        const { error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("User verification error:", userError);
+          if (userError.status === 403 || userError.message?.includes('user_not_found')) {
+            console.log("User not found in database, clearing session...");
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('supabase.auth.')) {
+                localStorage.removeItem(key);
+              }
+            });
+            await supabase.auth.signOut();
+            setIsAuthenticated(false);
+            toast.error("Your session has expired. Please sign in again.");
+            return;
+          }
+        }
+
+        setIsAuthenticated(true);
+        console.log("Authentication check complete - user is authenticated");
       } catch (error: any) {
         console.error("Auth check error:", error);
-        // If we get a 403/user not found error, clear the session
-        if (error.status === 403 || error.message?.includes('user_not_found')) {
-          console.log("Invalid session detected, clearing...");
-          await supabase.auth.signOut();
-          localStorage.removeItem('supabase.auth.token');
-          setIsAuthenticated(false);
-          toast.error("Your session has expired. Please sign in again.");
-        }
+        setIsAuthenticated(false);
       }
     };
 
     checkAuth();
 
-    // Subscribe to auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setIsAuthenticated(!!session);
       console.log("Auth state changed:", !!session);
+      setIsAuthenticated(!!session);
     });
 
     return () => subscription.unsubscribe();
