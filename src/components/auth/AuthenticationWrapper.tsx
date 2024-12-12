@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { QueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface AuthenticationWrapperProps {
   children: React.ReactNode;
@@ -39,8 +40,10 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       navigate('/auth');
       
       console.log("Auth state cleared successfully");
+      toast.success("Session cleared. Please sign in again.");
     } catch (error) {
       console.error("Error clearing auth state:", error);
+      toast.error("Error clearing session. Please refresh the page.");
       // Even if there's an error, we want to reset the state
       setIsAuthenticated(false);
       navigate('/auth');
@@ -52,6 +55,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
   useEffect(() => {
     let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const checkAuth = async () => {
       if (isClearing) return;
@@ -74,6 +78,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
             setIsAuthenticated(false);
             setIsLoading(false);
           }
+          navigate('/auth');
           return;
         }
 
@@ -95,7 +100,16 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
         console.error("Auth check error:", error);
         await clearAuthState();
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+          // Set a timeout to force clear auth state if loading persists
+          timeoutId = setTimeout(() => {
+            if (isLoading) {
+              console.log("Forcing auth state clear due to timeout");
+              clearAuthState();
+            }
+          }, 5000); // 5 second timeout
+        }
       }
     };
 
@@ -122,6 +136,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [navigate]);
 
@@ -130,7 +145,15 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
-          <p className="text-muted-foreground">Loading your profile...</p>
+          <p className="text-muted-foreground">
+            {isClearing ? "Clearing session..." : "Loading your profile..."}
+          </p>
+          <button
+            onClick={clearAuthState}
+            className="text-sm text-accent hover:text-accent/80 transition-colors"
+          >
+            Click here if loading takes too long
+          </button>
         </div>
       </div>
     );
