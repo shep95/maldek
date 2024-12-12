@@ -101,6 +101,7 @@ const Auth = () => {
         
         navigate("/dashboard");
       } else {
+        console.log('Starting signup process...');
         const { error: signUpError, data } = await supabase.auth.signUp({
           email,
           password,
@@ -109,11 +110,34 @@ const Auth = () => {
         if (signUpError) throw signUpError;
 
         if (data.user) {
-          // Upload profile picture if provided
-          const avatarUrl = await uploadProfilePicture(data.user.id);
-          console.log('Profile picture uploaded, URL:', avatarUrl);
+          console.log('User created successfully, uploading profile picture...');
+          let avatarUrl = null;
 
-          // Create profile entry with username, bio, and avatar_url
+          if (profilePicture) {
+            const fileExt = profilePicture.name.split('.').pop();
+            const filePath = `${data.user.id}.${fileExt}`;
+
+            console.log('Uploading profile picture to storage...');
+            const { error: uploadError, data: uploadData } = await supabase.storage
+              .from('avatars')
+              .upload(filePath, profilePicture, {
+                upsert: true
+              });
+
+            if (uploadError) {
+              console.error('Profile picture upload error:', uploadError);
+              throw uploadError;
+            }
+
+            console.log('Profile picture uploaded successfully');
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+            
+            avatarUrl = publicUrl;
+          }
+
+          console.log('Creating profile entry...');
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -121,14 +145,19 @@ const Auth = () => {
                 id: data.user.id,
                 username: username,
                 bio: bio,
-                avatar_url: avatarUrl
+                avatar_url: avatarUrl,
+                follower_count: 0
               }
             ]);
 
-          if (profileError) throw profileError;
-        }
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            throw profileError;
+          }
 
-        navigate("/onboarding");
+          console.log('Profile created successfully');
+          navigate("/onboarding");
+        }
       }
     } catch (error: any) {
       console.error('Auth error:', error);
