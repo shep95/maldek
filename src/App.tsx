@@ -32,12 +32,25 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
 
   const clearAuthState = async () => {
     try {
-      // Clear any stored session data
-      localStorage.removeItem('supabase.auth.token');
-      // Force clear the session
-      await supabase.auth.signOut({ scope: 'local' });
+      console.log("Clearing auth state...");
+      
+      // Clear all Supabase-related items from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth.')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Force clear the session with global scope
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Clear React Query cache
+      queryClient.clear();
+      
       setIsAuthenticated(false);
       navigate('/auth');
+      
+      console.log("Auth state cleared successfully");
     } catch (error) {
       console.error("Error clearing auth state:", error);
       // Even if there's an error, we want to reset the state
@@ -66,7 +79,6 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
         if (!session) {
           console.log("No active session found");
           setIsAuthenticated(false);
-          navigate('/auth');
           return;
         }
 
