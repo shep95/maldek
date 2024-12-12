@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Upload } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,6 +15,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [bio, setBio] = useState("");
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const navigate = useNavigate();
@@ -44,6 +46,36 @@ const Auth = () => {
     const newUsername = e.target.value;
     setUsername(newUsername);
     checkUsername(newUsername);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfilePicture(e.target.files[0]);
+    }
+  };
+
+  const uploadProfilePicture = async (userId: string) => {
+    if (!profilePicture) return null;
+
+    const fileExt = profilePicture.name.split('.').pop();
+    const filePath = `${userId}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, profilePicture, {
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Error uploading profile picture:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +109,11 @@ const Auth = () => {
         if (signUpError) throw signUpError;
 
         if (data.user) {
-          // Create profile entry with username and bio
+          // Upload profile picture if provided
+          const avatarUrl = await uploadProfilePicture(data.user.id);
+          console.log('Profile picture uploaded, URL:', avatarUrl);
+
+          // Create profile entry with username, bio, and avatar_url
           const { error: profileError } = await supabase
             .from('profiles')
             .insert([
@@ -85,6 +121,7 @@ const Auth = () => {
                 id: data.user.id,
                 username: username,
                 bio: bio,
+                avatar_url: avatarUrl
               }
             ]);
 
@@ -150,6 +187,28 @@ const Auth = () => {
                           : "Username is available"}
                       </p>
                     )}
+                  </div>
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="profile-picture"
+                      />
+                      <label
+                        htmlFor="profile-picture"
+                        className="flex items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-accent/50 transition-colors"
+                      >
+                        <div className="flex flex-col items-center space-y-2">
+                          <Upload className="w-8 h-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {profilePicture ? profilePicture.name : "Upload profile picture"}
+                          </span>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Textarea
