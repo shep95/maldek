@@ -34,8 +34,18 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          *,
-          profiles:user_id (*)
+          id,
+          content,
+          created_at,
+          media_urls,
+          user_id,
+          likes,
+          reposts,
+          profiles!inner (
+            id,
+            username,
+            avatar_url
+          )
         `)
         .order('created_at', { ascending: false });
 
