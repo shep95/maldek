@@ -14,87 +14,44 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isClearing, setIsClearing] = useState(false);
-
-  const clearAuthState = async () => {
-    if (isClearing) return;
-    
-    try {
-      console.log("Clearing auth state...");
-      setIsClearing(true);
-      setIsLoading(true);
-      
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.auth.')) {
-          localStorage.removeItem(key);
-        }
-      });
-
-      await supabase.auth.signOut({ scope: 'global' });
-      queryClient.clear();
-      
-      setIsAuthenticated(false);
-      navigate('/auth', { replace: true });
-      
-      console.log("Auth state cleared successfully");
-      toast.success("Session cleared. Please sign in again.");
-    } catch (error) {
-      console.error("Error clearing auth state:", error);
-      toast.error("Error clearing session. Please refresh the page.");
-      setIsAuthenticated(false);
-      navigate('/auth', { replace: true });
-    } finally {
-      setIsLoading(false);
-      setIsClearing(false);
-    }
-  };
 
   useEffect(() => {
-    let mounted = true;
-
     const checkAuth = async () => {
-      if (isClearing) return;
-
       try {
         console.log("Starting authentication check...");
-        if (mounted) setIsLoading(true);
-        
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Session error:", sessionError);
-          await clearAuthState();
-          return;
-        }
-
-        if (!session) {
-          console.log("No active session found");
-          if (mounted) {
-            setIsAuthenticated(false);
-            setIsLoading(false);
-          }
+          setIsAuthenticated(false);
           if (!location.pathname.startsWith('/auth')) {
             navigate('/auth', { replace: true });
           }
           return;
         }
 
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError || !user) {
-          console.error("User verification error:", userError);
-          await clearAuthState();
+        if (!session) {
+          console.log("No active session found");
+          setIsAuthenticated(false);
+          if (!location.pathname.startsWith('/auth')) {
+            navigate('/auth', { replace: true });
+          }
           return;
         }
 
-        if (mounted) {
-          setIsAuthenticated(true);
-          setIsLoading(false);
+        console.log("Valid session found");
+        setIsAuthenticated(true);
+        if (location.pathname === '/auth') {
+          navigate('/dashboard', { replace: true });
         }
-        console.log("Authentication check complete - user is authenticated");
       } catch (error) {
         console.error("Auth check error:", error);
-        await clearAuthState();
+        setIsAuthenticated(false);
+        if (!location.pathname.startsWith('/auth')) {
+          navigate('/auth', { replace: true });
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -103,34 +60,34 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, !!session);
+      console.log("Auth state changed:", event);
       
-      if (event === 'SIGNED_OUT') {
-        if (!isClearing) {
-          await clearAuthState();
-        }
+      if (event === 'SIGNED_OUT' || !session) {
+        console.log("User signed out or session ended");
+        setIsAuthenticated(false);
+        queryClient.clear();
+        navigate('/auth', { replace: true });
         return;
       }
       
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        checkAuth();
+      if (event === 'SIGNED_IN') {
+        console.log("User signed in");
+        setIsAuthenticated(true);
+        navigate('/dashboard', { replace: true });
       }
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, queryClient]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
-          <p className="text-muted-foreground">
-            {isClearing ? "Clearing session..." : "Loading your profile..."}
-          </p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
