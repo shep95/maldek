@@ -35,11 +35,15 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       try {
         console.log("Checking authentication state...");
         
+        // First clear any existing error states
+        setIsAuthenticated(null);
+        
         // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Session error:", sessionError);
+          await supabase.auth.signOut();
           setIsAuthenticated(false);
           navigate('/auth');
           return;
@@ -52,39 +56,53 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
           return;
         }
 
-        // Verify the user still exists and has a profile
-        const { error: userError } = await supabase.auth.getUser();
+        // Verify the user exists
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
         if (userError) {
           console.error("User verification error:", userError);
-          if (userError.status === 403 || userError.message?.includes('user_not_found')) {
-            console.log("User not found in database, clearing session...");
-            await supabase.auth.signOut();
-            setIsAuthenticated(false);
-            navigate('/auth');
-            return;
-          }
+          // If user doesn't exist, clear the session
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+          navigate('/auth');
+          toast.error("Session expired. Please sign in again.");
+          return;
+        }
+
+        if (!user) {
+          console.log("No user found");
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+          navigate('/auth');
+          return;
         }
 
         // Check if user has a profile
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single();
 
         if (profileError || !profile) {
           console.error("Profile error or not found:", profileError);
+          // If no profile exists, sign out and redirect to auth
+          await supabase.auth.signOut();
           setIsAuthenticated(false);
           navigate('/auth');
+          toast.error("Account not found. Please sign up.");
           return;
         }
 
         setIsAuthenticated(true);
         console.log("Authentication check complete - user is authenticated");
-      } catch (error: any) {
+      } catch (error) {
         console.error("Auth check error:", error);
+        // On any error, clear the session and redirect to auth
+        await supabase.auth.signOut();
         setIsAuthenticated(false);
         navigate('/auth');
+        toast.error("An error occurred. Please sign in again.");
       }
     };
 
@@ -94,10 +112,16 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, !!session);
-      if (!session) {
+      
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
         navigate('/auth');
+        return;
       }
-      setIsAuthenticated(!!session);
+      
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        checkAuth();
+      }
     });
 
     return () => subscription.unsubscribe();
