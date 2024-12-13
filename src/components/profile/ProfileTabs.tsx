@@ -14,7 +14,10 @@ export const ProfileTabs = () => {
   const session = useSession();
   const isCurrentUser = session?.user?.id === userId;
 
-  if (!userId) {
+  // If no userId is provided in the URL, use the current user's ID
+  const targetUserId = userId || session?.user?.id;
+
+  if (!targetUserId) {
     return null;
   }
 
@@ -48,28 +51,28 @@ export const ProfileTabs = () => {
       </TabsList>
 
       <TabsContent value="posts" className="min-h-[400px]">
-        <PostsTab userId={userId} />
+        <PostsTab userId={targetUserId} />
       </TabsContent>
 
       <TabsContent value="replies" className="min-h-[400px]">
-        <RepliesTab userId={userId} />
+        <RepliesTab userId={targetUserId} />
       </TabsContent>
 
       <TabsContent value="media" className="min-h-[400px]">
-        <MediaTab userId={userId} />
+        <MediaTab userId={targetUserId} />
       </TabsContent>
 
       <TabsContent value="videos" className="min-h-[400px]">
-        <VideosTab userId={userId} />
+        <VideosTab userId={targetUserId} />
       </TabsContent>
 
       <TabsContent value="likes" className="min-h-[400px]">
-        <LikesTab userId={userId} />
+        <LikesTab userId={targetUserId} />
       </TabsContent>
 
       {isCurrentUser && (
         <TabsContent value="analytics" className="min-h-[400px]">
-          <AnalyticsTab userId={userId} />
+          <AnalyticsTab userId={targetUserId} />
         </TabsContent>
       )}
     </Tabs>
