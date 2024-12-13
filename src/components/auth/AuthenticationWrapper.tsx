@@ -67,7 +67,9 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
         console.log("User signed out or session ended");
         setIsAuthenticated(false);
         queryClient.clear();
-        navigate('/auth');
+        if (!location.pathname.startsWith('/auth')) {
+          navigate('/auth');
+        }
         return;
       }
       
