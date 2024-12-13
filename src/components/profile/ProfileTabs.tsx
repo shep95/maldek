@@ -12,12 +12,14 @@ import { FollowingTab } from "./tabs/FollowingTab";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ProfileTabs = () => {
   const { userId } = useParams();
   const session = useSession();
   const [activeTab, setActiveTab] = useState("posts");
   const isCurrentUser = session?.user?.id === userId;
+  const isMobile = useIsMobile();
 
   const targetUserId = userId || session?.user?.id;
 
@@ -51,19 +53,25 @@ export const ProfileTabs = () => {
       className="w-full"
     >
       <div className="border-b border-muted sticky top-0 bg-background z-10">
-        <ScrollArea className="w-full">
-          <TabsList className="w-full justify-start rounded-none bg-transparent h-auto inline-flex min-w-full">
+        <ScrollArea className="w-full" type={isMobile ? "scroll" : "auto"}>
+          <TabsList 
+            className={cn(
+              "w-full justify-start rounded-none bg-transparent h-auto",
+              isMobile ? "flex min-w-[800px] px-2" : "inline-flex min-w-full"
+            )}
+          >
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
                 className={cn(
-                  "rounded-none border-b-2 border-transparent whitespace-nowrap",
+                  "rounded-none border-b-2 border-transparent",
                   "data-[state=active]:border-accent data-[state=active]:bg-transparent",
                   "data-[state=active]:text-accent hover:text-accent",
-                  "transition-colors duration-300 capitalize py-3 px-6",
+                  "transition-colors duration-300 capitalize",
                   "focus:outline-none focus-visible:ring-0",
-                  "touch-manipulation select-none"
+                  "touch-manipulation select-none",
+                  isMobile ? "py-2 px-4 text-sm" : "py-3 px-6"
                 )}
               >
                 {tab.label}
@@ -73,36 +81,36 @@ export const ProfileTabs = () => {
         </ScrollArea>
       </div>
 
-      <TabsContent value="posts" className="mt-6">
+      <TabsContent value="posts" className="mt-4">
         <PostsTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="replies" className="mt-6">
+      <TabsContent value="replies" className="mt-4">
         <RepliesTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="media" className="mt-6">
+      <TabsContent value="media" className="mt-4">
         <MediaTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="videos" className="mt-6">
+      <TabsContent value="videos" className="mt-4">
         <VideosTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="likes" className="mt-6">
+      <TabsContent value="likes" className="mt-4">
         <LikesTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="followers" className="mt-6">
+      <TabsContent value="followers" className="mt-4">
         <FollowersTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="following" className="mt-6">
+      <TabsContent value="following" className="mt-4">
         <FollowingTab userId={targetUserId} />
       </TabsContent>
 
       {isCurrentUser && (
-        <TabsContent value="analytics" className="mt-6">
+        <TabsContent value="analytics" className="mt-4">
           <AnalyticsTab userId={targetUserId} />
         </TabsContent>
       )}
