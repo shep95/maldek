@@ -12,8 +12,8 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
-const CREATOR_PRICE_ID = 'price_1Q496sApZ2oDcxDyXXXXXXXXX' // Replace with your Creator tier price ID
-const BUSINESS_PRICE_ID = 'price_1QVP6GApZ2oDcxDyEKdVL65o' // Business tier price ID
+const CREATOR_PRICE_ID = 'price_1QVP5tApZ2oDcxDyDDsOeGTy' // Creator tier ($8/month)
+const BUSINESS_PRICE_ID = 'price_1QVP6GApZ2oDcxDyEKdVL65o' // Business tier ($800/month)
 
 serve(async (req) => {
   // Handle CORS preflight requests
