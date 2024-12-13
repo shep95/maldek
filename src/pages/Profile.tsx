@@ -167,7 +167,9 @@ const Profile = () => {
           onEditBioChange={setEditBio}
           onSaveChanges={handleUpdateProfile}
         />
-        <ProfileTabs />
+        <div className="mt-4">
+          <ProfileTabs />
+        </div>
       </Card>
     </div>
   );
