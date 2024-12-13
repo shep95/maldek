@@ -1,6 +1,15 @@
-export const generateAIResponse = (userMessage: string): string => {
-  // Convert message to lowercase for easier matching
-  const message = userMessage.toLowerCase();
+interface ConversationContext {
+  messages: Message[];
+  currentMessage: string;
+}
+
+export const generateAIResponse = (context: ConversationContext): string => {
+  const { messages, currentMessage } = context;
+  const message = currentMessage.toLowerCase();
+  
+  // Get the last few messages for context (excluding the current one)
+  const recentMessages = messages.slice(-3);
+  const hasRecentContext = recentMessages.length > 0;
   
   // Handle mathematical expressions
   if (message.match(/[0-9+\-*/()]/)) {
@@ -13,7 +22,26 @@ export const generateAIResponse = (userMessage: string): string => {
     }
   }
 
-  // Handle personal advice requests
+  // Check if this is a follow-up question
+  const isFollowUp = hasRecentContext && (
+    message.includes('what about') ||
+    message.includes('and then') ||
+    message.includes('why') ||
+    message.startsWith('how about') ||
+    message.startsWith('what if')
+  );
+
+  if (isFollowUp) {
+    const lastAssistantMessage = messages.findLast(m => m.role === 'assistant');
+    if (lastAssistantMessage && lastAssistantMessage.content.includes('relationship')) {
+      return "I remember we were talking about relationships. Based on that, I think what you're asking about now relates to that topic. Could you tell me more about your specific situation?";
+    }
+    if (lastAssistantMessage && lastAssistantMessage.content.includes('career')) {
+      return "Following up on our career discussion - this is an important aspect to consider. What specific concerns do you have about this?";
+    }
+  }
+
+  // Handle personal advice requests with context
   if (message.includes('advice') || message.includes('help me with') || message.includes('what should i do')) {
     if (message.includes('relationship') || message.includes('dating') || message.includes('partner')) {
       return "Relationships can be complex! Communication and respect are key. Want to tell me more about what's going on? I might be able to offer some perspective.";
@@ -26,13 +54,19 @@ export const generateAIResponse = (userMessage: string): string => {
     }
   }
 
-  // Handle greetings
+  // Handle greetings with context
   if (message.includes('hello') || message.includes('hi ') || message.includes('hey')) {
+    if (hasRecentContext) {
+      return "Hey again! Still here to help. What's on your mind?";
+    }
     return "Hey there! How's your day going? I'm here if you need help with anything - math, advice, you name it!";
   }
 
-  // Handle thank you messages
+  // Handle thank you messages with context
   if (message.includes('thank')) {
+    if (hasRecentContext) {
+      return "You're welcome! I'm glad I could help with that. What else would you like to explore?";
+    }
     return "You're welcome! Always happy to help. What else is on your mind?";
   }
 
@@ -43,11 +77,18 @@ Want advice about work or relationships? I'm all ears.
 Or if you're just looking to chat or need someone to bounce ideas off of, I'm here for that too!`;
   }
 
-  // Handle general knowledge questions
+  // Handle general knowledge questions with context
   if (message.startsWith('what is') || message.startsWith('who is') || message.startsWith('how do') || message.startsWith('why')) {
-    return "That's an interesting question about " + message.replace(/^(what|who|how|why)\s+(is|are|do|does)\s+/i, '') + ". Tell me more about what you'd like to know, and I'll share what I know!";
+    const subject = message.replace(/^(what|who|how|why)\s+(is|are|do|does)\s+/i, '');
+    if (hasRecentContext) {
+      return `Building on our conversation, you're asking about ${subject}. What specific aspects would you like to explore?`;
+    }
+    return "That's an interesting question about " + subject + ". Tell me more about what you'd like to know, and I'll share what I know!";
   }
 
-  // Default response for other queries
+  // Default response with context
+  if (hasRecentContext) {
+    return "I see how this relates to what we were discussing. Could you elaborate a bit more? I want to make sure I understand exactly what you're asking.";
+  }
   return "Hey! I'm interested in hearing more about that. Could you tell me a bit more? I'm pretty good with math, advice, and general questions!";
 };

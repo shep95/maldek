@@ -80,13 +80,17 @@ export const DaarpAIChat = () => {
     setInput("");
     setIsLoading(true);
 
-    // Generate AI response with a delay to simulate processing
+    // Generate AI response with context
     setTimeout(() => {
       const aiMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: generateAIResponse(userMessage.content),
+        content: generateAIResponse({
+          messages: messages,
+          currentMessage: userMessage.content
+        }),
         timestamp: new Date(),
+        referencedMessageId: userMessage.id
       };
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
