@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
   id: string;
@@ -20,13 +21,15 @@ interface Message {
 export const MessageList = ({ messages }: { messages: Message[] }) => {
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<Message[]>(messages);
+  const isMobile = useIsMobile();
 
   const handleDeleteMessage = async (messageId: string) => {
     try {
       setDeletingMessageId(messageId);
       
-      // Wait for animation to complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Shorter animation duration on mobile for better responsiveness
+      const animationDuration = isMobile ? 500 : 1000;
+      await new Promise(resolve => setTimeout(resolve, animationDuration));
       
       const { error } = await supabase
         .from('messages')
@@ -35,7 +38,6 @@ export const MessageList = ({ messages }: { messages: Message[] }) => {
 
       if (error) throw error;
 
-      // Remove message from local state
       setLocalMessages(prev => prev.filter(msg => msg.id !== messageId));
       toast.success("Message deleted successfully");
     } catch (error) {
@@ -53,7 +55,9 @@ export const MessageList = ({ messages }: { messages: Message[] }) => {
           <Button
             key={message.id}
             variant="ghost"
-            className={`w-full justify-start p-4 h-auto hover:bg-accent/5 transition-all duration-1000 ${
+            className={`w-full justify-start p-4 h-auto active:bg-accent/5 transition-all ${
+              isMobile ? 'duration-500' : 'duration-1000'
+            } ${
               message.unread ? "bg-accent/5" : ""
             } ${
               deletingMessageId === message.id ? 
@@ -83,13 +87,19 @@ export const MessageList = ({ messages }: { messages: Message[] }) => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                      className={`
+                        ${isMobile ? 'h-10 w-10' : 'h-8 w-8'} 
+                        p-0 
+                        active:bg-destructive/10 
+                        active:text-destructive
+                        touch-manipulation
+                      `}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteMessage(message.id);
                       }}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className={isMobile ? "h-5 w-5" : "h-4 w-4"} />
                       <span className="sr-only">Delete message</span>
                     </Button>
                   </div>
