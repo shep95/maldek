@@ -50,6 +50,11 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
     }
   };
 
+  const handleProfileClick = (userId: string) => {
+    console.log("Navigating to profile:", userId);
+    navigate(`/profile/${userId}`);
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-2">
@@ -73,7 +78,7 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
         >
           <div 
             className="flex items-center gap-3 cursor-pointer"
-            onClick={() => navigate(`/profile/${user.id}`)}
+            onClick={() => handleProfileClick(user.id)}
           >
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.avatar_url || ''} />
