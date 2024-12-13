@@ -17,7 +17,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export const ProfileTabs = () => {
   const { userId } = useParams();
   const session = useSession();
-  const [activeTab, setActiveTab] = useState("posts");
   const isCurrentUser = session?.user?.id === userId;
   const isMobile = useIsMobile();
 
@@ -42,7 +41,6 @@ export const ProfileTabs = () => {
   }
 
   const renderTabContent = (value: string) => {
-    console.log('Rendering tab content for:', value);
     switch (value) {
       case "posts":
         return <PostsTab userId={targetUserId} />;
@@ -66,15 +64,7 @@ export const ProfileTabs = () => {
   };
 
   return (
-    <Tabs 
-      defaultValue="posts"
-      value={activeTab} 
-      onValueChange={(value) => {
-        console.log('Tab changed to:', value);
-        setActiveTab(value);
-      }}
-      className="w-full"
-    >
+    <Tabs defaultValue="posts" className="w-full">
       <div className="border-b border-muted sticky top-0 bg-background z-10">
         <ScrollArea className="w-full" type="scroll">
           <TabsList className={cn(
@@ -85,10 +75,6 @@ export const ProfileTabs = () => {
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                onClick={() => {
-                  console.log('TabsTrigger clicked:', tab.value);
-                  setActiveTab(tab.value);
-                }}
                 className={cn(
                   "rounded-none border-b-2 border-transparent",
                   "data-[state=active]:border-accent data-[state=active]:bg-transparent",
@@ -110,11 +96,7 @@ export const ProfileTabs = () => {
           <TabsContent 
             key={tab.value}
             value={tab.value}
-            className={cn(
-              "w-full",
-              "data-[state=active]:animate-in data-[state=active]:fade-in-0",
-              "data-[state=inactive]:hidden"
-            )}
+            className="w-full data-[state=active]:animate-in data-[state=active]:fade-in-0"
           >
             {renderTabContent(tab.value)}
           </TabsContent>
