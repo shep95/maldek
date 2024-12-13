@@ -10,11 +10,13 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
   console.log('Sidebar rendered with setIsCreatingPost function:', !!setIsCreatingPost);
   
   return (
-    <div className="hidden md:block fixed left-0 h-screen p-4">
-      <Card className="h-[90vh] w-64 flex flex-col justify-between border-muted bg-[#0d0d0d] backdrop-blur-sm">
-        <div>
+    <div className="hidden md:block fixed left-0 h-screen w-64 p-4">
+      <Card className="h-full flex flex-col border-muted bg-[#0d0d0d] backdrop-blur-sm overflow-hidden">
+        <div className="flex flex-col h-full">
           <SidebarHeader />
-          <SidebarNav setIsCreatingPost={setIsCreatingPost} />
+          <div className="flex-1 overflow-y-auto">
+            <SidebarNav setIsCreatingPost={setIsCreatingPost} />
+          </div>
         </div>
       </Card>
     </div>
