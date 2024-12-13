@@ -151,9 +151,9 @@ export const DaarpAIChat = () => {
       "flex flex-col h-[calc(100vh-6rem)]",
       isMobile ? "h-[calc(100vh-12rem)] px-2 pb-24" : "max-w-4xl mx-auto p-4"
     )}>
-      <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-muted">
-        <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-          <div className="space-y-4">
+      <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-muted overflow-hidden">
+        <ScrollArea className="flex-1">
+          <div className="space-y-4 p-4">
             {messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))}
