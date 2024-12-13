@@ -8,13 +8,9 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: Date;
-}
+import { Message } from "./types/messageTypes";
+import { ChatMessage } from "./components/ChatMessage";
+import { generateAIResponse } from "./utils/aiResponseUtils";
 
 export const DaarpAIChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -51,7 +47,7 @@ export const DaarpAIChat = () => {
       const welcomeMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Hello! I'm Daarp, your personal AI assistant. I'm here to help you with anything you need - whether it's analyzing images, answering questions, or providing creative suggestions. What can I help you with today?",
+        content: "Hello! I'm Daarp, your personal AI assistant. I'm here to help you with anything you need - whether it's mathematical calculations, analyzing images, answering questions, or providing creative suggestions. What can I help you with today?",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -63,22 +59,6 @@ export const DaarpAIChat = () => {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
-
-  const generateAIResponse = (userMessage: string): string => {
-    // Simulate AI responses based on user input
-    const responses = [
-      "I understand what you're asking about. Let me help you with that.",
-      "That's an interesting question! Here's what I think...",
-      "Based on my analysis, I would suggest...",
-      "I can definitely help you with that. Here's what you need to know...",
-      "Let me break this down for you in a simple way...",
-    ];
-    
-    // For now, return a random response
-    return responses[Math.floor(Math.random() * responses.length)] + 
-           " As an AI assistant, I'm continuously learning and improving to provide better answers. " +
-           "Would you like to know more about any specific aspect?";
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +80,7 @@ export const DaarpAIChat = () => {
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response with a delay
+    // Generate AI response with a delay to simulate processing
     setTimeout(() => {
       const aiMessage: Message = {
         id: crypto.randomUUID(),
@@ -140,25 +120,7 @@ export const DaarpAIChat = () => {
         <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
           <div className="space-y-4">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.role === "assistant" ? "justify-start" : "justify-end"
-                }`}
-              >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    message.role === "assistant"
-                      ? "bg-muted text-foreground"
-                      : "bg-accent text-accent-foreground"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  <span className="text-xs opacity-70 mt-1 block">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
+              <ChatMessage key={message.id} message={message} />
             ))}
             {isLoading && (
               <div className="flex justify-start">
@@ -178,7 +140,7 @@ export const DaarpAIChat = () => {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything..."
+              placeholder="Ask me anything... Try some math like '2 + 2' or ask for help!"
               className="min-h-[2.5rem] max-h-32 bg-background"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
