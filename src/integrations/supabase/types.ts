@@ -501,6 +501,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_user_account: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      delete_user_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       increment_post_view: {
         Args: {
           post_id: string
