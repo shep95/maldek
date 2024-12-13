@@ -39,24 +39,27 @@ export const ProfileTabs = () => {
     tabs.push({ value: "analytics", label: "Analytics" });
   }
 
-  const handleTabChange = (value: string) => {
-    console.log("Tab changed to:", value);
-    setActiveTab(value);
-  };
-
   return (
     <Tabs 
-      value={activeTab} 
-      onValueChange={handleTabChange} 
+      defaultValue="posts"
+      value={activeTab}
+      onValueChange={setActiveTab}
       className="w-full"
     >
-      <TabsList className="w-full justify-start rounded-none border-b bg-transparent">
+      <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto flex-wrap">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
             value={tab.value}
+            onClick={() => {
+              console.log("Tab clicked:", tab.value);
+              setActiveTab(tab.value);
+            }}
             className={cn(
-              "rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-accent hover:text-accent transition-colors duration-300 capitalize"
+              "rounded-none border-b-2 border-transparent",
+              "data-[state=active]:border-accent data-[state=active]:bg-transparent",
+              "data-[state=active]:text-accent hover:text-accent",
+              "transition-colors duration-300 capitalize py-2"
             )}
           >
             {tab.label}
@@ -64,28 +67,28 @@ export const ProfileTabs = () => {
         ))}
       </TabsList>
 
-      <TabsContent value="posts" className="min-h-[400px]">
+      <TabsContent value="posts" className="mt-6">
         <PostsTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="replies" className="min-h-[400px]">
+      <TabsContent value="replies" className="mt-6">
         <RepliesTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="media" className="min-h-[400px]">
+      <TabsContent value="media" className="mt-6">
         <MediaTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="videos" className="min-h-[400px]">
+      <TabsContent value="videos" className="mt-6">
         <VideosTab userId={targetUserId} />
       </TabsContent>
 
-      <TabsContent value="likes" className="min-h-[400px]">
+      <TabsContent value="likes" className="mt-6">
         <LikesTab userId={targetUserId} />
       </TabsContent>
 
       {isCurrentUser && (
-        <TabsContent value="analytics" className="min-h-[400px]">
+        <TabsContent value="analytics" className="mt-6">
           <AnalyticsTab userId={targetUserId} />
         </TabsContent>
       )}
