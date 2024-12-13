@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
@@ -41,6 +41,9 @@ export const CreatePostDialog = ({
       <DialogContent className="sm:max-w-[525px] bg-card">
         <DialogHeader>
           <DialogTitle>Create a New Post</DialogTitle>
+          <DialogDescription>
+            Share your thoughts, media, or mention other users in your post.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Textarea
