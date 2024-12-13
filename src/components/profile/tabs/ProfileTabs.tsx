@@ -11,6 +11,7 @@ import { FollowersTab } from "./FollowersTab";
 import { FollowingTab } from "./FollowingTab";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export const ProfileTabs = () => {
   const { userId } = useParams();
@@ -42,32 +43,36 @@ export const ProfileTabs = () => {
 
   return (
     <Tabs defaultValue="posts" className="w-full">
-      <div className="border-b border-muted sticky top-0 bg-background z-10">
-        <TabsList className={cn(
-          "w-full h-auto rounded-none bg-transparent",
-          "flex items-center justify-start",
-          "overflow-x-auto scrollbar-none",
-          isMobile ? "gap-2 px-2" : "gap-4"
-        )}>
-          {tabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className={cn(
-                "flex-shrink-0",
-                "rounded-none border-b-2 border-transparent",
-                "data-[state=active]:border-accent data-[state=active]:bg-transparent",
-                "data-[state=active]:text-accent hover:text-accent",
-                "transition-colors duration-300 capitalize",
-                "focus:outline-none focus-visible:ring-0",
-                isMobile ? "py-2 px-3 text-sm" : "py-3 px-6",
-                "touch-manipulation" // Add touch-manipulation for better mobile interaction
-              )}
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <div className="border-b border-muted sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+        <ScrollArea className="w-full" type="scroll">
+          <TabsList className={cn(
+            "w-full h-auto rounded-none bg-transparent",
+            "inline-flex items-center justify-start",
+            "no-scrollbar",
+            isMobile ? "gap-1 px-2" : "gap-4"
+          )}>
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className={cn(
+                  "flex-shrink-0",
+                  "rounded-none border-b-2 border-transparent",
+                  "data-[state=active]:border-accent data-[state=active]:bg-transparent",
+                  "data-[state=active]:text-accent hover:text-accent",
+                  "transition-all duration-300 capitalize",
+                  "focus:outline-none focus-visible:ring-0",
+                  "touch-manipulation select-none",
+                  "active:scale-95",
+                  isMobile ? "py-3 px-4 text-sm" : "py-3 px-6"
+                )}
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <ScrollBar orientation="horizontal" className="invisible" />
+        </ScrollArea>
       </div>
 
       <div className="mt-4 w-full px-2 md:px-0">
