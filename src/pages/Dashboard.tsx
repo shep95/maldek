@@ -48,6 +48,8 @@ const Dashboard = () => {
     toast.success('Post created successfully!');
   };
 
+  console.log('Dashboard render - isCreatingPost:', isCreatingPost);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="flex justify-center">
@@ -59,7 +61,10 @@ const Dashboard = () => {
               <Button
                 size="icon"
                 className="w-12 h-12 rounded-lg bg-accent hover:bg-accent/90 shadow-lg"
-                onClick={() => setIsCreatingPost(true)}
+                onClick={() => {
+                  console.log('Create post button clicked');
+                  setIsCreatingPost(true);
+                }}
               >
                 <Plus className="h-6 w-6 text-white" />
               </Button>
