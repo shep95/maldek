@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Check, DollarSign, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const Subscription = () => {
   const session = useSession();
@@ -57,9 +58,28 @@ const Subscription = () => {
     }
   });
 
-  const handleSubscribe = async (tierId: string) => {
-    // TODO: Implement subscription logic
-    console.log("Subscribe to tier:", tierId);
+  const handleSubscribe = async (tier: string) => {
+    try {
+      if (!session?.user?.id) {
+        toast.error("Please sign in to subscribe");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          tier: tier.toLowerCase(),
+          userId: session.user.id,
+        },
+      });
+
+      if (error) throw error;
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      toast.error("Failed to start checkout process");
+    }
   };
 
   return (
@@ -105,7 +125,7 @@ const Subscription = () => {
               </li>
             </ul>
             <Button 
-              onClick={() => handleSubscribe(tier.id)}
+              onClick={() => handleSubscribe(tier.name)}
               className="mt-auto"
               variant={subscription?.tier_id === tier.id ? "secondary" : "default"}
               disabled={subscription?.tier_id === tier.id}
