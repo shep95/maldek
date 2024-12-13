@@ -3,7 +3,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Check, DollarSign } from "lucide-react";
+import { Check, DollarSign, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const Subscription = () => {
@@ -92,6 +92,15 @@ const Subscription = () => {
                 <DollarSign className="mr-2 h-5 w-5 text-orange-500" />
                 <span>
                   Payouts (Beta Testing)
+                </span>
+              </li>
+              <li className="flex items-center">
+                <Sparkles className="mr-2 h-5 w-5 text-orange-500" />
+                <span className="flex items-center gap-2">
+                  DAARP AI (BETA)
+                  <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 text-xs">
+                    NEW
+                  </Badge>
                 </span>
               </li>
             </ul>
