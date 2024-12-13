@@ -91,7 +91,7 @@ const Subscription = () => {
               <li className="flex items-center">
                 <DollarSign className="mr-2 h-5 w-5 text-orange-500" />
                 <span>
-                  Payouts (Beta Testing) - {tier.name === 'Creator' ? 'Up to $1,000' : 'Unlimited'} monthly
+                  Payouts (Beta Testing)
                 </span>
               </li>
             </ul>
