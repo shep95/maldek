@@ -10,6 +10,7 @@ import PostDetail from "@/pages/PostDetail";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Analytics from "@/pages/Analytics";
 import Subscription from "@/pages/Subscription";
+import Settings from "@/pages/Settings";
 
 export const AppRoutes = () => {
   return (
@@ -38,6 +39,7 @@ export const AppRoutes = () => {
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/subscription" element={<Subscription />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );
