@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@13.6.0'
 
 const corsHeaders = {
@@ -7,9 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Price IDs for subscription tiers
-const CREATOR_PRICE_ID = 'price_1OxgQyApZ2oDcxDyNrRMc7rZ'
-const BUSINESS_PRICE_ID = 'price_1OxgRvApZ2oDcxDyezvlMWup'
+// Price IDs for subscription tiers - these need to match your Stripe dashboard
+const CREATOR_PRICE_ID = 'price_1OxgQyApZ2oDcxDyNrRMc7rZ'  // $8/month tier
+const BUSINESS_PRICE_ID = 'price_1OxgRvApZ2oDcxDyezvlMWup' // $800/month tier
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -40,7 +40,17 @@ serve(async (req) => {
       throw new Error('User not found')
     }
 
+    // Verify the price ID exists before creating the session
     const priceId = tier === 'creator' ? CREATOR_PRICE_ID : BUSINESS_PRICE_ID
+    
+    try {
+      // Verify the price exists
+      const price = await stripe.prices.retrieve(priceId)
+      console.log('Price verified:', price.id)
+    } catch (error) {
+      console.error('Error retrieving price:', error)
+      throw new Error(`Invalid price ID for ${tier} tier`)
+    }
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
