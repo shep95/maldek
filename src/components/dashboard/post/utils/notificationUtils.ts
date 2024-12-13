@@ -5,7 +5,7 @@ export const createNotification = async (
   recipientId: string,
   actorId: string,
   postId: string,
-  type: 'like' | 'comment' | 'share' | 'bookmark' | 'repost'
+  type: 'like' | 'comment' | 'share' | 'bookmark' | 'repost' | 'new_follow'
 ) => {
   if (recipientId === actorId) return;
 

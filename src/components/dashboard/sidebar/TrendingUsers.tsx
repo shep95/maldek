@@ -40,9 +40,11 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
           toast.error("You are already following this user");
           return;
         }
+        console.error("Follow error:", error);
         throw error;
       }
 
+      // The notification will be created by the database trigger
       toast.success("Successfully followed user");
     } catch (error) {
       console.error("Error following user:", error);
