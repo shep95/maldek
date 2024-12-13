@@ -27,7 +27,7 @@ export const AnalyticsTab = ({ userId }: AnalyticsTabProps) => {
       // First, get all posts by the user
       const { data: posts, error: postsError } = await supabase
         .from('posts')
-        .select('id')
+        .select('id, created_at')
         .eq('user_id', userId);
 
       if (postsError) {
@@ -43,16 +43,34 @@ export const AnalyticsTab = ({ userId }: AnalyticsTabProps) => {
       const postIds = posts.map(post => post.id);
       console.log('Found post IDs:', postIds);
 
+      // Get post likes count
+      const { data: likesData, error: likesError } = await supabase
+        .from('post_likes')
+        .select('post_id, created_at')
+        .in('post_id', postIds)
+        .gte('created_at', format(subDays(new Date(), 7), 'yyyy-MM-dd'));
+
+      if (likesError) {
+        console.error('Error fetching likes:', likesError);
+        throw likesError;
+      }
+
+      // Get post comments count
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('comments')
+        .select('post_id, created_at')
+        .in('post_id', postIds)
+        .gte('created_at', format(subDays(new Date(), 7), 'yyyy-MM-dd'));
+
+      if (commentsError) {
+        console.error('Error fetching comments:', commentsError);
+        throw commentsError;
+      }
+
       // Then get analytics for these posts
-      const { data: analyticsData, error: analyticsError } = await supabase
+      const { data: viewsData, error: analyticsError } = await supabase
         .from('post_analytics')
-        .select(`
-          date,
-          view_count,
-          like_count,
-          comment_count,
-          watch_time_seconds
-        `)
+        .select('*')
         .in('post_id', postIds)
         .gte('date', format(subDays(new Date(), 7), 'yyyy-MM-dd'))
         .order('date', { ascending: true });
@@ -62,29 +80,53 @@ export const AnalyticsTab = ({ userId }: AnalyticsTabProps) => {
         throw analyticsError;
       }
 
-      console.log('Raw analytics data:', analyticsData);
+      console.log('Raw analytics data:', {
+        views: viewsData,
+        likes: likesData,
+        comments: commentsData
+      });
 
-      // Group data by date
-      const groupedData = analyticsData.reduce((acc: { [key: string]: AnalyticsData }, curr) => {
-        const date = curr.date;
-        if (!acc[date]) {
-          acc[date] = {
-            date,
-            view_count: 0,
-            like_count: 0,
-            comment_count: 0,
-            watch_time_seconds: 0
-          };
+      // Create a map of dates for the last 7 days
+      const dates = Array.from({ length: 7 }, (_, i) => {
+        const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
+        return {
+          date,
+          view_count: 0,
+          like_count: 0,
+          comment_count: 0,
+          watch_time_seconds: 0
+        };
+      }).reverse();
+
+      // Group views by date
+      viewsData?.forEach((view) => {
+        const dateEntry = dates.find(d => d.date === view.date);
+        if (dateEntry) {
+          dateEntry.view_count += view.view_count || 0;
+          dateEntry.watch_time_seconds += view.watch_time_seconds || 0;
         }
-        acc[date].view_count += curr.view_count || 0;
-        acc[date].like_count += curr.like_count || 0;
-        acc[date].comment_count += curr.comment_count || 0;
-        acc[date].watch_time_seconds += curr.watch_time_seconds || 0;
-        return acc;
-      }, {});
+      });
 
-      // Convert to array and format dates
-      const processedData = Object.values(groupedData).map(day => ({
+      // Group likes by date
+      likesData?.forEach((like) => {
+        const date = format(new Date(like.created_at), 'yyyy-MM-dd');
+        const dateEntry = dates.find(d => d.date === date);
+        if (dateEntry) {
+          dateEntry.like_count += 1;
+        }
+      });
+
+      // Group comments by date
+      commentsData?.forEach((comment) => {
+        const date = format(new Date(comment.created_at), 'yyyy-MM-dd');
+        const dateEntry = dates.find(d => d.date === date);
+        if (dateEntry) {
+          dateEntry.comment_count += 1;
+        }
+      });
+
+      // Convert to array and format dates for display
+      const processedData = dates.map(day => ({
         date: format(new Date(day.date), 'MMM dd'),
         views: day.view_count,
         likes: day.like_count,
@@ -96,7 +138,7 @@ export const AnalyticsTab = ({ userId }: AnalyticsTabProps) => {
       return processedData;
     },
     enabled: !!userId,
-    refetchInterval: 30000 // Refetch every 30 seconds for live updates
+    refetchInterval: 5000 // Refetch every 5 seconds for more frequent live updates
   });
 
   if (isLoading) {
@@ -123,7 +165,7 @@ export const AnalyticsTab = ({ userId }: AnalyticsTabProps) => {
   };
 
   const totals = getTotals();
-  const engagementRate = analytics && analytics.length > 0
+  const engagementRate = analytics && analytics.length > 0 && totals.views > 0
     ? ((totals.likes + totals.comments) / totals.views * 100).toFixed(1)
     : '0';
 
