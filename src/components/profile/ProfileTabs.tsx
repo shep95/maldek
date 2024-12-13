@@ -40,7 +40,11 @@ export const ProfileTabs = () => {
   }
 
   return (
-    <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
+    <Tabs 
+      value={activeTab} 
+      onValueChange={setActiveTab} 
+      className="w-full"
+    >
       <TabsList className="w-full justify-start rounded-none border-b bg-transparent">
         {tabs.map((tab) => (
           <TabsTrigger
