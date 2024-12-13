@@ -81,39 +81,41 @@ export const ProfileTabs = () => {
         </ScrollArea>
       </div>
 
-      <TabsContent value="posts" className="mt-4">
-        <PostsTab userId={targetUserId} />
-      </TabsContent>
-
-      <TabsContent value="replies" className="mt-4">
-        <RepliesTab userId={targetUserId} />
-      </TabsContent>
-
-      <TabsContent value="media" className="mt-4">
-        <MediaTab userId={targetUserId} />
-      </TabsContent>
-
-      <TabsContent value="videos" className="mt-4">
-        <VideosTab userId={targetUserId} />
-      </TabsContent>
-
-      <TabsContent value="likes" className="mt-4">
-        <LikesTab userId={targetUserId} />
-      </TabsContent>
-
-      <TabsContent value="followers" className="mt-4">
-        <FollowersTab userId={targetUserId} />
-      </TabsContent>
-
-      <TabsContent value="following" className="mt-4">
-        <FollowingTab userId={targetUserId} />
-      </TabsContent>
-
-      {isCurrentUser && (
-        <TabsContent value="analytics" className="mt-4">
-          <AnalyticsTab userId={targetUserId} />
+      <div className="mt-4 overflow-x-hidden">
+        <TabsContent value="posts">
+          <PostsTab userId={targetUserId} />
         </TabsContent>
-      )}
+
+        <TabsContent value="replies">
+          <RepliesTab userId={targetUserId} />
+        </TabsContent>
+
+        <TabsContent value="media">
+          <MediaTab userId={targetUserId} />
+        </TabsContent>
+
+        <TabsContent value="videos">
+          <VideosTab userId={targetUserId} />
+        </TabsContent>
+
+        <TabsContent value="likes">
+          <LikesTab userId={targetUserId} />
+        </TabsContent>
+
+        <TabsContent value="followers">
+          <FollowersTab userId={targetUserId} />
+        </TabsContent>
+
+        <TabsContent value="following">
+          <FollowingTab userId={targetUserId} />
+        </TabsContent>
+
+        {isCurrentUser && (
+          <TabsContent value="analytics">
+            <AnalyticsTab userId={targetUserId} />
+          </TabsContent>
+        )}
+      </div>
     </Tabs>
   );
 };

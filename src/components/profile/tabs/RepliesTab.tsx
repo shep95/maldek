@@ -43,9 +43,9 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 px-2 md:px-0">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
+          <div key={i} className="p-4 md:p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
             <div className="flex items-center space-x-4">
               <Skeleton className="h-12 w-12 rounded-full" />
               <div className="space-y-2">
@@ -61,10 +61,10 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
   }
 
   return replies && replies.length > 0 ? (
-    <div className="space-y-6">
+    <div className="space-y-6 px-2 md:px-0">
       {replies.map((reply) => (
         <div key={reply.id} className="p-4 rounded-lg border border-muted">
-          <p className="text-muted-foreground mb-2">Replied to:</p>
+          <p className="text-muted-foreground mb-2 text-sm">Replied to:</p>
           {reply.posts && (
             <PostCard
               post={{
@@ -86,7 +86,7 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
             />
           )}
           <div className="mt-2 p-4 bg-accent/5 rounded">
-            <p>{reply.content}</p>
+            <p className="text-sm">{reply.content}</p>
           </div>
         </div>
       ))}
