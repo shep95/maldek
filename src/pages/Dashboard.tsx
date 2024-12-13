@@ -6,6 +6,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Image, Video, Plus } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PostWithProfile {
   id: string;
@@ -29,6 +32,7 @@ const Dashboard = () => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const session = useSession();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
@@ -94,6 +98,32 @@ const Dashboard = () => {
       <div className="flex justify-center">
         <main className="w-full max-w-3xl px-4 py-6 md:py-8 md:pl-24 animate-fade-in">
           <h1 className="text-3xl font-bold mb-8 text-foreground">Home</h1>
+          
+          {isMobile && (
+            <div className="fixed bottom-20 right-4 z-50 space-y-3">
+              <Button
+                size="icon"
+                className="w-12 h-12 rounded-lg bg-accent hover:bg-accent/90 shadow-lg"
+                onClick={() => toast.info('Create post coming soon')}
+              >
+                <Plus className="h-6 w-6 text-white" />
+              </Button>
+              <Button
+                size="icon"
+                className="w-12 h-12 rounded-lg bg-accent hover:bg-accent/90 shadow-lg"
+                onClick={() => toast.info('Upload video coming soon')}
+              >
+                <Video className="h-6 w-6 text-white" />
+              </Button>
+              <Button
+                size="icon"
+                className="w-12 h-12 rounded-lg bg-accent hover:bg-accent/90 shadow-lg"
+                onClick={() => toast.info('Upload image coming soon')}
+              >
+                <Image className="h-6 w-6 text-white" />
+              </Button>
+            </div>
+          )}
           
           {isLoading ? (
             <div className="space-y-6">
