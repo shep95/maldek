@@ -70,7 +70,7 @@ export const ProfileTabs = () => {
                   "data-[state=active]:text-accent hover:text-accent",
                   "transition-colors duration-300 capitalize",
                   "focus:outline-none focus-visible:ring-0",
-                  "touch-manipulation select-none",
+                  "touch-manipulation select-none whitespace-nowrap",
                   isMobile ? "py-2 px-4 text-sm" : "py-3 px-6"
                 )}
               >
@@ -82,36 +82,36 @@ export const ProfileTabs = () => {
       </div>
 
       <div className="mt-4 overflow-x-hidden">
-        <TabsContent value="posts">
+        <TabsContent value="posts" className="animate-in fade-in-50">
           <PostsTab userId={targetUserId} />
         </TabsContent>
 
-        <TabsContent value="replies">
+        <TabsContent value="replies" className="animate-in fade-in-50">
           <RepliesTab userId={targetUserId} />
         </TabsContent>
 
-        <TabsContent value="media">
+        <TabsContent value="media" className="animate-in fade-in-50">
           <MediaTab userId={targetUserId} />
         </TabsContent>
 
-        <TabsContent value="videos">
+        <TabsContent value="videos" className="animate-in fade-in-50">
           <VideosTab userId={targetUserId} />
         </TabsContent>
 
-        <TabsContent value="likes">
+        <TabsContent value="likes" className="animate-in fade-in-50">
           <LikesTab userId={targetUserId} />
         </TabsContent>
 
-        <TabsContent value="followers">
+        <TabsContent value="followers" className="animate-in fade-in-50">
           <FollowersTab userId={targetUserId} />
         </TabsContent>
 
-        <TabsContent value="following">
+        <TabsContent value="following" className="animate-in fade-in-50">
           <FollowingTab userId={targetUserId} />
         </TabsContent>
 
         {isCurrentUser && (
-          <TabsContent value="analytics">
+          <TabsContent value="analytics" className="animate-in fade-in-50">
             <AnalyticsTab userId={targetUserId} />
           </TabsContent>
         )}
