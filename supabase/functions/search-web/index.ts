@@ -26,17 +26,6 @@ serve(async (req) => {
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Format conversation history for OpenAI
-    const conversationHistory = messages?.map((msg: any) => ({
-      role: msg.role === 'user' ? 'user' : 'assistant',
-      content: msg.content
-    })) || [];
-
-    console.log('Formatted conversation history:', {
-      historyLength: conversationHistory.length,
-      lastMessage: conversationHistory[conversationHistory.length - 1]?.content
-    });
-
     const systemMessage = {
       role: 'system',
       content: `You are Daarp, a highly capable AI assistant. Your responses should be:
@@ -74,7 +63,10 @@ serve(async (req) => {
         model: imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
         messages: [
           systemMessage,
-          ...conversationHistory.slice(-5), // Keep last 5 messages for context
+          ...messages.slice(-5).map((msg: any) => ({
+            role: msg.role,
+            content: msg.content
+          })),
           userMessage
         ],
         temperature: 0.7,
