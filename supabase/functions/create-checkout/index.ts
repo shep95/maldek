@@ -13,7 +13,7 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 })
 
 const CREATOR_PRICE_ID = 'price_1QVPOZApZ2oDcxDyNrRMc7rZ' // Creator tier ($8/month)
-const BUSINESS_PRICE_ID = 'price_1OxALtApZ2oDcxDyDXbgxp0N' // Business tier ($800/month) - We'll update this when you have it
+const BUSINESS_PRICE_ID = 'price_1QVPPeApZ2oDcxDyezvlMWup' // Business tier ($800/month)
 
 serve(async (req) => {
   // Handle CORS preflight requests
