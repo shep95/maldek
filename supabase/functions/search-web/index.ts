@@ -16,6 +16,7 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
+    console.log('Processing query:', query);
 
     // First, search the web using SerpAPI
     const searchResponse = await fetch(`https://serpapi.com/search.json?q=${encodeURIComponent(query)}&api_key=${serpApiKey}`);
@@ -28,12 +29,15 @@ serve(async (req) => {
       link: result.link,
     })) || [];
 
+    console.log('Search results:', searchResults);
+
     // Format search results for OpenAI
     const searchContext = searchResults.map((result: any) => 
       `Title: ${result.title}\nSnippet: ${result.snippet}\nSource: ${result.link}`
     ).join('\n\n');
 
     // Use OpenAI to generate a response based on search results
+    console.log('Sending request to OpenAI');
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -45,7 +49,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are Daarp, a helpful AI assistant. Use the provided search results to give accurate, up-to-date information. Always cite your sources.'
+            content: 'You are Daarp, a helpful AI assistant. Use the provided search results to give accurate, up-to-date information. Always cite your sources and be engaging and conversational in your responses.'
           },
           {
             role: 'user',
@@ -56,10 +60,10 @@ serve(async (req) => {
     });
 
     const aiData = await aiResponse.json();
-    const response = aiData.choices[0].message.content;
+    console.log('OpenAI response received');
 
     return new Response(JSON.stringify({ 
-      response,
+      response: aiData.choices[0].message.content,
       sources: searchResults
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
