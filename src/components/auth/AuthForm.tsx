@@ -112,14 +112,14 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto px-4">
       <div className="space-y-4">
         <Input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="bg-muted/50"
+          className="bg-muted/50 w-full"
           required
         />
         {!isLogin && (
@@ -130,7 +130,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
                 placeholder="Username (minimum 3 characters)"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className={`bg-muted/50 ${
+                className={`bg-muted/50 w-full ${
                   isUsernameTaken ? "border-red-500" : 
                   username.length >= 3 && !isUsernameTaken ? "border-green-500" : ""
                 }`}
@@ -138,7 +138,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
                 minLength={3}
               />
               {username.length >= 3 && (
-                <div className="absolute right-3 top-3 text-sm">
+                <div className="absolute right-3 top-3 text-xs md:text-sm">
                   {isCheckingUsername ? (
                     <span className="text-muted-foreground">Checking...</span>
                   ) : isUsernameTaken ? (
@@ -162,8 +162,8 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
                 className="flex items-center justify-center w-full p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-accent/50 transition-colors"
               >
                 <div className="flex flex-col items-center space-y-2">
-                  <Upload className="w-8 h-8 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
+                  <Upload className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground" />
+                  <span className="text-xs md:text-sm text-muted-foreground text-center">
                     {profilePicture ? profilePicture.name : "Upload profile picture"}
                   </span>
                 </div>
@@ -173,7 +173,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
               placeholder="Tell us about yourself..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="bg-muted/50 min-h-[100px]"
+              className="bg-muted/50 min-h-[100px] w-full"
             />
           </>
         )}
@@ -182,7 +182,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="bg-muted/50"
+          className="bg-muted/50 w-full"
           required
           minLength={6}
         />

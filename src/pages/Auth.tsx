@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Auth = () => {
@@ -19,176 +17,76 @@ const Auth = () => {
     profilePicture?: File | null;
   }) => {
     try {
-      console.log('Starting authentication process:', isLogin ? 'login' : 'signup');
-      
-      if (!isLogin) {
-        // Signup process
-        console.log('Checking username availability...');
-        if (!formData.username) {
-          toast.error("Username is required");
-          return;
-        }
-
-        // Check if username exists
-        const { data: existingUser, error: usernameError } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', formData.username)
-          .maybeSingle();
-
-        if (usernameError) {
-          console.error('Username check error:', usernameError);
-          toast.error("Error checking username availability");
-          return;
-        }
-
-        if (existingUser) {
-          console.log('Username is taken:', formData.username);
-          toast.error("Username is already taken");
-          return;
-        }
-
-        console.log('Creating new user account...');
-        const { data, error: signUpError } = await supabase.auth.signUp({
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
-          options: {
-            data: {
-              username: formData.username,
-            }
-          }
         });
 
-        if (signUpError) {
-          console.error('Signup error:', signUpError);
-          if (signUpError.message.includes('Email')) {
-            toast.error("Invalid email format");
-          } else if (signUpError.message.includes('Password')) {
-            toast.error("Password must be at least 6 characters");
-          } else {
-            toast.error(signUpError.message);
-          }
-          return;
-        }
+        if (error) throw error;
+        navigate("/dashboard");
+      } else {
+        const { error: signUpError, data } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+        });
 
-        if (!data.user) {
-          console.error('No user data returned from signup');
-          toast.error("Sign up failed");
-          return;
-        }
+        if (signUpError) throw signUpError;
 
-        console.log('User created successfully, handling profile picture...');
-        let avatarUrl = null;
+        if (data.user) {
+          let avatarUrl = null;
 
-        if (formData.profilePicture) {
-          const fileExt = formData.profilePicture.name.split('.').pop();
-          const filePath = `${data.user.id}.${fileExt}`;
+          if (formData.profilePicture) {
+            const fileExt = formData.profilePicture.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
 
-          console.log('Uploading profile picture...');
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, formData.profilePicture, {
-              upsert: true
-            });
+            const { error: uploadError } = await supabase.storage
+              .from('avatars')
+              .upload(fileName, formData.profilePicture);
 
-          if (uploadError) {
-            console.error('Profile picture upload error:', uploadError);
-            toast.error("Failed to upload profile picture");
-          } else {
-            console.log('Profile picture uploaded successfully');
+            if (uploadError) throw uploadError;
+
             const { data: { publicUrl } } = supabase.storage
               .from('avatars')
-              .getPublicUrl(filePath);
-            
+              .getPublicUrl(fileName);
+
             avatarUrl = publicUrl;
           }
-        }
 
-        console.log('Creating profile entry...');
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
               id: data.user.id,
               username: formData.username,
-              bio: formData.bio || '',
               avatar_url: avatarUrl,
-              follower_count: 0
-            }
-          ]);
+              bio: formData.bio || '',
+            });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          toast.error("Failed to create profile");
-          return;
+          if (profileError) throw profileError;
         }
 
-        console.log('Profile created successfully');
-        toast.success("Account created successfully! Please sign in.");
+        toast.success("Account created successfully! Please check your email to verify your account.");
         setIsLogin(true);
-      } else {
-        // Login process
-        console.log('Attempting login...', { email: formData.email });
-        
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (signInError) {
-          console.error("Sign in error:", signInError);
-          
-          // Parse the error message from the response body if available
-          let errorMessage = "Invalid email or password";
-          try {
-            const errorBody = JSON.parse(signInError.message);
-            if (errorBody.message) {
-              errorMessage = errorBody.message;
-            }
-          } catch (e) {
-            // If parsing fails, use the original error message
-            errorMessage = signInError.message;
-          }
-          
-          toast.error(errorMessage);
-          return;
-        }
-
-        if (!data.user) {
-          console.error("No user data returned from login");
-          toast.error("Login failed");
-          return;
-        }
-
-        console.log("Sign in successful");
-        toast.success("Welcome back!");
-        navigate("/dashboard", { replace: true });
       }
     } catch (error: any) {
-      console.error('Authentication error:', error);
-      toast.error(error.message || "Authentication failed");
+      console.error('Auth error:', error);
+      toast.error(error.message || "An error occurred during authentication");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8 animate-fade-in">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 bg-background">
+      <div className="w-full max-w-md bg-card/50 backdrop-blur-sm rounded-xl shadow-xl border border-accent/10 p-4 md:p-8 animate-fade-in">
         <AuthHeader isLogin={isLogin} />
-        <Card className="mx-4 border border-muted bg-card/50 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <AuthForm isLogin={isLogin} onSubmit={handleSubmit} />
-          </CardContent>
-          <CardFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full text-muted-foreground hover:text-white hover:border hover:border-white hover:bg-transparent"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
-            </Button>
-          </CardFooter>
-        </Card>
+        <AuthForm isLogin={isLogin} onSubmit={handleSubmit} />
+        <div className="text-center mt-6">
+          <button
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-sm text-muted-foreground hover:text-accent transition-colors"
+          >
+            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+          </button>
+        </div>
       </div>
     </div>
   );
