@@ -8,7 +8,7 @@ import { VideosTab } from "./tabs/VideosTab";
 import { LikesTab } from "./tabs/LikesTab";
 import { AnalyticsTab } from "./tabs/AnalyticsTab";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export const ProfileTabs = () => {
   const { userId } = useParams();
@@ -41,9 +41,11 @@ export const ProfileTabs = () => {
 
   return (
     <Tabs 
-      defaultValue="posts"
       value={activeTab}
-      onValueChange={setActiveTab}
+      onValueChange={(value) => {
+        console.log("Tab value changed to:", value);
+        setActiveTab(value);
+      }}
       className="w-full"
     >
       <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto flex-wrap">
@@ -51,10 +53,6 @@ export const ProfileTabs = () => {
           <TabsTrigger
             key={tab.value}
             value={tab.value}
-            onClick={() => {
-              console.log("Tab clicked:", tab.value);
-              setActiveTab(tab.value);
-            }}
             className={cn(
               "rounded-none border-b-2 border-transparent",
               "data-[state=active]:border-accent data-[state=active]:bg-transparent",
