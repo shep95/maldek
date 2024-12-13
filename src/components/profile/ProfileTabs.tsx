@@ -46,6 +46,29 @@ export const ProfileTabs = () => {
     setActiveTab(value);
   };
 
+  const renderTabContent = (tab: string) => {
+    switch (tab) {
+      case "posts":
+        return <PostsTab userId={targetUserId} />;
+      case "replies":
+        return <RepliesTab userId={targetUserId} />;
+      case "media":
+        return <MediaTab userId={targetUserId} />;
+      case "videos":
+        return <VideosTab userId={targetUserId} />;
+      case "likes":
+        return <LikesTab userId={targetUserId} />;
+      case "followers":
+        return <FollowersTab userId={targetUserId} />;
+      case "following":
+        return <FollowingTab userId={targetUserId} />;
+      case "analytics":
+        return isCurrentUser ? <AnalyticsTab userId={targetUserId} /> : null;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Tabs 
       value={activeTab}
@@ -82,28 +105,17 @@ export const ProfileTabs = () => {
       </div>
 
       <div className="mt-4 w-full">
-        {tabs.map((tab) => (
-          <TabsContent 
-            key={tab.value}
-            value={tab.value} 
-            className={cn(
-              "w-full animate-in fade-in-50",
-              "data-[state=inactive]:hidden",
-              isMobile ? "px-2" : ""
-            )}
-          >
-            {tab.value === "posts" && <PostsTab userId={targetUserId} />}
-            {tab.value === "replies" && <RepliesTab userId={targetUserId} />}
-            {tab.value === "media" && <MediaTab userId={targetUserId} />}
-            {tab.value === "videos" && <VideosTab userId={targetUserId} />}
-            {tab.value === "likes" && <LikesTab userId={targetUserId} />}
-            {tab.value === "followers" && <FollowersTab userId={targetUserId} />}
-            {tab.value === "following" && <FollowingTab userId={targetUserId} />}
-            {tab.value === "analytics" && isCurrentUser && (
-              <AnalyticsTab userId={targetUserId} />
-            )}
-          </TabsContent>
-        ))}
+        <TabsContent 
+          key={activeTab}
+          value={activeTab}
+          className={cn(
+            "w-full animate-in fade-in-50",
+            "data-[state=inactive]:hidden",
+            isMobile ? "px-2" : ""
+          )}
+        >
+          {renderTabContent(activeTab)}
+        </TabsContent>
       </div>
     </Tabs>
   );
