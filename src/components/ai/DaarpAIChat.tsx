@@ -46,10 +46,39 @@ export const DaarpAIChat = () => {
   });
 
   useEffect(() => {
+    // Add welcome message when component mounts
+    if (messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "Hello! I'm Daarp, your personal AI assistant. I'm here to help you with anything you need - whether it's analyzing images, answering questions, or providing creative suggestions. What can I help you with today?",
+        timestamp: new Date(),
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, []);
+
+  useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const generateAIResponse = (userMessage: string): string => {
+    // Simulate AI responses based on user input
+    const responses = [
+      "I understand what you're asking about. Let me help you with that.",
+      "That's an interesting question! Here's what I think...",
+      "Based on my analysis, I would suggest...",
+      "I can definitely help you with that. Here's what you need to know...",
+      "Let me break this down for you in a simple way...",
+    ];
+    
+    // For now, return a random response
+    return responses[Math.floor(Math.random() * responses.length)] + 
+           " As an AI assistant, I'm continuously learning and improving to provide better answers. " +
+           "Would you like to know more about any specific aspect?";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,12 +100,12 @@ export const DaarpAIChat = () => {
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response
+    // Simulate AI response with a delay
     setTimeout(() => {
       const aiMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Hello! I'm Daarp AI, your personal assistant. I'm here to help you with any questions or tasks you might have. How can I assist you today?",
+        content: generateAIResponse(userMessage.content),
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, aiMessage]);
