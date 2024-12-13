@@ -3,7 +3,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Check, DollarSign, Sparkles } from "lucide-react";
+import { Check, DollarSign, Sparkles, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -74,7 +74,6 @@ const Subscription = () => {
 
       if (error) throw error;
 
-      // Redirect to Stripe Checkout
       window.location.href = data.url;
     } catch (error) {
       console.error('Error creating checkout session:', error);
@@ -82,8 +81,49 @@ const Subscription = () => {
     }
   };
 
+  const handleManageSubscription = async () => {
+    try {
+      if (!session?.user?.id || !subscription?.stripe_customer_id) {
+        toast.error("No active subscription found");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-portal-session', {
+        body: {
+          customerId: subscription.stripe_customer_id,
+        },
+      });
+
+      if (error) throw error;
+
+      window.location.href = data.url;
+    } catch (error) {
+      console.error('Error creating portal session:', error);
+      toast.error("Failed to open subscription management");
+    }
+  };
+
   return (
     <div className="container mx-auto py-8">
+      {subscription && (
+        <Card className="p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Current Subscription</h2>
+            <Badge variant="secondary" className={subscription.tier.name === 'Creator' ? 'bg-orange-500/10 text-orange-500' : 'bg-yellow-500/10 text-yellow-500'}>
+              {subscription.status}
+            </Badge>
+          </div>
+          <p className="text-lg mb-4">You are currently on the <span className="font-bold">{subscription.tier.name}</span> plan</p>
+          <div className="space-y-2 mb-6">
+            <p>Mentions remaining: {subscription.mentions_remaining}</p>
+            <p>Renewal date: {new Date(subscription.ends_at).toLocaleDateString()}</p>
+          </div>
+          <Button onClick={handleManageSubscription} className="w-full sm:w-auto">
+            Manage Subscription <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
+        </Card>
+      )}
+
       <h1 className="text-3xl font-bold mb-8">Premium Subscriptions</h1>
       <div className="grid md:grid-cols-2 gap-8">
         {tiers?.map((tier) => (
