@@ -17,26 +17,39 @@ const Auth = () => {
     profilePicture?: File | null;
   }) => {
     try {
+      console.log('Starting authentication process...');
+      
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        console.log('Attempting to sign in user:', formData.email);
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
 
-        if (error) throw error;
+        if (signInError) {
+          console.error('Sign in error:', signInError);
+          throw signInError;
+        }
+
+        console.log('Sign in successful, navigating to dashboard');
         navigate("/dashboard");
       } else {
+        console.log('Attempting to sign up user:', formData.email);
         const { error: signUpError, data } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
 
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error('Sign up error:', signUpError);
+          throw signUpError;
+        }
 
         if (data.user) {
           let avatarUrl = null;
 
           if (formData.profilePicture) {
+            console.log('Uploading profile picture');
             const fileExt = formData.profilePicture.name.split('.').pop();
             const fileName = `${Math.random()}.${fileExt}`;
 
@@ -44,7 +57,10 @@ const Auth = () => {
               .from('avatars')
               .upload(fileName, formData.profilePicture);
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+              console.error('Profile picture upload error:', uploadError);
+              throw uploadError;
+            }
 
             const { data: { publicUrl } } = supabase.storage
               .from('avatars')
@@ -53,6 +69,7 @@ const Auth = () => {
             avatarUrl = publicUrl;
           }
 
+          console.log('Creating user profile');
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -62,15 +79,26 @@ const Auth = () => {
               bio: formData.bio || '',
             });
 
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            throw profileError;
+          }
         }
 
         toast.success("Account created successfully! Please check your email to verify your account.");
         setIsLogin(true);
       }
     } catch (error: any) {
-      console.error('Auth error:', error);
-      toast.error(error.message || "An error occurred during authentication");
+      console.error('Authentication error:', error);
+      
+      // Handle specific error messages
+      if (error.message?.includes('Invalid login credentials')) {
+        toast.error("Invalid email or password");
+      } else if (error.message?.includes('Email rate limit exceeded')) {
+        toast.error("Too many attempts. Please try again later");
+      } else {
+        toast.error(error.message || "An error occurred during authentication");
+      }
     }
   };
 
