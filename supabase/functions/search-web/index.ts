@@ -14,10 +14,11 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, currentMessage, imageUrl } = await req.json();
+    const { messages, currentMessage, imageUrl, generateImage } = await req.json();
     console.log('Received chat request:', { 
       message: currentMessage,
       hasImage: !!imageUrl,
+      generateImage,
       historyLength: messages?.length || 0
     });
 
@@ -28,15 +29,75 @@ serve(async (req) => {
 
     const systemMessage = {
       role: 'system',
-      content: `You are Daarp, a highly capable AI assistant. Your responses should be:
+      content: `You are Bosley AI, a highly capable AI assistant. Your responses should be:
       - Detailed and accurate
       - Friendly and conversational
       - Direct and to the point
       - Helpful with practical solutions
-      You can handle topics like coding, general knowledge, analysis, and creative tasks.
+      You can handle topics like coding, general knowledge, analysis, creative tasks, and image generation.
       When users ask questions, provide thorough, well-thought-out responses.
       Always respond in a natural, conversational way while maintaining professionalism.`
     };
+
+    if (generateImage) {
+      // Call DALL-E API for image generation
+      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "dall-e-3",
+          prompt: currentMessage,
+          n: 1,
+          size: "1024x1024",
+        }),
+      });
+
+      if (!imageResponse.ok) {
+        const errorData = await imageResponse.json();
+        console.error('DALL-E API error:', errorData);
+        throw new Error(`Image generation failed: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const imageData = await imageResponse.json();
+      const generatedImageUrl = imageData.data[0].url;
+
+      // Get AI response about the generated image
+      const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
+          messages: [
+            systemMessage,
+            { role: 'user', content: currentMessage },
+            { role: 'assistant', content: "I've generated an image based on your request. Here it is! Let me know if you'd like any adjustments or have questions about it." }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errorData = await aiResponse.json();
+        console.error('OpenAI API error:', errorData);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const aiData = await aiResponse.json();
+      
+      return new Response(JSON.stringify({ 
+        response: aiData.choices[0].message.content,
+        generatedImageUrl
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const userMessage = imageUrl
       ? {
@@ -51,8 +112,6 @@ serve(async (req) => {
           content: currentMessage
         };
 
-    console.log('Sending request to OpenAI API with model:', imageUrl ? 'gpt-4o' : 'gpt-4o-mini');
-    
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -81,11 +140,6 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    console.log('OpenAI response received:', {
-      status: aiResponse.status,
-      messageLength: aiData.choices[0].message.content.length,
-      firstFewWords: aiData.choices[0].message.content.slice(0, 50)
-    });
 
     return new Response(JSON.stringify({ 
       response: aiData.choices[0].message.content

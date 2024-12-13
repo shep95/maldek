@@ -33,6 +33,17 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
             </AspectRatio>
           </div>
         )}
+        {message.generatedImageUrl && (
+          <div className="mb-2">
+            <AspectRatio ratio={1} className="overflow-hidden rounded-lg">
+              <img
+                src={message.generatedImageUrl}
+                alt="AI-generated image"
+                className="w-full h-full object-cover"
+              />
+            </AspectRatio>
+          </div>
+        )}
         <p className="whitespace-pre-wrap">{message.content}</p>
         <span className="text-[10px] sm:text-xs opacity-70 mt-1 block">
           {new Date(message.timestamp).toLocaleTimeString()}

@@ -4,5 +4,6 @@ export interface Message {
   content: string;
   timestamp: Date;
   referencedMessageId?: string;
-  imageUrl?: string;  // New field for image attachments
+  imageUrl?: string;  // For uploaded images
+  generatedImageUrl?: string;  // For AI-generated images
 }

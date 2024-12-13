@@ -47,7 +47,7 @@ export const DaarpAIChat = () => {
       const welcomeMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "👋 Hi! I'm Daarp, your AI assistant. Ask me anything!",
+        content: "👋 Hi! I'm Bosley AI, your AI assistant. I can help you generate images and answer questions. Try saying 'Generate an image of...' or ask me anything!",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -109,6 +109,10 @@ export const DaarpAIChat = () => {
         imageUrl = await handleImageUpload(image);
       }
 
+      const isImageGenerationRequest = content.toLowerCase().includes('generate an image') || 
+                                     content.toLowerCase().includes('create an image') ||
+                                     content.toLowerCase().includes('make an image');
+
       const userMessage: Message = {
         id: crypto.randomUUID(),
         role: "user",
@@ -122,15 +126,17 @@ export const DaarpAIChat = () => {
       const response = await generateAIResponse({
         messages,
         currentMessage: userMessage.content,
-        imageUrl: userMessage.imageUrl
+        imageUrl: userMessage.imageUrl,
+        generateImage: isImageGenerationRequest
       });
 
       const aiMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: response,
+        content: typeof response === 'string' ? response : response.text,
         timestamp: new Date(),
-        referencedMessageId: userMessage.id
+        referencedMessageId: userMessage.id,
+        generatedImageUrl: typeof response === 'string' ? undefined : response.imageUrl
       };
       
       setMessages(prev => [...prev, aiMessage]);

@@ -5,23 +5,26 @@ interface ConversationContext {
   messages: Message[];
   currentMessage: string;
   imageUrl?: string;
+  generateImage?: boolean;
 }
 
-export const generateAIResponse = async (context: ConversationContext): Promise<string> => {
-  const { messages, currentMessage, imageUrl } = context;
+export const generateAIResponse = async (context: ConversationContext): Promise<string | { text: string; imageUrl: string }> => {
+  const { messages, currentMessage, imageUrl, generateImage } = context;
   
   try {
     console.log('Sending request to OpenAI via Edge Function:', { 
       messageCount: messages.length,
       currentMessage,
-      hasImage: !!imageUrl 
+      hasImage: !!imageUrl,
+      generateImage 
     });
 
     const { data, error } = await supabase.functions.invoke('search-web', {
       body: { 
-        messages: messages.slice(-10), // Send last 10 messages for context
+        messages: messages.slice(-10),
         currentMessage,
-        imageUrl
+        imageUrl,
+        generateImage
       }
     });
 
@@ -33,8 +36,17 @@ export const generateAIResponse = async (context: ConversationContext): Promise<
     if (data.response) {
       console.log('Received OpenAI response:', {
         responseLength: data.response.length,
-        firstFewWords: data.response.slice(0, 50)
+        firstFewWords: data.response.slice(0, 50),
+        hasGeneratedImage: !!data.generatedImageUrl
       });
+      
+      if (data.generatedImageUrl) {
+        return {
+          text: data.response,
+          imageUrl: data.generatedImageUrl
+        };
+      }
+      
       return data.response;
     }
 
