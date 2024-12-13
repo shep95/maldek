@@ -24,8 +24,7 @@ serve(async (req) => {
       content: msg.content
     }));
 
-    // Use OpenAI to generate a response
-    console.log('Sending request to OpenAI with conversation history');
+    console.log('Sending request to OpenAI with model gpt-4o');
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -33,7 +32,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',  // Using the correct model as specified in the guidelines
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
