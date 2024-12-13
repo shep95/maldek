@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, TrendingUp, DollarSign } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, TrendingUp, DollarSign, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 interface NavItem {
   icon: any;
@@ -14,11 +15,32 @@ interface NavItem {
   onClick?: () => void;
   className?: string;
   premium?: boolean;
+  description?: string;
 }
 
 export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: boolean) => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fetch user's subscription status
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          tier:subscription_tiers(*)
+        `)
+        .eq('user_id', user.id)
+        .single();
+
+      return subscription;
+    }
+  });
 
   const handleLogout = async () => {
     try {
@@ -92,9 +114,18 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
     },
     { 
       icon: DollarSign, 
-      label: "Premium", 
+      label: subscription?.tier?.name || "Premium", 
       premium: true,
-      className: "text-accent"
+      description: subscription ? (
+        `${subscription.mentions_remaining} mentions remaining`
+      ) : (
+        "Unlock premium features"
+      ),
+      className: cn(
+        "text-accent relative",
+        subscription?.tier?.name === "Creator" && "text-orange-500",
+        subscription?.tier?.name === "Business" && "text-yellow-500"
+      )
     },
     { 
       icon: Plus, 
@@ -134,9 +165,25 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
             )}
           >
             <item.icon className="h-5 w-5" />
-            {item.label}
-            {item.premium && (
-              <span className="ml-auto text-xs opacity-70">$8/mo</span>
+            <div className="flex flex-col items-start text-left">
+              <span className="flex items-center gap-2">
+                {item.label}
+                {item.premium && subscription?.tier && (
+                  <Check className={cn(
+                    "h-4 w-4",
+                    subscription.tier.name === "Creator" && "text-orange-500",
+                    subscription.tier.name === "Business" && "text-yellow-500"
+                  )} />
+                )}
+              </span>
+              {item.description && (
+                <span className="text-xs text-muted-foreground">
+                  {item.description}
+                </span>
+              )}
+            </div>
+            {item.premium && !subscription && (
+              <span className="ml-auto text-xs">From $8/mo</span>
             )}
           </Button>
         ))}

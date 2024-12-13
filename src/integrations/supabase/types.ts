@@ -371,6 +371,81 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_tiers: {
+        Row: {
+          checkmark_color: string
+          created_at: string
+          id: string
+          monthly_mentions: number
+          name: string
+          price: number
+        }
+        Insert: {
+          checkmark_color: string
+          created_at?: string
+          id?: string
+          monthly_mentions: number
+          name: string
+          price: number
+        }
+        Update: {
+          checkmark_color?: string
+          created_at?: string
+          id?: string
+          monthly_mentions?: number
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          mentions_remaining: number
+          mentions_used: number
+          starts_at: string
+          tier_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          mentions_remaining?: number
+          mentions_used?: number
+          starts_at?: string
+          tier_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          mentions_remaining?: number
+          mentions_used?: number
+          starts_at?: string
+          tier_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           created_at: string
