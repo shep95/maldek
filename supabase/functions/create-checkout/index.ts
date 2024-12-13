@@ -12,8 +12,8 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
-const CREATOR_PRICE_ID = 'price_1Q496sApZ2oDcxDyXXXXXXXXX' // Replace with your actual price ID
-const BUSINESS_PRICE_ID = 'price_1Q496sApZ2oDcxDyYYYYYYYYY' // Replace with your actual price ID
+const CREATOR_PRICE_ID = 'price_1Q496sApZ2oDcxDyXXXXXXXXX' // Replace with your Creator tier price ID
+const BUSINESS_PRICE_ID = 'price_1QVP6GApZ2oDcxDyEKdVL65o' // Business tier price ID
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -65,7 +65,7 @@ serve(async (req) => {
     console.log('Checkout session created:', session.id)
 
     return new Response(
-      JSON.stringify({ sessionId: session.id }),
+      JSON.stringify({ url: session.url }),
       {
         headers: {
           ...corsHeaders,
