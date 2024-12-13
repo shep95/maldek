@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Price IDs for subscription tiers - these need to match your Stripe dashboard
+// Price IDs for subscription tiers
 const CREATOR_PRICE_ID = 'price_1QVPOZApZ2oDcxDyNrRMc7rZ'  // $8/month tier
 const BUSINESS_PRICE_ID = 'price_1QVPPeApZ2oDcxDyezvlMWup' // $800/month tier
 
@@ -44,6 +44,18 @@ serve(async (req) => {
     const priceId = tier === 'creator' ? CREATOR_PRICE_ID : BUSINESS_PRICE_ID
     console.log('Using price ID:', priceId, 'for tier:', tier)
 
+    // Get the tier ID from the subscription_tiers table
+    const { data: tierData, error: tierError } = await supabaseClient
+      .from('subscription_tiers')
+      .select('id')
+      .eq('name', tier === 'creator' ? 'Creator' : 'Business')
+      .single()
+
+    if (tierError || !tierData) {
+      console.error('Error fetching tier:', tierError)
+      throw new Error('Subscription tier not found')
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
@@ -58,6 +70,7 @@ serve(async (req) => {
       cancel_url: `${req.headers.get('origin')}/subscription`,
       metadata: {
         userId: userId,
+        tierId: tierData.id,
         tier: tier,
       },
     })

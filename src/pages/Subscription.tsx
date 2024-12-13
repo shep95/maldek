@@ -65,7 +65,10 @@ const Subscription = () => {
         return;
       }
 
-      toast.loading("Creating checkout session...");
+      toast.loading("Creating checkout session...", {
+        duration: 0, // Keep showing until we redirect or error
+        id: "checkout-toast"
+      });
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
@@ -74,16 +77,25 @@ const Subscription = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating checkout session:', error);
+        toast.dismiss("checkout-toast");
+        toast.error("Failed to start checkout process");
+        return;
+      }
 
       if (!data?.url) {
-        throw new Error("No checkout URL returned");
+        console.error("No checkout URL returned");
+        toast.dismiss("checkout-toast");
+        toast.error("Failed to create checkout session");
+        return;
       }
 
       console.log("Redirecting to checkout:", data.url);
       window.location.href = data.url;
     } catch (error) {
       console.error('Error creating checkout session:', error);
+      toast.dismiss("checkout-toast");
       toast.error("Failed to start checkout process");
     }
   };
