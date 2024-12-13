@@ -166,8 +166,8 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
   };
 
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)] w-full">
-      <nav className="space-y-2 px-2">
+    <ScrollArea className="h-full w-full px-2">
+      <nav className="space-y-1.5">
         {navItems.map((item) => (
           <Button
             key={item.label}
@@ -175,33 +175,33 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
             onClick={() => handleNavigation(item)}
             className={cn(
               "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
-              "text-sm md:text-base", // Responsive text size
-              "p-2 md:p-3", // Responsive padding
+              "text-sm font-medium",
+              "py-2.5",
               item.active && "bg-accent/10 text-accent",
               item.premium && "text-accent font-medium",
               item.className
             )}
           >
-            <item.icon className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+            <item.icon className="h-5 w-5 flex-shrink-0" />
             <div className="flex flex-col items-start text-left min-w-0">
               <span className="flex items-center gap-2 truncate">
                 {item.label}
                 {item.premium && subscription?.tier && (
                   <Check className={cn(
-                    "h-3 w-3 md:h-4 md:w-4",
+                    "h-4 w-4",
                     subscription.tier.name === "Creator" && "text-orange-500",
                     subscription.tier.name === "Business" && "text-yellow-500"
                   )} />
                 )}
               </span>
               {item.description && (
-                <span className="text-xs md:text-sm text-muted-foreground truncate max-w-full">
+                <span className="text-xs text-muted-foreground truncate max-w-full">
                   {item.description}
                 </span>
               )}
             </div>
             {item.premium && !subscription && (
-              <span className="ml-auto text-xs md:text-sm whitespace-nowrap">From $8/mo</span>
+              <span className="ml-auto text-xs whitespace-nowrap">From $8/mo</span>
             )}
           </Button>
         ))}
