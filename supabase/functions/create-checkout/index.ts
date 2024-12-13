@@ -8,8 +8,8 @@ const corsHeaders = {
 }
 
 // Price IDs for subscription tiers - these need to match your Stripe dashboard
-const CREATOR_PRICE_ID = 'price_1OxgQyApZ2oDcxDyNrRMc7rZ'  // $8/month tier
-const BUSINESS_PRICE_ID = 'price_1OxgRvApZ2oDcxDyezvlMWup' // $800/month tier
+const CREATOR_PRICE_ID = 'price_1QVPOZApZ2oDcxDyNrRMc7rZ'  // $8/month tier
+const BUSINESS_PRICE_ID = 'price_1QVPPeApZ2oDcxDyezvlMWup' // $800/month tier
 
 serve(async (req) => {
   // Handle CORS preflight requests
