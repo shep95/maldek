@@ -166,8 +166,8 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
   };
 
   return (
-    <ScrollArea className="h-full w-full px-2">
-      <nav className="space-y-1.5">
+    <ScrollArea className="h-full px-2 py-2">
+      <nav className="space-y-2">
         {navItems.map((item) => (
           <Button
             key={item.label}
@@ -176,15 +176,15 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
             className={cn(
               "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
               "text-sm font-medium",
-              "py-2.5",
+              "min-h-[2.5rem] py-2 px-3",
               item.active && "bg-accent/10 text-accent",
               item.premium && "text-accent font-medium",
               item.className
             )}
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
-            <div className="flex flex-col items-start text-left min-w-0">
-              <span className="flex items-center gap-2 truncate">
+            <div className="flex flex-col items-start text-left min-w-0 flex-1">
+              <span className="flex items-center gap-2 truncate w-full">
                 {item.label}
                 {item.premium && subscription?.tier && (
                   <Check className={cn(
@@ -195,13 +195,13 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
                 )}
               </span>
               {item.description && (
-                <span className="text-xs text-muted-foreground truncate max-w-full">
+                <span className="text-xs text-muted-foreground truncate w-full">
                   {item.description}
                 </span>
               )}
             </div>
             {item.premium && !subscription && (
-              <span className="ml-auto text-xs whitespace-nowrap">From $8/mo</span>
+              <span className="ml-2 text-xs whitespace-nowrap shrink-0">From $8/mo</span>
             )}
           </Button>
         ))}
