@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { PostHeader } from "@/components/dashboard/post/PostHeader";
 import { PostMedia } from "@/components/dashboard/post/PostMedia";
 import { PostActions } from "@/components/dashboard/post/PostActions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Comment {
   id: string;
@@ -27,6 +27,7 @@ const PostDetail = () => {
   const navigate = useNavigate();
   const [newComment, setNewComment] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -36,9 +37,39 @@ const PostDetail = () => {
     getCurrentUser();
   }, []);
 
+  // Subscribe to real-time comments
+  useEffect(() => {
+    if (!postId) return;
+
+    console.log('Subscribing to comments for post:', postId);
+    const channel = supabase
+      .channel('comments')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments',
+          filter: `post_id=eq.${postId}`,
+        },
+        (payload) => {
+          console.log('Received comment update:', payload);
+          // Invalidate and refetch comments
+          queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Unsubscribing from comments channel');
+      supabase.removeChannel(channel);
+    };
+  }, [postId, queryClient]);
+
   const { data: post, isLoading: isLoadingPost } = useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
+      console.log('Fetching post details:', postId);
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -48,13 +79,16 @@ const PostDetail = () => {
         .eq('id', postId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching post:', error);
+        throw error;
+      }
 
-      // Transform the data to match our expected format
+      console.log('Post details fetched:', data);
       return {
         ...data,
-        isLiked: false, // You might want to fetch this from a likes table
-        isBookmarked: false, // You might want to fetch this from a bookmarks table
+        isLiked: false,
+        isBookmarked: false,
         timestamp: new Date(data.created_at),
         mediaUrls: data.media_urls || []
       };
@@ -64,6 +98,7 @@ const PostDetail = () => {
   const { data: comments, isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
+      console.log('Fetching comments for post:', postId);
       const { data, error } = await supabase
         .from('comments')
         .select(`
@@ -73,15 +108,24 @@ const PostDetail = () => {
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching comments:', error);
+        throw error;
+      }
+
+      console.log('Comments fetched:', data);
       return data as Comment[];
     },
   });
 
   const handleSubmitComment = async () => {
-    if (!newComment.trim() || !currentUserId) return;
+    if (!newComment.trim() || !currentUserId || !postId) {
+      toast.error("Please enter a comment");
+      return;
+    }
 
     try {
+      console.log('Submitting new comment:', { postId, userId: currentUserId, content: newComment });
       const { error } = await supabase
         .from('comments')
         .insert({
@@ -93,8 +137,9 @@ const PostDetail = () => {
       if (error) throw error;
 
       setNewComment("");
-      refetchComments();
       toast.success("Comment added successfully");
+      
+      // The real-time subscription will handle the update
     } catch (error) {
       console.error("Error adding comment:", error);
       toast.error("Failed to add comment");
@@ -102,11 +147,27 @@ const PostDetail = () => {
   };
 
   if (isLoadingPost || isLoadingComments) {
-    return <div className="p-4">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (!post) {
-    return <div className="p-4">Post not found</div>;
+    return (
+      <div className="p-4 text-center">
+        <h2 className="text-xl font-semibold">Post not found</h2>
+        <Button 
+          variant="ghost" 
+          className="mt-4"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Go back
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -155,6 +216,12 @@ const PostDetail = () => {
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
               className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmitComment();
+                }
+              }}
             />
             <Button onClick={handleSubmitComment}>
               <Send className="h-4 w-4" />
@@ -165,16 +232,21 @@ const PostDetail = () => {
 
       <div className="space-y-4">
         {comments?.map((comment) => (
-          <Card key={comment.id} className="p-4">
+          <Card key={comment.id} className="p-4 transition-all duration-200 hover:bg-accent/5">
             <div className="flex items-start gap-3">
-              <Avatar className="h-8 w-8 cursor-pointer" onClick={() => navigate(`/profile/${comment.user.username}`)}>
+              <Avatar 
+                className="h-8 w-8 cursor-pointer" 
+                onClick={() => navigate(`/profile/${comment.user.username}`)}
+              >
                 <AvatarImage src={comment.user.avatar_url || undefined} />
-                <AvatarFallback>{comment.user.username[0]}</AvatarFallback>
+                <AvatarFallback>{comment.user.username[0].toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-1">
                 <div className="flex items-baseline gap-2">
-                  <h4 className="font-semibold cursor-pointer hover:underline" 
-                      onClick={() => navigate(`/profile/${comment.user.username}`)}>
+                  <h4 
+                    className="font-semibold cursor-pointer hover:underline" 
+                    onClick={() => navigate(`/profile/${comment.user.username}`)}
+                  >
                     @{comment.user.username}
                   </h4>
                   <span className="text-sm text-muted-foreground">
