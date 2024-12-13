@@ -8,10 +8,12 @@ import { VideosTab } from "./tabs/VideosTab";
 import { LikesTab } from "./tabs/LikesTab";
 import { AnalyticsTab } from "./tabs/AnalyticsTab";
 import { useSession } from "@supabase/auth-helpers-react";
+import { useState } from "react";
 
 export const ProfileTabs = () => {
   const { userId } = useParams();
   const session = useSession();
+  const [activeTab, setActiveTab] = useState("posts");
   const isCurrentUser = session?.user?.id === userId;
 
   // If no userId is provided in the URL, use the current user's ID
@@ -20,6 +22,9 @@ export const ProfileTabs = () => {
   if (!targetUserId) {
     return null;
   }
+
+  console.log("ProfileTabs - Current active tab:", activeTab);
+  console.log("ProfileTabs - Target user ID:", targetUserId);
 
   const tabs = [
     { value: "posts", label: "Posts" },
@@ -34,8 +39,13 @@ export const ProfileTabs = () => {
     tabs.push({ value: "analytics", label: "Analytics" });
   }
 
+  const handleTabChange = (value: string) => {
+    console.log("Tab changed to:", value);
+    setActiveTab(value);
+  };
+
   return (
-    <Tabs defaultValue="posts" className="w-full">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="w-full justify-start rounded-none border-b bg-transparent">
         {tabs.map((tab) => (
           <TabsTrigger
