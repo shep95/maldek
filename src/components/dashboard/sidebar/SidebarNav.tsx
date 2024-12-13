@@ -41,7 +41,8 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
             tier:subscription_tiers(*)
           `)
           .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('status', 'active')
+          .maybeSingle(); // Changed from .single() to .maybeSingle()
 
         if (error) {
           console.error("Error fetching subscription:", error);
