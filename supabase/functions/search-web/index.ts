@@ -15,31 +15,38 @@ serve(async (req) => {
 
   try {
     const { messages, currentMessage, imageUrl } = await req.json();
-    console.log('Processing request:', { 
+    console.log('Received chat request:', { 
       message: currentMessage,
       hasImage: !!imageUrl,
-      historyLength: messages.length 
+      historyLength: messages?.length || 0
     });
 
     if (!openAIApiKey) {
+      console.error('OpenAI API key missing');
       throw new Error('OpenAI API key is not configured');
     }
 
-    // Convert previous messages to OpenAI format
-    const conversationHistory = messages.map((msg: any) => ({
+    // Format conversation history for OpenAI
+    const conversationHistory = messages?.map((msg: any) => ({
       role: msg.role === 'user' ? 'user' : 'assistant',
       content: msg.content
-    }));
+    })) || [];
+
+    console.log('Formatted conversation history:', {
+      historyLength: conversationHistory.length,
+      lastMessage: conversationHistory[conversationHistory.length - 1]?.content
+    });
 
     const systemMessage = {
       role: 'system',
-      content: `You are Daarp, a highly capable AI assistant powered by OpenAI. Your responses should be:
+      content: `You are Daarp, a highly capable AI assistant. Your responses should be:
       - Detailed and accurate
       - Friendly and conversational
       - Direct and to the point
       - Helpful with practical solutions
       You can handle topics like coding, general knowledge, analysis, and creative tasks.
-      When users ask questions, provide thorough, well-thought-out responses.`
+      When users ask questions, provide thorough, well-thought-out responses.
+      Always respond in a natural, conversational way while maintaining professionalism.`
     };
 
     const userMessage = imageUrl
@@ -55,7 +62,8 @@ serve(async (req) => {
           content: currentMessage
         };
 
-    console.log('Sending request to OpenAI API');
+    console.log('Sending request to OpenAI API with model:', imageUrl ? 'gpt-4o' : 'gpt-4o-mini');
+    
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -70,7 +78,7 @@ serve(async (req) => {
           userMessage
         ],
         temperature: 0.7,
-        max_tokens: 1000, // Increased for more detailed responses
+        max_tokens: 1000,
       }),
     });
 
@@ -81,9 +89,10 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    console.log('Received response from OpenAI:', {
+    console.log('OpenAI response received:', {
       status: aiResponse.status,
-      messageLength: aiData.choices[0].message.content.length
+      messageLength: aiData.choices[0].message.content.length,
+      firstFewWords: aiData.choices[0].message.content.slice(0, 50)
     });
 
     return new Response(JSON.stringify({ 
