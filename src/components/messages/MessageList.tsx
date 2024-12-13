@@ -61,7 +61,7 @@ export const MessageList = ({ messages }: { messages: Message[] }) => {
               message.unread ? "bg-accent/5" : ""
             } ${
               deletingMessageId === message.id ? 
-              "opacity-0 scale-95 blur-sm [mask-image:linear-gradient(45deg,transparent_25%,black_75%)]" : 
+              "opacity-0 scale-95 blur-sm [mask-image:linear-gradient(45deg,transparent 25%,black 75%)]" : 
               "opacity-100 scale-100 blur-0"
             }`}
           >
