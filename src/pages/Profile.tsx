@@ -160,6 +160,7 @@ const Profile = () => {
           bio={profile.bio || ""}
           followerCount={profile.follower_count}
           createdAt={profile.created_at}
+          userId={userId || ''}
           isCurrentUser={isCurrentUser}
           isEditing={isEditing}
           editBio={editBio}
