@@ -40,17 +40,9 @@ serve(async (req) => {
       throw new Error('User not found')
     }
 
-    // Verify the price ID exists before creating the session
+    // Determine the price ID based on the tier
     const priceId = tier === 'creator' ? CREATOR_PRICE_ID : BUSINESS_PRICE_ID
-    
-    try {
-      // Verify the price exists
-      const price = await stripe.prices.retrieve(priceId)
-      console.log('Price verified:', price.id)
-    } catch (error) {
-      console.error('Error retrieving price:', error)
-      throw new Error(`Invalid price ID for ${tier} tier`)
-    }
+    console.log('Using price ID:', priceId, 'for tier:', tier)
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
