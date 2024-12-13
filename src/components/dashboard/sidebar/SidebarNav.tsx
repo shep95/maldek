@@ -41,7 +41,7 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
             tier:subscription_tiers(*)
           `)
           .eq('user_id', user.id)
-          .maybeSingle(); // Using maybeSingle() instead of single()
+          .maybeSingle();
 
         if (error) {
           console.error("Error fetching subscription:", error);
@@ -61,22 +61,18 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
     try {
       console.log("Starting logout process...");
       
-      // First clear all auth data from localStorage
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('supabase.auth.')) {
           localStorage.removeItem(key);
         }
       });
       
-      // Force navigation to auth page
       navigate("/auth");
       
-      // Attempt to sign out from Supabase after navigation
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.log("Logout error:", error);
-        // Even if there's an error, we've already cleared localStorage and redirected
         toast.success("Logged out successfully");
         return;
       }
@@ -85,9 +81,13 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       toast.success("Logged out successfully");
     } catch (error) {
       console.error("Logout error:", error);
-      // Even if there's an error, ensure the user is logged out locally
       toast.success("Logged out successfully");
     }
+  };
+
+  const handlePremiumClick = () => {
+    navigate('/subscription');
+    toast.info(subscription ? 'Viewing your subscription' : 'Explore premium features');
   };
 
   const navItems: NavItem[] = [
@@ -131,13 +131,14 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       icon: DollarSign, 
       label: subscription?.tier?.name || "Premium", 
       premium: true,
+      onClick: handlePremiumClick,
       description: subscription ? (
         `${subscription.mentions_remaining} mentions remaining`
       ) : (
         "Unlock premium features"
       ),
       className: cn(
-        "text-accent relative",
+        "text-accent relative hover:bg-accent/10",
         subscription?.tier?.name === "Creator" && "text-orange-500",
         subscription?.tier?.name === "Business" && "text-yellow-500"
       )
@@ -148,7 +149,7 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       onClick: () => setIsCreatingPost(true),
       className: "border-2 border-white hover:bg-accent/90 text-white"
     },
-    { icon: Settings, label: "Settings" },
+    { icon: Settings, label: "Settings", path: "/settings" },
     { 
       icon: LogOut, 
       label: "Logout", 
@@ -165,8 +166,8 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
   };
 
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)]">
-      <nav className="space-y-2">
+    <ScrollArea className="h-[calc(100vh-12rem)] w-full">
+      <nav className="space-y-2 px-2">
         {navItems.map((item) => (
           <Button
             key={item.label}
@@ -174,31 +175,33 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
             onClick={() => handleNavigation(item)}
             className={cn(
               "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
+              "text-sm md:text-base", // Responsive text size
+              "p-2 md:p-3", // Responsive padding
               item.active && "bg-accent/10 text-accent",
               item.premium && "text-accent font-medium",
               item.className
             )}
           >
-            <item.icon className="h-5 w-5" />
-            <div className="flex flex-col items-start text-left">
-              <span className="flex items-center gap-2">
+            <item.icon className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+            <div className="flex flex-col items-start text-left min-w-0">
+              <span className="flex items-center gap-2 truncate">
                 {item.label}
                 {item.premium && subscription?.tier && (
                   <Check className={cn(
-                    "h-4 w-4",
+                    "h-3 w-3 md:h-4 md:w-4",
                     subscription.tier.name === "Creator" && "text-orange-500",
                     subscription.tier.name === "Business" && "text-yellow-500"
                   )} />
                 )}
               </span>
               {item.description && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs md:text-sm text-muted-foreground truncate max-w-full">
                   {item.description}
                 </span>
               )}
             </div>
             {item.premium && !subscription && (
-              <span className="ml-auto text-xs">From $8/mo</span>
+              <span className="ml-auto text-xs md:text-sm whitespace-nowrap">From $8/mo</span>
             )}
           </Button>
         ))}

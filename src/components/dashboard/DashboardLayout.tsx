@@ -62,10 +62,14 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         <Sidebar setIsCreatingPost={setIsCreatingPost} />
-        <div className={`flex-1 md:ml-64 ${showRightSidebar ? 'lg:mr-80' : ''}`}>
-          <main className="min-h-screen pb-20 md:pb-0">
+        <div className={cn(
+          "flex-1 transition-all duration-200",
+          "md:ml-64",
+          showRightSidebar && "lg:mr-80"
+        )}>
+          <main className="min-h-screen pb-20 md:pb-0 px-4 md:px-8">
             <div className="max-w-3xl mx-auto">
               <Outlet />
             </div>
