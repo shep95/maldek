@@ -1,15 +1,16 @@
 import { Message } from "../types/messageTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConversationContext {
   messages: Message[];
   currentMessage: string;
 }
 
-export const generateAIResponse = (context: ConversationContext): string => {
+export const generateAIResponse = async (context: ConversationContext): Promise<string> => {
   const { messages, currentMessage } = context;
   const message = currentMessage.toLowerCase();
   
-  // Get the last few messages for context (excluding the current one)
+  // Get the last few messages for context
   const recentMessages = messages.slice(-3);
   const hasRecentContext = recentMessages.length > 0;
   
@@ -24,6 +25,32 @@ export const generateAIResponse = (context: ConversationContext): string => {
     }
   }
 
+  // Check if this is a knowledge-based question that might benefit from web search
+  const isKnowledgeQuestion = message.startsWith('what') || 
+                            message.startsWith('who') || 
+                            message.startsWith('how') || 
+                            message.startsWith('why') ||
+                            message.startsWith('when') ||
+                            message.includes('tell me about') ||
+                            message.includes('explain');
+
+  if (isKnowledgeQuestion) {
+    try {
+      const { data, error } = await supabase.functions.invoke('search-web', {
+        body: { query: currentMessage }
+      });
+
+      if (error) throw error;
+
+      if (data.response) {
+        return data.response;
+      }
+    } catch (error) {
+      console.error('Error searching web:', error);
+      // Fall back to regular response if web search fails
+    }
+  }
+
   // Check if this is a follow-up question
   const isFollowUp = hasRecentContext && (
     message.includes('what about') ||
@@ -34,7 +61,6 @@ export const generateAIResponse = (context: ConversationContext): string => {
   );
 
   if (isFollowUp) {
-    // Find the last assistant message using filter and slice instead of findLast
     const lastAssistantMessage = messages
       .filter(m => m.role === 'assistant')
       .slice(-1)[0];

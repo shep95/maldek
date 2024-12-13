@@ -42,12 +42,11 @@ export const DaarpAIChat = () => {
   });
 
   useEffect(() => {
-    // Add welcome message when component mounts
     if (messages.length === 0) {
       const welcomeMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Hello! I'm Daarp, your personal AI assistant. I'm here to help you with anything you need - whether it's mathematical calculations, analyzing images, answering questions, or providing creative suggestions. What can I help you with today?",
+        content: "Hello! I'm Daarp, your personal AI assistant. I can help you with calculations, search the web for information, answer questions, and provide creative suggestions. What can I help you with today?",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -80,21 +79,27 @@ export const DaarpAIChat = () => {
     setInput("");
     setIsLoading(true);
 
-    // Generate AI response with context
-    setTimeout(() => {
+    try {
+      const response = await generateAIResponse({
+        messages,
+        currentMessage: userMessage.content
+      });
+
       const aiMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: generateAIResponse({
-          messages: messages,
-          currentMessage: userMessage.content
-        }),
+        content: response,
         timestamp: new Date(),
         referencedMessageId: userMessage.id
       };
+      
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      toast.error("Sorry, I had trouble processing that request. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   if (!subscription) {
