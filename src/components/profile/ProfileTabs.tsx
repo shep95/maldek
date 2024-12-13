@@ -46,29 +46,59 @@ export const ProfileTabs = () => {
     setActiveTab(value);
   };
 
-  const renderTabContent = (tab: string) => {
-    switch (tab) {
-      case "posts":
-        return <PostsTab userId={targetUserId} />;
-      case "replies":
-        return <RepliesTab userId={targetUserId} />;
-      case "media":
-        return <MediaTab userId={targetUserId} />;
-      case "videos":
-        return <VideosTab userId={targetUserId} />;
-      case "likes":
-        return <LikesTab userId={targetUserId} />;
-      case "followers":
-        return <FollowersTab userId={targetUserId} />;
-      case "following":
-        return <FollowingTab userId={targetUserId} />;
-      case "analytics":
-        return isCurrentUser ? <AnalyticsTab userId={targetUserId} /> : null;
-      default:
-        return null;
-    }
-  };
+  if (isMobile) {
+    return (
+      <Tabs 
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
+        <div className="border-b border-muted sticky top-0 bg-background z-10">
+          <ScrollArea className="w-full" type="scroll">
+            <TabsList className="w-full justify-start rounded-none bg-transparent h-auto min-w-[800px] px-2">
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className={cn(
+                    "rounded-none border-b-2 border-transparent",
+                    "data-[state=active]:border-accent data-[state=active]:bg-transparent",
+                    "data-[state=active]:text-accent hover:text-accent",
+                    "transition-colors duration-300 capitalize",
+                    "focus:outline-none focus-visible:ring-0",
+                    "touch-manipulation select-none whitespace-nowrap",
+                    "py-2 px-4 text-sm"
+                  )}
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </ScrollArea>
+        </div>
 
+        <div className="mt-4 w-full px-2">
+          <TabsContent 
+            value={activeTab}
+            className="w-full animate-in fade-in-50 data-[state=inactive]:hidden"
+          >
+            {activeTab === "posts" && <PostsTab userId={targetUserId} />}
+            {activeTab === "replies" && <RepliesTab userId={targetUserId} />}
+            {activeTab === "media" && <MediaTab userId={targetUserId} />}
+            {activeTab === "videos" && <VideosTab userId={targetUserId} />}
+            {activeTab === "likes" && <LikesTab userId={targetUserId} />}
+            {activeTab === "followers" && <FollowersTab userId={targetUserId} />}
+            {activeTab === "following" && <FollowingTab userId={targetUserId} />}
+            {activeTab === "analytics" && isCurrentUser && (
+              <AnalyticsTab userId={targetUserId} />
+            )}
+          </TabsContent>
+        </div>
+      </Tabs>
+    );
+  }
+
+  // Desktop layout
   return (
     <Tabs 
       value={activeTab}
@@ -76,46 +106,45 @@ export const ProfileTabs = () => {
       className="w-full"
     >
       <div className="border-b border-muted sticky top-0 bg-background z-10">
-        <ScrollArea className="w-full" type={isMobile ? "scroll" : "auto"}>
-          <TabsList 
-            className={cn(
-              "w-full justify-start rounded-none bg-transparent h-auto",
-              isMobile ? "flex min-w-[800px] px-2" : "inline-flex min-w-full"
-            )}
-          >
-            {tabs.map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                className={cn(
-                  "rounded-none border-b-2 border-transparent",
-                  "data-[state=active]:border-accent data-[state=active]:bg-transparent",
-                  "data-[state=active]:text-accent hover:text-accent",
-                  "transition-colors duration-300 capitalize",
-                  "focus:outline-none focus-visible:ring-0",
-                  "touch-manipulation select-none whitespace-nowrap",
-                  isMobile ? "py-2 px-4 text-sm" : "py-3 px-6"
-                )}
-              >
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </ScrollArea>
+        <TabsList className="inline-flex min-w-full justify-start rounded-none bg-transparent h-auto">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className={cn(
+                "rounded-none border-b-2 border-transparent",
+                "data-[state=active]:border-accent data-[state=active]:bg-transparent",
+                "data-[state=active]:text-accent hover:text-accent",
+                "transition-colors duration-300 capitalize",
+                "focus:outline-none focus-visible:ring-0",
+                "py-3 px-6"
+              )}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
       </div>
 
       <div className="mt-4 w-full">
-        <TabsContent 
-          key={activeTab}
-          value={activeTab}
-          className={cn(
-            "w-full animate-in fade-in-50",
-            "data-[state=inactive]:hidden",
-            isMobile ? "px-2" : ""
-          )}
-        >
-          {renderTabContent(activeTab)}
-        </TabsContent>
+        {tabs.map((tab) => (
+          <TabsContent 
+            key={tab.value}
+            value={tab.value}
+            className="w-full animate-in fade-in-50 data-[state=inactive]:hidden"
+          >
+            {tab.value === "posts" && <PostsTab userId={targetUserId} />}
+            {tab.value === "replies" && <RepliesTab userId={targetUserId} />}
+            {tab.value === "media" && <MediaTab userId={targetUserId} />}
+            {tab.value === "videos" && <VideosTab userId={targetUserId} />}
+            {tab.value === "likes" && <LikesTab userId={targetUserId} />}
+            {tab.value === "followers" && <FollowersTab userId={targetUserId} />}
+            {tab.value === "following" && <FollowingTab userId={targetUserId} />}
+            {tab.value === "analytics" && isCurrentUser && (
+              <AnalyticsTab userId={targetUserId} />
+            )}
+          </TabsContent>
+        ))}
       </div>
     </Tabs>
   );
