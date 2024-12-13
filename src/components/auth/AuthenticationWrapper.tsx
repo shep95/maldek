@@ -25,7 +25,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           console.error("Session error:", sessionError);
           setIsAuthenticated(false);
           if (!location.pathname.startsWith('/auth')) {
-            navigate('/auth', { replace: true });
+            navigate('/auth');
           }
           return;
         }
@@ -34,46 +34,49 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           console.log("No active session found");
           setIsAuthenticated(false);
           if (!location.pathname.startsWith('/auth')) {
-            navigate('/auth', { replace: true });
+            navigate('/auth');
           }
           return;
         }
 
-        console.log("Valid session found");
+        console.log("Valid session found:", session);
         setIsAuthenticated(true);
         if (location.pathname === '/auth') {
-          navigate('/dashboard', { replace: true });
+          navigate('/dashboard');
         }
       } catch (error) {
         console.error("Auth check error:", error);
+        toast.error("Authentication error occurred");
         setIsAuthenticated(false);
         if (!location.pathname.startsWith('/auth')) {
-          navigate('/auth', { replace: true });
+          navigate('/auth');
         }
       } finally {
         setIsLoading(false);
       }
     };
 
+    // Initial auth check
     checkAuth();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event);
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
       
       if (event === 'SIGNED_OUT' || !session) {
         console.log("User signed out or session ended");
         setIsAuthenticated(false);
         queryClient.clear();
-        navigate('/auth', { replace: true });
+        navigate('/auth');
         return;
       }
       
-      if (event === 'SIGNED_IN') {
-        console.log("User signed in");
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        console.log("User signed in or token refreshed");
         setIsAuthenticated(true);
-        navigate('/dashboard', { replace: true });
+        if (location.pathname === '/auth') {
+          navigate('/dashboard');
+        }
       }
     });
 
