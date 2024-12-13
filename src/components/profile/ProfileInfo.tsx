@@ -84,6 +84,8 @@ export const ProfileInfo = ({
     }
 
     try {
+      console.log('Following/unfollowing user:', userId);
+      
       if (isFollowing) {
         const { error } = await supabase
           .from('followers')
@@ -92,6 +94,7 @@ export const ProfileInfo = ({
           .eq('following_id', userId);
 
         if (error) throw error;
+        
         toast.success('Unfollowed successfully');
       } else {
         const { error } = await supabase
@@ -108,6 +111,21 @@ export const ProfileInfo = ({
           }
           throw error;
         }
+
+        // Create notification for new follow
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            recipient_id: userId,
+            actor_id: session.user.id,
+            type: 'new_follow',
+            post_id: userId
+          });
+
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
+        }
+
         toast.success('Followed successfully');
       }
 
