@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface ConversationContext {
   messages: Message[];
   currentMessage: string;
+  imageUrl?: string;
 }
 
 export const generateAIResponse = async (context: ConversationContext): Promise<string> => {
-  const { messages, currentMessage } = context;
+  const { messages, currentMessage, imageUrl } = context;
   
   // Handle mathematical expressions separately for quick responses
   if (currentMessage.match(/[0-9+\-*/()]/)) {
@@ -21,11 +22,12 @@ export const generateAIResponse = async (context: ConversationContext): Promise<
   }
 
   try {
-    console.log('Sending request to search-web function:', currentMessage);
+    console.log('Sending request to search-web function:', { currentMessage, imageUrl });
     const { data, error } = await supabase.functions.invoke('search-web', {
       body: { 
         messages: messages.slice(-10), // Send last 10 messages for context
-        currentMessage 
+        currentMessage,
+        imageUrl
       }
     });
 

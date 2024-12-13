@@ -3,7 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, Send, Image, Upload } from "lucide-react";
+import { MessageCircle, Send, Image as ImageIcon, Upload } from "lucide-react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,8 @@ export const DaarpAIChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const isMobile = useIsMobile();
@@ -62,30 +64,72 @@ export const DaarpAIChat = () => {
     }
   }, [messages]);
 
+  const handleImageUpload = async (file: File) => {
+    try {
+      if (!session?.user?.id) {
+        toast.error("Please sign in to upload images");
+        return null;
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${session.user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        toast.error("Failed to upload image");
+        return null;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error in image upload:', error);
+      toast.error("Failed to upload image");
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !selectedImage) || isLoading) return;
 
     if (!subscription) {
       toast.error("This feature is only available for premium users");
       return;
     }
 
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: input.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
     setIsLoading(true);
 
     try {
+      let imageUrl = null;
+      if (selectedImage) {
+        imageUrl = await handleImageUpload(selectedImage);
+        setSelectedImage(null);
+      }
+
+      const userMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: input.trim(),
+        timestamp: new Date(),
+        imageUrl
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+      setInput("");
+
       const response = await generateAIResponse({
         messages,
-        currentMessage: userMessage.content
+        currentMessage: userMessage.content,
+        imageUrl: userMessage.imageUrl
       });
 
       const aiMessage: Message = {
@@ -102,6 +146,22 @@ export const DaarpAIChat = () => {
       toast.error("Sorry, I had trouble processing that request. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error("Only image files are allowed");
+        return;
+      }
+      setSelectedImage(file);
+      toast.success("Image selected");
     }
   };
 
@@ -131,6 +191,13 @@ export const DaarpAIChat = () => {
       "flex flex-col h-[calc(100vh-6rem)]",
       isMobile ? "h-[calc(100vh-8rem)] px-2" : "max-w-4xl mx-auto p-4"
     )}>
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+      />
       <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-muted">
         <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
           <div className="space-y-4">
@@ -151,6 +218,18 @@ export const DaarpAIChat = () => {
           </div>
         </ScrollArea>
         <div className="p-2 sm:p-4 border-t border-muted">
+          {selectedImage && (
+            <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+              <span className="text-sm truncate">{selectedImage.name}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedImage(null)}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="flex gap-2">
             <Textarea
               value={input}
@@ -165,26 +244,15 @@ export const DaarpAIChat = () => {
               }}
             />
             <div className="flex gap-2">
-              {!isMobile && (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                  >
-                    <Image className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                  >
-                    <Upload className="h-5 w-5" />
-                  </Button>
-                </>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <ImageIcon className="h-5 w-5" />
+              </Button>
               <Button type="submit" size="icon" className="shrink-0 bg-accent hover:bg-accent/90">
                 <Send className="h-5 w-5" />
               </Button>
