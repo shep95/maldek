@@ -66,7 +66,7 @@ export const ProfileTabs = () => {
   return (
     <Tabs defaultValue="posts" className="w-full">
       <div className="border-b border-muted sticky top-0 bg-background z-10">
-        <ScrollArea className="w-full" type="scroll">
+        <div className={cn("w-full overflow-x-auto", isMobile && "scrollbar-none")}>
           <TabsList className={cn(
             "w-full justify-start rounded-none bg-transparent h-auto",
             isMobile ? "min-w-[800px] px-2" : "inline-flex"
@@ -88,7 +88,7 @@ export const ProfileTabs = () => {
               </TabsTrigger>
             ))}
           </TabsList>
-        </ScrollArea>
+        </div>
       </div>
 
       <div className="mt-4 w-full px-2 md:px-0">
