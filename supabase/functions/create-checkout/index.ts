@@ -7,8 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const CREATOR_PRICE_ID = 'price_1QVPOZApZ2oDcxDyNrRMc7rZ';
-const BUSINESS_PRICE_ID = 'price_1QVPPeApZ2oDcxDyezvlMWup';
+// Price IDs for subscription tiers
+const CREATOR_PRICE_ID = 'price_1OxgQyApZ2oDcxDyNrRMc7rZ'
+const BUSINESS_PRICE_ID = 'price_1OxgRvApZ2oDcxDyezvlMWup'
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -17,29 +18,29 @@ serve(async (req) => {
   }
 
   try {
-    const { tier, userId } = await req.json();
-    console.log('Creating checkout session for:', { tier, userId });
+    const { tier, userId } = await req.json()
+    console.log('Creating checkout session for:', { tier, userId })
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
       httpClient: Stripe.createFetchHttpClient(),
-    });
+    })
 
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
     // Get user's email
-    const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
+    const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
 
     if (userError || !user?.email) {
-      console.error('Error fetching user:', userError);
-      throw new Error('User not found');
+      console.error('Error fetching user:', userError)
+      throw new Error('User not found')
     }
 
-    const priceId = tier === 'creator' ? CREATOR_PRICE_ID : BUSINESS_PRICE_ID;
+    const priceId = tier === 'creator' ? CREATOR_PRICE_ID : BUSINESS_PRICE_ID
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -57,24 +58,24 @@ serve(async (req) => {
         userId: userId,
         tier: tier,
       },
-    });
+    })
 
-    console.log('Checkout session created:', session.id);
+    console.log('Checkout session created:', session.id)
 
     return new Response(
       JSON.stringify({ url: session.url }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-    );
+    )
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Error creating checkout session:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-    );
+    )
   }
-});
+})
