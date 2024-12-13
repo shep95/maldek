@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { PostCard } from "./PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePosts } from "@/hooks/usePosts";
 import { useSession } from '@supabase/auth-helpers-react';
-import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
 
 export const PostList = () => {
   const session = useSession();
+  const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
