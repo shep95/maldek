@@ -14,9 +14,8 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, currentMessage } = await req.json();
-    console.log('Processing new message:', currentMessage);
-    console.log('With conversation history:', messages);
+    const { messages, currentMessage, imageUrl } = await req.json();
+    console.log('Processing request with:', { currentMessage, hasImage: !!imageUrl });
 
     // Convert previous messages to OpenAI format
     const conversationHistory = messages.map((msg: any) => ({
@@ -24,7 +23,25 @@ serve(async (req) => {
       content: msg.content
     }));
 
-    console.log('Sending request to OpenAI with model gpt-4o-mini');
+    const systemMessage = {
+      role: 'system',
+      content: 'You are Daarp, a helpful and engaging AI assistant. You should be friendly, conversational, and direct in your responses. You can handle a wide range of topics including calculations, general knowledge, and personal advice. Always maintain a helpful and positive tone.'
+    };
+
+    const userMessage = imageUrl
+      ? {
+          role: 'user',
+          content: [
+            { type: 'text', text: currentMessage },
+            { type: 'image_url', image_url: imageUrl }
+          ]
+        }
+      : {
+          role: 'user',
+          content: currentMessage
+        };
+
+    console.log('Sending request to OpenAI');
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -32,17 +49,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: 'You are Daarp, a helpful and engaging AI assistant. You should be friendly, conversational, and direct in your responses. You can handle a wide range of topics including calculations, general knowledge, and personal advice. Always maintain a helpful and positive tone. When users repeat questions, acknowledge this and provide a different perspective or ask for clarification. Remember previous context in the conversation to provide more natural responses.'
-          },
+          systemMessage,
           ...conversationHistory,
-          {
-            role: 'user',
-            content: currentMessage
-          }
+          userMessage
         ],
         temperature: 0.7,
         max_tokens: 500,
@@ -56,12 +67,7 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    console.log('OpenAI response received:', aiData);
-
-    if (aiData.error) {
-      console.error('OpenAI error:', aiData.error);
-      throw new Error(aiData.error.message);
-    }
+    console.log('Received response from OpenAI');
 
     return new Response(JSON.stringify({ 
       response: aiData.choices[0].message.content
@@ -70,7 +76,9 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in search-web function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: 'An error occurred while processing your request. Please try again.' 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
