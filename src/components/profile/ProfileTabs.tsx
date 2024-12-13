@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
@@ -10,7 +10,7 @@ import { LikesTab } from "./tabs/LikesTab";
 import { AnalyticsTab } from "./tabs/AnalyticsTab";
 import { FollowersTab } from "./tabs/FollowersTab";
 import { FollowingTab } from "./tabs/FollowingTab";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useSession } from '@supabase/auth-helpers-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -67,6 +67,7 @@ export const ProfileTabs = () => {
 
   return (
     <Tabs 
+      defaultValue="posts"
       value={activeTab} 
       onValueChange={(value) => {
         console.log('Tab changed to:', value);
@@ -84,6 +85,10 @@ export const ProfileTabs = () => {
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
+                onClick={() => {
+                  console.log('TabsTrigger clicked:', tab.value);
+                  setActiveTab(tab.value);
+                }}
                 className={cn(
                   "rounded-none border-b-2 border-transparent",
                   "data-[state=active]:border-accent data-[state=active]:bg-transparent",
@@ -101,12 +106,19 @@ export const ProfileTabs = () => {
       </div>
 
       <div className="mt-4 w-full px-2 md:px-0">
-        <TabsContent 
-          value={activeTab}
-          className="w-full animate-in fade-in-50 data-[state=inactive]:hidden"
-        >
-          {renderTabContent(activeTab)}
-        </TabsContent>
+        {tabs.map((tab) => (
+          <TabsContent 
+            key={tab.value}
+            value={tab.value}
+            className={cn(
+              "w-full",
+              "data-[state=active]:animate-in data-[state=active]:fade-in-0",
+              "data-[state=inactive]:hidden"
+            )}
+          >
+            {renderTabContent(tab.value)}
+          </TabsContent>
+        ))}
       </div>
     </Tabs>
   );
