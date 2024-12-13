@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Maximize } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -12,29 +12,57 @@ interface PostMediaProps {
 export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   const [loadError, setLoadError] = useState<Record<string, boolean>>({});
   const [videoLoaded, setVideoLoaded] = useState<Record<string, boolean>>({});
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   useEffect(() => {
     console.log('Media URLs to display:', mediaUrls);
   }, [mediaUrls]);
+
+  useEffect(() => {
+    const observers: IntersectionObserver[] = [];
+
+    mediaUrls.forEach((url) => {
+      if (isVideoFile(url) && videoRefs.current[url]) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              const video = videoRefs.current[url];
+              if (!video) return;
+
+              if (entry.isIntersecting) {
+                console.log('Video entering viewport:', url);
+                video.play().catch((error) => {
+                  console.error('Error playing video:', error);
+                });
+              } else {
+                console.log('Video leaving viewport:', url);
+                video.pause();
+              }
+            });
+          },
+          {
+            threshold: 0.5, // 50% of the video must be visible
+          }
+        );
+
+        observer.observe(videoRefs.current[url]!);
+        observers.push(observer);
+      }
+    });
+
+    return () => {
+      observers.forEach((observer) => observer.disconnect());
+    };
+  }, [mediaUrls, videoLoaded]);
 
   const handleMediaError = (url: string) => {
     console.error(`Error loading media from URL: ${url}`);
     setLoadError(prev => ({ ...prev, [url]: true }));
   };
 
-  const handleVideoLoad = (url: string, video: HTMLVideoElement) => {
+  const handleVideoLoad = (url: string) => {
     console.log(`Video loaded successfully: ${url}`);
     setVideoLoaded(prev => ({ ...prev, [url]: true }));
-    
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
-      video.poster = canvas.toDataURL('image/jpeg');
-    } catch (error) {
-      console.error('Error creating video thumbnail:', error);
-    }
   };
 
   return (
@@ -71,13 +99,14 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
           {isVideoFile(url) ? (
             <AspectRatio ratio={16 / 9}>
               <video
+                ref={(el) => videoRefs.current[url] = el}
                 src={url}
                 controls
-                autoPlay
-                loop
                 playsInline
+                loop
+                muted
                 onError={() => handleMediaError(url)}
-                onLoadedData={(e) => handleVideoLoad(url, e.target as HTMLVideoElement)}
+                onLoadedData={() => handleVideoLoad(url)}
                 className={`w-full h-full object-contain bg-black rounded-lg ${
                   loadError[url] ? 'opacity-50' : ''
                 }`}
