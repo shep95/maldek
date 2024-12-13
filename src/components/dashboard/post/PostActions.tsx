@@ -69,7 +69,6 @@ export const PostActions = ({
           break;
 
         case 'bookmark':
-          // Toggle bookmark status
           const { error: bookmarkError } = await supabase
             .from('bookmarks')
             .upsert({
