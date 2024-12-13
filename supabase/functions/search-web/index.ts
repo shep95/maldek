@@ -24,7 +24,7 @@ serve(async (req) => {
       content: msg.content
     }));
 
-    console.log('Sending request to OpenAI with model gpt-4o');
+    console.log('Sending request to OpenAI with model gpt-4o-mini');
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -32,7 +32,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
