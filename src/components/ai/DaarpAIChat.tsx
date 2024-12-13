@@ -109,9 +109,17 @@ export const DaarpAIChat = () => {
         imageUrl = await handleImageUpload(image);
       }
 
+      // Explicitly check for image generation requests
       const isImageGenerationRequest = content.toLowerCase().includes('generate an image') || 
                                      content.toLowerCase().includes('create an image') ||
-                                     content.toLowerCase().includes('make an image');
+                                     content.toLowerCase().includes('make an image') ||
+                                     content.toLowerCase().includes('draw');
+
+      console.log('Processing request:', { 
+        content, 
+        hasImage: !!imageUrl, 
+        isImageGenerationRequest 
+      });
 
       const userMessage: Message = {
         id: crypto.randomUUID(),
@@ -129,6 +137,8 @@ export const DaarpAIChat = () => {
         imageUrl: userMessage.imageUrl,
         generateImage: isImageGenerationRequest
       });
+
+      console.log('AI Response received:', response);
 
       const aiMessage: Message = {
         id: crypto.randomUUID(),

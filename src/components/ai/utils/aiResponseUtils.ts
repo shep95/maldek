@@ -1,5 +1,6 @@
 import { Message } from "../types/messageTypes";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ConversationContext {
   messages: Message[];
@@ -51,9 +52,9 @@ export const generateAIResponse = async (context: ConversationContext): Promise<
     }
 
     console.error('No response received from OpenAI');
-    return "I apologize, but I'm having trouble processing your request right now. Could you try asking again?";
+    throw new Error("No response received from AI");
   } catch (error) {
     console.error('Error generating AI response:', error);
-    return "I apologize, but I'm having trouble connecting right now. Please try again in a moment.";
+    throw error;
   }
 };
