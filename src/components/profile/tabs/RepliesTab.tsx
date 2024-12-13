@@ -8,28 +8,6 @@ interface RepliesTabProps {
   userId: string;
 }
 
-interface ReplyWithPost {
-  content: string;
-  created_at: string;
-  id: string;
-  post_id: string;
-  user_id: string;
-  posts: {
-    id: string;
-    content: string;
-    created_at: string;
-    user_id: string;
-    media_urls: string[];
-    likes: number;
-    reposts: number;
-    profiles: {
-      id: string;
-      username: string;
-      avatar_url: string | null;
-    };
-  };
-}
-
 export const RepliesTab = ({ userId }: RepliesTabProps) => {
   const session = useSession();
 
@@ -41,9 +19,9 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
         .from('comments')
         .select(`
           *,
-          posts!inner (
+          posts (
             *,
-            profiles!inner (
+            profiles (
               id,
               username,
               avatar_url
@@ -58,7 +36,7 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
         throw error;
       }
       console.log('Fetched replies:', data);
-      return data as unknown as ReplyWithPost[];
+      return data;
     },
     enabled: !!userId
   });
@@ -89,9 +67,7 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
           <p className="text-muted-foreground mb-2">Replied to:</p>
           <PostCard
             post={{
-              id: reply.posts.id,
-              content: reply.posts.content,
-              user_id: reply.posts.user_id,
+              ...reply.posts,
               author: {
                 id: reply.posts.profiles.id,
                 username: reply.posts.profiles.username,
@@ -99,10 +75,7 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
                 name: reply.posts.profiles.username
               },
               timestamp: new Date(reply.posts.created_at),
-              media_urls: reply.posts.media_urls || [],
-              likes: reply.posts.likes || 0,
               comments: 0,
-              reposts: reply.posts.reposts || 0,
               isLiked: false,
               isBookmarked: false
             }}

@@ -26,7 +26,7 @@ export const MediaTab = ({ userId }: MediaTabProps) => {
           )
         `)
         .eq('user_id', userId)
-        .not('media_urls', 'eq', '{}')
+        .neq('media_urls', '{}')
         .order('created_at', { ascending: false });
 
       if (error) {
