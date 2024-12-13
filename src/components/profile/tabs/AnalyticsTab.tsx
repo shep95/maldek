@@ -23,7 +23,28 @@ export const AnalyticsTab = ({ userId }: AnalyticsTabProps) => {
     queryKey: ['profile-analytics', userId],
     queryFn: async () => {
       console.log('Fetching analytics for user:', userId);
-      const { data: analyticsData, error } = await supabase
+      
+      // First, get all posts by the user
+      const { data: posts, error: postsError } = await supabase
+        .from('posts')
+        .select('id')
+        .eq('user_id', userId);
+
+      if (postsError) {
+        console.error('Error fetching posts:', postsError);
+        throw postsError;
+      }
+
+      if (!posts || posts.length === 0) {
+        console.log('No posts found for user');
+        return [];
+      }
+
+      const postIds = posts.map(post => post.id);
+      console.log('Found post IDs:', postIds);
+
+      // Then get analytics for these posts
+      const { data: analyticsData, error: analyticsError } = await supabase
         .from('post_analytics')
         .select(`
           date,
@@ -32,30 +53,50 @@ export const AnalyticsTab = ({ userId }: AnalyticsTabProps) => {
           comment_count,
           watch_time_seconds
         `)
-        .eq('user_id', userId)
+        .in('post_id', postIds)
         .gte('date', format(subDays(new Date(), 7), 'yyyy-MM-dd'))
         .order('date', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching analytics:', error);
-        throw error;
+      if (analyticsError) {
+        console.error('Error fetching analytics:', analyticsError);
+        throw analyticsError;
       }
 
       console.log('Raw analytics data:', analyticsData);
 
-      // Process data for the chart
-      const processedData = analyticsData.map((day: AnalyticsData) => ({
+      // Group data by date
+      const groupedData = analyticsData.reduce((acc: { [key: string]: AnalyticsData }, curr) => {
+        const date = curr.date;
+        if (!acc[date]) {
+          acc[date] = {
+            date,
+            view_count: 0,
+            like_count: 0,
+            comment_count: 0,
+            watch_time_seconds: 0
+          };
+        }
+        acc[date].view_count += curr.view_count || 0;
+        acc[date].like_count += curr.like_count || 0;
+        acc[date].comment_count += curr.comment_count || 0;
+        acc[date].watch_time_seconds += curr.watch_time_seconds || 0;
+        return acc;
+      }, {});
+
+      // Convert to array and format dates
+      const processedData = Object.values(groupedData).map(day => ({
         date: format(new Date(day.date), 'MMM dd'),
-        views: day.view_count || 0,
-        likes: day.like_count || 0,
-        comments: day.comment_count || 0,
-        watchTime: Math.round((day.watch_time_seconds || 0) / 60) // Convert to minutes
+        views: day.view_count,
+        likes: day.like_count,
+        comments: day.comment_count,
+        watchTime: Math.round(day.watch_time_seconds / 60) // Convert to minutes
       }));
 
       console.log('Processed analytics data:', processedData);
       return processedData;
     },
-    enabled: !!userId
+    enabled: !!userId,
+    refetchInterval: 30000 // Refetch every 30 seconds for live updates
   });
 
   if (isLoading) {
