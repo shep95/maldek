@@ -65,6 +65,8 @@ const Subscription = () => {
         return;
       }
 
+      toast.loading("Creating checkout session...");
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           tier: tier.toLowerCase(),
@@ -74,6 +76,11 @@ const Subscription = () => {
 
       if (error) throw error;
 
+      if (!data?.url) {
+        throw new Error("No checkout URL returned");
+      }
+
+      console.log("Redirecting to checkout:", data.url);
       window.location.href = data.url;
     } catch (error) {
       console.error('Error creating checkout session:', error);
@@ -88,6 +95,8 @@ const Subscription = () => {
         return;
       }
 
+      toast.loading("Loading subscription portal...");
+
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
         body: {
           customerId: subscription.stripe_customer_id,
@@ -96,6 +105,11 @@ const Subscription = () => {
 
       if (error) throw error;
 
+      if (!data?.url) {
+        throw new Error("No portal URL returned");
+      }
+
+      console.log("Redirecting to portal:", data.url);
       window.location.href = data.url;
     } catch (error) {
       console.error('Error creating portal session:', error);
