@@ -51,7 +51,7 @@ export const ProfileTabs = () => {
       className="w-full"
     >
       <div className="border-b border-muted sticky top-0 bg-background z-10">
-        <ScrollArea className="w-full" orientation="horizontal">
+        <ScrollArea className="w-full">
           <TabsList className="w-full justify-start rounded-none bg-transparent h-auto inline-flex min-w-full">
             {tabs.map((tab) => (
               <TabsTrigger
