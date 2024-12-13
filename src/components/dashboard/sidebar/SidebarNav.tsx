@@ -26,19 +26,34 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      try {
+        console.log("Fetching user subscription data...");
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.log("No user found");
+          return null;
+        }
 
-      const { data: subscription } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          tier:subscription_tiers(*)
-        `)
-        .eq('user_id', user.id)
-        .single();
+        const { data: subscription, error } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            tier:subscription_tiers(*)
+          `)
+          .eq('user_id', user.id)
+          .maybeSingle(); // Using maybeSingle() instead of single()
 
-      return subscription;
+        if (error) {
+          console.error("Error fetching subscription:", error);
+          return null;
+        }
+
+        console.log("Subscription data:", subscription);
+        return subscription;
+      } catch (error) {
+        console.error("Error in subscription query:", error);
+        return null;
+      }
     }
   });
 
