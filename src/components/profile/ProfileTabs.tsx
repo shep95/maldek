@@ -39,13 +39,8 @@ export const ProfileTabs = () => {
     tabs.push({ value: "analytics", label: "Analytics" });
   }
 
-  const handleTabChange = (value: string) => {
-    console.log("Tab changed to:", value);
-    setActiveTab(value);
-  };
-
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+    <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="w-full justify-start rounded-none border-b bg-transparent">
         {tabs.map((tab) => (
           <TabsTrigger
