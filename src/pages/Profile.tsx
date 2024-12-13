@@ -57,7 +57,8 @@ const Profile = () => {
                   username: user.user_metadata.username || user.email,
                   bio: '',
                   follower_count: 0,
-                  banner_url: null
+                  banner_url: null,
+                  avatar_url: null
                 }
               ])
               .select()
