@@ -33,11 +33,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4',  // Fixed the model name from 'gpt-4o' to 'gpt-4'
         messages: [
           {
             role: 'system',
-            content: 'You are Daarp, a helpful and engaging AI assistant. You should be friendly, conversational, and direct in your responses. You can handle a wide range of topics including calculations, general knowledge, and personal advice. Always maintain a helpful and positive tone. When users repeat questions, acknowledge this and provide a different perspective or ask for clarification.'
+            content: 'You are Daarp, a helpful and engaging AI assistant. You should be friendly, conversational, and direct in your responses. You can handle a wide range of topics including calculations, general knowledge, and personal advice. Always maintain a helpful and positive tone. When users repeat questions, acknowledge this and provide a different perspective or ask for clarification. Remember previous context in the conversation to provide more natural responses.'
           },
           ...conversationHistory,
           {
@@ -45,13 +45,16 @@ serve(async (req) => {
             content: currentMessage
           }
         ],
+        temperature: 0.7,  // Added temperature for more dynamic responses
+        max_tokens: 500,   // Ensure responses aren't too long
       }),
     });
 
     const aiData = await aiResponse.json();
-    console.log('OpenAI response received');
+    console.log('OpenAI response received:', aiData);
 
     if (aiData.error) {
+      console.error('OpenAI error:', aiData.error);
       throw new Error(aiData.error.message);
     }
 
