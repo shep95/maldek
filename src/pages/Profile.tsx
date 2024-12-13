@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import { useParams } from "react-router-dom";
 
 interface ProfileData {
   username: string;
@@ -20,24 +21,28 @@ const Profile = () => {
   const [editBio, setEditBio] = useState("");
   const { toast } = useToast();
   const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const { userId } = useParams();
 
   const { data: profile, isLoading, error, refetch } = useQuery({
-    queryKey: ['profile'],
+    queryKey: ['profile', userId],
     queryFn: async () => {
       try {
-        console.log("Fetching profile data...");
+        console.log("Fetching profile data for user:", userId);
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (authError || !user) {
+        if (authError) {
           console.error("Auth error:", authError);
           throw new Error('Not authenticated');
         }
 
-        console.log("User authenticated, fetching profile...");
+        // If no userId is provided, use the current user's ID
+        const targetUserId = userId || user.id;
+        console.log("Target user ID:", targetUserId);
+
         const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', targetUserId)
           .single();
 
         if (profileError) {
@@ -46,7 +51,7 @@ const Profile = () => {
         }
 
         console.log("Profile data fetched:", existingProfile);
-        setIsCurrentUser(true);
+        setIsCurrentUser(user.id === targetUserId);
         setEditBio(existingProfile.bio || "");
         return existingProfile as ProfileData;
       } catch (error) {
@@ -57,6 +62,34 @@ const Profile = () => {
     retry: 1,
     refetchOnWindowFocus: false
   });
+
+  // Subscribe to real-time profile updates
+  useEffect(() => {
+    if (!userId) return;
+
+    console.log("Setting up real-time subscription for profile:", userId);
+    const channel = supabase
+      .channel('profile_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${userId}`
+        },
+        (payload) => {
+          console.log("Received profile update:", payload);
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Cleaning up profile subscription");
+      supabase.removeChannel(channel);
+    };
+  }, [userId, refetch]);
 
   const handleUpdateProfile = async () => {
     try {
