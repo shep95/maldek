@@ -2,13 +2,18 @@ import { useState } from "react";
 import { VideoUploadDialog } from "@/components/videos/VideoUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Play, Clock } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useSession } from "@supabase/auth-helpers-react";
 
 const Videos = () => {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const session = useSession();
+  const queryClient = useQueryClient();
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['videos'],
@@ -28,6 +33,23 @@ const Videos = () => {
     }
   });
 
+  const handleDeleteVideo = async (videoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('videos')
+        .delete()
+        .eq('id', videoId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      toast.success('Video deleted successfully');
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      toast.error('Failed to delete video');
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -40,6 +62,19 @@ const Videos = () => {
         isOpen={isUploadingVideo}
         onOpenChange={setIsUploadingVideo}
       />
+
+      <Dialog open={!!selectedVideo} onOpenChange={() => setSelectedVideo(null)}>
+        <DialogContent className="sm:max-w-4xl bg-black p-0 overflow-hidden">
+          {selectedVideo && (
+            <video
+              src={selectedVideo}
+              controls
+              autoPlay
+              className="w-full h-full"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -70,7 +105,10 @@ const Videos = () => {
               key={video.id}
               className="group bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in"
             >
-              <div className="aspect-video relative cursor-pointer">
+              <div 
+                className="aspect-video relative cursor-pointer"
+                onClick={() => setSelectedVideo(video.video_url)}
+              >
                 <img
                   src={video.thumbnail_url}
                   alt={video.title}
@@ -102,6 +140,15 @@ const Videos = () => {
                       {formatDistanceToNow(new Date(video.created_at), { addSuffix: true })}
                     </p>
                   </div>
+                  {session?.user?.id === video.user_id && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteVideo(video.id)}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
