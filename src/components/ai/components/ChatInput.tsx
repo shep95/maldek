@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Image as ImageIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface ChatInputProps {
   onSubmit: (content: string, image: File | null) => void;
