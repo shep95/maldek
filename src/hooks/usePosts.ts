@@ -1,37 +1,46 @@
-import { useState, useEffect } from "react";
-import { Post } from "@/utils/postUtils";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const usePosts = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadPosts = () => {
-      setIsLoading(true);
-      try {
-        const savedPosts = localStorage.getItem("posts");
-        console.log("Loading posts from localStorage:", savedPosts);
-        if (savedPosts) {
-          setPosts(JSON.parse(savedPosts));
-        }
-      } catch (error) {
-        console.error("Error loading posts:", error);
-      } finally {
-        setIsLoading(false);
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ['posts'],
+    queryFn: async () => {
+      console.log('Fetching posts...');
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles (
+            id,
+            username,
+            avatar_url
+          ),
+          post_likes (
+            id
+          ),
+          bookmarks (
+            id
+          ),
+          comments (
+            id
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching posts:', error);
+        toast.error('Failed to load posts');
+        throw error;
       }
-    };
 
-    loadPosts();
-  }, []);
+      console.log('Posts fetched:', data);
+      return data;
+    },
+    refetchInterval: 3000 // Refetch every 3 seconds to get new posts
+  });
 
-  useEffect(() => {
-    try {
-      console.log("Saving posts to localStorage:", posts);
-      localStorage.setItem("posts", JSON.stringify(posts));
-    } catch (error) {
-      console.error("Error saving posts:", error);
-    }
-  }, [posts]);
-
-  return { posts, setPosts, isLoading };
+  return { posts, isLoading };
 };
