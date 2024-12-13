@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
 import { SidebarNav } from "./sidebar/SidebarNav";
+import { toast } from "sonner";
 
 interface NavItem {
   icon: any;
@@ -17,7 +18,7 @@ export const MobileNav = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
-  const SWIPE_THRESHOLD = 50; // Minimum swipe distance to trigger
+  const SWIPE_THRESHOLD = 50;
 
   const handleTouchStart = (e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -29,12 +30,25 @@ export const MobileNav = () => {
     const touchEndX = e.changedTouches[0].clientX;
     const swipeDistance = touchEndX - touchStartX.current;
 
-    // If swipe right and distance is greater than threshold
     if (swipeDistance > SWIPE_THRESHOLD) {
       setIsOpen(true);
     }
 
     touchStartX.current = null;
+  };
+
+  const handleNavigation = (path: string) => {
+    try {
+      console.log('Mobile navigation: Navigating to', path);
+      navigate(path);
+      // Add a small delay to ensure the navigation is smooth
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error("Navigation failed. Please try again.");
+    }
   };
 
   const navItems: NavItem[] = [
@@ -68,13 +82,13 @@ export const MobileNav = () => {
         style={{ pointerEvents: isOpen ? 'none' : 'auto' }}
       />
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0d0d0d] border-t border-muted p-2 md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 bg-[#0d0d0d] border-t border-muted p-2 md:hidden z-50">
         <div className="flex justify-around items-center">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsOpen(true)}
-            className="text-muted-foreground"
+            className="text-muted-foreground active:scale-95 transition-transform"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -84,10 +98,13 @@ export const MobileNav = () => {
               key={item.label}
               variant="ghost"
               size="icon"
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className={cn(
                 "text-muted-foreground",
-                location.pathname === item.path && "text-accent"
+                "active:scale-95 transition-transform",
+                "touch-manipulation select-none",
+                "min-w-[44px] min-h-[44px]", // Larger touch target
+                location.pathname === item.path && "text-accent bg-accent/10"
               )}
             >
               <item.icon className="h-5 w-5" />
