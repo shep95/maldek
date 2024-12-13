@@ -33,7 +33,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',  // Fixed the model name from 'gpt-4o' to 'gpt-4'
+        model: 'gpt-4o',  // Using the correct model as specified in the guidelines
         messages: [
           {
             role: 'system',
@@ -45,8 +45,8 @@ serve(async (req) => {
             content: currentMessage
           }
         ],
-        temperature: 0.7,  // Added temperature for more dynamic responses
-        max_tokens: 500,   // Ensure responses aren't too long
+        temperature: 0.7,
+        max_tokens: 500,
       }),
     });
 
