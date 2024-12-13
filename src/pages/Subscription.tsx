@@ -3,7 +3,8 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, DollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const Subscription = () => {
   const session = useSession();
@@ -67,7 +68,12 @@ const Subscription = () => {
       <div className="grid md:grid-cols-2 gap-8">
         {tiers?.map((tier) => (
           <Card key={tier.id} className="p-6 flex flex-col">
-            <h2 className="text-2xl font-bold mb-4">{tier.name}</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold">{tier.name}</h2>
+              <Badge variant="secondary" className="bg-orange-500/10 text-orange-500">
+                Beta
+              </Badge>
+            </div>
             <p className="text-4xl font-bold mb-6">${tier.price}<span className="text-sm">/month</span></p>
             <ul className="space-y-3 mb-8">
               <li className="flex items-center">
@@ -81,6 +87,12 @@ const Subscription = () => {
               <li className="flex items-center">
                 <Check className="mr-2 h-5 w-5 text-green-500" />
                 Priority support
+              </li>
+              <li className="flex items-center">
+                <DollarSign className="mr-2 h-5 w-5 text-orange-500" />
+                <span>
+                  Payouts (Beta Testing) - {tier.name === 'Creator' ? 'Up to $1,000' : 'Unlimited'} monthly
+                </span>
               </li>
             </ul>
             <Button 
