@@ -68,6 +68,31 @@ export const PostCard = ({
     navigate(`/post/${post.id}`);
   };
 
+  const renderContent = (content: string) => {
+    // Split content by spaces and process each part
+    return content.split(' ').map((word, index) => {
+      if (word.startsWith('@')) {
+        const username = word.slice(1); // Remove @ symbol
+        return (
+          <span key={index}>
+            <Button
+              variant="link"
+              className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${username}`);
+              }}
+            >
+              {word}
+            </Button>
+            {' '}
+          </span>
+        );
+      }
+      return word + ' ';
+    });
+  };
+
   return (
     <Card 
       className="border border-muted bg-card/50 backdrop-blur-sm p-6 cursor-pointer hover:bg-accent/5"
@@ -114,7 +139,7 @@ export const PostCard = ({
             </div>
           </div>
         ) : (
-          <p className="text-foreground whitespace-pre-wrap">{post.content}</p>
+          <p className="text-foreground whitespace-pre-wrap">{renderContent(post.content)}</p>
         )}
 
         {post.media_urls && post.media_urls.length > 0 && (
