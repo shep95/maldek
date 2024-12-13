@@ -39,6 +39,7 @@ const Profile = () => {
         const targetUserId = userId || user.id;
         console.log("Target user ID:", targetUserId);
 
+        // First check if profile exists
         const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -46,6 +47,29 @@ const Profile = () => {
           .single();
 
         if (profileError) {
+          // If profile doesn't exist, create it
+          if (profileError.code === 'PGRST116') {
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .insert([
+                { 
+                  id: targetUserId,
+                  username: user.user_metadata.username || user.email,
+                  bio: '',
+                  follower_count: 0
+                }
+              ])
+              .select()
+              .single();
+
+            if (createError) {
+              console.error("Profile creation error:", createError);
+              throw createError;
+            }
+
+            console.log("Created new profile:", newProfile);
+            return newProfile as ProfileData;
+          }
           console.error("Profile fetch error:", profileError);
           throw profileError;
         }
