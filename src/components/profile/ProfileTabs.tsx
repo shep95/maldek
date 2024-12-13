@@ -81,12 +81,16 @@ export const ProfileTabs = () => {
         </ScrollArea>
       </div>
 
-      <div className="mt-4 overflow-x-hidden w-full">
+      <div className="mt-4 w-full">
         {tabs.map((tab) => (
           <TabsContent 
             key={tab.value}
             value={tab.value} 
-            className="w-full animate-in fade-in-50 data-[state=inactive]:hidden"
+            className={cn(
+              "w-full animate-in fade-in-50",
+              "data-[state=inactive]:hidden",
+              isMobile ? "px-2" : ""
+            )}
           >
             {tab.value === "posts" && <PostsTab userId={targetUserId} />}
             {tab.value === "replies" && <RepliesTab userId={targetUserId} />}
