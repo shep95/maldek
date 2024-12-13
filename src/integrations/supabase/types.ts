@@ -124,6 +124,7 @@ export type Database = {
           id: string
           read_at: string | null
           recipient_id: string
+          removed_by_recipient: boolean | null
           sender_id: string
           status: string
         }
@@ -133,6 +134,7 @@ export type Database = {
           id?: string
           read_at?: string | null
           recipient_id: string
+          removed_by_recipient?: boolean | null
           sender_id: string
           status?: string
         }
@@ -142,6 +144,7 @@ export type Database = {
           id?: string
           read_at?: string | null
           recipient_id?: string
+          removed_by_recipient?: boolean | null
           sender_id?: string
           status?: string
         }

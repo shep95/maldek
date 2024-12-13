@@ -1,8 +1,12 @@
-import { Calendar } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useSession } from '@supabase/auth-helpers-react';
-import { useFollowUser } from "./hooks/useFollowUser";
+import { MessageCircle, Edit2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
+import { FollowButton } from "./FollowButton";
 
 interface ProfileInfoProps {
   username: string;
@@ -27,85 +31,121 @@ export const ProfileInfo = ({
   isEditing,
   editBio,
   onEditBioChange,
-  onSaveChanges
+  onSaveChanges,
 }: ProfileInfoProps) => {
+  const navigate = useNavigate();
   const session = useSession();
-  const { isFollowing, followingCount, handleFollow } = useFollowUser(userId, session?.user?.id);
+  const [isMessageSending, setIsMessageSending] = useState(false);
+
+  const handleMessageClick = async () => {
+    if (!session?.user?.id) {
+      toast.error("Please sign in to send messages");
+      return;
+    }
+
+    if (isMessageSending) return;
+
+    try {
+      setIsMessageSending(true);
+
+      // Get current user's follower count
+      const { data: currentUserData, error: currentUserError } = await supabase
+        .from('profiles')
+        .select('follower_count')
+        .eq('id', session.user.id)
+        .single();
+
+      if (currentUserError) throw currentUserError;
+
+      // Get target user's follower count
+      const { data: targetUserData, error: targetUserError } = await supabase
+        .from('profiles')
+        .select('follower_count')
+        .eq('id', userId)
+        .single();
+
+      if (targetUserError) throw targetUserError;
+
+      // Determine message status based on follower counts
+      const status = currentUserData.follower_count >= targetUserData.follower_count 
+        ? 'accepted' 
+        : 'pending';
+
+      // Create the message
+      const { error: messageError } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: session.user.id,
+          recipient_id: userId,
+          content: `Hey ${username}! 👋`,
+          status
+        });
+
+      if (messageError) throw messageError;
+
+      toast.success(
+        status === 'accepted' 
+          ? "Message sent! Check your messages tab." 
+          : "Message request sent!"
+      );
+      
+      navigate('/messages');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error("Failed to send message");
+    } finally {
+      setIsMessageSending(false);
+    }
+  };
 
   return (
-    <div className="px-6 pt-20 pb-4">
-      <div className="flex items-start justify-between">
-        <div className="animate-fade-in">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              @{username}
-            </h1>
-          </div>
+    <div className="px-4 py-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{username}</h1>
+        <div className="flex gap-2">
+          {!isCurrentUser && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMessageClick}
+                disabled={isMessageSending}
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Message
+              </Button>
+              <FollowButton userId={userId} />
+            </>
+          )}
+          {isCurrentUser && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => !isEditing && onSaveChanges()}
+            >
+              <Edit2 className="h-4 w-4 mr-2" />
+              {isEditing ? "Save Changes" : "Edit Profile"}
+            </Button>
+          )}
         </div>
-        {!isCurrentUser && session?.user?.id && (
-          <Button 
-            variant={isFollowing ? "outline" : "default"}
-            className={`${isFollowing ? 'bg-background hover:bg-background/90' : 'bg-accent hover:bg-accent/90'} transition-all duration-300 animate-fade-in`}
-            onClick={handleFollow}
-          >
-            {isFollowing ? 'Following' : 'Follow'}
-          </Button>
-        )}
-        {isCurrentUser && (
-          <Button 
-            variant="outline" 
-            className="bg-accent text-white hover:bg-accent/90 transition-all duration-300 animate-fade-in"
-          >
-            Get verified
-          </Button>
-        )}
       </div>
 
-      {isEditing ? (
-        <div className="mt-4 animate-fade-in">
+      <div className="space-y-2">
+        {isEditing ? (
           <Textarea
             value={editBio}
             onChange={(e) => onEditBioChange(e.target.value)}
-            placeholder="Tell us about yourself..."
-            className="min-h-[100px] bg-background/50 backdrop-blur border-accent/20 focus:border-accent/50 transition-all duration-300"
+            placeholder="Write something about yourself..."
+            className="min-h-[100px]"
           />
-          <Button 
-            onClick={onSaveChanges}
-            className="mt-2 bg-accent hover:bg-accent/90 transition-all duration-300"
-          >
-            Save Changes
-          </Button>
-        </div>
-      ) : (
-        <p className="mt-4 text-lg text-gray-300 animate-fade-in">{bio || "No bio yet"}</p>
-      )}
-
-      <div className="mt-4 flex flex-wrap gap-4 text-muted-foreground animate-fade-in">
-        <div className="flex items-center group">
-          <Calendar className="mr-1 h-4 w-4 group-hover:text-accent transition-colors duration-300" />
-          <span className="group-hover:text-accent transition-colors duration-300">
-            Joined {new Date(createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </span>
-        </div>
+        ) : (
+          <p className="text-muted-foreground">{bio || "No bio yet"}</p>
+        )}
       </div>
 
-      <div className="mt-4 flex gap-6 animate-fade-in">
-        <button className="group hover:scale-105 transition-transform duration-300">
-          <span className="font-bold text-foreground group-hover:text-accent transition-colors duration-300">
-            {followingCount}
-          </span>{" "}
-          <span className="text-muted-foreground group-hover:text-accent/70 transition-colors duration-300">
-            Following
-          </span>
-        </button>
-        <button className="group hover:scale-105 transition-transform duration-300">
-          <span className="font-bold text-foreground group-hover:text-accent transition-colors duration-300">
-            {followerCount}
-          </span>{" "}
-          <span className="text-muted-foreground group-hover:text-accent/70 transition-colors duration-300">
-            Followers
-          </span>
-        </button>
+      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <span>{followerCount} followers</span>
+        <span>Joined {new Date(createdAt).toLocaleDateString()}</span>
       </div>
     </div>
   );
