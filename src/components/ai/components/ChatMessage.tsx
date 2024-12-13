@@ -12,20 +12,18 @@ interface ChatMessageProps {
 export const ChatMessage = ({ message }: ChatMessageProps) => {
   const handleDownload = async (imageUrl: string) => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `generated-image-${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success("Image downloaded successfully");
+      // Create an anchor element and trigger download directly from the image URL
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `generated-image-${Date.now()}.png`;
+      link.target = '_blank'; // Open in new tab if direct download fails
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Image download started");
     } catch (error) {
       console.error('Error downloading image:', error);
-      toast.error("Failed to download image");
+      toast.error("Failed to download image. Try right-clicking and 'Save Image As'");
     }
   };
 
