@@ -20,9 +20,7 @@ export const ProfileTabs = () => {
 
   const targetUserId = userId || session?.user?.id;
 
-  if (!targetUserId) {
-    return null;
-  }
+  if (!targetUserId) return null;
 
   const tabs = [
     { value: "posts", label: "Posts", component: <PostsTab userId={targetUserId} /> },
@@ -71,7 +69,7 @@ export const ProfileTabs = () => {
         </TabsList>
       </div>
 
-      <div className="mt-4 w-full">
+      <div className="mt-4 w-full px-2 md:px-0">
         {tabs.map((tab) => (
           <TabsContent 
             key={tab.value}
