@@ -89,8 +89,7 @@ export const MobileNav = () => {
       <div 
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="fixed inset-0 md:hidden"
-        style={{ pointerEvents: isOpen ? 'none' : 'auto' }}
+        className="fixed inset-0 md:hidden pointer-events-none"
       />
 
       <nav className="fixed bottom-0 left-0 right-0 bg-[#0d0d0d] border-t border-muted p-2 md:hidden z-50">
