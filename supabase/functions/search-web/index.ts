@@ -14,11 +14,18 @@ serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
-    console.log('Processing query:', query);
+    const { messages, currentMessage } = await req.json();
+    console.log('Processing new message:', currentMessage);
+    console.log('With conversation history:', messages);
+
+    // Convert previous messages to OpenAI format
+    const conversationHistory = messages.map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    }));
 
     // Use OpenAI to generate a response
-    console.log('Sending request to OpenAI');
+    console.log('Sending request to OpenAI with conversation history');
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -30,11 +37,12 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are Daarp, a helpful and engaging AI assistant. You should be friendly, conversational, and direct in your responses. You can handle a wide range of topics including calculations, general knowledge, and personal advice. Always maintain a helpful and positive tone.'
+            content: 'You are Daarp, a helpful and engaging AI assistant. You should be friendly, conversational, and direct in your responses. You can handle a wide range of topics including calculations, general knowledge, and personal advice. Always maintain a helpful and positive tone. When users repeat questions, acknowledge this and provide a different perspective or ask for clarification.'
           },
+          ...conversationHistory,
           {
             role: 'user',
-            content: query
+            content: currentMessage
           }
         ],
       }),

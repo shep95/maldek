@@ -7,7 +7,7 @@ interface ConversationContext {
 }
 
 export const generateAIResponse = async (context: ConversationContext): Promise<string> => {
-  const { currentMessage } = context;
+  const { messages, currentMessage } = context;
   
   // Handle mathematical expressions separately for quick responses
   if (currentMessage.match(/[0-9+\-*/()]/)) {
@@ -23,7 +23,10 @@ export const generateAIResponse = async (context: ConversationContext): Promise<
   try {
     console.log('Sending request to search-web function:', currentMessage);
     const { data, error } = await supabase.functions.invoke('search-web', {
-      body: { query: currentMessage }
+      body: { 
+        messages: messages.slice(-10), // Send last 10 messages for context
+        currentMessage 
+      }
     });
 
     if (error) {
