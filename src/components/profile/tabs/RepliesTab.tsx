@@ -65,24 +65,26 @@ export const RepliesTab = ({ userId }: RepliesTabProps) => {
       {replies.map((reply) => (
         <div key={reply.id} className="p-4 rounded-lg border border-muted">
           <p className="text-muted-foreground mb-2">Replied to:</p>
-          <PostCard
-            post={{
-              ...reply.posts,
-              author: {
-                id: reply.posts.profiles.id,
-                username: reply.posts.profiles.username,
-                avatar_url: reply.posts.profiles.avatar_url,
-                name: reply.posts.profiles.username
-              },
-              timestamp: new Date(reply.posts.created_at),
-              comments: 0,
-              isLiked: false,
-              isBookmarked: false
-            }}
-            currentUserId={session?.user?.id || ''}
-            onPostAction={() => {}}
-            onMediaClick={() => {}}
-          />
+          {reply.posts && (
+            <PostCard
+              post={{
+                ...reply.posts,
+                author: {
+                  id: reply.posts.profiles.id,
+                  username: reply.posts.profiles.username,
+                  avatar_url: reply.posts.profiles.avatar_url,
+                  name: reply.posts.profiles.username
+                },
+                timestamp: new Date(reply.posts.created_at),
+                comments: 0,
+                isLiked: false,
+                isBookmarked: false
+              }}
+              currentUserId={session?.user?.id || ''}
+              onPostAction={() => {}}
+              onMediaClick={() => {}}
+            />
+          )}
           <div className="mt-2 p-4 bg-accent/5 rounded">
             <p>{reply.content}</p>
           </div>
