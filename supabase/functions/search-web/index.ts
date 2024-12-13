@@ -15,7 +15,15 @@ serve(async (req) => {
 
   try {
     const { messages, currentMessage, imageUrl } = await req.json();
-    console.log('Processing request with:', { currentMessage, hasImage: !!imageUrl });
+    console.log('Processing request:', { 
+      message: currentMessage,
+      hasImage: !!imageUrl,
+      historyLength: messages.length 
+    });
+
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
 
     // Convert previous messages to OpenAI format
     const conversationHistory = messages.map((msg: any) => ({
@@ -25,7 +33,13 @@ serve(async (req) => {
 
     const systemMessage = {
       role: 'system',
-      content: 'You are Daarp, a helpful and engaging AI assistant. You should be friendly, conversational, and direct in your responses. You can handle a wide range of topics including calculations, general knowledge, and personal advice. Always maintain a helpful and positive tone.'
+      content: `You are Daarp, a highly capable AI assistant powered by OpenAI. Your responses should be:
+      - Detailed and accurate
+      - Friendly and conversational
+      - Direct and to the point
+      - Helpful with practical solutions
+      You can handle topics like coding, general knowledge, analysis, and creative tasks.
+      When users ask questions, provide thorough, well-thought-out responses.`
     };
 
     const userMessage = imageUrl
@@ -41,7 +55,7 @@ serve(async (req) => {
           content: currentMessage
         };
 
-    console.log('Sending request to OpenAI');
+    console.log('Sending request to OpenAI API');
     const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -52,11 +66,11 @@ serve(async (req) => {
         model: imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
         messages: [
           systemMessage,
-          ...conversationHistory,
+          ...conversationHistory.slice(-5), // Keep last 5 messages for context
           userMessage
         ],
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 1000, // Increased for more detailed responses
       }),
     });
 
@@ -67,7 +81,10 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    console.log('Received response from OpenAI');
+    console.log('Received response from OpenAI:', {
+      status: aiResponse.status,
+      messageLength: aiData.choices[0].message.content.length
+    });
 
     return new Response(JSON.stringify({ 
       response: aiData.choices[0].message.content
@@ -77,7 +94,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in search-web function:', error);
     return new Response(JSON.stringify({ 
-      error: 'An error occurred while processing your request. Please try again.' 
+      error: `Error: ${error.message}. Please try again.`
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
