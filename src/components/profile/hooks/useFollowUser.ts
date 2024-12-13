@@ -11,6 +11,7 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
     const checkFollowStatus = async () => {
       if (!currentUserId || userId === currentUserId) return;
 
+      console.log('Checking follow status:', { currentUserId, userId });
       const { data, error } = await supabase
         .from('followers')
         .select('*')
@@ -51,6 +52,11 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
   const handleFollow = async () => {
     if (!currentUserId) {
       toast.error('Please sign in to follow users');
+      return;
+    }
+
+    if (userId === currentUserId) {
+      toast.error('You cannot follow yourself');
       return;
     }
 
