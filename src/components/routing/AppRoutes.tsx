@@ -8,6 +8,7 @@ import Videos from "@/pages/Videos";
 import Profile from "@/pages/Profile";
 import PostDetail from "@/pages/PostDetail";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import Analytics from "@/pages/Analytics";
 
 export const AppRoutes = () => {
   return (
@@ -34,6 +35,7 @@ export const AppRoutes = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/post/:postId" element={<PostDetail />} />
+        <Route path="/analytics" element={<Analytics />} />
       </Route>
     </Routes>
   );

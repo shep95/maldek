@@ -84,7 +84,12 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       path: "/profile",
       active: location.pathname === "/profile"
     },
-    { icon: TrendingUp, label: "Analytics" },
+    { 
+      icon: TrendingUp, 
+      label: "Analytics",
+      path: "/analytics",
+      active: location.pathname === "/analytics"
+    },
     { 
       icon: DollarSign, 
       label: "Premium", 
