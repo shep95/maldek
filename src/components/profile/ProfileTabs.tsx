@@ -11,6 +11,7 @@ import { FollowersTab } from "./tabs/FollowersTab";
 import { FollowingTab } from "./tabs/FollowingTab";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const ProfileTabs = () => {
   const { userId } = useParams();
@@ -38,31 +39,36 @@ export const ProfileTabs = () => {
     tabs.push({ value: "analytics", label: "Analytics" });
   }
 
+  const handleTabChange = (value: string) => {
+    console.log("Tab change requested:", value);
+    setActiveTab(value);
+  };
+
   return (
     <Tabs 
       value={activeTab}
-      onValueChange={(value) => {
-        console.log("Tab value changed to:", value);
-        setActiveTab(value);
-      }}
+      onValueChange={handleTabChange}
       className="w-full"
     >
-      <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto flex-wrap">
-        {tabs.map((tab) => (
-          <TabsTrigger
-            key={tab.value}
-            value={tab.value}
-            className={cn(
-              "rounded-none border-b-2 border-transparent",
-              "data-[state=active]:border-accent data-[state=active]:bg-transparent",
-              "data-[state=active]:text-accent hover:text-accent",
-              "transition-colors duration-300 capitalize py-2"
-            )}
-          >
-            {tab.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <ScrollArea className="w-full pb-2">
+        <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto flex no-scrollbar overflow-x-auto">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className={cn(
+                "rounded-none border-b-2 border-transparent whitespace-nowrap",
+                "data-[state=active]:border-accent data-[state=active]:bg-transparent",
+                "data-[state=active]:text-accent hover:text-accent",
+                "transition-colors duration-300 capitalize py-2 px-4",
+                "focus:outline-none focus-visible:ring-0"
+              )}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </ScrollArea>
 
       <TabsContent value="posts" className="mt-6">
         <PostsTab userId={targetUserId} />
