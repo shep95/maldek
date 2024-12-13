@@ -81,40 +81,25 @@ export const ProfileTabs = () => {
         </ScrollArea>
       </div>
 
-      <div className="mt-4 overflow-x-hidden">
-        <TabsContent value="posts" className="animate-in fade-in-50">
-          <PostsTab userId={targetUserId} />
-        </TabsContent>
-
-        <TabsContent value="replies" className="animate-in fade-in-50">
-          <RepliesTab userId={targetUserId} />
-        </TabsContent>
-
-        <TabsContent value="media" className="animate-in fade-in-50">
-          <MediaTab userId={targetUserId} />
-        </TabsContent>
-
-        <TabsContent value="videos" className="animate-in fade-in-50">
-          <VideosTab userId={targetUserId} />
-        </TabsContent>
-
-        <TabsContent value="likes" className="animate-in fade-in-50">
-          <LikesTab userId={targetUserId} />
-        </TabsContent>
-
-        <TabsContent value="followers" className="animate-in fade-in-50">
-          <FollowersTab userId={targetUserId} />
-        </TabsContent>
-
-        <TabsContent value="following" className="animate-in fade-in-50">
-          <FollowingTab userId={targetUserId} />
-        </TabsContent>
-
-        {isCurrentUser && (
-          <TabsContent value="analytics" className="animate-in fade-in-50">
-            <AnalyticsTab userId={targetUserId} />
+      <div className="mt-4 overflow-x-hidden w-full">
+        {tabs.map((tab) => (
+          <TabsContent 
+            key={tab.value}
+            value={tab.value} 
+            className="w-full animate-in fade-in-50 data-[state=inactive]:hidden"
+          >
+            {tab.value === "posts" && <PostsTab userId={targetUserId} />}
+            {tab.value === "replies" && <RepliesTab userId={targetUserId} />}
+            {tab.value === "media" && <MediaTab userId={targetUserId} />}
+            {tab.value === "videos" && <VideosTab userId={targetUserId} />}
+            {tab.value === "likes" && <LikesTab userId={targetUserId} />}
+            {tab.value === "followers" && <FollowersTab userId={targetUserId} />}
+            {tab.value === "following" && <FollowingTab userId={targetUserId} />}
+            {tab.value === "analytics" && isCurrentUser && (
+              <AnalyticsTab userId={targetUserId} />
+            )}
           </TabsContent>
-        )}
+        ))}
       </div>
     </Tabs>
   );
