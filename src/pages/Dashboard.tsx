@@ -2,7 +2,7 @@ import { useState } from "react";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
 import { useSession } from '@supabase/auth-helpers-react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -20,11 +20,15 @@ interface PostWithProfile {
     username: string;
     avatar_url: string | null;
   };
+  post_likes: { id: string }[];
+  bookmarks: { id: string }[];
+  comments: { id: string }[];
 }
 
 const Dashboard = () => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const session = useSession();
+  const queryClient = useQueryClient();
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
@@ -38,6 +42,15 @@ const Dashboard = () => {
             id,
             username,
             avatar_url
+          ),
+          post_likes (
+            id
+          ),
+          bookmarks (
+            id
+          ),
+          comments (
+            id
           )
         `)
         .order('created_at', { ascending: false });
@@ -62,6 +75,7 @@ const Dashboard = () => {
           .eq('id', postId);
 
         if (error) throw error;
+        queryClient.invalidateQueries({ queryKey: ['posts'] });
         toast.success('Post deleted successfully');
       }
     } catch (error) {
@@ -115,9 +129,9 @@ const Dashboard = () => {
                       name: post.profiles.username
                     },
                     timestamp: new Date(post.created_at),
-                    comments: 0,
-                    isLiked: false,
-                    isBookmarked: false
+                    comments: post.comments?.length || 0,
+                    isLiked: post.post_likes?.some(like => like.id) || false,
+                    isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false
                   }}
                   currentUserId={session?.user?.id || ''}
                   onPostAction={handlePostAction}
