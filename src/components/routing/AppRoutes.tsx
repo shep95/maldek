@@ -9,6 +9,7 @@ import Profile from "@/pages/Profile";
 import PostDetail from "@/pages/PostDetail";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Analytics from "@/pages/Analytics";
+import Subscription from "@/pages/Subscription";
 
 export const AppRoutes = () => {
   return (
@@ -36,6 +37,7 @@ export const AppRoutes = () => {
         <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/subscription" element={<Subscription />} />
       </Route>
     </Routes>
   );
