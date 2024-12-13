@@ -11,6 +11,7 @@ import { PostHeader } from "@/components/dashboard/post/PostHeader";
 import { PostMedia } from "@/components/dashboard/post/PostMedia";
 import { PostActions } from "@/components/dashboard/post/PostActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createNotification } from "@/components/dashboard/post/utils/notificationUtils";
 
 interface Comment {
   id: string;
@@ -54,7 +55,6 @@ const PostDetail = () => {
         },
         (payload) => {
           console.log('Received comment update:', payload);
-          // Invalidate and refetch comments
           queryClient.invalidateQueries({ queryKey: ['comments', postId] });
         }
       )
@@ -95,7 +95,7 @@ const PostDetail = () => {
     },
   });
 
-  const { data: comments, isLoading: isLoadingComments, refetch: refetchComments } = useQuery({
+  const { data: comments, isLoading: isLoadingComments } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
       console.log('Fetching comments for post:', postId);
@@ -136,10 +136,19 @@ const PostDetail = () => {
 
       if (error) throw error;
 
+      // Create notification for post author
+      if (post?.author?.id && post.author.id !== currentUserId) {
+        await createNotification(
+          post.author.id,
+          currentUserId,
+          postId,
+          'comment'
+        );
+      }
+
       setNewComment("");
       toast.success("Comment added successfully");
       
-      // The real-time subscription will handle the update
     } catch (error) {
       console.error("Error adding comment:", error);
       toast.error("Failed to add comment");

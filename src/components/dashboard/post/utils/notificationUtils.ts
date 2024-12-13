@@ -9,16 +9,20 @@ export const createNotification = async (
 ) => {
   if (recipientId === actorId) return;
 
-  const { error } = await supabase
-    .from('notifications')
-    .insert({
-      recipient_id: recipientId,
-      actor_id: actorId,
-      post_id: postId,
-      type
-    });
+  try {
+    console.log('Creating notification:', { recipientId, actorId, postId, type });
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        recipient_id: recipientId,
+        actor_id: actorId,
+        post_id: postId,
+        type
+      });
 
-  if (error) {
+    if (error) throw error;
+    console.log('Notification created successfully');
+  } catch (error) {
     console.error('Error creating notification:', error);
     toast.error('Failed to create notification');
   }
