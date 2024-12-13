@@ -11,10 +11,19 @@ import { toast } from "sonner";
 import { RightSidebar } from "./RightSidebar";
 import { cn } from "@/lib/utils";
 
+declare global {
+  interface Window {
+    setIsCreatingPost: (value: boolean) => void;
+  }
+}
+
 const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
   const location = useLocation();
+
+  // Make setIsCreatingPost available globally for the mobile nav
+  window.setIsCreatingPost = setIsCreatingPost;
 
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ['profile', session?.user?.id],

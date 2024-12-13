@@ -29,7 +29,16 @@ export const MobileNav = () => {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent side="left" className="w-72 p-0 bg-[#0d0d0d]">
-          <SidebarNav setIsCreatingPost={() => {}} />
+          <SidebarNav 
+            setIsCreatingPost={(value) => {
+              console.log('Mobile SidebarNav setIsCreatingPost called with:', value);
+              setIsOpen(false); // Close the sheet when creating a post
+              // Pass the setIsCreatingPost function from props
+              if (window.setIsCreatingPost) {
+                window.setIsCreatingPost(value);
+              }
+            }} 
+          />
         </SheetContent>
       </Sheet>
 
