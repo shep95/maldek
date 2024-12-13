@@ -11,14 +11,12 @@ import { FollowersTab } from "./FollowersTab";
 import { FollowingTab } from "./FollowingTab";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
 
 export const ProfileTabs = () => {
   const { userId } = useParams();
   const session = useSession();
   const isCurrentUser = session?.user?.id === userId;
   const isMobile = useIsMobile();
-  const [activeTab, setActiveTab] = useState("posts");
 
   const targetUserId = userId || session?.user?.id;
 
@@ -42,17 +40,8 @@ export const ProfileTabs = () => {
     });
   }
 
-  const handleTabChange = (value: string) => {
-    console.log('Tab changed to:', value);
-    setActiveTab(value);
-  };
-
   return (
-    <Tabs 
-      value={activeTab} 
-      onValueChange={handleTabChange}
-      className="w-full"
-    >
+    <Tabs defaultValue="posts" className="w-full">
       <div className="border-b border-muted sticky top-0 bg-background z-10">
         <TabsList className={cn(
           "w-full h-auto rounded-none bg-transparent",
@@ -71,9 +60,9 @@ export const ProfileTabs = () => {
                 "data-[state=active]:text-accent hover:text-accent",
                 "transition-colors duration-300 capitalize",
                 "focus:outline-none focus-visible:ring-0",
-                isMobile ? "py-2 px-3 text-sm" : "py-3 px-6"
+                isMobile ? "py-2 px-3 text-sm" : "py-3 px-6",
+                "touch-manipulation" // Add touch-manipulation for better mobile interaction
               )}
-              onClick={() => handleTabChange(tab.value)}
             >
               {tab.label}
             </TabsTrigger>
