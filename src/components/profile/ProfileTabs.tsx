@@ -50,25 +50,28 @@ export const ProfileTabs = () => {
       onValueChange={handleTabChange}
       className="w-full"
     >
-      <ScrollArea className="w-full pb-2">
-        <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto flex no-scrollbar overflow-x-auto">
-          {tabs.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className={cn(
-                "rounded-none border-b-2 border-transparent whitespace-nowrap",
-                "data-[state=active]:border-accent data-[state=active]:bg-transparent",
-                "data-[state=active]:text-accent hover:text-accent",
-                "transition-colors duration-300 capitalize py-2 px-4",
-                "focus:outline-none focus-visible:ring-0"
-              )}
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </ScrollArea>
+      <div className="border-b border-muted sticky top-0 bg-background z-10">
+        <ScrollArea className="w-full" orientation="horizontal">
+          <TabsList className="w-full justify-start rounded-none bg-transparent h-auto inline-flex min-w-full">
+            {tabs.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className={cn(
+                  "rounded-none border-b-2 border-transparent whitespace-nowrap",
+                  "data-[state=active]:border-accent data-[state=active]:bg-transparent",
+                  "data-[state=active]:text-accent hover:text-accent",
+                  "transition-colors duration-300 capitalize py-3 px-6",
+                  "focus:outline-none focus-visible:ring-0",
+                  "touch-manipulation select-none"
+                )}
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </ScrollArea>
+      </div>
 
       <TabsContent value="posts" className="mt-6">
         <PostsTab userId={targetUserId} />
