@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, TrendingUp, DollarSign, Check, BrainCircuit } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, TrendingUp, DollarSign, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -120,6 +119,15 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       label: "Profile", 
       path: "/profile",
       active: location.pathname === "/profile"
+    },
+    {
+      icon: BrainCircuit,
+      label: "Daarp AI",
+      path: "/daarp-ai",
+      active: location.pathname === "/daarp-ai",
+      premium: true,
+      description: subscription ? "Chat with AI assistant" : "Unlock AI features",
+      className: "text-accent"
     },
     { 
       icon: TrendingUp, 
