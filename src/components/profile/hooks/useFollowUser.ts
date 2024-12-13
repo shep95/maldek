@@ -9,7 +9,8 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
   // Check if current user is following this profile
   useEffect(() => {
     const checkFollowStatus = async () => {
-      if (!currentUserId || userId === currentUserId) return;
+      // Don't proceed if either ID is missing or if user is trying to follow themselves
+      if (!currentUserId || !userId || userId === currentUserId) return;
 
       console.log('Checking follow status:', { currentUserId, userId });
       const { data, error } = await supabase
@@ -19,7 +20,7 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
         .eq('following_id', userId)
         .single();
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') { // PGRST116 is the "no rows returned" error
         console.error('Error checking follow status:', error);
         return;
       }
@@ -33,6 +34,9 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
   // Get following count
   useEffect(() => {
     const getFollowingCount = async () => {
+      // Don't proceed if userId is missing
+      if (!userId) return;
+
       const { count, error } = await supabase
         .from('followers')
         .select('*', { count: 'exact', head: true })
@@ -52,6 +56,11 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
   const handleFollow = async () => {
     if (!currentUserId) {
       toast.error('Please sign in to follow users');
+      return;
+    }
+
+    if (!userId) {
+      toast.error('Invalid user profile');
       return;
     }
 
