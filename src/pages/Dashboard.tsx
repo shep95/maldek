@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Image, Video, Plus } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
+import { Author } from "@/utils/postUtils";
 
 interface PostWithProfile {
   id: string;
@@ -30,9 +32,38 @@ interface PostWithProfile {
 
 const Dashboard = () => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        toast.error('Error loading profile');
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
+
+  const currentUser: Author = {
+    id: session?.user?.id || '',
+    username: profile?.username || '',
+    avatar_url: profile?.avatar_url || '',
+    name: profile?.username || ''
+  };
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
@@ -88,6 +119,12 @@ const Dashboard = () => {
     }
   };
 
+  const handlePostCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ['posts'] });
+    setIsCreatingPost(false);
+    toast.success('Post created successfully!');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <MediaPreviewDialog
@@ -104,7 +141,7 @@ const Dashboard = () => {
               <Button
                 size="icon"
                 className="w-12 h-12 rounded-lg bg-accent hover:bg-accent/90 shadow-lg"
-                onClick={() => toast.info('Create post coming soon')}
+                onClick={() => setIsCreatingPost(true)}
               >
                 <Plus className="h-6 w-6 text-white" />
               </Button>
@@ -179,6 +216,13 @@ const Dashboard = () => {
           )}
         </main>
       </div>
+
+      <CreatePostDialog
+        isOpen={isCreatingPost}
+        onOpenChange={setIsCreatingPost}
+        currentUser={currentUser}
+        onPostCreated={handlePostCreated}
+      />
     </div>
   );
 };
