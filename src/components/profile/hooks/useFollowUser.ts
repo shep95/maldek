@@ -13,19 +13,23 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
       if (!currentUserId || !userId || userId === currentUserId) return;
 
       console.log('Checking follow status:', { currentUserId, userId });
-      const { data, error } = await supabase
-        .from('followers')
-        .select('*')
-        .eq('follower_id', currentUserId)
-        .eq('following_id', userId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('followers')
+          .select('*')
+          .eq('follower_id', currentUserId)
+          .eq('following_id', userId);
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is the "no rows returned" error
+        if (error) {
+          console.error('Error checking follow status:', error);
+          return;
+        }
+
+        // If data exists and has length > 0, user is following
+        setIsFollowing(data && data.length > 0);
+      } catch (error) {
         console.error('Error checking follow status:', error);
-        return;
       }
-
-      setIsFollowing(!!data);
     };
 
     checkFollowStatus();
@@ -37,17 +41,21 @@ export const useFollowUser = (userId: string, currentUserId: string | undefined)
       // Don't proceed if userId is missing
       if (!userId) return;
 
-      const { count, error } = await supabase
-        .from('followers')
-        .select('*', { count: 'exact', head: true })
-        .eq('follower_id', userId);
+      try {
+        const { count, error } = await supabase
+          .from('followers')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', userId);
 
-      if (error) {
+        if (error) {
+          console.error('Error getting following count:', error);
+          return;
+        }
+
+        setFollowingCount(count || 0);
+      } catch (error) {
         console.error('Error getting following count:', error);
-        return;
       }
-
-      setFollowingCount(count || 0);
     };
 
     getFollowingCount();
