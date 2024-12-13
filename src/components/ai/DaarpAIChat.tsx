@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Message } from "./types/messageTypes";
 import { ChatMessage } from "./components/ChatMessage";
 import { generateAIResponse } from "./utils/aiResponseUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const DaarpAIChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,6 +19,7 @@ export const DaarpAIChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const session = useSession();
+  const isMobile = useIsMobile();
 
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', session?.user?.id],
@@ -46,7 +48,7 @@ export const DaarpAIChat = () => {
       const welcomeMessage: Message = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Hello! I'm Daarp, your personal AI assistant. I can help you with calculations, search the web for information, answer questions, and provide creative suggestions. What can I help you with today?",
+        content: "👋 Hi! I'm Daarp, your AI assistant. Ask me anything!",
         timestamp: new Date(),
       };
       setMessages([welcomeMessage]);
@@ -106,7 +108,7 @@ export const DaarpAIChat = () => {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] p-4">
         <Card className="p-6 max-w-md w-full text-center space-y-4 bg-card/50 backdrop-blur-sm">
-          <MessageCircle className="w-12 h-12 mx-auto text-accent" />
+          <MessageCircle className="w-12 h-12 mx-auto text-accent animate-pulse" />
           <h2 className="text-xl font-semibold">Premium Feature</h2>
           <p className="text-muted-foreground">
             Upgrade to our premium plan to access Daarp AI and unlock powerful AI features.
@@ -124,7 +126,10 @@ export const DaarpAIChat = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] max-w-4xl mx-auto p-4">
+    <div className={cn(
+      "flex flex-col h-[calc(100vh-6rem)]",
+      isMobile ? "h-[calc(100vh-8rem)] px-2" : "max-w-4xl mx-auto p-4"
+    )}>
       <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-muted">
         <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
           <div className="space-y-4">
@@ -133,7 +138,7 @@ export const DaarpAIChat = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-muted p-3 rounded-lg">
+                <div className="bg-muted p-3 rounded-lg animate-pulse">
                   <div className="flex space-x-2">
                     <div className="w-2 h-2 bg-accent rounded-full animate-bounce" />
                     <div className="w-2 h-2 bg-accent rounded-full animate-bounce [animation-delay:0.2s]" />
@@ -144,13 +149,13 @@ export const DaarpAIChat = () => {
             )}
           </div>
         </ScrollArea>
-        <div className="p-4 border-t border-muted">
+        <div className="p-2 sm:p-4 border-t border-muted">
           <form onSubmit={handleSubmit} className="flex gap-2">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything... Try some math like '2 + 2' or ask for help!"
-              className="min-h-[2.5rem] max-h-32 bg-background"
+              placeholder="Message Daarp..."
+              className="min-h-[2.5rem] max-h-32 bg-background text-sm sm:text-base"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -159,23 +164,27 @@ export const DaarpAIChat = () => {
               }}
             />
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-              >
-                <Image className="h-5 w-5" />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-              >
-                <Upload className="h-5 w-5" />
-              </Button>
-              <Button type="submit" size="icon" className="shrink-0">
+              {!isMobile && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                  >
+                    <Image className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                  >
+                    <Upload className="h-5 w-5" />
+                  </Button>
+                </>
+              )}
+              <Button type="submit" size="icon" className="shrink-0 bg-accent hover:bg-accent/90">
                 <Send className="h-5 w-5" />
               </Button>
             </div>
