@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RightSidebar } from "./RightSidebar";
+import { cn } from "@/lib/utils";
 
 const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
