@@ -39,12 +39,23 @@ export const MobileNav = () => {
 
   const handleNavigation = (path: string) => {
     try {
+      // Prevent navigation if we're already on the path
+      if (location.pathname === path) {
+        console.log('Already on path:', path);
+        return;
+      }
+
       console.log('Mobile navigation: Navigating to', path);
+      
+      // Close the sheet if it's open
+      setIsOpen(false);
+      
+      // Navigate to the new path
       navigate(path);
-      // Add a small delay to ensure the navigation is smooth
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-      }, 100);
+      
+      // Reset scroll position
+      window.scrollTo(0, 0);
+      
     } catch (error) {
       console.error('Navigation error:', error);
       toast.error("Navigation failed. Please try again.");
