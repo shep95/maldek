@@ -39,10 +39,15 @@ export const ProfileTabs = () => {
     tabs.push({ value: "analytics", label: "Analytics" });
   }
 
+  const handleTabChange = (value: string) => {
+    console.log("Tab changed to:", value);
+    setActiveTab(value);
+  };
+
   return (
     <Tabs 
       value={activeTab} 
-      onValueChange={setActiveTab} 
+      onValueChange={handleTabChange} 
       className="w-full"
     >
       <TabsList className="w-full justify-start rounded-none border-b bg-transparent">
