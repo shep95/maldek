@@ -1,3 +1,5 @@
+import { Message } from "../types/messageTypes";
+
 interface ConversationContext {
   messages: Message[];
   currentMessage: string;
@@ -32,7 +34,11 @@ export const generateAIResponse = (context: ConversationContext): string => {
   );
 
   if (isFollowUp) {
-    const lastAssistantMessage = messages.findLast(m => m.role === 'assistant');
+    // Find the last assistant message using filter and slice instead of findLast
+    const lastAssistantMessage = messages
+      .filter(m => m.role === 'assistant')
+      .slice(-1)[0];
+
     if (lastAssistantMessage && lastAssistantMessage.content.includes('relationship')) {
       return "I remember we were talking about relationships. Based on that, I think what you're asking about now relates to that topic. Could you tell me more about your specific situation?";
     }
