@@ -7,8 +7,10 @@ import { MediaTab } from "./tabs/MediaTab";
 import { VideosTab } from "./tabs/VideosTab";
 import { LikesTab } from "./tabs/LikesTab";
 import { AnalyticsTab } from "./tabs/AnalyticsTab";
+import { FollowersTab } from "./tabs/FollowersTab";
+import { FollowingTab } from "./tabs/FollowingTab";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export const ProfileTabs = () => {
   const { userId } = useParams();
@@ -16,15 +18,11 @@ export const ProfileTabs = () => {
   const [activeTab, setActiveTab] = useState("posts");
   const isCurrentUser = session?.user?.id === userId;
 
-  // If no userId is provided in the URL, use the current user's ID
   const targetUserId = userId || session?.user?.id;
 
   if (!targetUserId) {
     return null;
   }
-
-  console.log("ProfileTabs - Current active tab:", activeTab);
-  console.log("ProfileTabs - Target user ID:", targetUserId);
 
   const tabs = [
     { value: "posts", label: "Posts" },
@@ -32,9 +30,10 @@ export const ProfileTabs = () => {
     { value: "media", label: "Media" },
     { value: "videos", label: "Videos" },
     { value: "likes", label: "Likes" },
+    { value: "followers", label: "Followers" },
+    { value: "following", label: "Following" },
   ];
 
-  // Only show analytics tab for the current user's profile
   if (isCurrentUser) {
     tabs.push({ value: "analytics", label: "Analytics" });
   }
@@ -83,6 +82,14 @@ export const ProfileTabs = () => {
 
       <TabsContent value="likes" className="mt-6">
         <LikesTab userId={targetUserId} />
+      </TabsContent>
+
+      <TabsContent value="followers" className="mt-6">
+        <FollowersTab userId={targetUserId} />
+      </TabsContent>
+
+      <TabsContent value="following" className="mt-6">
+        <FollowingTab userId={targetUserId} />
       </TabsContent>
 
       {isCurrentUser && (

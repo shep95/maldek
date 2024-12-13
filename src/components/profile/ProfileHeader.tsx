@@ -43,7 +43,7 @@ export const ProfileHeader = ({
                 <AvatarImage src={avatarUrl || ''} alt={username} />
                 <AvatarFallback className="bg-accent/10 text-2xl rounded-xl">{username?.[0]}</AvatarFallback>
               </Avatar>
-              {isCurrentUser && (
+              {isCurrentUser && isEditing && (
                 <div className="absolute -bottom-2 -right-2">
                   <ImageUpload
                     userId={userId}
@@ -57,12 +57,14 @@ export const ProfileHeader = ({
           </div>
           {isCurrentUser && (
             <div className="absolute right-4 top-4 flex gap-2 animate-fade-in">
-              <ImageUpload
-                userId={userId}
-                type="banner"
-                currentUrl={bannerUrl}
-                onUploadComplete={(url) => onImageUpdate('banner', url)}
-              />
+              {isEditing && (
+                <ImageUpload
+                  userId={userId}
+                  type="banner"
+                  currentUrl={bannerUrl}
+                  onUploadComplete={(url) => onImageUpdate('banner', url)}
+                />
+              )}
               <Button 
                 variant="outline" 
                 size="sm" 
