@@ -12,6 +12,7 @@ interface ProfileData {
   username: string;
   bio: string | null;
   avatar_url: string | null;
+  banner_url: string | null;
   created_at: string;
   follower_count: number;
 }
@@ -35,7 +36,6 @@ const Profile = () => {
           throw new Error('Not authenticated');
         }
 
-        // If no userId is provided, use the current user's ID
         const targetUserId = userId || user.id;
         console.log("Target user ID:", targetUserId);
 
@@ -153,6 +153,10 @@ const Profile = () => {
     }
   };
 
+  const handleImageUpdate = (type: 'avatar' | 'banner', url: string) => {
+    refetch();
+  };
+
   if (isLoading) {
     return (
       <div className="animate-fade-in py-4">
@@ -175,9 +179,12 @@ const Profile = () => {
         <ProfileHeader
           username={profile.username}
           avatarUrl={profile.avatar_url}
+          bannerUrl={profile.banner_url}
           isCurrentUser={isCurrentUser}
           onEditClick={() => setIsEditing(!isEditing)}
           isEditing={isEditing}
+          userId={userId || ''}
+          onImageUpdate={handleImageUpdate}
         />
         <ProfileInfo
           username={profile.username}
