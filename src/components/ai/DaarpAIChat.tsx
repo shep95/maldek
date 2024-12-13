@@ -149,7 +149,7 @@ export const DaarpAIChat = () => {
   return (
     <div className={cn(
       "flex flex-col h-[calc(100vh-6rem)]",
-      isMobile ? "h-[calc(100vh-8rem)] px-2" : "max-w-4xl mx-auto p-4"
+      isMobile ? "h-[calc(100vh-10rem)] px-2 pb-20" : "max-w-4xl mx-auto p-4"
     )}>
       <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-muted">
         <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
