@@ -6,9 +6,10 @@ import { Post } from "@/utils/postUtils";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil } from "lucide-react";
+import { Pencil, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostCardProps {
   post: Post;
@@ -29,6 +30,9 @@ export const PostCard = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [canEdit, setCanEdit] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
+  const [userLanguage, setUserLanguage] = useState<string>('en');
 
   useEffect(() => {
     const checkEditability = () => {
@@ -39,10 +43,33 @@ export const PostCard = ({
     };
 
     checkEditability();
-    const timer = setInterval(checkEditability, 10000); // Check every 10 seconds
+    const timer = setInterval(checkEditability, 10000);
 
     return () => clearInterval(timer);
   }, [post.timestamp, post.user_id, currentUserId]);
+
+  useEffect(() => {
+    const fetchUserLanguage = async () => {
+      if (!currentUserId) return;
+      
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('preferred_language')
+        .eq('user_id', currentUserId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user language:', error);
+        return;
+      }
+
+      if (data) {
+        setUserLanguage(data.preferred_language);
+      }
+    };
+
+    fetchUserLanguage();
+  }, [currentUserId]);
 
   const handleSaveEdit = () => {
     if (editedContent.trim() === '') {
@@ -55,8 +82,26 @@ export const PostCard = ({
     toast.success("Post updated successfully");
   };
 
+  const handleTranslate = async () => {
+    if (isTranslating || !userLanguage) return;
+    
+    try {
+      setIsTranslating(true);
+      const { data, error } = await supabase.functions.invoke('translate-text', {
+        body: { text: post.content, targetLanguage: userLanguage }
+      });
+
+      if (error) throw error;
+      setTranslatedContent(data.translatedText);
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast.error("Failed to translate post");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handlePostClick = (e: React.MouseEvent) => {
-    // Prevent navigation if clicking on buttons or links
     if (
       (e.target as HTMLElement).tagName === 'BUTTON' ||
       (e.target as HTMLElement).tagName === 'A' ||
@@ -69,10 +114,9 @@ export const PostCard = ({
   };
 
   const renderContent = (content: string) => {
-    // Split content by spaces and process each part
     return content.split(' ').map((word, index) => {
       if (word.startsWith('@')) {
-        const username = word.slice(1); // Remove @ symbol
+        const username = word.slice(1);
         return (
           <span key={index}>
             <Button
@@ -139,7 +183,39 @@ export const PostCard = ({
             </div>
           </div>
         ) : (
-          <p className="text-foreground whitespace-pre-wrap">{renderContent(post.content)}</p>
+          <>
+            <p className="text-foreground whitespace-pre-wrap">
+              {renderContent(translatedContent || post.content)}
+            </p>
+            {!translatedContent && currentUserId && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTranslate();
+                }}
+                disabled={isTranslating}
+                className="mt-2"
+              >
+                <Languages className="h-4 w-4 mr-2" />
+                {isTranslating ? "Translating..." : "Translate"}
+              </Button>
+            )}
+            {translatedContent && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTranslatedContent(null);
+                }}
+                className="mt-2"
+              >
+                Show original
+              </Button>
+            )}
+          </>
         )}
 
         {post.media_urls && post.media_urls.length > 0 && (
