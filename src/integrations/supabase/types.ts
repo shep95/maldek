@@ -418,7 +418,7 @@ export type Database = {
           created_at?: string
           preferred_language?: string
           updated_at?: string
-          user_id?: string
+          user_id: string
         }
         Relationships: [
           {
@@ -528,6 +528,53 @@ export type Database = {
           },
         ]
       }
+      advertisements: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string | null;
+          video_url: string;
+          thumbnail_url: string | null;
+          duration: number;
+          budget: number;
+          status: 'pending' | 'active' | 'completed';
+          created_at: string;
+        }
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          description?: string | null;
+          video_url: string;
+          thumbnail_url?: string | null;
+          duration: number;
+          budget: number;
+          status?: 'pending' | 'active' | 'completed';
+          created_at?: string;
+        }
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          description?: string | null;
+          video_url?: string;
+          thumbnail_url?: string | null;
+          duration?: number;
+          budget?: number;
+          status?: 'pending' | 'active' | 'completed';
+          created_at?: string;
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advertisements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -566,7 +613,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
@@ -578,10 +625,10 @@ export type Tables<
         PublicSchema["Views"])
     ? (PublicSchema["Tables"] &
         PublicSchema["Views"])[PublicTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+      Row: infer R
+    }
+    ? R
+    : never
     : never
 
 export type TablesInsert<
