@@ -12,6 +12,30 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
   const location = useLocation();
   const { profilePath } = useProfileNavigation();
 
+  // Fetch unread notifications count
+  const { data: unreadCount } = useQuery({
+    queryKey: ['unread-notifications-count'],
+    queryFn: async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return 0;
+
+        const { count, error } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('recipient_id', user.id)
+          .eq('read', false);
+
+        if (error) throw error;
+        return count || 0;
+      } catch (error) {
+        console.error('Error fetching notification count:', error);
+        return 0;
+      }
+    },
+    refetchInterval: 30000 // Refetch every 30 seconds
+  });
+
   // Fetch user's subscription status
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription'],
@@ -105,7 +129,8 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       icon: Bell, 
       label: "Notifications", 
       path: "/notifications", 
-      active: location.pathname === "/notifications" 
+      active: location.pathname === "/notifications",
+      badge: unreadCount && unreadCount > 0 ? unreadCount : undefined
     },
     { 
       icon: Video, 
