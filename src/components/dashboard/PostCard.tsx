@@ -82,11 +82,14 @@ export const PostCard = ({
   };
 
   const handlePostClick = (e: React.MouseEvent) => {
+    // Check if the click was on or inside an interactive element
+    const target = e.target as HTMLElement;
     if (
-      (e.target as HTMLElement).tagName === 'BUTTON' ||
-      (e.target as HTMLElement).tagName === 'A' ||
-      (e.target as HTMLElement).closest('button') ||
-      (e.target as HTMLElement).closest('a')
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'A' ||
+      target.closest('button') ||
+      target.closest('a') ||
+      target.getAttribute('data-interactive') === 'true'
     ) {
       return;
     }
