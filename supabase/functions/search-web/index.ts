@@ -30,7 +30,6 @@ serve(async (req) => {
     if (generateImage) {
       console.log('Generating image for prompt:', currentMessage);
       
-      // Call DALL-E API for image generation
       const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: {
@@ -42,6 +41,7 @@ serve(async (req) => {
           prompt: currentMessage,
           n: 1,
           size: "1024x1024",
+          quality: "standard",
         }),
       });
 
@@ -55,12 +55,14 @@ serve(async (req) => {
       console.log('Image generated successfully');
       
       return new Response(JSON.stringify({ 
-        response: "I've generated an image based on your request. Here it is! Let me know if you'd like any adjustments.",
+        response: "Here's your generated image! Let me know if you'd like any adjustments or if you want to try a different prompt.",
         generatedImageUrl: imageData.data[0].url
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const systemMessage = "You are Bosley AI, a helpful and friendly AI assistant. You can help users with various tasks, including generating images and answering questions. When users want to generate images, guide them to use phrases like 'Generate an image of...' or similar phrases.";
 
     const userMessage = imageUrl
       ? {
@@ -82,11 +84,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
+        model: imageUrl ? 'gpt-4-vision-preview' : 'gpt-4',
         messages: [
           {
             role: 'system',
-            content: "You are Bosley AI, a helpful and friendly AI assistant. You can help users with various tasks, including generating images and answering questions. When users want to generate images, they can say 'Generate an image of...' or similar phrases."
+            content: systemMessage
           },
           ...messages.slice(-5).map((msg: any) => ({
             role: msg.role,
