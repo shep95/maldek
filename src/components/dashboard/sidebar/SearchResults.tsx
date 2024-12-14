@@ -33,7 +33,7 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
         <div 
           key={user.id} 
           className="flex items-center gap-3 p-2 hover:bg-accent/10 rounded-md cursor-pointer"
-          onClick={() => navigate(`/profile/${user.id}`)}
+          onClick={() => navigate(`/${user.username}`)}
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatar_url || ''} />
