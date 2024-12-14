@@ -65,8 +65,15 @@ const DashboardLayout = () => {
     toast.success('Post created successfully!');
   };
 
+  // Don't show create post dialog if profile is still loading
   if (isLoadingProfile) {
     return <div>Loading...</div>;
+  }
+
+  // Don't show create post dialog if no profile data
+  if (!profile) {
+    console.error('No profile data available');
+    return <div>Error loading profile</div>;
   }
 
   const showRightSidebar = location.pathname === '/dashboard';
@@ -88,12 +95,14 @@ const DashboardLayout = () => {
         </div>
         {showRightSidebar && <RightSidebar />}
       </div>
-      <CreatePostDialog
-        isOpen={isCreatingPost}
-        onOpenChange={setIsCreatingPost}
-        currentUser={currentUser}
-        onPostCreated={handlePostCreated}
-      />
+      {profile && (
+        <CreatePostDialog
+          isOpen={isCreatingPost}
+          onOpenChange={setIsCreatingPost}
+          currentUser={currentUser}
+          onPostCreated={handlePostCreated}
+        />
+      )}
       <MobileNav />
     </div>
   );
