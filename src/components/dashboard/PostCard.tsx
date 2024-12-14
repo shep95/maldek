@@ -95,9 +95,7 @@ export const PostCard = ({
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const username = post.author.username;
-    console.log("Navigating to user profile:", username);
-    navigate(`/@${username}`);
+    navigate(`/@${post.author.username}`);
   };
 
   return (

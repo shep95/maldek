@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
 
 const Profile = () => {
@@ -12,24 +12,24 @@ const Profile = () => {
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const { username } = useParams();
   
-  // Remove @ from username if present
-  const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
+  // Remove @ from username if present and handle undefined
+  const cleanUsername = username?.replace('@', '') || '';
 
-  const { data: profile, isLoading, error } = useQuery({
+  // Redirect to dashboard if no username
+  if (!cleanUsername) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', cleanUsername],
     queryFn: async () => {
-      if (!cleanUsername) {
-        console.log("No username provided");
-        return null;
-      }
+      console.log("Fetching profile for username:", cleanUsername);
 
-      console.log("Fetching profile for:", cleanUsername);
-
-      // First, get the current user's session
+      // Get current user's session
       const { data: { session } } = await supabase.auth.getSession();
       
-      // Get profile by username using a direct query
-      const { data: profiles, error: profileError } = await supabase
+      // Get profile by username
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('username', cleanUsername)
@@ -37,23 +37,23 @@ const Profile = () => {
 
       if (profileError) {
         console.error("Profile fetch error:", profileError);
-        throw profileError;
+        return null;
       }
 
-      if (!profiles) {
+      if (!profileData) {
         console.log("No profile found for username:", cleanUsername);
         return null;
       }
 
-      console.log("Found profile:", profiles);
+      console.log("Found profile:", profileData);
       
       // Set whether this is the current user's profile
-      setIsCurrentUser(session?.user?.id === profiles.id);
-      setEditBio(profiles.bio || "");
+      setIsCurrentUser(session?.user?.id === profileData.id);
+      setEditBio(profileData.bio || "");
 
-      return profiles;
+      return profileData;
     },
-    retry: false
+    retry: 1
   });
 
   const handleUpdateProfile = async () => {
@@ -99,7 +99,7 @@ const Profile = () => {
     );
   }
 
-  if (error || !profile) {
+  if (!profile) {
     return (
       <div className="animate-fade-in py-4 text-center">
         <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
