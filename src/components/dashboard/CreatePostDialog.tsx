@@ -61,6 +61,8 @@ export const CreatePostDialog = ({
   };
 
   const handleCreatePost = async () => {
+    console.log('Starting post creation with:', { content, mediaFiles, currentUser });
+    
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -70,26 +72,36 @@ export const CreatePostDialog = ({
       setIsSubmitting(true);
       const mediaUrls: string[] = [];
 
-      // Upload media files
-      for (const file of mediaFiles) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `${currentUser.id}/${fileName}`;
+      // Upload media files if any
+      if (mediaFiles.length > 0) {
+        console.log('Uploading media files:', mediaFiles.length);
+        
+        for (const file of mediaFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `${currentUser.id}/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('posts')
-          .upload(filePath, file);
+          console.log('Uploading file:', { fileName, filePath });
 
-        if (uploadError) {
-          throw uploadError;
+          const { error: uploadError } = await supabase.storage
+            .from('posts')
+            .upload(filePath, file);
+
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            throw uploadError;
+          }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('posts')
+            .getPublicUrl(filePath);
+
+          console.log('File uploaded successfully:', publicUrl);
+          mediaUrls.push(publicUrl);
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('posts')
-          .getPublicUrl(filePath);
-
-        mediaUrls.push(publicUrl);
       }
+
+      console.log('Creating post with media URLs:', mediaUrls);
 
       // Create post
       const { data: newPost, error: postError } = await supabase
@@ -103,8 +115,11 @@ export const CreatePostDialog = ({
         .single();
 
       if (postError) {
+        console.error('Post creation error:', postError);
         throw postError;
       }
+
+      console.log('Post created successfully:', newPost);
 
       // Reset form
       setContent("");
@@ -118,7 +133,7 @@ export const CreatePostDialog = ({
       toast.success("Post created successfully!");
 
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('Detailed error in post creation:', error);
       toast.error("Failed to create post. Please try again.");
     } finally {
       setIsSubmitting(false);
