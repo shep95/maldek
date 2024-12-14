@@ -56,7 +56,21 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, on
           .update({ likes: likes + 1 })
           .eq('id', postId);
 
-        await createNotification(authorId, currentUserId, postId, 'like');
+        // Create notification with UUID post_id
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            recipient_id: authorId,
+            actor_id: currentUserId,
+            type: 'like',
+            post_id: postId // Now this will be properly cast to UUID by Supabase
+          });
+
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
+          // Don't throw here to avoid rolling back the like
+          toast.error('Failed to create notification');
+        }
       }
 
       // Invalidate posts query to trigger a refetch
