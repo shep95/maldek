@@ -20,8 +20,8 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
   const session = useSession();
 
   const handleUserClick = (username: string) => {
-    console.log("Navigating to profile:", username);
-    navigate(`/${username}`);
+    console.log("Navigating to user profile:", username);
+    navigate(`/@${username}`);
   };
 
   const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
