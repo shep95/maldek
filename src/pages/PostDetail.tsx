@@ -138,7 +138,6 @@ const PostDetail = () => {
 
       if (error) throw error;
 
-      // Create notification for post author
       if (post?.author?.id && post.author.id !== currentUserId) {
         await createNotification(
           post.author.id,
@@ -155,6 +154,12 @@ const PostDetail = () => {
       console.error("Error adding comment:", error);
       toast.error("Failed to add comment");
     }
+  };
+
+  const handleUsernameClick = (username: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Navigating to profile:', username);
+    navigate(`/${username}`);
   };
 
   if (isLoadingPost || isLoadingComments) {
@@ -193,15 +198,17 @@ const PostDetail = () => {
       </Button>
 
       <Card className="mb-6 p-6">
-        <PostHeader 
-          author={{
-            id: post.author.id,
-            username: post.author.username,
-            avatar_url: post.author.avatar_url,
-            name: post.author.username
-          }} 
-          timestamp={post.timestamp} 
-        />
+        <div onClick={(e) => handleUsernameClick(post.author.username, e)}>
+          <PostHeader 
+            author={{
+              id: post.author.id,
+              username: post.author.username,
+              avatar_url: post.author.avatar_url,
+              name: post.author.username
+            }} 
+            timestamp={post.timestamp} 
+          />
+        </div>
         <p className="mt-4 text-foreground whitespace-pre-wrap">{post.content}</p>
         {post.media_urls && post.media_urls.length > 0 && (
           <PostMedia mediaUrls={post.media_urls} onMediaClick={() => {}} />
