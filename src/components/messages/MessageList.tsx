@@ -33,16 +33,16 @@ export const MessageList = ({ messages }: { messages: Message[] }) => {
       
       const { error } = await supabase
         .from('messages')
-        .delete()
+        .update({ removed_by_recipient: true })
         .eq('id', messageId);
 
       if (error) throw error;
 
       setLocalMessages(prev => prev.filter(msg => msg.id !== messageId));
-      toast.success("Message deleted successfully");
+      toast.success("Message removed successfully");
     } catch (error) {
-      console.error('Error deleting message:', error);
-      toast.error("Failed to delete message");
+      console.error('Error removing message:', error);
+      toast.error("Failed to remove message");
     } finally {
       setDeletingMessageId(null);
     }

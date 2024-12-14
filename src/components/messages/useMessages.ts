@@ -8,6 +8,8 @@ export const useMessages = (currentUserId: string | null) => {
     queryFn: async () => {
       if (!currentUserId) return [];
       
+      console.log('Fetching messages for user:', currentUserId);
+      
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -23,13 +25,16 @@ export const useMessages = (currentUserId: string | null) => {
             follower_count
           )
         `)
-        .eq('recipient_id', currentUserId)
+        .or(`recipient_id.eq.${currentUserId},sender_id.eq.${currentUserId}`)
         .eq('status', 'accepted')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
       
-      // Type assertion to ensure the response matches our Message type
+      console.log('Messages fetched:', data);
       return data as unknown as Message[];
     },
     enabled: !!currentUserId,
@@ -41,6 +46,8 @@ export const useMessageRequests = (currentUserId: string | null) => {
     queryKey: ['message_requests', currentUserId],
     queryFn: async () => {
       if (!currentUserId) return [];
+      
+      console.log('Fetching message requests for user:', currentUserId);
       
       const { data, error } = await supabase
         .from('messages')
@@ -61,9 +68,12 @@ export const useMessageRequests = (currentUserId: string | null) => {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching message requests:', error);
+        throw error;
+      }
       
-      // Type assertion to ensure the response matches our Message type
+      console.log('Message requests fetched:', data);
       return data as unknown as Message[];
     },
     enabled: !!currentUserId,
