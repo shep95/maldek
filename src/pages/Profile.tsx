@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
 
 const Profile = () => {
@@ -11,6 +11,7 @@ const Profile = () => {
   const { toast } = useToast();
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const { username } = useParams();
+  const navigate = useNavigate();
   
   // Remove @ from username if present
   const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
@@ -19,11 +20,10 @@ const Profile = () => {
     queryKey: ['profile', cleanUsername],
     queryFn: async () => {
       console.log("Fetching profile data for username:", cleanUsername);
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
-      if (authError) {
-        console.error("Auth error:", authError);
-        throw new Error('Not authenticated');
+      if (!cleanUsername) {
+        console.error("No username provided");
+        throw new Error('Username is required');
       }
 
       // First get the profile by username
@@ -39,11 +39,20 @@ const Profile = () => {
       }
 
       if (!profileByUsername) {
+        console.error("Profile not found for username:", cleanUsername);
         throw new Error('Profile not found');
       }
 
-      setIsCurrentUser(user?.id === profileByUsername.id);
+      console.log("Found profile:", profileByUsername);
+
+      // Check if this is the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      const isCurrentUserProfile = user?.id === profileByUsername.id;
+      console.log("Is current user's profile:", isCurrentUserProfile);
+      
+      setIsCurrentUser(isCurrentUserProfile);
       setEditBio(profileByUsername.bio || "");
+      
       return profileByUsername;
     },
   });
@@ -95,7 +104,7 @@ const Profile = () => {
   if (error || !profile) {
     return (
       <div className="animate-fade-in py-4">
-        <div className="text-destructive">Error loading profile. Please refresh the page.</div>
+        <div className="text-destructive">Error loading profile. Please try again.</div>
       </div>
     );
   }
