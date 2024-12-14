@@ -12,9 +12,14 @@ export const ChatInput = ({ onSendMessage, isLoading }: ChatInputProps) => {
   const [message, setMessage] = useState("");
 
   const handleSend = async () => {
-    if (!message.trim()) return;
-    await onSendMessage(message);
-    setMessage("");
+    if (!message.trim() || isLoading) return;
+    
+    try {
+      await onSendMessage(message);
+      setMessage("");
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   return (
