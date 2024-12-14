@@ -12,6 +12,7 @@ export const DownloadSection = () => {
   useEffect(() => {
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('App is already installed');
       setIsInstalled(true);
     }
 
@@ -30,6 +31,23 @@ export const DownloadSection = () => {
       setDeferredPrompt(null);
       toast.success("App installed successfully!");
     });
+
+    // Check if the browser supports installation
+    const isInstallSupported = () => {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      
+      if (isIOS && !isSafari) {
+        return false;
+      }
+      
+      return 'serviceWorker' in navigator;
+    };
+
+    if (!isInstallSupported()) {
+      console.log('Installation not supported on this browser/device');
+      setIsInstallable(false);
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', () => {});
