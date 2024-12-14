@@ -108,11 +108,13 @@ export const usePostCreation = (
 
           console.log("File uploaded successfully:", filePath);
 
+          // Get the public URL for the uploaded file
           const { data: { publicUrl } } = supabase.storage
             .from('posts')
             .getPublicUrl(filePath);
 
           mediaUrls.push(publicUrl);
+          console.log("Added public URL:", publicUrl);
         }
       }
 
@@ -131,7 +133,7 @@ export const usePostCreation = (
           media_urls,
           created_at,
           user_id,
-          profiles:user_id (
+          profiles (
             id,
             username,
             avatar_url
@@ -146,7 +148,7 @@ export const usePostCreation = (
 
       console.log("Post created successfully:", post);
       
-      // Cleanup
+      // Clean up
       setPostContent("");
       mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setMediaPreviewUrls([]);
