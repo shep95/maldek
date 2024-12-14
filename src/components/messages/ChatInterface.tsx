@@ -71,6 +71,7 @@ export const ChatInterface = ({
           )
         `)
         .or(`and(sender_id.eq.${session.user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${session.user.id})`)
+        .is('removed_by_recipient', false)
         .order('created_at', { ascending: true });
 
       if (error) throw error;

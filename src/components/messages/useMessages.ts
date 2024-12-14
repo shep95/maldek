@@ -18,6 +18,7 @@ export const useMessages = (currentUserId: string | null) => {
           created_at,
           read_at,
           status,
+          removed_by_recipient,
           sender:sender_id (
             id,
             username,
@@ -27,6 +28,7 @@ export const useMessages = (currentUserId: string | null) => {
         `)
         .or(`recipient_id.eq.${currentUserId},sender_id.eq.${currentUserId}`)
         .eq('status', 'accepted')
+        .is('removed_by_recipient', false)
         .order('created_at', { ascending: false });
 
       if (error) {
