@@ -28,6 +28,8 @@ export const CreatePostDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mentionedUser, setMentionedUser] = useState("");
 
+  console.log('CreatePostDialog rendered with currentUser:', currentUser);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
@@ -63,6 +65,14 @@ export const CreatePostDialog = ({
   const handleCreatePost = async () => {
     console.log('Starting post creation with:', { content, mediaFiles, currentUser });
     
+    // Validate user data
+    if (!currentUser?.id) {
+      console.error('No user ID available:', currentUser);
+      toast.error("User authentication error. Please try logging in again.");
+      return;
+    }
+
+    // Validate content
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -83,14 +93,16 @@ export const CreatePostDialog = ({
 
           console.log('Uploading file:', { fileName, filePath });
 
-          const { error: uploadError } = await supabase.storage
+          const { error: uploadError, data: uploadData } = await supabase.storage
             .from('posts')
             .upload(filePath, file);
 
           if (uploadError) {
             console.error('File upload error:', uploadError);
-            throw uploadError;
+            throw new Error(`Failed to upload file: ${uploadError.message}`);
           }
+
+          console.log('Upload successful:', uploadData);
 
           const { data: { publicUrl } } = supabase.storage
             .from('posts')
@@ -116,7 +128,7 @@ export const CreatePostDialog = ({
 
       if (postError) {
         console.error('Post creation error:', postError);
-        throw postError;
+        throw new Error(`Failed to create post: ${postError.message}`);
       }
 
       console.log('Post created successfully:', newPost);
@@ -134,7 +146,7 @@ export const CreatePostDialog = ({
 
     } catch (error) {
       console.error('Detailed error in post creation:', error);
-      toast.error("Failed to create post. Please try again.");
+      toast.error(error.message || "Failed to create post. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
