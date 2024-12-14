@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Edit2, CheckCircle } from "lucide-react";
+import { MessageCircle, Edit2, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { FollowButton } from "./FollowButton";
 import { MessageDialog } from "./MessageDialog";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck } from "lucide-react";
 
 interface ProfileInfoProps {
   username: string;
@@ -171,3 +170,4 @@ export const ProfileInfo = ({
     </div>
   );
 };
+
