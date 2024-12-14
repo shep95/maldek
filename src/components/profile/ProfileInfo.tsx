@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Edit2 } from "lucide-react";
+import { MessageCircle, Edit2, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { FollowButton } from "./FollowButton";
 import { MessageDialog } from "./MessageDialog";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProfileInfoProps {
   username: string;
@@ -37,6 +38,28 @@ export const ProfileInfo = ({
   const navigate = useNavigate();
   const session = useSession();
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          tier:subscription_tiers(*)
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
+      }
+
+      return data;
+    },
+  });
 
   const renderBioContent = (text: string) => {
     // URL regex pattern
@@ -70,7 +93,15 @@ export const ProfileInfo = ({
   return (
     <div className="px-4 py-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{username}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">{username}</h1>
+          {subscription?.tier?.name === 'Creator' && (
+            <CheckCircle className="h-5 w-5 text-orange-500 fill-orange-500" />
+          )}
+          {subscription?.tier?.name === 'Business' && (
+            <CheckCircle className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+          )}
+        </div>
         <div className="flex gap-2">
           {!isCurrentUser && (
             <>

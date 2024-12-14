@@ -1,5 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Author } from "@/utils/postUtils";
+import { CheckCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostHeaderProps {
   author: Author;
@@ -7,6 +10,30 @@ interface PostHeaderProps {
 }
 
 export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription', author.id],
+    queryFn: async () => {
+      console.log('Fetching subscription for user:', author.id);
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          tier:subscription_tiers(*)
+        `)
+        .eq('user_id', author.id)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
+      }
+
+      console.log('Subscription data:', data);
+      return data;
+    },
+  });
+
   const getTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
@@ -58,10 +85,16 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
       </Avatar>
       <div className="flex-1">
         <div className="flex items-baseline gap-2">
-          <div>
+          <div className="flex items-center gap-1">
             <h3 className="font-semibold">{author.name}</h3>
-            <p className="text-sm text-muted-foreground">@{author.username}</p>
+            {subscription?.tier?.name === 'Creator' && (
+              <CheckCircle className="h-4 w-4 text-orange-500 fill-orange-500" />
+            )}
+            {subscription?.tier?.name === 'Business' && (
+              <CheckCircle className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            )}
           </div>
+          <p className="text-sm text-muted-foreground">@{author.username}</p>
         </div>
       </div>
       <span className="text-sm text-muted-foreground">{timeAgo}</span>
