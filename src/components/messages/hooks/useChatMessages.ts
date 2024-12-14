@@ -39,21 +39,27 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
         .is('removed_by_recipient', false)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
+      
       console.log('Fetched messages:', data);
       setMessages(data || []);
       
       // Mark messages as read
-      const { error: updateError } = await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('recipient_id', currentUserId)
-        .eq('sender_id', recipientId)
-        .is('read_at', null);
+      if (data && data.length > 0) {
+        const { error: updateError } = await supabase
+          .from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .eq('recipient_id', currentUserId)
+          .eq('sender_id', recipientId)
+          .is('read_at', null);
 
-      if (updateError) console.error('Error marking messages as read:', updateError);
+        if (updateError) console.error('Error marking messages as read:', updateError);
+      }
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error in fetchMessages:', error);
       toast.error("Failed to load messages");
     }
   };
@@ -62,6 +68,7 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
     fetchMessages();
     
     if (!isSubscribed && currentUserId) {
+      console.log('Setting up real-time subscription for messages');
       const channel = supabase
         .channel('chat-updates')
         .on(
@@ -82,6 +89,7 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
       setIsSubscribed(true);
       
       return () => {
+        console.log('Cleaning up message subscription');
         supabase.removeChannel(channel);
         setIsSubscribed(false);
       };
@@ -129,8 +137,11 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
 
       console.log('Message sent successfully:', data);
       toast.success("Message sent");
+      
+      // Update local messages state
+      setMessages(prev => [...prev, data]);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error in sendMessage:', error);
       toast.error("Failed to send message");
       throw error;
     } finally {

@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useNavigate } from "react-router-dom";
 import { ChatHeader } from "./ChatHeader";
@@ -17,29 +16,11 @@ export const ChatInterface = ({
   recipientId,
   recipientName,
 }: ChatInterfaceProps) => {
-  const [recipientAvatar, setRecipientAvatar] = useState<string | null>(null);
   const session = useSession();
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   
   const { messages, isLoading, sendMessage } = useChatMessages(session?.user?.id || null, recipientId);
-
-  // Fetch recipient's avatar
-  useEffect(() => {
-    const fetchRecipientProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('avatar_url')
-        .eq('id', recipientId)
-        .single();
-
-      if (!error && data) {
-        setRecipientAvatar(data.avatar_url);
-      }
-    };
-
-    fetchRecipientProfile();
-  }, [recipientId]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -55,7 +36,6 @@ export const ChatInterface = ({
     <div className="flex flex-col h-[calc(100vh-16rem)]">
       <ChatHeader
         recipientName={recipientName}
-        recipientAvatar={recipientAvatar}
         onViewProfile={handleViewProfile}
       />
       <ScrollArea ref={scrollRef} className="flex-1">

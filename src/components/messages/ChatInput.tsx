@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ImagePlus, Send, Smile } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface ChatInputProps {
   onSendMessage: (content: string) => Promise<void>;
@@ -19,6 +20,7 @@ export const ChatInput = ({ onSendMessage, isLoading }: ChatInputProps) => {
       setMessage("");
     } catch (error) {
       console.error('Error sending message:', error);
+      toast.error("Failed to send message");
     }
   };
 
