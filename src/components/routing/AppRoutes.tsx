@@ -16,21 +16,10 @@ import DaarpAI from "@/pages/DaarpAI";
 export const AppRoutes = () => {
   return (
     <Routes>
-      <Route
-        path="/"
-        element={<Navigate to="/dashboard" replace />}
-      />
-      <Route
-        path="/auth"
-        element={<Auth />}
-      />
-      <Route
-        path="/onboarding"
-        element={<Onboarding />}
-      />
-      <Route
-        element={<DashboardLayout />}
-      >
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/onboarding" element={<Onboarding />} />
+      <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />

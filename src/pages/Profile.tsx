@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
 
 const Profile = () => {
@@ -11,57 +11,56 @@ const Profile = () => {
   const { toast } = useToast();
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const { username } = useParams();
-  const navigate = useNavigate();
   
   // Remove @ from username if present
   const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
 
-  const { data: profile, isLoading, error, refetch } = useQuery({
+  const { data: profile, isLoading, error } = useQuery({
     queryKey: ['profile', cleanUsername],
     queryFn: async () => {
-      console.log("Fetching profile data for username:", cleanUsername);
-      
       if (!cleanUsername) {
-        console.error("No username provided");
-        throw new Error('Username is required');
+        console.log("No username provided");
+        return null;
       }
 
-      // First get the profile by username
-      const { data: profileByUsername, error: profileError } = await supabase
+      console.log("Fetching profile for:", cleanUsername);
+
+      // First, get the current user's session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Get profile by username using a direct query
+      const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('username', cleanUsername)
         .single();
 
       if (profileError) {
-        console.error("Profile error:", profileError);
+        console.error("Profile fetch error:", profileError);
         throw profileError;
       }
 
-      if (!profileByUsername) {
-        console.error("Profile not found for username:", cleanUsername);
-        throw new Error('Profile not found');
+      if (!profiles) {
+        console.log("No profile found for username:", cleanUsername);
+        return null;
       }
 
-      console.log("Found profile:", profileByUsername);
+      console.log("Found profile:", profiles);
+      
+      // Set whether this is the current user's profile
+      setIsCurrentUser(session?.user?.id === profiles.id);
+      setEditBio(profiles.bio || "");
 
-      // Check if this is the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      const isCurrentUserProfile = user?.id === profileByUsername.id;
-      console.log("Is current user's profile:", isCurrentUserProfile);
-      
-      setIsCurrentUser(isCurrentUserProfile);
-      setEditBio(profileByUsername.bio || "");
-      
-      return profileByUsername;
+      return profiles;
     },
+    retry: false
   });
 
   const handleUpdateProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!user) {
+      if (!session) {
         toast({
           title: "Error",
           description: "You must be logged in to update your profile",
@@ -73,12 +72,11 @@ const Profile = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ bio: editBio })
-        .eq('id', user.id);
+        .eq('id', session.user.id);
 
       if (error) throw error;
       
       setIsEditing(false);
-      refetch();
       toast({
         title: "Success",
         description: "Profile updated successfully",
@@ -103,8 +101,11 @@ const Profile = () => {
 
   if (error || !profile) {
     return (
-      <div className="animate-fade-in py-4">
-        <div className="text-destructive">Error loading profile. Please try again.</div>
+      <div className="animate-fade-in py-4 text-center">
+        <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
+        <p className="text-muted-foreground">
+          The profile you're looking for doesn't exist or has been removed.
+        </p>
       </div>
     );
   }
@@ -119,7 +120,7 @@ const Profile = () => {
       onEditClick={() => setIsEditing(!isEditing)}
       onEditBioChange={setEditBio}
       onSaveChanges={handleUpdateProfile}
-      onImageUpdate={() => refetch()}
+      onImageUpdate={() => {}}
     />
   );
 };
