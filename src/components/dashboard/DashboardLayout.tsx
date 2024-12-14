@@ -62,6 +62,7 @@ const DashboardLayout = () => {
   const handlePostCreated = (newPost: any) => {
     console.log('New post created:', newPost);
     setIsCreatingPost(false);
+    toast.success('Post created successfully!');
   };
 
   if (isLoadingProfile) {

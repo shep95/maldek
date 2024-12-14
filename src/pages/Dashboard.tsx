@@ -23,6 +23,7 @@ const Dashboard = () => {
         .single();
 
       if (error) {
+        console.error('Error loading profile:', error);
         toast.error('Error loading profile');
         return null;
       }
@@ -39,7 +40,8 @@ const Dashboard = () => {
     name: profile?.username || ''
   };
 
-  const handlePostCreated = () => {
+  const handlePostCreated = (newPost: any) => {
+    console.log('New post created:', newPost);
     setIsCreatingPost(false);
     toast.success('Post created successfully!');
   };
