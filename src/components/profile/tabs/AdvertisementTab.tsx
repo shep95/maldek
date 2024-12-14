@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { VideoUploadDialog } from "@/components/videos/VideoUploadDialog";
+import { CreateAdDialog } from "@/components/advertisements/CreateAdDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, Play, Plus } from "lucide-react";
@@ -12,7 +12,7 @@ interface AdvertisementTabProps {
 }
 
 export const AdvertisementTab = ({ userId }: AdvertisementTabProps) => {
-  const [isUploading, setIsUploading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const { data: advertisements, isLoading } = useQuery({
     queryKey: ['advertisements', userId],
@@ -49,7 +49,7 @@ export const AdvertisementTab = ({ userId }: AdvertisementTabProps) => {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Your Advertisements</h2>
         <Button
-          onClick={() => setIsUploading(true)}
+          onClick={() => setIsCreating(true)}
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -65,7 +65,7 @@ export const AdvertisementTab = ({ userId }: AdvertisementTabProps) => {
             Create your first video advertisement to reach more viewers
           </p>
           <Button
-            onClick={() => setIsUploading(true)}
+            onClick={() => setIsCreating(true)}
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -108,9 +108,9 @@ export const AdvertisementTab = ({ userId }: AdvertisementTabProps) => {
         </div>
       )}
 
-      <VideoUploadDialog
-        isOpen={isUploading}
-        onOpenChange={setIsUploading}
+      <CreateAdDialog
+        isOpen={isCreating}
+        onOpenChange={setIsCreating}
       />
     </div>
   );
