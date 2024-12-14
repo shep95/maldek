@@ -17,7 +17,7 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('Navigating to user profile:', username);
-    navigate(`/${username}`);
+    navigate(`/${username}`, { replace: true });
   };
 
   if (isLoading) {

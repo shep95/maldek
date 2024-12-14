@@ -23,11 +23,12 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
     e.preventDefault();
     e.stopPropagation();
     console.log("Navigating to profile:", username);
-    navigate(`/${username}`);
+    navigate(`/${username}`, { replace: true });
   };
 
-  const handleFollowUser = async (userId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation when clicking follow button
+  const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     try {
       if (!session?.user?.id) {
         toast.error("Please sign in to follow users");
@@ -95,7 +96,7 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
               variant="outline" 
               size="sm"
               className="ml-2 hover:bg-accent hover:text-white"
-              onClick={(e) => handleFollowUser(user.id, e)}
+              onClick={(e) => handleFollowUser(e, user.id)}
             >
               Follow
             </Button>
