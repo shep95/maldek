@@ -25,8 +25,8 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
   };
 
   const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
-    e.preventDefault(); // Prevent any navigation
-    e.stopPropagation(); // Prevent the click from bubbling up
+    e.preventDefault();
+    e.stopPropagation();
     
     try {
       if (!session?.user?.id) {
