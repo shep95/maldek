@@ -5,6 +5,8 @@ import { Bell, Heart, MessageCircle, Share2, Bookmark, Repeat, UserPlus } from "
 import type { Notification } from "@/hooks/useNotifications";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -50,6 +52,34 @@ interface NotificationListProps {
 
 export const NotificationList = ({ notifications }: NotificationListProps) => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const markNotificationsAsRead = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        console.log('Marking notifications as read for user:', user.id);
+        
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('recipient_id', user.id)
+          .eq('read', false);
+
+        if (error) {
+          console.error('Error marking notifications as read:', error);
+        } else {
+          console.log('Successfully marked notifications as read');
+        }
+      } catch (error) {
+        console.error('Error in markNotificationsAsRead:', error);
+      }
+    };
+
+    // Mark notifications as read when component mounts
+    markNotificationsAsRead();
+  }, []);
 
   const handleNotificationClick = (notification: Notification) => {
     console.log('Notification clicked:', notification);
