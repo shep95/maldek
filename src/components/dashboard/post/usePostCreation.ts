@@ -96,7 +96,7 @@ export const usePostCreation = (
 
           console.log("Uploading file:", { fileName, fileType: file.type });
 
-          const { error: uploadError } = await supabase.storage
+          const { data: uploadResult, error: uploadError } = await supabase.storage
             .from('posts')
             .upload(filePath, file);
 
@@ -126,7 +126,11 @@ export const usePostCreation = (
           media_urls: mediaUrls,
         })
         .select(`
-          *,
+          id,
+          content,
+          media_urls,
+          created_at,
+          user_id,
           profiles:user_id (
             id,
             username,
