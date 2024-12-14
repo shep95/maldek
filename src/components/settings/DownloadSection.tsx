@@ -2,23 +2,65 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { AppWindow, Download, Laptop, Smartphone, Tablet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 export const DownloadSection = () => {
   const [isInstalled, setIsInstalled] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
     }
-  }, []);
 
-  const handleInstall = () => {
-    // Use native browser install prompt
-    if ('beforeinstallprompt' in window) {
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        e.prompt();
+    // Listen for the beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Listen for successful installation
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+      toast({
+        title: "Installation Successful",
+        description: "Bosley has been installed on your device!",
+      });
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, [toast]);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) {
+      toast({
+        title: "Installation Not Available",
+        description: "Your browser or device may not support app installation, or Bosley may already be installed.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Show the install prompt
+      const result = await deferredPrompt.prompt();
+      console.log('Install prompt result:', result);
+      
+      // Reset the deferred prompt
+      setDeferredPrompt(null);
+    } catch (error) {
+      console.error('Error installing app:', error);
+      toast({
+        title: "Installation Failed",
+        description: "There was an error installing Bosley. Please try again.",
+        variant: "destructive"
       });
     }
   };
