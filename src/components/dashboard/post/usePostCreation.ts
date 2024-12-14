@@ -79,7 +79,7 @@ export const usePostCreation = (
 
     try {
       setIsSubmitting(true);
-      console.log("Starting post creation with:", { 
+      console.log("Starting post creation:", { 
         contentLength: postContent.length,
         numberOfMediaFiles: mediaFiles.length,
         userId: currentUser.id
@@ -96,7 +96,7 @@ export const usePostCreation = (
 
           console.log("Uploading file:", { fileName, fileType: file.type });
 
-          const { data: uploadResult, error: uploadError } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('posts')
             .upload(filePath, file);
 
@@ -120,6 +120,7 @@ export const usePostCreation = (
 
       console.log("Creating post with media URLs:", mediaUrls);
 
+      // Create the post
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
@@ -128,11 +129,7 @@ export const usePostCreation = (
           media_urls: mediaUrls,
         })
         .select(`
-          id,
-          content,
-          media_urls,
-          created_at,
-          user_id,
+          *,
           profiles (
             id,
             username,
@@ -147,17 +144,18 @@ export const usePostCreation = (
       }
 
       console.log("Post created successfully:", post);
-      
-      // Clean up
+
+      // Clean up state
       setPostContent("");
       mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setMediaPreviewUrls([]);
       setMediaFiles([]);
       
+      // Notify success and close dialog
       onPostCreated(post);
       onOpenChange(false);
-      
       toast.success("Post created successfully!");
+      
     } catch (error) {
       console.error("Error in post creation:", error);
       toast.error("Failed to create post. Please try again.");
