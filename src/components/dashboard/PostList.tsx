@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PostCard } from "./PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePosts } from "@/hooks/usePosts";
@@ -13,6 +13,55 @@ export const PostList = () => {
   const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log('Setting up real-time subscriptions for posts');
+    
+    const channel = supabase
+      .channel('post-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts'
+        },
+        (payload) => {
+          console.log('Post update received:', payload);
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        },
+        () => {
+          console.log('Like update received');
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookmarks'
+        },
+        () => {
+          console.log('Bookmark update received');
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time subscriptions');
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {

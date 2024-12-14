@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { createNotification } from "../utils/notificationUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface BookmarkActionProps {
   postId: string;
@@ -13,6 +14,8 @@ interface BookmarkActionProps {
 }
 
 export const BookmarkAction = ({ postId, authorId, currentUserId, isBookmarked, onAction }: BookmarkActionProps) => {
+  const queryClient = useQueryClient();
+
   const handleBookmark = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -41,6 +44,8 @@ export const BookmarkAction = ({ postId, authorId, currentUserId, isBookmarked, 
         await createNotification(authorId, currentUserId, postId, 'bookmark');
       }
 
+      // Invalidate posts query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
       onAction(postId, 'bookmark');
       toast.success(`Post ${isBookmarked ? 'unbookmarked' : 'bookmarked'} successfully`);
     } catch (error) {

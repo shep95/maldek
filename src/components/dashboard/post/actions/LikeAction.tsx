@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { createNotification } from "../utils/notificationUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface LikeActionProps {
   postId: string;
@@ -14,6 +15,8 @@ interface LikeActionProps {
 }
 
 export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, onAction }: LikeActionProps) => {
+  const queryClient = useQueryClient();
+
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -30,6 +33,13 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, on
           .eq('post_id', postId);
         
         if (unlikeError) throw unlikeError;
+
+        // Update posts count
+        await supabase
+          .from('posts')
+          .update({ likes: likes - 1 })
+          .eq('id', postId);
+
       } else {
         const { error: likeError } = await supabase
           .from('post_likes')
@@ -39,9 +49,18 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, on
           });
         
         if (likeError) throw likeError;
+
+        // Update posts count
+        await supabase
+          .from('posts')
+          .update({ likes: likes + 1 })
+          .eq('id', postId);
+
         await createNotification(authorId, currentUserId, postId, 'like');
       }
 
+      // Invalidate posts query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
       onAction(postId, 'like');
     } catch (error) {
       console.error('Error handling like:', error);

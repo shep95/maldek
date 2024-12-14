@@ -19,10 +19,12 @@ export const usePosts = () => {
             avatar_url
           ),
           post_likes (
-            id
+            id,
+            user_id
           ),
           bookmarks (
-            id
+            id,
+            user_id
           ),
           comments (
             id
@@ -39,7 +41,7 @@ export const usePosts = () => {
       console.log('Posts fetched:', data);
       return data;
     },
-    refetchInterval: 3000 // Refetch every 3 seconds to get new posts
+    refetchInterval: 0 // Disable polling since we're using real-time updates
   });
 
   return { posts, isLoading };
