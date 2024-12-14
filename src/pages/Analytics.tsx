@@ -19,7 +19,7 @@ const Analytics = () => {
         <h1 className="text-2xl font-bold mb-6">Analytics Dashboard</h1>
         
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="mb-4">
+          <TabsList>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="advertisements">Advertisements</TabsTrigger>
           </TabsList>
