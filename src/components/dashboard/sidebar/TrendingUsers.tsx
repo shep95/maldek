@@ -19,16 +19,14 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
   const navigate = useNavigate();
   const session = useSession();
 
-  const handleUserClick = (e: React.MouseEvent, username: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleUserClick = (username: string) => {
     console.log("Navigating to profile:", username);
-    navigate(`/${username}`, { replace: true });
+    // Navigate without replace to allow back navigation
+    navigate(`/${username}`);
   };
 
   const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent the parent click from firing
     try {
       if (!session?.user?.id) {
         toast.error("Please sign in to follow users");
@@ -78,10 +76,10 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
       {users.map((user) => (
         <div 
           key={user.id} 
-          className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors"
-          onClick={(e) => handleUserClick(e, user.username)}
+          className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors cursor-pointer"
+          onClick={() => handleUserClick(user.username)}
         >
-          <div className="flex items-center gap-3 cursor-pointer">
+          <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.avatar_url || ''} />
               <AvatarFallback>{user.username[0]}</AvatarFallback>
