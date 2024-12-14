@@ -19,6 +19,13 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
   const navigate = useNavigate();
   const session = useSession();
 
+  const handleUserClick = (e: React.MouseEvent, username: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Navigating to profile:", username);
+    navigate(`/${username}`);
+  };
+
   const handleFollowUser = async (userId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigation when clicking follow button
     try {
@@ -51,11 +58,6 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
     }
   };
 
-  const handleUserClick = (username: string) => {
-    console.log("Navigating to profile:", username);
-    navigate(`/${username}`);
-  };
-
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-2">
@@ -76,11 +78,9 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
         <div 
           key={user.id} 
           className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors"
+          onClick={(e) => handleUserClick(e, user.username)}
         >
-          <div 
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => handleUserClick(user.username)}
-          >
+          <div className="flex items-center gap-3 cursor-pointer">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.avatar_url || ''} />
               <AvatarFallback>{user.username[0]}</AvatarFallback>
