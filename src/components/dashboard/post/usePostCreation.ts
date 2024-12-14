@@ -21,7 +21,6 @@ export const usePostCreation = (
     console.log("File upload started:", { numberOfFiles: files.length });
     const fileArray = Array.from(files);
     
-    // Validate file types and sizes
     const validFiles = fileArray.filter(file => {
       const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
       const isSizeValid = file.size <= 100 * 1024 * 1024; // 100MB limit
@@ -65,8 +64,10 @@ export const usePostCreation = (
   };
 
   const handleCreatePost = async () => {
+    console.log("Starting post creation with user:", currentUser);
+    
     if (!currentUser?.id) {
-      console.error("No user ID found");
+      console.error("No user ID found in currentUser:", currentUser);
       toast.error("Please sign in to create a post");
       return;
     }
@@ -79,7 +80,7 @@ export const usePostCreation = (
 
     try {
       setIsSubmitting(true);
-      console.log("Starting post creation:", { 
+      console.log("Creating post with data:", { 
         userId: currentUser.id,
         contentLength: postContent.length,
         mediaCount: mediaFiles.length 
@@ -129,10 +130,6 @@ export const usePostCreation = (
       if (postError) {
         console.error("Error creating post:", postError);
         throw postError;
-      }
-
-      if (!newPost) {
-        throw new Error("No post data returned after creation");
       }
 
       console.log("Post created successfully:", newPost);

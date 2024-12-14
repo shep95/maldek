@@ -20,6 +20,15 @@ export const CreatePostDialog = ({
   currentUser,
   onPostCreated
 }: CreatePostDialogProps) => {
+  console.log('CreatePostDialog rendered with props:', { 
+    isOpen, 
+    currentUser: {
+      id: currentUser?.id,
+      username: currentUser?.username,
+      hasAvatar: !!currentUser?.avatar_url
+    }
+  });
+
   const {
     postContent,
     setPostContent,
@@ -34,7 +43,10 @@ export const CreatePostDialog = ({
     handleCreatePost
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
 
-  console.log('CreatePostDialog rendered:', { isOpen, currentUser, mediaFiles });
+  if (!currentUser?.id) {
+    console.error('CreatePostDialog: No user ID provided');
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -69,7 +81,7 @@ export const CreatePostDialog = ({
           <Button 
             onClick={handleCreatePost} 
             className="w-full gap-2"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !currentUser?.id}
           >
             <Send className="h-4 w-4" />
             {isSubmitting ? 'Creating...' : 'Create Post'}
