@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { ChatHeader } from "./ChatHeader";
+import { ChatMessage } from "./ChatMessage";
+import { ChatInput } from "./ChatInput";
 
 interface ChatMessage {
   id: string;
@@ -19,19 +19,21 @@ interface ChatMessage {
   };
 }
 
+interface ChatInterfaceProps {
+  recipientId: string;
+  recipientName: string;
+}
+
 export const ChatInterface = ({
   recipientId,
   recipientName,
-}: {
-  recipientId: string;
-  recipientName: string;
-}) => {
+}: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const session = useSession();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const navigate = useNavigate();
 
   const fetchMessages = async () => {
     if (!session?.user?.id) return;
@@ -108,8 +110,8 @@ export const ChatInterface = ({
     }
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!session?.user?.id || !newMessage.trim()) return;
+  const handleSendMessage = async (content: string) => {
+    if (!session?.user?.id) return;
 
     try {
       setIsLoading(true);
@@ -120,13 +122,11 @@ export const ChatInterface = ({
         .insert({
           sender_id: session.user.id,
           recipient_id: recipientId,
-          content: newMessage.trim(),
+          content: content.trim(),
           status: 'accepted'
         });
 
       if (error) throw error;
-
-      setNewMessage("");
       await fetchMessages();
     } catch (error) {
       console.error('Error sending message:', error);
@@ -136,67 +136,32 @@ export const ChatInterface = ({
     }
   };
 
+  const handleViewProfile = () => {
+    navigate(`/@${recipientName}`);
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-16rem)]">
-      <div className="flex items-center gap-2 mb-4 p-4 border-b">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={messages[0]?.sender?.avatar_url || ''} alt={recipientName} />
-          <AvatarFallback>{recipientName[0]?.toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <span className="font-semibold text-lg">{recipientName}</span>
-      </div>
-      <ScrollArea ref={scrollRef} className="flex-1 pr-4">
-        <div className="space-y-4">
+      <ChatHeader
+        recipientName={recipientName}
+        recipientAvatar={messages[0]?.sender?.avatar_url}
+        onViewProfile={handleViewProfile}
+      />
+      <ScrollArea ref={scrollRef} className="flex-1">
+        <div className="space-y-4 p-4">
           {messages.map((message) => (
-            <div
+            <ChatMessage
               key={message.id}
-              className={`flex gap-2 ${
-                message.sender_id === session?.user?.id ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              {message.sender_id !== session?.user?.id && (
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={message.sender.avatar_url || ''} alt={message.sender.username} />
-                  <AvatarFallback>{message.sender.username[0]}</AvatarFallback>
-                </Avatar>
-              )}
-              <div
-                className={`max-w-[70%] rounded-lg p-3 ${
-                  message.sender_id === session?.user?.id
-                    ? 'bg-accent text-accent-foreground'
-                    : 'bg-muted'
-                }`}
-              >
-                <p className="text-sm">{message.content}</p>
-                <span className="text-xs text-muted-foreground block mt-1">
-                  {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                </span>
-              </div>
-            </div>
+              content={message.content}
+              timestamp={message.created_at}
+              isCurrentUser={message.sender_id === session?.user?.id}
+              senderName={message.sender.username}
+              senderAvatar={message.sender.avatar_url}
+            />
           ))}
         </div>
       </ScrollArea>
-      <div className="flex gap-2 mt-4">
-        <Textarea
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder={`Message ${recipientName}...`}
-          className="min-h-[60px]"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-        />
-        <Button
-          onClick={handleSendMessage}
-          disabled={isLoading || !newMessage.trim()}
-          className="px-8"
-        >
-          Send
-        </Button>
-      </div>
+      <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
     </div>
   );
 };
