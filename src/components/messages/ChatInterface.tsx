@@ -15,7 +15,7 @@ interface ChatMessage {
   sender_id: string;
   sender: {
     username: string;
-    avatar_url: string;
+    avatar_url: string | null;
   };
 }
 
@@ -45,7 +45,7 @@ export const ChatInterface = ({
           content,
           created_at,
           sender_id,
-          sender:sender_id (
+          sender:profiles!messages_sender_id_fkey (
             username,
             avatar_url
           )
@@ -149,7 +149,7 @@ export const ChatInterface = ({
             >
               {message.sender_id !== session?.user?.id && (
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={message.sender.avatar_url} alt={message.sender.username} />
+                  <AvatarImage src={message.sender.avatar_url || ''} alt={message.sender.username} />
                   <AvatarFallback>{message.sender.username[0]}</AvatarFallback>
                 </Avatar>
               )}
