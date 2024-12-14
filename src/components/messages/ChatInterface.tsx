@@ -130,23 +130,47 @@ export const ChatInterface = ({
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to send messages");
+      return;
+    }
 
     try {
       setIsLoading(true);
       console.log('Sending message to:', recipientId);
 
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: session.user.id,
-          recipient_id: recipientId,
-          content: content.trim(),
-          status: 'accepted'
-        });
+      const newMessage = {
+        sender_id: session.user.id,
+        recipient_id: recipientId,
+        content: content.trim(),
+        status: 'accepted'
+      };
 
-      if (error) throw error;
-      await fetchMessages();
+      console.log('New message data:', newMessage);
+
+      const { data, error } = await supabase
+        .from('messages')
+        .insert(newMessage)
+        .select(`
+          id,
+          content,
+          created_at,
+          sender_id,
+          sender:profiles!messages_sender_id_fkey (
+            username,
+            avatar_url
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+
+      console.log('Message sent successfully:', data);
+      // No need to manually update messages array as the subscription will handle it
+      toast.success("Message sent");
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error("Failed to send message");
