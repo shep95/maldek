@@ -89,7 +89,7 @@ export const ProfileInfo = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => !isEditing && onSaveChanges()}
+              onClick={() => isEditing ? onSaveChanges() : onEditClick()}
             >
               <Edit2 className="h-4 w-4 mr-2" />
               {isEditing ? "Save Changes" : "Edit Profile"}
