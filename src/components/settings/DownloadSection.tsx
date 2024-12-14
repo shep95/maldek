@@ -4,20 +4,36 @@ import { AppWindow, Download, Laptop, Smartphone, Tablet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+declare global {
+  interface WindowEventMap {
+    beforeinstallprompt: BeforeInstallPromptEvent;
+  }
+}
+
 export const DownloadSection = () => {
   const [isInstalled, setIsInstalled] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("Checking installation status...");
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log("App is already installed");
       setIsInstalled(true);
     }
 
     // Listen for the beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+      console.log("Received beforeinstallprompt event");
+      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
+      // Store the event for later use
       setDeferredPrompt(e);
     };
 
@@ -25,6 +41,7 @@ export const DownloadSection = () => {
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
+      console.log("App installed successfully");
       setIsInstalled(true);
       setDeferredPrompt(null);
       toast({
@@ -39,10 +56,13 @@ export const DownloadSection = () => {
   }, [toast]);
 
   const handleInstall = async () => {
+    console.log("Install button clicked, deferredPrompt:", deferredPrompt);
+    
     if (!deferredPrompt) {
+      console.log("No installation prompt available");
       toast({
         title: "Installation Not Available",
-        description: "Your browser or device may not support app installation, or Bosley may already be installed.",
+        description: "Please make sure you're using a supported browser (like Chrome) and haven't already installed Bosley.",
         variant: "destructive"
       });
       return;
@@ -50,10 +70,27 @@ export const DownloadSection = () => {
 
     try {
       // Show the install prompt
-      const result = await deferredPrompt.prompt();
-      console.log('Install prompt result:', result);
+      await deferredPrompt.prompt();
       
-      // Reset the deferred prompt
+      // Wait for the user to respond to the prompt
+      const choiceResult = await deferredPrompt.userChoice;
+      console.log("User choice result:", choiceResult.outcome);
+      
+      if (choiceResult.outcome === 'accepted') {
+        console.log("User accepted installation");
+        toast({
+          title: "Installing Bosley",
+          description: "The app is being installed on your device.",
+        });
+      } else {
+        console.log("User declined installation");
+        toast({
+          title: "Installation Cancelled",
+          description: "You can install Bosley anytime by clicking the install button again.",
+        });
+      }
+      
+      // Clear the deferredPrompt
       setDeferredPrompt(null);
     } catch (error) {
       console.error('Error installing app:', error);
