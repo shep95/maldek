@@ -12,11 +12,16 @@ export type Database = {
       advertisements: {
         Row: {
           budget: number
+          click_count: number
+          cost_per_click: number
           created_at: string
+          daily_budget: number
+          daily_spend: number
           description: string | null
           duration: number
           id: string
           status: string
+          target_url: string
           thumbnail_url: string | null
           title: string
           user_id: string
@@ -24,11 +29,16 @@ export type Database = {
         }
         Insert: {
           budget: number
+          click_count?: number
+          cost_per_click?: number
           created_at?: string
+          daily_budget?: number
+          daily_spend?: number
           description?: string | null
           duration: number
           id?: string
           status?: string
+          target_url?: string
           thumbnail_url?: string | null
           title: string
           user_id: string
@@ -36,11 +46,16 @@ export type Database = {
         }
         Update: {
           budget?: number
+          click_count?: number
+          cost_per_click?: number
           created_at?: string
+          daily_budget?: number
+          daily_spend?: number
           description?: string | null
           duration?: number
           id?: string
           status?: string
+          target_url?: string
           thumbnail_url?: string | null
           title?: string
           user_id?: string

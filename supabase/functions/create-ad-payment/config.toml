@@ -1,0 +1,4 @@
+project_id = "yridaehdhtmdtasnbsrn"
+
+[functions.create-ad-payment]
+verify_jwt = true
