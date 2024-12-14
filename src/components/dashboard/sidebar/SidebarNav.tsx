@@ -1,26 +1,16 @@
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, TrendingUp, DollarSign, Check, BrainCircuit } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-
-interface NavItem {
-  icon: any;
-  label: string;
-  path?: string;
-  active?: boolean;
-  onClick?: () => void;
-  className?: string;
-  premium?: boolean;
-  description?: string;
-}
+import { NavItem } from "./components/NavItem";
+import { useProfileNavigation } from "./utils/profileUtils";
 
 export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: boolean) => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { profilePath } = useProfileNavigation();
 
   // Fetch user's subscription status
   const { data: subscription } = useQuery({
@@ -42,7 +32,7 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
           `)
           .eq('user_id', user.id)
           .eq('status', 'active')
-          .maybeSingle(); // Changed from .single() to .maybeSingle()
+          .maybeSingle();
 
         if (error) {
           console.error("Error fetching subscription:", error);
@@ -91,7 +81,14 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
     toast.info(subscription ? 'Viewing your subscription' : 'Explore premium features');
   };
 
-  const navItems: NavItem[] = [
+  const handleNavigation = (path?: string) => {
+    if (path) {
+      console.log('Navigating to:', path);
+      navigate(path);
+    }
+  };
+
+  const navItems = [
     { 
       icon: Home, 
       label: "Home", 
@@ -119,8 +116,8 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
     { 
       icon: User, 
       label: "Profile", 
-      path: "/profile",
-      active: location.pathname === "/profile"
+      path: profilePath,
+      active: location.pathname.startsWith('/profile')
     },
     {
       icon: BrainCircuit,
@@ -147,11 +144,9 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
       ) : (
         "Unlock premium features"
       ),
-      className: cn(
-        "text-accent relative hover:bg-accent/10",
-        subscription?.tier?.name === "Creator" && "text-orange-500",
-        subscription?.tier?.name === "Business" && "text-yellow-500"
-      )
+      className: subscription?.tier?.name === "Creator" ? "text-orange-500" : 
+                 subscription?.tier?.name === "Business" ? "text-yellow-500" : 
+                 "text-accent relative hover:bg-accent/10"
     },
     { 
       icon: Plus, 
@@ -167,53 +162,16 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
     },
   ];
 
-  const handleNavigation = (item: NavItem) => {
-    if (item.onClick) {
-      item.onClick();
-    } else if (item.path) {
-      navigate(item.path);
-    }
-  };
-
   return (
     <ScrollArea className="h-full px-2 py-2">
       <nav className="space-y-2">
         {navItems.map((item) => (
-          <Button
+          <NavItem
             key={item.label}
-            variant="ghost"
-            onClick={() => handleNavigation(item)}
-            className={cn(
-              "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
-              "text-sm font-medium",
-              "min-h-[2.5rem] py-2 px-3",
-              item.active && "bg-accent/10 text-accent",
-              item.premium && "text-accent font-medium",
-              item.className
-            )}
-          >
-            <item.icon className="h-5 w-5 flex-shrink-0" />
-            <div className="flex flex-col items-start text-left min-w-0 flex-1">
-              <span className="flex items-center gap-2 truncate w-full">
-                {item.label}
-                {item.premium && subscription?.tier && (
-                  <Check className={cn(
-                    "h-4 w-4",
-                    subscription.tier.name === "Creator" && "text-orange-500",
-                    subscription.tier.name === "Business" && "text-yellow-500"
-                  )} />
-                )}
-              </span>
-              {item.description && (
-                <span className="text-xs text-muted-foreground truncate w-full">
-                  {item.description}
-                </span>
-              )}
-            </div>
-            {item.premium && !subscription && (
-              <span className="ml-2 text-xs whitespace-nowrap shrink-0">From $8/mo</span>
-            )}
-          </Button>
+            {...item}
+            subscription={subscription}
+            onNavigate={handleNavigation}
+          />
         ))}
       </nav>
     </ScrollArea>
