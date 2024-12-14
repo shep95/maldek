@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,33 +11,36 @@ import { PostMedia } from "@/components/dashboard/post/PostMedia";
 import { PostActions } from "@/components/dashboard/post/PostActions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createNotification } from "@/components/dashboard/post/utils/notificationUtils";
-
-interface Comment {
-  id: string;
-  content: string;
-  created_at: string;
-  user: {
-    username: string;
-    avatar_url: string | null;
-  };
-}
+import { CommentCard } from "@/components/dashboard/post/comments/CommentCard";
 
 const PostDetail = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
   const [newComment, setNewComment] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userLanguage, setUserLanguage] = useState<string>('en');
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const getCurrentUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id || null);
+
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('user_settings')
+          .select('preferred_language')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!error && data) {
+          setUserLanguage(data.preferred_language);
+        }
+      }
     };
     getCurrentUser();
   }, []);
 
-  // Subscribe to real-time comments
   useEffect(() => {
     if (!postId) return;
 
@@ -114,7 +116,7 @@ const PostDetail = () => {
       }
 
       console.log('Comments fetched:', data);
-      return data as Comment[];
+      return data;
     },
   });
 
@@ -241,31 +243,11 @@ const PostDetail = () => {
 
       <div className="space-y-4">
         {comments?.map((comment) => (
-          <Card key={comment.id} className="p-4 transition-all duration-200 hover:bg-accent/5">
-            <div className="flex items-start gap-3">
-              <Avatar 
-                className="h-8 w-8 cursor-pointer" 
-                onClick={() => navigate(`/profile/${comment.user.username}`)}
-              >
-                <AvatarImage src={comment.user.avatar_url || undefined} />
-                <AvatarFallback>{comment.user.username[0].toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2">
-                  <h4 
-                    className="font-semibold cursor-pointer hover:underline" 
-                    onClick={() => navigate(`/profile/${comment.user.username}`)}
-                  >
-                    @{comment.user.username}
-                  </h4>
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(comment.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="mt-1 text-foreground">{comment.content}</p>
-              </div>
-            </div>
-          </Card>
+          <CommentCard 
+            key={comment.id} 
+            comment={comment}
+            userLanguage={userLanguage}
+          />
         ))}
       </div>
     </div>
