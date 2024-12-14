@@ -50,6 +50,8 @@ export type Database = {
       advertisements: {
         Row: {
           budget: number
+          campaign_duration_days: number
+          campaign_start_time: string
           click_count: number
           cost_per_click: number
           created_at: string
@@ -67,6 +69,8 @@ export type Database = {
         }
         Insert: {
           budget: number
+          campaign_duration_days?: number
+          campaign_start_time?: string
           click_count?: number
           cost_per_click?: number
           created_at?: string
@@ -84,6 +88,8 @@ export type Database = {
         }
         Update: {
           budget?: number
+          campaign_duration_days?: number
+          campaign_start_time?: string
           click_count?: number
           cost_per_click?: number
           created_at?: string
