@@ -84,7 +84,10 @@ serve(async (req) => {
       body: JSON.stringify({
         model: imageUrl ? 'gpt-4o' : 'gpt-4o-mini',
         messages: [
-          systemMessage,
+          {
+            role: 'system',
+            content: "You are Bosley AI, a helpful and friendly AI assistant. You can help users with various tasks, including generating images and answering questions. When users want to generate images, they can say 'Generate an image of...' or similar phrases."
+          },
           ...messages.slice(-5).map((msg: any) => ({
             role: msg.role,
             content: msg.content
