@@ -19,7 +19,7 @@ export const PostDetailContent = ({
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Navigating to profile:', post.author.username);
+    console.log("Navigating to profile:", post.author.username);
     navigate(`/${post.author.username}`);
   };
 
