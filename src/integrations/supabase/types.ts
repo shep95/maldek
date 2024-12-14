@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ad_analytics: {
+        Row: {
+          ad_id: string | null
+          clicks: number | null
+          completion_rate: number | null
+          created_at: string | null
+          date: string | null
+          id: string
+          views: number | null
+        }
+        Insert: {
+          ad_id?: string | null
+          clicks?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          views?: number | null
+        }
+        Update: {
+          ad_id?: string | null
+          clicks?: number | null
+          completion_rate?: number | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_analytics_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advertisements: {
         Row: {
           budget: number
@@ -601,6 +639,18 @@ export type Database = {
       }
       delete_user_data: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      increment_ad_click: {
+        Args: {
+          ad_id: string
+        }
+        Returns: undefined
+      }
+      increment_ad_view: {
+        Args: {
+          ad_id: string
+        }
         Returns: undefined
       }
       increment_post_view: {

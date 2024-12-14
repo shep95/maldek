@@ -44,7 +44,11 @@ export const PostContent = ({
   };
 
   const renderContent = (text: string) => {
+    // URL regex pattern
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    
     return text.split(' ').map((word, index) => {
+      // Handle mentions
       if (word.startsWith('@')) {
         const username = word.slice(1);
         return (
@@ -63,6 +67,28 @@ export const PostContent = ({
           </span>
         );
       }
+      
+      // Handle URLs
+      if (urlPattern.test(word)) {
+        return (
+          <span key={index}>
+            <a
+              href={word}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-orange-500 hover:text-orange-600 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {word}
+            </a>
+            {' '}
+          </span>
+        );
+      }
+      
+      // Return regular word
       return word + ' ';
     });
   };
