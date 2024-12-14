@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { FollowButton } from "./FollowButton";
 import { MessageDialog } from "./MessageDialog";
 import { useQuery } from "@tanstack/react-query";
+import { BadgeCheck } from "lucide-react";
 
 interface ProfileInfoProps {
   username: string;
@@ -96,10 +97,20 @@ export const ProfileInfo = ({
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold">{username}</h1>
           {subscription?.tier?.name === 'Creator' && (
-            <CheckCircle className="h-5 w-5 text-orange-500 fill-orange-500" />
+            <div className="group relative">
+              <BadgeCheck className="h-5 w-5 text-orange-500 fill-orange-500" />
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+                Creator
+              </div>
+            </div>
           )}
           {subscription?.tier?.name === 'Business' && (
-            <CheckCircle className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+            <div className="group relative">
+              <BadgeCheck className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+                Business
+              </div>
+            </div>
           )}
         </div>
         <div className="flex gap-2">

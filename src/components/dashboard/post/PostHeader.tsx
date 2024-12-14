@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Author } from "@/utils/postUtils";
-import { CheckCircle } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -88,10 +88,20 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
           <div className="flex items-center gap-1">
             <h3 className="font-semibold">{author.name}</h3>
             {subscription?.tier?.name === 'Creator' && (
-              <CheckCircle className="h-4 w-4 text-orange-500 fill-orange-500" />
+              <div className="group relative">
+                <BadgeCheck className="h-4 w-4 text-orange-500 fill-orange-500" />
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+                  Creator
+                </div>
+              </div>
             )}
             {subscription?.tier?.name === 'Business' && (
-              <CheckCircle className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <div className="group relative">
+                <BadgeCheck className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+                  Business
+                </div>
+              </div>
             )}
           </div>
           <p className="text-sm text-muted-foreground">@{author.username}</p>

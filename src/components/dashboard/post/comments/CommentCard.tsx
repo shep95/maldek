@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Languages, CheckCircle } from "lucide-react";
+import { Languages, BadgeCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -88,10 +88,20 @@ export const CommentCard = ({ comment, userLanguage }: CommentCardProps) => {
                 @{comment.user.username}
               </h4>
               {subscription?.tier?.name === 'Creator' && (
-                <CheckCircle className="h-4 w-4 text-orange-500 fill-orange-500" />
+                <div className="group relative">
+                  <BadgeCheck className="h-4 w-4 text-orange-500 fill-orange-500" />
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+                    Creator
+                  </div>
+                </div>
               )}
               {subscription?.tier?.name === 'Business' && (
-                <CheckCircle className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                <div className="group relative">
+                  <BadgeCheck className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+                    Business
+                  </div>
+                </div>
               )}
             </div>
             <span className="text-sm text-muted-foreground">
