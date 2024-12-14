@@ -1,29 +1,34 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Smartphone, Laptop, Tablet, Menu } from "lucide-react";
+import { Download, Smartphone, Laptop, Tablet, Share2, MoreVertical, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export const DownloadSection = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [isChrome, setIsChrome] = useState(false);
+  const [deviceType, setDeviceType] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [browser, setBrowser] = useState<'chrome' | 'safari' | 'other'>('other');
 
   useEffect(() => {
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('App is already installed');
       setIsInstalled(true);
       return;
     }
 
-    // Check if using Chrome
-    const isChromeBrowser = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-    setIsChrome(isChromeBrowser);
+    // Detect browser
+    const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+    setBrowser(isChrome ? 'chrome' : isSafari ? 'safari' : 'other');
+
+    // Detect device type
+    const isTablet = /iPad|Android(?!.*Mobile)|Tablet/.test(navigator.userAgent);
+    const isMobile = /iPhone|Android.*Mobile|Mobile/.test(navigator.userAgent);
+    setDeviceType(isTablet ? 'tablet' : isMobile ? 'mobile' : 'desktop');
 
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
@@ -31,7 +36,6 @@ export const DownloadSection = () => {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', () => {
-      console.log('App installed successfully');
       setIsInstalled(true);
       setDeferredPrompt(null);
       toast.success("App installed successfully!");
@@ -44,31 +48,52 @@ export const DownloadSection = () => {
   }, []);
 
   const handleInstall = async () => {
-    console.log('Install button clicked', { deferredPrompt, isInstallable });
-    
-    if (!deferredPrompt) {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isAndroid = /Android/.test(navigator.userAgent);
-      
-      if (isIOS) {
-        toast.info("To install on iOS: Tap the share button (📤) at the bottom of your screen and select 'Add to Home Screen'");
-      } else if (isAndroid && !isChrome) {
-        toast.info("Please use Chrome browser for the best installation experience");
-      } else if (isChrome) {
-        toast.info("Click the menu (⋮) in Chrome and select 'Install Bosley'");
-      } else {
-        toast.info("Use your browser's menu to install the app. Look for 'Install' or 'Add to Home Screen' option");
+    if (deferredPrompt) {
+      try {
+        await deferredPrompt.prompt();
+        const result = await deferredPrompt.userChoice;
+        if (result.outcome === 'accepted') {
+          toast.success("Installation started!");
+        }
+      } catch (error) {
+        showInstallInstructions();
       }
-      return;
+    } else {
+      showInstallInstructions();
     }
+  };
 
-    try {
-      const promptResult = await deferredPrompt.prompt();
-      console.log('Install prompt result:', promptResult);
-      setDeferredPrompt(null);
-    } catch (error) {
-      console.error('Error installing app:', error);
-      toast.error("Installation failed. Please try using your browser's menu to install.");
+  const showInstallInstructions = () => {
+    if (deviceType === 'desktop') {
+      if (browser === 'chrome') {
+        toast.info(
+          <div className="space-y-2">
+            <p>To install on Chrome/Edge:</p>
+            <p>1. Look for the install icon <Plus className="inline h-4 w-4" /> in the address bar</p>
+            <p>2. Or click the menu <MoreVertical className="inline h-4 w-4" /> and select "Install Bosley"</p>
+          </div>
+        );
+      } else {
+        toast.info("Please use Chrome or Edge browser for the best installation experience");
+      }
+    } else if (deviceType === 'tablet') {
+      if (browser === 'safari') {
+        toast.info(
+          <div className="space-y-2">
+            <p>To install on iPad:</p>
+            <p>1. Tap the share button <Share2 className="inline h-4 w-4" /></p>
+            <p>2. Select "Add to Home Screen"</p>
+          </div>
+        );
+      } else if (browser === 'chrome') {
+        toast.info(
+          <div className="space-y-2">
+            <p>To install on Android tablet:</p>
+            <p>1. Tap the menu <MoreVertical className="inline h-4 w-4" /></p>
+            <p>2. Select "Install app" or "Add to Home Screen"</p>
+          </div>
+        );
+      }
     }
   };
 
@@ -110,20 +135,17 @@ export const DownloadSection = () => {
             </Button>
 
             <div className="text-sm text-muted-foreground space-y-2">
-              <p>
-                {isChrome ? (
-                  <>
-                    <Menu className="inline-block w-4 h-4 mr-1 mb-1" />
-                    Click the menu button in Chrome and select "Install Bosley"
-                  </>
-                ) : /iPad|iPhone|iPod/.test(navigator.userAgent) ? (
-                  "Tap the share button (📤) and select 'Add to Home Screen'"
+              <p className="flex items-center gap-2">
+                {deviceType === 'desktop' ? (
+                  <>Look for the install icon <Plus className="h-4 w-4" /> in your browser's address bar</>
+                ) : browser === 'safari' ? (
+                  <>Tap the share button <Share2 className="h-4 w-4" /> and select "Add to Home Screen"</>
                 ) : (
-                  "Use your browser's menu to install Bosley. Look for 'Install' or 'Add to Home Screen'"
+                  <>Tap the menu <MoreVertical className="h-4 w-4" /> and select "Install app"</>
                 )}
               </p>
               <p className="text-xs">
-                For the best experience, we recommend using Chrome on desktop or Android devices.
+                For the best experience, we recommend using Chrome on desktop or tablet devices.
               </p>
             </div>
           </>
