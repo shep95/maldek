@@ -14,9 +14,12 @@ export const DownloadSection = () => {
   }, []);
 
   const handleInstall = () => {
-    // Trigger Progressier install prompt
-    if (window.progressier) {
-      window.progressier.install();
+    // Use native browser install prompt
+    if ('beforeinstallprompt' in window) {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        e.prompt();
+      });
     }
   };
 
