@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Author } from "@/utils/postUtils";
-import { BadgeCheck } from "lucide-react";
+import { Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,40 +38,15 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
     
-    // Less than a minute
-    if (diffInSeconds < 60) {
-      return `${diffInSeconds}s`;
-    }
-    
-    // Less than an hour
+    if (diffInSeconds < 60) return `${diffInSeconds}s`;
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}M`;
-    }
-    
-    // Less than a day
+    if (diffInMinutes < 60) return `${diffInMinutes}M`;
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-      return `${diffInHours}h`;
-    }
-    
-    // Less than a week
+    if (diffInHours < 24) return `${diffInHours}h`;
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) {
-      return `${diffInDays}d`;
-    }
-    
-    // Less than a month
-    if (diffInDays < 30) {
-      return `${Math.floor(diffInDays / 7)}w`;
-    }
-    
-    // Less than a year
-    if (diffInDays < 365) {
-      return `${Math.floor(diffInDays / 30)}mo`;
-    }
-    
-    // More than a year
+    if (diffInDays < 7) return `${diffInDays}d`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w`;
+    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)}mo`;
     return `${Math.floor(diffInDays / 365)}y`;
   };
 
@@ -89,7 +64,9 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
             <h3 className="font-semibold">{author.name}</h3>
             {subscription?.tier?.name === 'Creator' && (
               <div className="group relative">
-                <BadgeCheck className="h-4 w-4 text-orange-500 fill-orange-500" />
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(249,115,22,0.5)]">
+                  <Check className="h-3 w-3 text-orange-500" />
+                </div>
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                   Creator
                 </div>
@@ -97,7 +74,9 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
             )}
             {subscription?.tier?.name === 'Business' && (
               <div className="group relative">
-                <BadgeCheck className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]">
+                  <Check className="h-3 w-3 text-yellow-500" />
+                </div>
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                   Business
                 </div>

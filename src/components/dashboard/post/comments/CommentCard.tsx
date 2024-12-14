@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Languages, BadgeCheck } from "lucide-react";
+import { Languages, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -89,7 +89,9 @@ export const CommentCard = ({ comment, userLanguage }: CommentCardProps) => {
               </h4>
               {subscription?.tier?.name === 'Creator' && (
                 <div className="group relative">
-                  <BadgeCheck className="h-4 w-4 text-orange-500 fill-orange-500" />
+                  <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(249,115,22,0.5)]">
+                    <Check className="h-3 w-3 text-orange-500" />
+                  </div>
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                     Creator
                   </div>
@@ -97,7 +99,9 @@ export const CommentCard = ({ comment, userLanguage }: CommentCardProps) => {
               )}
               {subscription?.tier?.name === 'Business' && (
                 <div className="group relative">
-                  <BadgeCheck className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  <div className="h-5 w-5 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]">
+                    <Check className="h-3 w-3 text-yellow-500" />
+                  </div>
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                     Business
                   </div>

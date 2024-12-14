@@ -63,11 +63,9 @@ export const ProfileInfo = ({
   });
 
   const renderBioContent = (text: string) => {
-    // URL regex pattern
     const urlPattern = /(https?:\/\/[^\s]+)/g;
     
     return text.split(' ').map((word, index) => {
-      // Handle URLs
       if (urlPattern.test(word)) {
         return (
           <span key={index}>
@@ -86,7 +84,6 @@ export const ProfileInfo = ({
           </span>
         );
       }
-      // Return regular word
       return word + ' ';
     });
   };
@@ -98,7 +95,9 @@ export const ProfileInfo = ({
           <h1 className="text-2xl font-bold">{username}</h1>
           {subscription?.tier?.name === 'Creator' && (
             <div className="group relative">
-              <BadgeCheck className="h-5 w-5 text-orange-500 fill-orange-500" />
+              <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(249,115,22,0.5)]">
+                <Check className="h-4 w-4 text-orange-500" />
+              </div>
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                 Creator
               </div>
@@ -106,7 +105,9 @@ export const ProfileInfo = ({
           )}
           {subscription?.tier?.name === 'Business' && (
             <div className="group relative">
-              <BadgeCheck className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+              <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]">
+                <Check className="h-4 w-4 text-yellow-500" />
+              </div>
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                 Business
               </div>
