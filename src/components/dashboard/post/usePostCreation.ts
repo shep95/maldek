@@ -41,8 +41,6 @@ export const usePostCreation = (
         const previewUrl = URL.createObjectURL(file);
         setMediaPreviewUrls(prev => [...prev, previewUrl]);
       });
-      
-      toast.success(`${validFiles.length} media file(s) added to post`);
     }
   };
 
@@ -54,7 +52,7 @@ export const usePostCreation = (
 
   const handleMentionUser = () => {
     if (mentionedUser) {
-      setPostContent(prev => `${prev} @${mentionedUser} `);
+      setPostContent(prev => `${prev} ${mentionedUser} `);
       setMentionedUser("");
     }
   };
@@ -67,7 +65,6 @@ export const usePostCreation = (
 
     try {
       setIsSubmitting(true);
-
       const mediaUrls: string[] = [];
 
       // Upload media files if any
@@ -121,6 +118,7 @@ export const usePostCreation = (
       toast.success("Post created successfully!");
 
     } catch (error) {
+      console.error('Error creating post:', error);
       toast.error("Failed to create post. Please try again.");
     } finally {
       setIsSubmitting(false);
