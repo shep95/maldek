@@ -94,8 +94,8 @@ export const ProfileInfo = ({
           <h1 className="text-2xl font-bold">{username}</h1>
           {subscription?.tier?.name === 'Creator' && (
             <div className="group relative">
-              <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(249,115,22,0.5)]">
-                <Check className="h-4 w-4 text-orange-500" />
+              <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.6)] border-2 border-orange-500 bg-black/50 backdrop-blur-sm">
+                <Check className="h-4 w-4 text-orange-500 stroke-[3]" />
               </div>
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                 Creator
@@ -104,8 +104,8 @@ export const ProfileInfo = ({
           )}
           {subscription?.tier?.name === 'Business' && (
             <div className="group relative">
-              <div className="h-6 w-6 rounded-full bg-white flex items-center justify-center shadow-[0_0_10px_rgba(234,179,8,0.5)]">
-                <Check className="h-4 w-4 text-yellow-500" />
+              <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(234,179,8,0.6)] border-2 border-yellow-500 bg-black/50 backdrop-blur-sm">
+                <Check className="h-4 w-4 text-yellow-500 stroke-[3]" />
               </div>
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                 Business
@@ -170,4 +170,3 @@ export const ProfileInfo = ({
     </div>
   );
 };
-
