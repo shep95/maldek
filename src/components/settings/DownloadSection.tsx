@@ -21,27 +21,50 @@ export const DownloadSection = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log("Checking installation status...");
+    console.log("Initializing installation checks...");
+    
     // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log("App is already installed");
-      setIsInstalled(true);
-    }
+    const checkInstallation = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      console.log("Standalone mode check:", isStandalone);
+      setIsInstalled(isStandalone);
+    };
+
+    checkInstallation();
+
+    // Listen for display mode changes
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    mediaQuery.addListener(checkInstallation);
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
-      console.log("Received beforeinstallprompt event");
-      // Prevent the mini-infobar from appearing on mobile
+      console.log("📱 Received beforeinstallprompt event");
       e.preventDefault();
-      // Store the event for later use
       setDeferredPrompt(e);
     };
 
+    // Check if the app can be installed
+    const checkInstallability = async () => {
+      if ('getInstalledRelatedApps' in navigator) {
+        try {
+          // @ts-ignore - TypeScript doesn't know about this API yet
+          const relatedApps = await navigator.getInstalledRelatedApps();
+          console.log("Related apps check:", relatedApps);
+          if (relatedApps.length > 0) {
+            setIsInstalled(true);
+          }
+        } catch (error) {
+          console.log("Error checking related apps:", error);
+        }
+      }
+    };
+
+    checkInstallability();
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
-      console.log("App installed successfully");
+      console.log("✅ App installed successfully");
       setIsInstalled(true);
       setDeferredPrompt(null);
       toast({
@@ -51,49 +74,64 @@ export const DownloadSection = () => {
     });
 
     return () => {
+      mediaQuery.removeListener(checkInstallation);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, [toast]);
 
   const handleInstall = async () => {
-    console.log("Install button clicked, deferredPrompt:", deferredPrompt);
+    console.log("🔄 Install button clicked");
+    console.log("Current deferredPrompt state:", deferredPrompt ? "Available" : "Not available");
     
     if (!deferredPrompt) {
-      console.log("No installation prompt available");
+      console.log("❌ No installation prompt available");
+      
+      // Check if running in Chrome
+      const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+      console.log("Browser check - Chrome:", isChrome);
+      
+      // Check if on HTTPS
+      const isHttps = window.location.protocol === 'https:';
+      console.log("Protocol check - HTTPS:", isHttps);
+      
+      let errorMessage = "Installation is not available. ";
+      if (!isChrome) {
+        errorMessage += "Please use Chrome browser. ";
+      }
+      if (!isHttps) {
+        errorMessage += "HTTPS is required. ";
+      }
+      
       toast({
         title: "Installation Not Available",
-        description: "Please make sure you're using a supported browser (like Chrome) and haven't already installed Bosley.",
+        description: errorMessage,
         variant: "destructive"
       });
       return;
     }
 
     try {
-      // Show the install prompt
+      console.log("🚀 Triggering installation prompt");
       await deferredPrompt.prompt();
       
-      // Wait for the user to respond to the prompt
       const choiceResult = await deferredPrompt.userChoice;
-      console.log("User choice result:", choiceResult.outcome);
+      console.log("👤 User choice:", choiceResult.outcome);
       
       if (choiceResult.outcome === 'accepted') {
-        console.log("User accepted installation");
         toast({
           title: "Installing Bosley",
           description: "The app is being installed on your device.",
         });
       } else {
-        console.log("User declined installation");
         toast({
           title: "Installation Cancelled",
           description: "You can install Bosley anytime by clicking the install button again.",
         });
       }
       
-      // Clear the deferredPrompt
       setDeferredPrompt(null);
     } catch (error) {
-      console.error('Error installing app:', error);
+      console.error('❌ Error installing app:', error);
       toast({
         title: "Installation Failed",
         description: "There was an error installing Bosley. Please try again.",
