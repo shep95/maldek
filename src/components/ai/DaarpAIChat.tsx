@@ -109,16 +109,36 @@ export const DaarpAIChat = () => {
         imageUrl = await handleImageUpload(image);
       }
 
-      // Explicitly check for image generation requests
-      const isImageGenerationRequest = content.toLowerCase().includes('generate an image') || 
-                                     content.toLowerCase().includes('create an image') ||
-                                     content.toLowerCase().includes('make an image') ||
-                                     content.toLowerCase().includes('draw');
+      // Check for image generation keywords more comprehensively
+      const imageGenerationKeywords = [
+        'generate an image',
+        'create an image',
+        'make an image',
+        'draw',
+        'generate a picture',
+        'create a picture',
+        'make a picture',
+        'generate img',
+        'create img',
+        'make img',
+        'generate photo',
+        'create photo',
+        'make photo',
+        'imagine'
+      ];
+
+      const normalizedContent = content.toLowerCase();
+      const isImageGenerationRequest = imageGenerationKeywords.some(keyword => 
+        normalizedContent.includes(keyword)
+      );
 
       console.log('Processing request:', { 
         content, 
         hasImage: !!imageUrl, 
-        isImageGenerationRequest 
+        isImageGenerationRequest,
+        matchedKeywords: imageGenerationKeywords.filter(keyword => 
+          normalizedContent.includes(keyword)
+        )
       });
 
       const userMessage: Message = {
