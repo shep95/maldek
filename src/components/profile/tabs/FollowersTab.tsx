@@ -58,7 +58,7 @@ export const FollowersTab = ({ userId }: FollowersTabProps) => {
         <div 
           key={follow.follower_id}
           className="flex items-center space-x-4 p-4 rounded-lg hover:bg-accent/5 cursor-pointer transition-colors"
-          onClick={() => navigate(`/profile/${follow.profiles.id}`)}
+          onClick={() => navigate(`/@${follow.profiles.username}`)}
         >
           <Avatar className="h-12 w-12">
             <AvatarImage src={follow.profiles.avatar_url || ''} />
