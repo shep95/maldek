@@ -38,6 +38,35 @@ export const ProfileInfo = ({
   const session = useSession();
   const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
 
+  const renderBioContent = (text: string) => {
+    // URL regex pattern
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    
+    return text.split(' ').map((word, index) => {
+      // Handle URLs
+      if (urlPattern.test(word)) {
+        return (
+          <span key={index}>
+            <a
+              href={word}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-orange-500 hover:text-orange-600 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              {word}
+            </a>
+            {' '}
+          </span>
+        );
+      }
+      // Return regular word
+      return word + ' ';
+    });
+  };
+
   return (
     <div className="px-4 py-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -74,11 +103,13 @@ export const ProfileInfo = ({
           <Textarea
             value={editBio}
             onChange={(e) => onEditBioChange(e.target.value)}
-            placeholder="Write something about yourself..."
+            placeholder="Write something about yourself... (URLs will be clickable)"
             className="min-h-[100px]"
           />
         ) : (
-          <p className="text-muted-foreground">{bio || "No bio yet"}</p>
+          <p className="text-muted-foreground whitespace-pre-wrap">
+            {bio ? renderBioContent(bio) : "No bio yet"}
+          </p>
         )}
       </div>
 
