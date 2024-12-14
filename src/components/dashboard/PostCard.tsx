@@ -93,16 +93,19 @@ export const PostCard = ({
     navigate(`/post/${post.id}`);
   };
 
+  const handleUsernameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log("Navigating to profile:", post.author.username);
+    navigate(`/${post.author.username}`);
+  };
+
   return (
     <Card 
       className="border border-muted bg-card/50 backdrop-blur-sm p-6 cursor-pointer hover:bg-accent/5"
       onClick={handlePostClick}
     >
       <div className="space-y-4">
-        <div onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/${post.author.username}`);
-        }}>
+        <div onClick={handleUsernameClick}>
           <PostHeader author={post.author} timestamp={post.timestamp} />
         </div>
         
