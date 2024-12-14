@@ -138,6 +138,13 @@ export const ChatInterface = ({
 
   return (
     <div className="flex flex-col h-[calc(100vh-16rem)]">
+      <div className="flex items-center gap-2 mb-4 p-4 border-b">
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={messages[0]?.sender?.avatar_url || ''} alt={recipientName} />
+          <AvatarFallback>{recipientName[0]?.toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <span className="font-semibold text-lg">{recipientName}</span>
+      </div>
       <ScrollArea ref={scrollRef} className="flex-1 pr-4">
         <div className="space-y-4">
           {messages.map((message) => (
