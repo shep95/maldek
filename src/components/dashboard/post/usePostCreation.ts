@@ -16,56 +16,56 @@ export const usePostCreation = (
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
-      console.log("File upload started:", { numberOfFiles: files.length });
-      const fileArray = Array.from(files);
-      
-      // Validate file types and sizes
-      const validFiles = fileArray.filter(file => {
-        const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
-        const isSizeValid = file.size <= 100 * 1024 * 1024; // 100MB limit
-        
-        if (!isValid) {
-          toast.error(`Invalid file type: ${file.name}`);
-        }
-        if (!isSizeValid) {
-          toast.error(`File too large: ${file.name}`);
-        }
-        
-        return isValid && isSizeValid;
-      });
+    if (!files) return;
 
-      if (validFiles.length > 0) {
-        setMediaFiles(prev => [...prev, ...validFiles]);
-        
-        validFiles.forEach(file => {
-          const previewUrl = URL.createObjectURL(file);
-          setMediaPreviewUrls(prev => [...prev, previewUrl]);
-        });
-        
-        console.log("Files added successfully:", validFiles.map(f => ({ name: f.name, type: f.type })));
-        toast.success(`${validFiles.length} media file(s) added to post`);
+    console.log("File upload started:", { numberOfFiles: files.length });
+    const fileArray = Array.from(files);
+    
+    // Validate file types and sizes
+    const validFiles = fileArray.filter(file => {
+      const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
+      const isSizeValid = file.size <= 100 * 1024 * 1024; // 100MB limit
+      
+      if (!isValid) {
+        toast.error(`Invalid file type: ${file.name}`);
       }
+      if (!isSizeValid) {
+        toast.error(`File too large: ${file.name}`);
+      }
+      
+      return isValid && isSizeValid;
+    });
+
+    if (validFiles.length > 0) {
+      setMediaFiles(prev => [...prev, ...validFiles]);
+      
+      validFiles.forEach(file => {
+        const previewUrl = URL.createObjectURL(file);
+        setMediaPreviewUrls(prev => [...prev, previewUrl]);
+      });
+      
+      console.log("Files added successfully:", validFiles.map(f => ({ name: f.name, type: f.type })));
+      toast.success(`${validFiles.length} media file(s) added to post`);
     }
   };
 
   const removeMedia = (index: number) => {
     console.log("Removing media at index:", index);
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
     URL.revokeObjectURL(mediaPreviewUrls[index]);
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
     setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleMentionUser = () => {
     if (mentionedUser) {
-      setPostContent((prev) => `${prev} ${mentionedUser} `);
+      setPostContent(prev => `${prev} @${mentionedUser} `);
       setMentionedUser("");
       console.log("Mentioned user added:", mentionedUser);
     }
   };
 
   const handleCreatePost = async () => {
-    if (!currentUser.id) {
+    if (!currentUser?.id) {
       console.error("No user ID found");
       toast.error("Please sign in to create a post");
       return;
@@ -80,9 +80,9 @@ export const usePostCreation = (
     try {
       setIsSubmitting(true);
       console.log("Starting post creation:", { 
+        userId: currentUser.id,
         contentLength: postContent.length,
-        numberOfMediaFiles: mediaFiles.length,
-        userId: currentUser.id
+        mediaCount: mediaFiles.length 
       });
 
       const mediaUrls: string[] = [];
@@ -94,7 +94,7 @@ export const usePostCreation = (
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${currentUser.id}/${fileName}`;
 
-          console.log("Uploading file:", { fileName, fileType: file.type });
+          console.log("Uploading file:", { fileName, type: file.type, size: file.size });
 
           const { error: uploadError } = await supabase.storage
             .from('posts')
@@ -106,36 +106,24 @@ export const usePostCreation = (
             throw uploadError;
           }
 
-          console.log("File uploaded successfully:", filePath);
-
-          // Get the public URL for the uploaded file
           const { data: { publicUrl } } = supabase.storage
             .from('posts')
             .getPublicUrl(filePath);
 
           mediaUrls.push(publicUrl);
-          console.log("Added public URL:", publicUrl);
+          console.log("File uploaded successfully:", { filePath, publicUrl });
         }
       }
 
-      console.log("Creating post with media URLs:", mediaUrls);
-
       // Create the post
-      const { data: post, error: postError } = await supabase
+      const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert({
           content: postContent.trim(),
           user_id: currentUser.id,
           media_urls: mediaUrls,
         })
-        .select(`
-          *,
-          profiles (
-            id,
-            username,
-            avatar_url
-          )
-        `)
+        .select('*, profiles(id, username, avatar_url)')
         .single();
 
       if (postError) {
@@ -143,7 +131,11 @@ export const usePostCreation = (
         throw postError;
       }
 
-      console.log("Post created successfully:", post);
+      if (!newPost) {
+        throw new Error("No post data returned after creation");
+      }
+
+      console.log("Post created successfully:", newPost);
 
       // Clean up state
       setPostContent("");
@@ -152,10 +144,10 @@ export const usePostCreation = (
       setMediaFiles([]);
       
       // Notify success and close dialog
-      onPostCreated(post);
+      onPostCreated(newPost);
       onOpenChange(false);
       toast.success("Post created successfully!");
-      
+
     } catch (error) {
       console.error("Error in post creation:", error);
       toast.error("Failed to create post. Please try again.");
