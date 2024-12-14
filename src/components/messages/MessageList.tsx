@@ -3,10 +3,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
-import { Trash2 } from "lucide-react";
+import { Trash2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ChatInterface } from "./ChatInterface";
 
 interface Message {
   id: string;
@@ -21,13 +22,13 @@ interface Message {
 export const MessageList = ({ messages }: { messages: Message[] }) => {
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<Message[]>(messages);
+  const [selectedChat, setSelectedChat] = useState<Message | null>(null);
   const isMobile = useIsMobile();
 
   const handleDeleteMessage = async (messageId: string) => {
     try {
       setDeletingMessageId(messageId);
       
-      // Shorter animation duration on mobile for better responsiveness
       const animationDuration = isMobile ? 500 : 1000;
       await new Promise(resolve => setTimeout(resolve, animationDuration));
       
@@ -48,6 +49,31 @@ export const MessageList = ({ messages }: { messages: Message[] }) => {
     }
   };
 
+  if (selectedChat) {
+    return (
+      <div className="h-full">
+        <div className="flex items-center gap-2 mb-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedChat(null)}
+            className="h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={selectedChat.avatar} alt={selectedChat.name} />
+              <AvatarFallback>{selectedChat.name[0]}</AvatarFallback>
+            </Avatar>
+            <span className="font-semibold">{selectedChat.name}</span>
+          </div>
+        </div>
+        <ChatInterface recipientId={selectedChat.id} recipientName={selectedChat.name} />
+      </div>
+    );
+  }
+
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-2 pr-4">
@@ -64,6 +90,7 @@ export const MessageList = ({ messages }: { messages: Message[] }) => {
               "opacity-0 scale-95 blur-sm [mask-image:linear-gradient(45deg,transparent 25%,black 75%)]" : 
               "opacity-100 scale-100 blur-0"
             }`}
+            onClick={() => setSelectedChat(message)}
           >
             <div className="flex gap-4 items-start w-full">
               <Avatar className="h-12 w-12 border-2 border-accent/10">
