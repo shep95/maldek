@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { NavItems } from "./components/NavItems";
+import { useEffect, useState } from "react";
 
 export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: boolean) => void }) => {
   const navigate = useNavigate();
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Fetch user's subscription status
   const { data: subscription } = useQuery({
@@ -84,9 +86,15 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
     }
   };
 
-  // Get current user ID
-  const { data: { user } } = await supabase.auth.getUser();
-  const userId = user?.id || null;
+  // Fetch current user ID on component mount
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    
+    fetchUserId();
+  }, []);
 
   return (
     <ScrollArea className="h-full px-2 py-2">
