@@ -13,6 +13,11 @@ interface SearchResultsProps {
 export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
   const navigate = useNavigate();
 
+  const handleUserClick = (username: string) => {
+    console.log('Navigating to user profile:', username);
+    navigate(`/${username}`);
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-2">
@@ -33,7 +38,7 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
         <div 
           key={user.id} 
           className="flex items-center gap-3 p-2 hover:bg-accent/10 rounded-md cursor-pointer"
-          onClick={() => navigate(`/${user.username}`)}
+          onClick={() => handleUserClick(user.username)}
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.avatar_url || ''} />

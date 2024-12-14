@@ -44,7 +44,6 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
         throw error;
       }
 
-      // The notification will be created by the database trigger
       toast.success("Successfully followed user");
     } catch (error) {
       console.error("Error following user:", error);
@@ -52,7 +51,7 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
     }
   };
 
-  const handleProfileClick = (username: string) => {
+  const handleUserClick = (username: string) => {
     console.log("Navigating to profile:", username);
     navigate(`/${username}`);
   };
@@ -80,7 +79,7 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
         >
           <div 
             className="flex items-center gap-3 cursor-pointer"
-            onClick={() => handleProfileClick(user.username)}
+            onClick={() => handleUserClick(user.username)}
           >
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.avatar_url || ''} />
