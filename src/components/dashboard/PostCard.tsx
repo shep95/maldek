@@ -5,11 +5,12 @@ import { PostActions } from "./post/PostActions";
 import { Post } from "@/utils/postUtils";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Languages } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { PostContent } from "./post/PostContent";
+import { EditControls } from "./post/EditControls";
 
 interface PostCardProps {
   post: Post;
@@ -30,8 +31,6 @@ export const PostCard = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [canEdit, setCanEdit] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
   const [userLanguage, setUserLanguage] = useState<string>('en');
 
   useEffect(() => {
@@ -82,25 +81,6 @@ export const PostCard = ({
     toast.success("Post updated successfully");
   };
 
-  const handleTranslate = async () => {
-    if (isTranslating || !userLanguage) return;
-    
-    try {
-      setIsTranslating(true);
-      const { data, error } = await supabase.functions.invoke('translate-text', {
-        body: { text: post.content, targetLanguage: userLanguage }
-      });
-
-      if (error) throw error;
-      setTranslatedContent(data.translatedText);
-    } catch (error) {
-      console.error('Translation error:', error);
-      toast.error("Failed to translate post");
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
   const handlePostClick = (e: React.MouseEvent) => {
     if (
       (e.target as HTMLElement).tagName === 'BUTTON' ||
@@ -113,37 +93,18 @@ export const PostCard = ({
     navigate(`/post/${post.id}`);
   };
 
-  const renderContent = (content: string) => {
-    return content.split(' ').map((word, index) => {
-      if (word.startsWith('@')) {
-        const username = word.slice(1);
-        return (
-          <span key={index}>
-            <Button
-              variant="link"
-              className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/profile/${username}`);
-              }}
-            >
-              {word}
-            </Button>
-            {' '}
-          </span>
-        );
-      }
-      return word + ' ';
-    });
-  };
-
   return (
     <Card 
       className="border border-muted bg-card/50 backdrop-blur-sm p-6 cursor-pointer hover:bg-accent/5"
       onClick={handlePostClick}
     >
       <div className="space-y-4">
-        <PostHeader author={post.author} timestamp={post.timestamp} />
+        <div onClick={(e) => {
+          e.stopPropagation();
+          navigate(`/${post.author.username}`);
+        }}>
+          <PostHeader author={post.author} timestamp={post.timestamp} />
+        </div>
         
         {canEdit && !isEditing && (
           <Button
@@ -156,66 +117,22 @@ export const PostCard = ({
           </Button>
         )}
 
-        {isEditing ? (
-          <div className="space-y-2">
-            <Textarea
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              className="min-h-[100px]"
-            />
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditedContent(post.content);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveEdit}
-              >
-                Save
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <p className="text-foreground whitespace-pre-wrap">
-              {renderContent(translatedContent || post.content)}
-            </p>
-            {!translatedContent && currentUserId && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTranslate();
-                }}
-                disabled={isTranslating}
-                className="mt-2"
-              >
-                <Languages className="h-4 w-4 mr-2" />
-                {isTranslating ? "Translating..." : "Translate"}
-              </Button>
-            )}
-            {translatedContent && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTranslatedContent(null);
-                }}
-                className="mt-2"
-              >
-                Show original
-              </Button>
-            )}
-          </>
+        <PostContent
+          content={post.content}
+          userLanguage={userLanguage}
+          isEditing={isEditing}
+          editedContent={editedContent}
+          onEditContentChange={setEditedContent}
+        />
+
+        {isEditing && (
+          <EditControls
+            onCancel={() => {
+              setIsEditing(false);
+              setEditedContent(post.content);
+            }}
+            onSave={handleSaveEdit}
+          />
         )}
 
         {post.media_urls && post.media_urls.length > 0 && (
