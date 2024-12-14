@@ -10,12 +10,15 @@ const Profile = () => {
   const [editBio, setEditBio] = useState("");
   const { toast } = useToast();
   const [isCurrentUser, setIsCurrentUser] = useState(false);
-  const { userId } = useParams();
+  const { username } = useParams();
+  
+  // Remove @ from username if present
+  const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
 
   const { data: profile, isLoading, error, refetch } = useQuery({
-    queryKey: ['profile', userId],
+    queryKey: ['profile', cleanUsername],
     queryFn: async () => {
-      console.log("Fetching profile data for user:", userId);
+      console.log("Fetching profile data for username:", cleanUsername);
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError) {
@@ -23,39 +26,25 @@ const Profile = () => {
         throw new Error('Not authenticated');
       }
 
-      const targetUserId = userId || user.id;
-      console.log("Target user ID:", targetUserId);
-
-      const { data: existingProfile, error: profileError } = await supabase
+      // First get the profile by username
+      const { data: profileByUsername, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', targetUserId)
+        .eq('username', cleanUsername)
         .single();
 
       if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert([{ 
-              id: targetUserId,
-              username: user.user_metadata.username || user.email,
-              bio: '',
-              follower_count: 0,
-              banner_url: null,
-              avatar_url: null
-            }])
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          return newProfile;
-        }
+        console.error("Profile error:", profileError);
         throw profileError;
       }
 
-      setIsCurrentUser(user.id === targetUserId);
-      setEditBio(existingProfile.bio || "");
-      return existingProfile;
+      if (!profileByUsername) {
+        throw new Error('Profile not found');
+      }
+
+      setIsCurrentUser(user?.id === profileByUsername.id);
+      setEditBio(profileByUsername.bio || "");
+      return profileByUsername;
     },
   });
 
@@ -117,7 +106,7 @@ const Profile = () => {
       isCurrentUser={isCurrentUser}
       isEditing={isEditing}
       editBio={editBio}
-      userId={userId || ''}
+      userId={profile.id}
       onEditClick={() => setIsEditing(!isEditing)}
       onEditBioChange={setEditBio}
       onSaveChanges={handleUpdateProfile}
