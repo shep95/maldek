@@ -15,7 +15,7 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
 
   const handleUserClick = (username: string) => {
     console.log('Navigating to user profile:', username);
-    // Navigate without replace to allow back navigation
+    // Navigate to the username route directly
     navigate(`/${username}`);
   };
 
