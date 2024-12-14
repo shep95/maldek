@@ -58,7 +58,7 @@ export const usePostCreation = (
 
   const handleMentionUser = () => {
     if (mentionedUser) {
-      setPostContent((prev) => `${prev} @${mentionedUser} `);
+      setPostContent((prev) => `${prev} ${mentionedUser} `);
       setMentionedUser("");
       console.log("Mentioned user added:", mentionedUser);
     }
@@ -87,40 +87,43 @@ export const usePostCreation = (
 
       const mediaUrls: string[] = [];
 
-      for (const file of mediaFiles) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `${currentUser.id}/${fileName}`;
+      // Upload media files if any
+      if (mediaFiles.length > 0) {
+        for (const file of mediaFiles) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `${currentUser.id}/${fileName}`;
 
-        console.log("Uploading file:", { fileName, fileType: file.type });
+          console.log("Uploading file:", { fileName, fileType: file.type });
 
-        const { error: uploadError, data } = await supabase.storage
-          .from('posts')
-          .upload(filePath, file);
+          const { error: uploadError, data } = await supabase.storage
+            .from('posts')
+            .upload(filePath, file);
 
-        if (uploadError) {
-          console.error('Error uploading file:', uploadError);
-          toast.error(`Failed to upload ${file.name}`);
-          continue;
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            toast.error(`Failed to upload ${file.name}`);
+            continue;
+          }
+
+          console.log("File uploaded successfully:", filePath);
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('posts')
+            .getPublicUrl(filePath);
+
+          mediaUrls.push(publicUrl);
         }
-
-        console.log("File uploaded successfully:", filePath);
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('posts')
-          .getPublicUrl(filePath);
-
-        mediaUrls.push(publicUrl);
       }
 
-      console.log("All media uploaded, creating post with URLs:", mediaUrls);
+      console.log("Creating post with media URLs:", mediaUrls);
 
       const { data: post, error: postError } = await supabase
         .from('posts')
         .insert({
-          content: postContent,
+          content: postContent.trim(),
           user_id: currentUser.id,
-          media_urls: mediaUrls
+          media_urls: mediaUrls,
         })
         .select('*, profiles:user_id(*)')
         .single();
@@ -131,13 +134,14 @@ export const usePostCreation = (
       }
 
       console.log("Post created successfully:", post);
-      onPostCreated(post);
       
       // Cleanup
       setPostContent("");
       mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setMediaPreviewUrls([]);
       setMediaFiles([]);
+      
+      onPostCreated(post);
       onOpenChange(false);
       
       toast.success("Post created successfully!");
