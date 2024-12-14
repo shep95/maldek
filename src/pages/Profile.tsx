@@ -4,12 +4,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Navigate } from "react-router-dom";
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
+import { useSession } from '@supabase/auth-helpers-react';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
   const { toast } = useToast();
-  const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const session = useSession();
   const { username } = useParams();
   
   // Remove @ from username if present and handle undefined
@@ -25,9 +26,6 @@ const Profile = () => {
     queryFn: async () => {
       console.log("Fetching profile for username:", cleanUsername);
 
-      // Get current user's session
-      const { data: { session } } = await supabase.auth.getSession();
-      
       // Get profile by username
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -48,19 +46,17 @@ const Profile = () => {
       console.log("Found profile:", profileData);
       
       // Set whether this is the current user's profile
-      setIsCurrentUser(session?.user?.id === profileData.id);
+      const isCurrentUser = session?.user?.id === profileData.id;
       setEditBio(profileData.bio || "");
 
-      return profileData;
+      return { ...profileData, isCurrentUser };
     },
     retry: 1
   });
 
   const handleUpdateProfile = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
+      if (!session?.user?.id || !profile?.isCurrentUser) {
         toast({
           title: "Error",
           description: "You must be logged in to update your profile",
@@ -113,7 +109,7 @@ const Profile = () => {
   return (
     <ProfileContainer
       profile={profile}
-      isCurrentUser={isCurrentUser}
+      isCurrentUser={profile.isCurrentUser}
       isEditing={isEditing}
       editBio={editBio}
       userId={profile.id}
