@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -12,13 +12,15 @@ import { ChatInput } from "./components/ChatInput";
 import { PremiumFeatureNotice } from "./components/PremiumFeatureNotice";
 import { generateAIResponse } from "./utils/aiResponseUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useChatState } from "./hooks/useChatState";
+import { handleImageUpload } from "./utils/imageUploadUtils";
+import { isImageGenerationRequest } from "./utils/imageGenerationUtils";
 
 export const DaarpAIChat = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const isMobile = useIsMobile();
+  const { messages, setMessages, isLoading, setIsLoading } = useChatState();
 
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', session?.user?.id],
@@ -42,57 +44,6 @@ export const DaarpAIChat = () => {
     enabled: !!session?.user?.id
   });
 
-  useEffect(() => {
-    if (messages.length === 0) {
-      const welcomeMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: "👋 Hi! I'm Bosley AI, your AI assistant. I can help you generate images and answer questions. Try saying 'Generate an image of...' or ask me anything!",
-        timestamp: new Date(),
-      };
-      setMessages([welcomeMessage]);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  const handleImageUpload = async (file: File) => {
-    try {
-      if (!session?.user?.id) {
-        toast.error("Please sign in to upload images");
-        return null;
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `${session.user.id}/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('chat-images')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        toast.error("Failed to upload image");
-        return null;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-images')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Error in image upload:', error);
-      toast.error("Failed to upload image");
-      return null;
-    }
-  };
-
   const handleSubmit = async (content: string, image: File | null) => {
     if ((!content && !image) || isLoading) return;
 
@@ -105,41 +56,11 @@ export const DaarpAIChat = () => {
 
     try {
       let imageUrl = null;
-      if (image) {
-        imageUrl = await handleImageUpload(image);
+      if (image && session?.user?.id) {
+        imageUrl = await handleImageUpload(image, session.user.id);
       }
 
-      // Check for image generation keywords more comprehensively
-      const imageGenerationKeywords = [
-        'generate an image',
-        'create an image',
-        'make an image',
-        'draw',
-        'generate a picture',
-        'create a picture',
-        'make a picture',
-        'generate img',
-        'create img',
-        'make img',
-        'generate photo',
-        'create photo',
-        'make photo',
-        'imagine'
-      ];
-
-      const normalizedContent = content.toLowerCase();
-      const isImageGenerationRequest = imageGenerationKeywords.some(keyword => 
-        normalizedContent.includes(keyword)
-      );
-
-      console.log('Processing request:', { 
-        content, 
-        hasImage: !!imageUrl, 
-        isImageGenerationRequest,
-        matchedKeywords: imageGenerationKeywords.filter(keyword => 
-          normalizedContent.includes(keyword)
-        )
-      });
+      const shouldGenerateImage = isImageGenerationRequest(content);
 
       const userMessage: Message = {
         id: crypto.randomUUID(),
@@ -155,10 +76,8 @@ export const DaarpAIChat = () => {
         messages,
         currentMessage: userMessage.content,
         imageUrl: userMessage.imageUrl,
-        generateImage: isImageGenerationRequest
+        generateImage: shouldGenerateImage
       });
-
-      console.log('AI Response received:', response);
 
       const aiMessage: Message = {
         id: crypto.randomUUID(),
@@ -188,7 +107,7 @@ export const DaarpAIChat = () => {
       isMobile ? "h-[calc(100vh-12rem)] px-2 pb-24" : "max-w-4xl mx-auto p-4"
     )}>
       <Card className="flex-1 flex flex-col bg-card/50 backdrop-blur-sm border-muted overflow-hidden">
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1" ref={scrollAreaRef}>
           <div className="space-y-4 p-4">
             {messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
