@@ -21,12 +21,13 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
 
   const handleUserClick = (username: string) => {
     console.log("Navigating to profile:", username);
-    // Navigate to the username route directly
     navigate(`/${username}`);
   };
 
   const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
-    e.stopPropagation(); // Prevent navigation when clicking follow button
+    e.preventDefault(); // Prevent any navigation
+    e.stopPropagation(); // Prevent the click from bubbling up
+    
     try {
       if (!session?.user?.id) {
         toast.error("Please sign in to follow users");
