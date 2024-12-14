@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Smartphone, Laptop, Tablet } from "lucide-react";
+import { Download, Smartphone, Laptop, Tablet, Menu } from "lucide-react";
 import { toast } from "sonner";
 
 export const DownloadSection = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isChrome, setIsChrome] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
@@ -17,6 +18,10 @@ export const DownloadSection = () => {
       return;
     }
 
+    // Check if using Chrome
+    const isChromeBrowser = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    setIsChrome(isChromeBrowser);
+
     const handleBeforeInstallPrompt = (e: Event) => {
       console.log('beforeinstallprompt event fired');
       e.preventDefault();
@@ -24,10 +29,7 @@ export const DownloadSection = () => {
       setIsInstallable(true);
     };
 
-    // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Listen for successful installation
     window.addEventListener('appinstalled', () => {
       console.log('App installed successfully');
       setIsInstalled(true);
@@ -35,31 +37,6 @@ export const DownloadSection = () => {
       toast.success("App installed successfully!");
     });
 
-    // Initial check for installation support
-    const checkInstallSupport = () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      const hasServiceWorker = 'serviceWorker' in navigator;
-      const isSecure = window.location.protocol === 'https:';
-      const hasManifest = !!document.querySelector('link[rel="manifest"]');
-
-      console.log('Installation support check:', {
-        isStandalone,
-        hasServiceWorker,
-        isSecure,
-        hasManifest
-      });
-
-      return hasServiceWorker && (isSecure || window.location.hostname === 'localhost');
-    };
-
-    const isSupported = checkInstallSupport();
-    setIsInstallable(isSupported);
-    
-    if (!isSupported) {
-      console.log('Installation not supported on this browser/device');
-    }
-
-    // Cleanup
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', () => {});
@@ -70,30 +47,28 @@ export const DownloadSection = () => {
     console.log('Install button clicked', { deferredPrompt, isInstallable });
     
     if (!deferredPrompt) {
-      // If no prompt but installable, guide the user
-      if (isInstallable) {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          toast.info("To install on iOS: tap the share button and select 'Add to Home Screen'");
-        } else {
-          toast.info("Use your browser's menu to install the app");
-        }
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        toast.info("To install on iOS: Tap the share button (📤) at the bottom of your screen and select 'Add to Home Screen'");
+      } else if (isAndroid && !isChrome) {
+        toast.info("Please use Chrome browser for the best installation experience");
+      } else if (isChrome) {
+        toast.info("Click the menu (⋮) in Chrome and select 'Install Bosley'");
       } else {
-        toast.error("Installation not supported on this browser");
+        toast.info("Use your browser's menu to install the app. Look for 'Install' or 'Add to Home Screen' option");
       }
       return;
     }
 
     try {
-      // Show the install prompt
       const promptResult = await deferredPrompt.prompt();
       console.log('Install prompt result:', promptResult);
-      
-      // Reset the deferred prompt
       setDeferredPrompt(null);
     } catch (error) {
       console.error('Error installing app:', error);
-      toast.error("Failed to install app. Please try again.");
+      toast.error("Installation failed. Please try using your browser's menu to install.");
     }
   };
 
@@ -128,20 +103,29 @@ export const DownloadSection = () => {
             <Button
               onClick={handleInstall}
               className="w-full"
+              variant="default"
             >
               <Download className="mr-2 h-4 w-4" />
               Install App
             </Button>
 
-            <p className="text-sm text-muted-foreground">
-              {!isInstallable ? (
-                "To install Bosley, please use a supported browser like Chrome, Edge, or Safari on a desktop or Android device. iOS users should use Safari."
-              ) : !deferredPrompt ? (
-                "You can install Bosley using your browser's menu or the share button (iOS)"
-              ) : (
-                "Click the Install button above to add Bosley to your device"
-              )}
-            </p>
+            <div className="text-sm text-muted-foreground space-y-2">
+              <p>
+                {isChrome ? (
+                  <>
+                    <Menu className="inline-block w-4 h-4 mr-1 mb-1" />
+                    Click the menu button in Chrome and select "Install Bosley"
+                  </>
+                ) : /iPad|iPhone|iPod/.test(navigator.userAgent) ? (
+                  "Tap the share button (📤) and select 'Add to Home Screen'"
+                ) : (
+                  "Use your browser's menu to install Bosley. Look for 'Install' or 'Add to Home Screen'"
+                )}
+              </p>
+              <p className="text-xs">
+                For the best experience, we recommend using Chrome on desktop or Android devices.
+              </p>
+            </div>
           </>
         )}
       </CardContent>
