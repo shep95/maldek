@@ -96,14 +96,14 @@ export const usePostCreation = (
 
           console.log("Uploading file:", { fileName, fileType: file.type });
 
-          const { error: uploadError, data } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('posts')
             .upload(filePath, file);
 
           if (uploadError) {
             console.error('Error uploading file:', uploadError);
             toast.error(`Failed to upload ${file.name}`);
-            continue;
+            throw uploadError;
           }
 
           console.log("File uploaded successfully:", filePath);
@@ -125,7 +125,14 @@ export const usePostCreation = (
           user_id: currentUser.id,
           media_urls: mediaUrls,
         })
-        .select('*, profiles:user_id(*)')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            username,
+            avatar_url
+          )
+        `)
         .single();
 
       if (postError) {
