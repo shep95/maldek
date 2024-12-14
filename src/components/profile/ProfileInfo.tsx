@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { FollowButton } from "./FollowButton";
+import { MessageDialog } from "./MessageDialog";
 
 interface ProfileInfoProps {
   username: string;
@@ -35,68 +36,7 @@ export const ProfileInfo = ({
 }: ProfileInfoProps) => {
   const navigate = useNavigate();
   const session = useSession();
-  const [isMessageSending, setIsMessageSending] = useState(false);
-
-  const handleMessageClick = async () => {
-    if (!session?.user?.id) {
-      toast.error("Please sign in to send messages");
-      return;
-    }
-
-    if (isMessageSending) return;
-
-    try {
-      setIsMessageSending(true);
-
-      // Get current user's follower count
-      const { data: currentUserData, error: currentUserError } = await supabase
-        .from('profiles')
-        .select('follower_count')
-        .eq('id', session.user.id)
-        .single();
-
-      if (currentUserError) throw currentUserError;
-
-      // Get target user's follower count
-      const { data: targetUserData, error: targetUserError } = await supabase
-        .from('profiles')
-        .select('follower_count')
-        .eq('id', userId)
-        .single();
-
-      if (targetUserError) throw targetUserError;
-
-      // Determine message status based on follower counts
-      const status = currentUserData.follower_count >= targetUserData.follower_count 
-        ? 'accepted' 
-        : 'pending';
-
-      // Create the message
-      const { error: messageError } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: session.user.id,
-          recipient_id: userId,
-          content: `Hey ${username}! 👋`,
-          status
-        });
-
-      if (messageError) throw messageError;
-
-      toast.success(
-        status === 'accepted' 
-          ? "Message sent! Check your messages tab." 
-          : "Message request sent!"
-      );
-      
-      navigate('/messages');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error("Failed to send message");
-    } finally {
-      setIsMessageSending(false);
-    }
-  };
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
 
   return (
     <div className="px-4 py-4 space-y-4">
@@ -108,8 +48,7 @@ export const ProfileInfo = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleMessageClick}
-                disabled={isMessageSending}
+                onClick={() => setIsMessageDialogOpen(true)}
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Message
@@ -147,6 +86,14 @@ export const ProfileInfo = ({
         <span>{followerCount} followers</span>
         <span>Joined {new Date(createdAt).toLocaleDateString()}</span>
       </div>
+
+      <MessageDialog
+        isOpen={isMessageDialogOpen}
+        onOpenChange={setIsMessageDialogOpen}
+        recipientId={userId}
+        recipientName={username}
+        recipientFollowerCount={followerCount}
+      />
     </div>
   );
 };
