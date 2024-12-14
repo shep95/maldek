@@ -22,5 +22,22 @@
   "prefer_related_applications": false,
   "categories": ["social", "lifestyle"],
   "orientation": "any",
-  "scope": "/"
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "New Post",
+      "url": "/dashboard?newPost=true",
+      "description": "Create a new post"
+    },
+    {
+      "name": "Messages",
+      "url": "/messages",
+      "description": "View your messages"
+    }
+  ],
+  "screenshots": [],
+  "related_applications": [],
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  }
 }
