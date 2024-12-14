@@ -30,16 +30,34 @@ export const ChatInterface = ({
 }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [recipientAvatar, setRecipientAvatar] = useState<string | null>(null);
   const session = useSession();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch recipient's avatar
+  useEffect(() => {
+    const fetchRecipientProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', recipientId)
+        .single();
+
+      if (!error && data) {
+        setRecipientAvatar(data.avatar_url);
+      }
+    };
+
+    fetchRecipientProfile();
+  }, [recipientId]);
+
   const fetchMessages = async () => {
     if (!session?.user?.id) return;
 
     try {
-      console.log('Fetching messages for chat with:', recipientId);
+      console.log('Fetching messages between', session.user.id, 'and', recipientId);
       const { data, error } = await supabase
         .from('messages')
         .select(`
@@ -77,7 +95,7 @@ export const ChatInterface = ({
   useEffect(() => {
     fetchMessages();
     
-    if (!isSubscribed) {
+    if (!isSubscribed && session?.user?.id) {
       const channel = supabase
         .channel('chat-updates')
         .on(
@@ -86,7 +104,7 @@ export const ChatInterface = ({
             event: 'INSERT',
             schema: 'public',
             table: 'messages',
-            filter: `sender_id=eq.${recipientId}`
+            filter: `or(and(sender_id.eq.${session.user.id},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${session.user.id}))`
           },
           (payload) => {
             console.log('New message received:', payload);
@@ -144,7 +162,7 @@ export const ChatInterface = ({
     <div className="flex flex-col h-[calc(100vh-16rem)]">
       <ChatHeader
         recipientName={recipientName}
-        recipientAvatar={messages[0]?.sender?.avatar_url}
+        recipientAvatar={recipientAvatar}
         onViewProfile={handleViewProfile}
       />
       <ScrollArea ref={scrollRef} className="flex-1">
