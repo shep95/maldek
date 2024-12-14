@@ -12,28 +12,56 @@ import { FollowingTab } from "./tabs/FollowingTab";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ProfileTabs = () => {
-  const { userId } = useParams();
+  const { username } = useParams();
   const session = useSession();
-  const isCurrentUser = session?.user?.id === userId;
   const isMobile = useIsMobile();
 
-  // Use the URL userId parameter instead of the session user id
-  const profileUserId = userId;
+  // Get the profile ID for the username in the URL
+  const { data: profile } = useQuery({
+    queryKey: ['profile-id', username],
+    queryFn: async () => {
+      console.log('Fetching profile ID for username:', username);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username?.replace('@', ''))
+        .single();
 
-  if (!profileUserId) return null;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        throw error;
+      }
 
-  console.log('ProfileTabs - Displaying tabs for user:', profileUserId);
+      console.log('Found profile:', data);
+      return data;
+    },
+    enabled: !!username
+  });
+
+  if (!profile?.id) {
+    console.log('No profile ID found for username:', username);
+    return null;
+  }
+
+  const isCurrentUser = session?.user?.id === profile.id;
+  console.log('Profile tabs - Current user check:', { 
+    sessionUserId: session?.user?.id, 
+    profileId: profile.id,
+    isCurrentUser 
+  });
 
   const tabs = [
-    { value: "posts", label: "Posts", component: <PostsTab userId={profileUserId} /> },
-    { value: "replies", label: "Replies", component: <RepliesTab userId={profileUserId} /> },
-    { value: "media", label: "Media", component: <MediaTab userId={profileUserId} /> },
-    { value: "videos", label: "Videos", component: <VideosTab userId={profileUserId} /> },
-    { value: "likes", label: "Likes", component: <LikesTab userId={profileUserId} /> },
-    { value: "followers", label: "Followers", component: <FollowersTab userId={profileUserId} /> },
-    { value: "following", label: "Following", component: <FollowingTab userId={profileUserId} /> },
+    { value: "posts", label: "Posts", component: <PostsTab userId={profile.id} /> },
+    { value: "replies", label: "Replies", component: <RepliesTab userId={profile.id} /> },
+    { value: "media", label: "Media", component: <MediaTab userId={profile.id} /> },
+    { value: "videos", label: "Videos", component: <VideosTab userId={profile.id} /> },
+    { value: "likes", label: "Likes", component: <LikesTab userId={profile.id} /> },
+    { value: "followers", label: "Followers", component: <FollowersTab userId={profile.id} /> },
+    { value: "following", label: "Following", component: <FollowingTab userId={profile.id} /> },
   ];
 
   // Only show analytics tab for the current user's profile
@@ -41,7 +69,7 @@ export const ProfileTabs = () => {
     tabs.push({ 
       value: "analytics", 
       label: "Analytics", 
-      component: <AnalyticsTab userId={profileUserId} /> 
+      component: <AnalyticsTab userId={profile.id} /> 
     });
   }
 

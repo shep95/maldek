@@ -23,6 +23,17 @@ export const PostsTab = ({ userId }: PostsTabProps) => {
             id,
             username,
             avatar_url
+          ),
+          post_likes (
+            id,
+            user_id
+          ),
+          bookmarks (
+            id,
+            user_id
+          ),
+          comments (
+            id
           )
         `)
         .eq('user_id', userId)
@@ -71,9 +82,9 @@ export const PostsTab = ({ userId }: PostsTabProps) => {
               name: post.profiles.username
             },
             timestamp: new Date(post.created_at),
-            comments: 0,
-            isLiked: false,
-            isBookmarked: false
+            comments: post.comments?.length || 0,
+            isLiked: post.post_likes?.some(like => like.user_id === session?.user?.id) || false,
+            isBookmarked: post.bookmarks?.some(bookmark => bookmark.user_id === session?.user?.id) || false
           }}
           currentUserId={session?.user?.id || ''}
           onPostAction={() => {}}
