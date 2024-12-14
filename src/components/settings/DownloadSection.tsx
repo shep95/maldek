@@ -14,15 +14,18 @@ export const DownloadSection = () => {
     if (window.matchMedia('(display-mode: standalone)').matches) {
       console.log('App is already installed');
       setIsInstalled(true);
+      return;
     }
 
-    // Listen for the beforeinstallprompt event
-    window.addEventListener('beforeinstallprompt', (e) => {
+    const handleBeforeInstallPrompt = (e: Event) => {
       console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
-    });
+    };
+
+    // Listen for the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // Listen for successful installation
     window.addEventListener('appinstalled', () => {
@@ -32,44 +35,62 @@ export const DownloadSection = () => {
       toast.success("App installed successfully!");
     });
 
-    // Check if the browser supports installation
-    const isInstallSupported = () => {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      
-      if (isIOS && !isSafari) {
-        return false;
-      }
-      
-      return 'serviceWorker' in navigator;
+    // Initial check for installation support
+    const checkInstallSupport = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const hasServiceWorker = 'serviceWorker' in navigator;
+      const isSecure = window.location.protocol === 'https:';
+      const hasManifest = !!document.querySelector('link[rel="manifest"]');
+
+      console.log('Installation support check:', {
+        isStandalone,
+        hasServiceWorker,
+        isSecure,
+        hasManifest
+      });
+
+      return hasServiceWorker && (isSecure || window.location.hostname === 'localhost');
     };
 
-    if (!isInstallSupported()) {
+    const isSupported = checkInstallSupport();
+    setIsInstallable(isSupported);
+    
+    if (!isSupported) {
       console.log('Installation not supported on this browser/device');
-      setIsInstallable(false);
     }
 
+    // Cleanup
     return () => {
-      window.removeEventListener('beforeinstallprompt', () => {});
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', () => {});
     };
   }, []);
 
   const handleInstall = async () => {
-    console.log('Install button clicked');
+    console.log('Install button clicked', { deferredPrompt, isInstallable });
+    
     if (!deferredPrompt) {
-      console.log('No installation prompt available');
+      // If no prompt but installable, guide the user
+      if (isInstallable) {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          toast.info("To install on iOS: tap the share button and select 'Add to Home Screen'");
+        } else {
+          toast.info("Use your browser's menu to install the app");
+        }
+      } else {
+        toast.error("Installation not supported on this browser");
+      }
       return;
     }
 
     try {
       // Show the install prompt
-      const result = await deferredPrompt.prompt();
-      console.log('Install prompt result:', result);
+      const promptResult = await deferredPrompt.prompt();
+      console.log('Install prompt result:', promptResult);
       
       // Reset the deferred prompt
       setDeferredPrompt(null);
-      setIsInstallable(false);
     } catch (error) {
       console.error('Error installing app:', error);
       toast.error("Failed to install app. Please try again.");
@@ -106,20 +127,21 @@ export const DownloadSection = () => {
 
             <Button
               onClick={handleInstall}
-              disabled={!isInstallable}
               className="w-full"
             >
               <Download className="mr-2 h-4 w-4" />
-              {isInstallable ? "Install App" : "Not Available"}
+              Install App
             </Button>
 
-            {!isInstallable && (
-              <p className="text-sm text-muted-foreground">
-                To install Bosley, please use a supported browser like Chrome, Edge, or Safari. 
-                If you're already using a supported browser, you might need to visit this page 
-                directly (not in an iframe or private mode).
-              </p>
-            )}
+            <p className="text-sm text-muted-foreground">
+              {!isInstallable ? (
+                "To install Bosley, please use a supported browser like Chrome, Edge, or Safari on a desktop or Android device. iOS users should use Safari."
+              ) : !deferredPrompt ? (
+                "You can install Bosley using your browser's menu or the share button (iOS)"
+              ) : (
+                "Click the Install button above to add Bosley to your device"
+              )}
+            </p>
           </>
         )}
       </CardContent>

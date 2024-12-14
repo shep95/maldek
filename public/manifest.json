@@ -18,5 +18,9 @@
       "sizes": "180x180",
       "type": "image/png"
     }
-  ]
+  ],
+  "prefer_related_applications": false,
+  "categories": ["social", "lifestyle"],
+  "orientation": "any",
+  "scope": "/"
 }
