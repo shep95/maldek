@@ -115,8 +115,12 @@ export const CreatePostDialog = ({
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     console.log('Cancelling post creation');
+    
     // Clean up any media preview URLs
     mediaPreviewUrls.forEach(url => {
       console.log('Revoking URL:', url);
@@ -177,7 +181,7 @@ export const CreatePostDialog = ({
               onClick={handleCancel}
               variant="outline"
               className="w-full gap-2"
-              disabled={isSubmitting}
+              type="button"
             >
               <X className="h-4 w-4" />
               Cancel
@@ -186,6 +190,7 @@ export const CreatePostDialog = ({
               onClick={handleCreatePost} 
               className="w-full gap-2"
               disabled={isSubmitting}
+              type="button"
             >
               <Send className="h-4 w-4" />
               {isSubmitting ? 'Creating...' : 'Create Post'}
