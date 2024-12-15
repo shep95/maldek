@@ -2,6 +2,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Play, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoGridProps {
   videos: any[];
@@ -25,8 +26,14 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       console.error('No video URL found for video:', video);
       return;
     }
-    console.log('Playing video URL:', video.video_url);
-    onVideoSelect(video.video_url);
+
+    // Get public URL for video
+    const { data: { publicUrl } } = supabase.storage
+      .from('videos')
+      .getPublicUrl(video.video_url);
+
+    console.log('Playing video URL:', publicUrl);
+    onVideoSelect(publicUrl);
   };
 
   return (

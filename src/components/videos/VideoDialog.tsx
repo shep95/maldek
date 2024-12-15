@@ -15,7 +15,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
   useEffect(() => {
     if (videoUrl) {
-      console.log('VideoDialog - Attempting to load video:', videoUrl);
+      console.log('VideoDialog - Loading video:', videoUrl);
       setIsLoading(true);
       setVideoError(null);
     }
@@ -62,6 +62,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             controls
             playsInline
             autoPlay
+            preload="auto"
             className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
             style={{ opacity: isLoading ? 0 : 1 }}
             onLoadedData={handleVideoLoad}
