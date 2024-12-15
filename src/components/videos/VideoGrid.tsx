@@ -23,9 +23,19 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Just pass the video URL directly since it's already complete
-      console.log('Using video URL:', video.video_url);
-      onVideoSelect(video.video_url);
+      // Get the public URL for the video
+      const { data } = supabase.storage
+        .from('videos')
+        .getPublicUrl(video.video_url);
+
+      if (!data?.publicUrl) {
+        console.error('Failed to get public URL for video:', video.video_url);
+        toast.error("Failed to load video");
+        return;
+      }
+
+      console.log('Using public video URL:', data.publicUrl);
+      onVideoSelect(data.publicUrl);
       
     } catch (error) {
       console.error('Error handling video click:', error);
