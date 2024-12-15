@@ -22,15 +22,15 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
   }, [videoUrl]);
 
   const handleVideoError = (error: any) => {
-    console.error('Video playback error:', error);
     const errorMessage = 'Failed to load video. Please try again.';
+    console.error('Video playback error:', error, 'URL:', videoUrl);
     setVideoError(errorMessage);
     setIsLoading(false);
     toast.error(errorMessage);
   };
 
   const handleVideoLoad = () => {
-    console.log('Video loaded successfully');
+    console.log('Video loaded successfully:', videoUrl);
     setIsLoading(false);
     setVideoError(null);
   };
@@ -62,7 +62,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
         <div className="relative w-full h-full flex items-center justify-center">
           <video
-            key={videoUrl} // Force video element recreation when URL changes
+            key={videoUrl}
             src={videoUrl}
             controls
             playsInline
@@ -76,6 +76,11 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             onPause={() => console.log('Video paused:', videoUrl)}
             aria-label="Video player"
           />
+          {videoError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <p className="text-white text-center p-4">{videoError}</p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

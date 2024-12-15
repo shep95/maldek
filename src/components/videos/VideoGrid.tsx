@@ -23,7 +23,14 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Get the public URL for the video
+      // Check if the URL is already a full URL
+      if (video.video_url.startsWith('http')) {
+        console.log('Using existing video URL:', video.video_url);
+        onVideoSelect(video.video_url);
+        return;
+      }
+
+      // Get the public URL for the video if it's a storage path
       const { data } = supabase.storage
         .from('videos')
         .getPublicUrl(video.video_url);
