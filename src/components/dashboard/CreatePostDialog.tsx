@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, X } from "lucide-react";
 import type { Author } from "@/utils/postUtils";
 import { MediaUpload } from "./post/MediaUpload";
 import { MentionInput } from "./post/MentionInput";
@@ -67,7 +67,6 @@ export const CreatePostDialog = ({
         for (const file of mediaFiles) {
           console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
           
-          // Use handleImageUpload utility which now handles both images and videos
           const publicUrl = await handleImageUpload(file, currentUser.id);
           
           if (!publicUrl) {
@@ -116,6 +115,20 @@ export const CreatePostDialog = ({
     }
   };
 
+  const handleCancel = () => {
+    // Clean up any media preview URLs
+    mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    
+    // Reset all state
+    setContent("");
+    setMediaPreviewUrls([]);
+    setMediaFiles([]);
+    setMentionedUser("");
+    
+    // Close the dialog
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px] bg-card">
@@ -155,14 +168,25 @@ export const CreatePostDialog = ({
             }}
           />
           
-          <Button 
-            onClick={handleCreatePost} 
-            className="w-full gap-2"
-            disabled={isSubmitting}
-          >
-            <Send className="h-4 w-4" />
-            {isSubmitting ? 'Creating...' : 'Create Post'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleCancel}
+              variant="outline"
+              className="w-full gap-2"
+              disabled={isSubmitting}
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreatePost} 
+              className="w-full gap-2"
+              disabled={isSubmitting}
+            >
+              <Send className="h-4 w-4" />
+              {isSubmitting ? 'Creating...' : 'Create Post'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
