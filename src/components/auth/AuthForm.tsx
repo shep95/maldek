@@ -33,14 +33,13 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id') // Only select id to minimize data transfer
+        .select('id')
         .eq('username', username)
-        .limit(1) // Limit to 1 result since we only need to know if it exists
-        .single();
+        .maybeSingle();
 
       console.log('Username check query completed:', { data, error });
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
+      if (error) {
         console.error('Username check error:', error);
         toast.error('Error checking username availability');
         return;
