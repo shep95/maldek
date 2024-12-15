@@ -23,13 +23,17 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Get the storage path from the video_url
-      const storagePath = video.video_url.replace('videos/', '');
-      console.log('Getting public URL for storage path:', storagePath);
+      // Extract the file path from the full URL
+      const fullUrl = new URL(video.video_url);
+      const pathParts = fullUrl.pathname.split('/');
+      const bucketName = pathParts[2]; // 'videos'
+      const filePath = pathParts.slice(3).join('/'); // Everything after the bucket name
+
+      console.log('Getting signed URL for:', { bucketName, filePath });
 
       const { data, error } = await supabase.storage
-        .from('videos')
-        .createSignedUrl(storagePath, 3600); // 1 hour expiry
+        .from(bucketName)
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
 
       if (error || !data?.signedUrl) {
         console.error('Error getting signed URL:', error);
