@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -40,10 +40,6 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
   return (
     <Dialog open={!!videoUrl} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[95vw] h-[95vh] flex items-center justify-center bg-black/95 p-0 gap-0 border-none">
-        <DialogHeader>
-          <DialogTitle className="sr-only">Video Player</DialogTitle>
-        </DialogHeader>
-        
         <Button
           variant="ghost"
           size="icon"
@@ -51,10 +47,9 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
           onClick={onClose}
         >
           <X className="h-6 w-6" />
-          <span className="sr-only">Close video</span>
         </Button>
 
-        {isLoading && !videoError && (
+        {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
           </div>
@@ -62,23 +57,15 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
         <div className="relative w-full h-full flex items-center justify-center">
           <video
-            key={videoUrl} // Add key to force re-render when URL changes
             src={videoUrl}
             controls
             playsInline
             autoPlay
-            preload="auto"
             className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
             style={{ opacity: isLoading ? 0 : 1 }}
             onLoadedData={handleVideoLoad}
             onError={handleVideoError}
-            onPlay={() => console.log('Video started playing:', videoUrl)}
-            onPause={() => console.log('Video paused:', videoUrl)}
-            aria-label="Video player"
-          >
-            <source src={videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
+          />
           {videoError && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
               <p className="text-white text-center p-4">{videoError}</p>

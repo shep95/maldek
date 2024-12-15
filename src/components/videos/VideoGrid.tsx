@@ -13,7 +13,7 @@ interface VideoGridProps {
 export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridProps) => {
   const session = useSession();
 
-  const handleVideoClick = async (video: any) => {
+  const handleVideoClick = (video: any) => {
     console.log('Video clicked:', video);
     
     if (!video.video_url) {
@@ -22,15 +22,9 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       return;
     }
 
-    try {
-      // Simply pass the video URL directly to the dialog
-      console.log('Opening video with URL:', video.video_url);
-      onVideoSelect(video.video_url);
-      
-    } catch (error) {
-      console.error('Error handling video click:', error);
-      toast.error("Failed to load video");
-    }
+    // Simply pass the video URL directly to the dialog
+    console.log('Opening video with URL:', video.video_url);
+    onVideoSelect(video.video_url);
   };
 
   return (
