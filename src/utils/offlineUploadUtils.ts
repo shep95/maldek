@@ -28,7 +28,7 @@ const storeForOfflineUpload = async (file: File, userId: string, metadata: any) 
       timestamp: Date.now(),
     });
     console.log('Video stored for offline upload');
-    toast.info('Video will be uploaded when you're back online');
+    toast.info("Video will be uploaded when you're back online");
     return true;
   } catch (error) {
     console.error('Error storing video for offline upload:', error);
@@ -95,7 +95,7 @@ export const handleOfflineUpload = async (file: File, userId: string, metadata: 
     if (stored) {
       const syncRegistered = await registerBackgroundSync();
       if (syncRegistered) {
-        toast.info('Video will be uploaded automatically when you're back online');
+        toast.info("Video will be uploaded automatically when you're back online");
       } else {
         toast.info('Video will be uploaded when you return to the app online');
       }
