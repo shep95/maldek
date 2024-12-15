@@ -3,11 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Image, Upload, Video } from "lucide-react";
+import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@supabase/auth-helpers-react";
+import { FileInputSection } from "./FileInputSection";
+import { UploadProgress } from "./UploadProgress";
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ export const VideoUploadDialog = ({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const queryClient = useQueryClient();
   const session = useSession();
@@ -38,14 +41,12 @@ export const VideoUploadDialog = ({
       return;
     }
 
-    // Check file size (100MB limit)
     const maxSize = 100 * 1024 * 1024; // 100MB in bytes
     if (file.size > maxSize) {
       toast.error("Video file size must be less than 100MB");
       return;
     }
 
-    // Create a URL for the video to check its duration
     const videoElement = document.createElement('video');
     videoElement.preload = 'metadata';
     
@@ -83,7 +84,6 @@ export const VideoUploadDialog = ({
       return;
     }
 
-    // Check thumbnail size (5MB limit)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
       toast.error("Thumbnail file size must be less than 5MB");
@@ -107,26 +107,37 @@ export const VideoUploadDialog = ({
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     console.log('Starting video upload process...');
 
     try {
-      // Upload video
+      // Upload video with progress tracking
       const videoPath = `${session.user.id}/${Date.now()}_${videoFile.name}`;
       console.log('Uploading video to path:', videoPath);
-      
-      const { error: videoError } = await supabase.storage
-        .from('videos')
-        .upload(videoPath, videoFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
 
-      if (videoError) {
-        console.error('Video upload error:', videoError);
-        throw new Error(`Failed to upload video: ${videoError.message}`);
+      const videoChunkSize = 1024 * 1024; // 1MB chunks
+      const totalChunks = Math.ceil(videoFile.size / videoChunkSize);
+      let uploadedChunks = 0;
+
+      for (let start = 0; start < videoFile.size; start += videoChunkSize) {
+        const chunk = videoFile.slice(start, start + videoChunkSize);
+        const chunkPath = `${videoPath}_chunk_${uploadedChunks}`;
+
+        const { error: chunkError } = await supabase.storage
+          .from('videos')
+          .upload(chunkPath, chunk, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (chunkError) {
+          throw new Error(`Failed to upload video chunk: ${chunkError.message}`);
+        }
+
+        uploadedChunks++;
+        const progress = (uploadedChunks / totalChunks) * 100;
+        setUploadProgress(progress);
       }
-
-      console.log('Video uploaded successfully');
 
       // Upload thumbnail
       const thumbnailPath = `${session.user.id}/thumbnails/${Date.now()}_${thumbnailFile.name}`;
@@ -141,8 +152,6 @@ export const VideoUploadDialog = ({
 
       if (thumbnailError) {
         console.error('Thumbnail upload error:', thumbnailError);
-        // Clean up video if thumbnail upload fails
-        await supabase.storage.from('videos').remove([videoPath]);
         throw new Error(`Failed to upload thumbnail: ${thumbnailError.message}`);
       }
 
@@ -171,8 +180,6 @@ export const VideoUploadDialog = ({
 
       if (dbError) {
         console.error('Database insert error:', dbError);
-        // Clean up uploaded files if database insert fails
-        await supabase.storage.from('videos').remove([videoPath, thumbnailPath]);
         throw dbError;
       }
 
@@ -185,6 +192,7 @@ export const VideoUploadDialog = ({
       setDescription("");
       setVideoFile(null);
       setThumbnailFile(null);
+      setUploadProgress(0);
     } catch (error) {
       console.error('Detailed upload error:', error);
       toast.error(error.message || "Failed to upload video");
@@ -214,50 +222,30 @@ export const VideoUploadDialog = ({
             onChange={(e) => setDescription(e.target.value)}
             className="min-h-[100px]"
           />
-          <div className="space-y-2">
-            <Input
-              type="file"
-              accept="video/*"
-              onChange={handleVideoSelect}
-              className="hidden"
-              id="video-upload"
-            />
-            <Button
-              variant="outline"
-              onClick={() => document.getElementById("video-upload")?.click()}
-              className="w-full gap-2"
-            >
-              <Video className="h-4 w-4" />
-              Select Video
-            </Button>
-            {videoFile && (
-              <p className="text-sm text-muted-foreground">
-                Selected: {videoFile.name}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailSelect}
-              className="hidden"
-              id="thumbnail-upload"
-            />
-            <Button
-              variant="outline"
-              onClick={() => document.getElementById("thumbnail-upload")?.click()}
-              className="w-full gap-2"
-            >
-              <Image className="h-4 w-4" />
-              Select Thumbnail
-            </Button>
-            {thumbnailFile && (
-              <p className="text-sm text-muted-foreground">
-                Selected: {thumbnailFile.name}
-              </p>
-            )}
-          </div>
+          
+          <FileInputSection
+            id="video-upload"
+            accept="video/*"
+            icon="video"
+            label="Select Video"
+            selectedFile={videoFile}
+            onFileSelect={handleVideoSelect}
+          />
+
+          <FileInputSection
+            id="thumbnail-upload"
+            accept="image/*"
+            icon="image"
+            label="Select Thumbnail"
+            selectedFile={thumbnailFile}
+            onFileSelect={handleThumbnailSelect}
+          />
+
+          <UploadProgress
+            progress={uploadProgress}
+            isUploading={isUploading}
+          />
+          
           <Button 
             onClick={handleUpload} 
             className="w-full gap-2"
