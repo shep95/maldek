@@ -31,7 +31,7 @@ const Auth = () => {
           throw signInError;
         }
 
-        console.log('Sign in successful, navigating to dashboard');
+        console.log('Sign in successful');
         navigate("/dashboard");
       } else {
         console.log('Attempting to sign up user:', formData.email);
