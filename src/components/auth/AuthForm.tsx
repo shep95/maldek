@@ -32,6 +32,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     setIsUsernameTaken(false);
 
     try {
+      console.log("Starting username check for:", username);
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
@@ -44,13 +45,11 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         return;
       }
 
-      if (data) {
-        console.log("Username is taken:", username);
-        setIsUsernameTaken(true);
-      } else {
-        console.log("Username is available:", username);
-        setIsUsernameTaken(false);
-      }
+      console.log("Username check result:", { username, exists: !!data });
+      setIsUsernameTaken(!!data);
+    } catch (error) {
+      console.error("Username check failed:", error);
+      toast.error("Failed to check username availability");
     } finally {
       setIsCheckingUsername(false);
     }
@@ -89,7 +88,6 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (!isLogin && username.length >= 3) {
-        console.log("Checking username availability:", username);
         handleUsernameCheck(username);
       }
     }, 500);
