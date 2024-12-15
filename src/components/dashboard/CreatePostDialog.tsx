@@ -46,6 +46,16 @@ export const CreatePostDialog = ({
     }
   };
 
+  const resetFormState = () => {
+    console.log('Resetting form state');
+    setContent("");
+    setIsSubmitting(false);
+    mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    setMediaPreviewUrls([]);
+    setMediaFiles([]);
+    setMentionedUser("");
+  };
+
   const handleCreatePost = async () => {
     if (!currentUser?.id) {
       console.error('No user ID found');
@@ -96,13 +106,8 @@ export const CreatePostDialog = ({
       }
 
       console.log('Post created successfully:', newPost);
-
-      // Clean up
-      setContent("");
-      mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
-      setMediaPreviewUrls([]);
-      setMediaFiles([]);
       
+      resetFormState();
       onPostCreated(newPost);
       onOpenChange(false);
       toast.success("Post created successfully!");
@@ -110,7 +115,6 @@ export const CreatePostDialog = ({
     } catch (error) {
       console.error('Detailed error:', error);
       toast.error(error.message || "Failed to create post");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -120,20 +124,7 @@ export const CreatePostDialog = ({
     e.stopPropagation();
     
     console.log('Cancelling post creation');
-    
-    // Clean up any media preview URLs
-    mediaPreviewUrls.forEach(url => {
-      console.log('Revoking URL:', url);
-      URL.revokeObjectURL(url);
-    });
-    
-    // Reset all state
-    setContent("");
-    setMediaPreviewUrls([]);
-    setMediaFiles([]);
-    setMentionedUser("");
-    
-    // Close the dialog
+    resetFormState();
     onOpenChange(false);
   };
 
