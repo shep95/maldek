@@ -27,7 +27,6 @@ export const VideoPlayer = ({
     setIsLoading(true);
     setError(null);
 
-    // Check if the video URL is valid
     if (!videoUrl) {
       console.error('Invalid video URL:', videoUrl);
       setError('Invalid video URL');
@@ -51,7 +50,6 @@ export const VideoPlayer = ({
 
     loadAd();
 
-    // Reset states when video URL changes
     return () => {
       setIsLoading(true);
       setError(null);
@@ -60,39 +58,31 @@ export const VideoPlayer = ({
 
   const handleVideoError = (e: any) => {
     const videoElement = e.target as HTMLVideoElement;
-    const videoSource = videoElement.currentSrc || videoUrl;
-    const fileExtension = videoSource.split('.').pop()?.toLowerCase();
-    
     console.error('Video playback error:', {
-      originalError: e,
-      videoUrl: videoSource,
-      fileExtension,
+      error: videoElement.error,
       networkState: videoElement.networkState,
       readyState: videoElement.readyState,
-      errorMessage: videoElement.error?.message || 'Unknown error',
-      errorCode: videoElement.error?.code,
-      supportedTypes: videoElement.canPlayType('video/mp4'),
-      currentTime: videoElement.currentTime,
-      paused: videoElement.paused,
-      videoWidth: videoElement.videoWidth,
-      videoHeight: videoElement.videoHeight
+      currentSrc: videoElement.currentSrc,
+      videoUrl
     });
     
-    let errorMessage = 'Failed to load video: ';
-    if (videoElement.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-      errorMessage += `Format not supported (${fileExtension}). Please try converting to MP4.`;
-    } else if (videoElement.error?.code === MediaError.MEDIA_ERR_DECODE) {
-      errorMessage += 'Video file is corrupted or uses an unsupported codec';
-    } else if (videoElement.error?.code === MediaError.MEDIA_ERR_NETWORK) {
-      errorMessage += 'Network error occurred while loading';
-    } else if (videoElement.error?.code === MediaError.MEDIA_ERR_ABORTED) {
-      errorMessage += 'Video loading was aborted';
-    } else {
-      errorMessage += videoElement.error?.message || 'Unknown error';
-    }
-    
-    setError(errorMessage);
+    setError('Failed to load video. Please try again.');
     setIsLoading(false);
+  };
+
+  const handleVideoLoaded = () => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      console.log('Video loaded successfully:', {
+        url: videoUrl,
+        duration: videoElement.duration,
+        readyState: videoElement.readyState,
+        networkState: videoElement.networkState,
+        currentSrc: videoElement.currentSrc
+      });
+    }
+    setIsLoading(false);
+    setError(null);
   };
 
   const handleAdEnded = () => {
@@ -104,24 +94,6 @@ export const VideoPlayer = ({
         setError('Failed to play video after ad');
       });
     }
-  };
-
-  const handleVideoLoaded = () => {
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      console.log('Video loaded successfully:', {
-        url: videoUrl,
-        duration: videoElement.duration,
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-        readyState: videoElement.readyState,
-        networkState: videoElement.networkState,
-        error: videoElement.error,
-        currentSrc: videoElement.currentSrc
-      });
-    }
-    setIsLoading(false);
-    setError(null);
   };
 
   return (
@@ -150,6 +122,7 @@ export const VideoPlayer = ({
       ) : (
         <video
           ref={videoRef}
+          src={videoUrl}
           className={className}
           controls={controls}
           autoPlay={autoPlay}
@@ -157,12 +130,7 @@ export const VideoPlayer = ({
           onLoadedData={handleVideoLoaded}
           playsInline
           preload="metadata"
-        >
-          <source src={videoUrl} type="video/mp4" />
-          <source src={videoUrl} type="video/webm" />
-          <source src={videoUrl} type="video/ogg" />
-          Your browser does not support the video tag.
-        </video>
+        />
       )}
 
       {isLoading && !error && (
