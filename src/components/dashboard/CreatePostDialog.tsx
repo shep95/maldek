@@ -8,6 +8,7 @@ import { MentionInput } from "./post/MentionInput";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
 
 interface CreatePostDialogProps {
   isOpen: boolean;
@@ -34,25 +35,40 @@ export const CreatePostDialog = ({
     const files = event.target.files;
     if (!files) return;
 
+    console.log('Files selected:', files.length);
+
     const validFiles = Array.from(files).filter(file => {
       const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
+      const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
+      
       if (!isValid) {
         toast.error(`Invalid file type: ${file.name}`);
+        return false;
       }
-      return isValid;
+      
+      if (file.size > maxSize) {
+        toast.error(`File too large: ${file.name} (max ${file.type.startsWith('video/') ? '100MB' : '5MB'})`);
+        return false;
+      }
+      
+      return true;
     });
 
-    setMediaFiles(prev => [...prev, ...validFiles]);
-    validFiles.forEach(file => {
-      const previewUrl = URL.createObjectURL(file);
-      setMediaPreviewUrls(prev => [...prev, previewUrl]);
-    });
+    if (validFiles.length > 0) {
+      setMediaFiles(prev => [...prev, ...validFiles]);
+      validFiles.forEach(file => {
+        const previewUrl = URL.createObjectURL(file);
+        setMediaPreviewUrls(prev => [...prev, previewUrl]);
+      });
+      console.log('Valid files added:', validFiles.length);
+    }
   };
 
   const removeMedia = (index: number) => {
     URL.revokeObjectURL(mediaPreviewUrls[index]);
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
     setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    console.log('Media removed at index:', index);
   };
 
   const handleMentionUser = () => {
@@ -65,14 +81,12 @@ export const CreatePostDialog = ({
   const handleCreatePost = async () => {
     console.log('Starting post creation with:', { content, mediaFiles, currentUser });
     
-    // Validate user data
     if (!currentUser?.id) {
       console.error('No user ID available:', currentUser);
       toast.error("User authentication error. Please try logging in again.");
       return;
     }
 
-    // Validate content
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -82,40 +96,20 @@ export const CreatePostDialog = ({
       setIsSubmitting(true);
       const mediaUrls: string[] = [];
 
-      // Upload media files if any
       if (mediaFiles.length > 0) {
         console.log('Uploading media files:', mediaFiles.length);
         
         for (const file of mediaFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `${currentUser.id}/${fileName}`;
-
-          console.log('Uploading file:', { fileName, filePath });
-
-          const { error: uploadError, data: uploadData } = await supabase.storage
-            .from('posts')
-            .upload(filePath, file);
-
-          if (uploadError) {
-            console.error('File upload error:', uploadError);
-            throw new Error(`Failed to upload file: ${uploadError.message}`);
+          const mediaUrl = await handleImageUpload(file, currentUser.id);
+          if (mediaUrl) {
+            mediaUrls.push(mediaUrl);
+            console.log('Media uploaded successfully:', mediaUrl);
           }
-
-          console.log('Upload successful:', uploadData);
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('posts')
-            .getPublicUrl(filePath);
-
-          console.log('File uploaded successfully:', publicUrl);
-          mediaUrls.push(publicUrl);
         }
       }
 
       console.log('Creating post with media URLs:', mediaUrls);
 
-      // Create post
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert({
@@ -133,13 +127,11 @@ export const CreatePostDialog = ({
 
       console.log('Post created successfully:', newPost);
 
-      // Reset form
       setContent("");
       mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setMediaPreviewUrls([]);
       setMediaFiles([]);
       
-      // Close dialog and notify success
       onPostCreated(newPost);
       onOpenChange(false);
       toast.success("Post created successfully!");
