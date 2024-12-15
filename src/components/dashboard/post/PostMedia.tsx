@@ -41,7 +41,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
             });
           },
           {
-            threshold: 0.5, // 50% of the video must be visible
+            threshold: 0.5,
           }
         );
 
