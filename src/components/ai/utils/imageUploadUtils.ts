@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { compressVideo } from "@/utils/videoCompression";
 import { handleOfflineUpload } from "@/utils/offlineUploadUtils";
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
@@ -15,28 +14,17 @@ export const handleImageUpload = async (file: File, userId: string) => {
       lastModified: new Date(file.lastModified).toISOString()
     });
 
-    let processedFile = file;
-    if (file.type.startsWith('video/')) {
-      try {
-        processedFile = await compressVideo(file);
-      } catch (error) {
-        console.error('Compression error:', error);
-        toast.error('Failed to compress video');
-        return null;
-      }
-    }
-
-    // Verify final file size
+    // Verify file size
     const maxSize = 50 * 1024 * 1024; // 50MB
-    if (processedFile.size > maxSize) {
-      console.error('File still too large after compression:', `${(processedFile.size / (1024 * 1024)).toFixed(2)}MB`);
+    if (file.size > maxSize) {
+      console.error('File too large:', `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
       toast.error(`File size must be less than 50MB. Please try a smaller file.`);
       return null;
     }
 
     // Check if device is offline and handle offline upload
-    const canUploadNow = await handleOfflineUpload(processedFile, userId, {
-      type: processedFile.type,
+    const canUploadNow = await handleOfflineUpload(file, userId, {
+      type: file.type,
       originalName: file.name
     });
 
@@ -45,7 +33,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     }
 
     // Generate file path
-    const fileExt = processedFile.name.split('.').pop();
+    const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
@@ -53,13 +41,13 @@ export const handleImageUpload = async (file: File, userId: string) => {
     toast.info('Uploading file...');
 
     // Implement chunked upload
-    const chunks = Math.ceil(processedFile.size / CHUNK_SIZE);
+    const chunks = Math.ceil(file.size / CHUNK_SIZE);
     const uploadPromises = [];
 
     for (let i = 0; i < chunks; i++) {
       const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, processedFile.size);
-      const chunk = processedFile.slice(start, end);
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
       const chunkPath = `${filePath}_chunk_${i}`;
 
       uploadPromises.push(
