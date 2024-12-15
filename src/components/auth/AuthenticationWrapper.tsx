@@ -15,12 +15,29 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log("AuthenticationWrapper mounted");
+    
     // Clear all Supabase auth data from localStorage
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('supabase.auth.')) {
+        console.log("Removing auth data:", key);
         localStorage.removeItem(key);
       }
     });
+
+    // Force sign out from Supabase
+    const performSignOut = async () => {
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error("Sign out error:", error);
+        }
+      } catch (error) {
+        console.error("Error during sign out:", error);
+      }
+    };
+
+    performSignOut();
 
     // Force navigation to auth page
     navigate('/auth');
@@ -33,18 +50,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         if (!session?.user?.id) {
           console.error("No user ID in session");
           return;
-        }
-
-        // Check if profile exists
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          console.error("Profile check error:", profileError);
-          // Continue to dashboard even if profile check fails
         }
 
         navigate('/dashboard');
