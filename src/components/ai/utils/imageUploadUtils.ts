@@ -56,19 +56,22 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Bucket info:', bucketInfo);
 
-    // Attempt the upload
+    // Attempt the upload with content type
     const { error: uploadError, data } = await supabase.storage
       .from(bucket)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        contentType: file.type // Explicitly set content type
       });
 
     if (uploadError) {
       console.error('Upload error details:', {
         name: uploadError.name,
         message: uploadError.message,
-        stack: uploadError.stack
+        stack: uploadError.stack,
+        status: uploadError.status,
+        statusText: uploadError.statusText
       });
       toast.error(`Upload error: ${uploadError.message}`);
       return null;
@@ -94,6 +97,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     }
 
     console.log('File verified successfully');
+    toast.success(`${isVideo ? 'Video' : 'Image'} uploaded successfully!`);
     return publicUrl;
 
   } catch (error: any) {
