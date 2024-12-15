@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { compressVideo } from "@/utils/videoCompression";
 
 export const handleImageUpload = async (file: File, userId: string) => {
   try {
@@ -11,28 +12,39 @@ export const handleImageUpload = async (file: File, userId: string) => {
       lastModified: file.lastModified
     });
 
-    // Limit file size to 50MB (Supabase's default limit)
+    let processedFile = file;
+    if (file.type.startsWith('video/')) {
+      try {
+        processedFile = await compressVideo(file);
+      } catch (error) {
+        console.error('Compression error:', error);
+        toast.error('Failed to compress video');
+        return null;
+      }
+    }
+
+    // Verify final file size
     const maxSize = 50 * 1024 * 1024; // 50MB
-    if (file.size > maxSize) {
-      console.error('File too large:', file.size);
-      toast.error(`File size must be less than 50MB`);
+    if (processedFile.size > maxSize) {
+      console.error('File still too large after compression:', processedFile.size);
+      toast.error(`File size must be less than 50MB. Please try a smaller file.`);
       return null;
     }
 
     // Generate file path
-    const fileExt = file.name.split('.').pop();
+    const fileExt = processedFile.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
     console.log('Uploading file to path:', filePath);
 
-    // Upload file with original content type
+    // Upload file
     const { error: uploadError, data } = await supabase.storage
       .from('posts')
-      .upload(filePath, file, {
+      .upload(filePath, processedFile, {
         cacheControl: '3600',
         upsert: true,
-        contentType: file.type
+        contentType: processedFile.type
       });
 
     if (uploadError) {
