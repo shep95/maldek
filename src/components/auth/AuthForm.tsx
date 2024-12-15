@@ -28,7 +28,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
-    console.log("Checking username:", username);
+    console.log("Starting username check for:", username);
     setIsCheckingUsername(true);
 
     try {
@@ -38,18 +38,21 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         .eq('username', username)
         .maybeSingle();
 
+      console.log("Username check response:", { data, error });
+
       if (error) {
         console.error("Username check error:", error);
         toast.error("Error checking username");
+        setIsCheckingUsername(false);
         return;
       }
 
-      console.log("Username check result:", { username, taken: !!data });
       setIsUsernameTaken(!!data);
     } catch (error) {
       console.error("Username check error:", error);
       toast.error("Error checking username");
     } finally {
+      console.log("Finishing username check, setting isCheckingUsername to false");
       setIsCheckingUsername(false);
     }
   }, []);
@@ -68,15 +71,19 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     }
 
     setIsSubmitting(true);
+    console.log("Starting form submission");
+
     try {
       await onSubmit({
         email,
         password,
         ...(isLogin ? {} : { username }),
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Form submission error:", error);
+      toast.error(error.message || "Authentication failed");
     } finally {
+      console.log("Ending form submission");
       setIsSubmitting(false);
     }
   };
@@ -85,6 +92,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     let timeoutId: NodeJS.Timeout;
 
     if (!isLogin && username.length >= 3) {
+      console.log("Setting timeout for username check");
       timeoutId = setTimeout(() => {
         handleUsernameCheck(username);
       }, 500);
@@ -92,6 +100,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
     return () => {
       if (timeoutId) {
+        console.log("Clearing username check timeout");
         clearTimeout(timeoutId);
       }
     };
@@ -106,7 +115,10 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
               type="text"
               placeholder="Username (minimum 3 characters)"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                console.log("Username input changed:", e.target.value);
+                setUsername(e.target.value);
+              }}
               className={`${
                 isUsernameTaken ? "border-red-500" : 
                 username.length >= 3 && !isUsernameTaken && !isCheckingUsername ? "border-green-500" : ""
