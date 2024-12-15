@@ -39,7 +39,8 @@ export const VideoUploadDialog = ({
     }
 
     // Check file size (100MB limit)
-    if (file.size > 100 * 1024 * 1024) {
+    const maxSize = 100 * 1024 * 1024; // 100MB in bytes
+    if (file.size > maxSize) {
       toast.error("Video file size must be less than 100MB");
       return;
     }
@@ -83,7 +84,8 @@ export const VideoUploadDialog = ({
     }
 
     // Check thumbnail size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
       toast.error("Thumbnail file size must be less than 5MB");
       return;
     }
@@ -94,6 +96,7 @@ export const VideoUploadDialog = ({
 
   const handleUpload = async () => {
     if (!session?.user?.id) {
+      console.error('No user session found');
       toast.error("Please sign in to upload videos");
       return;
     }
@@ -113,7 +116,10 @@ export const VideoUploadDialog = ({
       
       const { error: videoError } = await supabase.storage
         .from('videos')
-        .upload(videoPath, videoFile);
+        .upload(videoPath, videoFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (videoError) {
         console.error('Video upload error:', videoError);
@@ -123,12 +129,15 @@ export const VideoUploadDialog = ({
       console.log('Video uploaded successfully');
 
       // Upload thumbnail
-      const thumbnailPath = `${session.user.id}/${Date.now()}_${thumbnailFile.name}`;
+      const thumbnailPath = `${session.user.id}/thumbnails/${Date.now()}_${thumbnailFile.name}`;
       console.log('Uploading thumbnail to path:', thumbnailPath);
       
       const { error: thumbnailError } = await supabase.storage
         .from('videos')
-        .upload(thumbnailPath, thumbnailFile);
+        .upload(thumbnailPath, thumbnailFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (thumbnailError) {
         console.error('Thumbnail upload error:', thumbnailError);
@@ -140,8 +149,13 @@ export const VideoUploadDialog = ({
       console.log('Thumbnail uploaded successfully');
 
       // Get public URLs
-      const videoUrl = supabase.storage.from('videos').getPublicUrl(videoPath).data.publicUrl;
-      const thumbnailUrl = supabase.storage.from('videos').getPublicUrl(thumbnailPath).data.publicUrl;
+      const { data: { publicUrl: videoUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(videoPath);
+
+      const { data: { publicUrl: thumbnailUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(thumbnailPath);
 
       console.log('Generated public URLs:', { videoUrl, thumbnailUrl });
 
