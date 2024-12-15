@@ -635,6 +635,7 @@ export interface Database {
             referencedColumns: ["id"]
           },
         ]
+      }
     }
     Views: {
       [_ in never]: never
