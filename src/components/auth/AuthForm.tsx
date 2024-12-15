@@ -59,7 +59,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     return () => clearTimeout(debounceTimer);
   }, [username]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
@@ -80,6 +80,34 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
       if (isUsernameTaken) {
         toast.error("Username is already taken");
+        return;
+      }
+
+      try {
+        // Sign up the user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (authData.user) {
+          // Create profile
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              username,
+            });
+
+          if (profileError) throw profileError;
+        }
+
+        toast.success("Account created successfully!");
+      } catch (error: any) {
+        console.error('Signup error:', error);
+        toast.error(error.message || "Failed to create account");
         return;
       }
     }

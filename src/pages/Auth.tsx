@@ -31,40 +31,6 @@ const Auth = () => {
 
         console.log('Sign in successful');
         navigate("/dashboard");
-      } else {
-        console.log('Attempting to sign up user:', formData.email);
-        const { error: signUpError, data } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (signUpError) {
-          console.error('Sign up error:', signUpError);
-          throw signUpError;
-        }
-
-        if (data.user) {
-          console.log('Creating user profile...');
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              username: formData.username,
-              bio: '',
-            });
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            toast.error("Failed to create profile. Please try again.");
-            // Clean up the created auth user
-            await supabase.auth.signOut();
-            return;
-          }
-
-          console.log('Profile created successfully');
-          toast.success("Account created successfully! You can now sign in.");
-          setIsLogin(true);
-        }
       }
     } catch (error: any) {
       console.error('Authentication error:', error);

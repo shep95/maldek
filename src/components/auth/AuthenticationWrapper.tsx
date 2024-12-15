@@ -36,26 +36,32 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
           if (profileError) {
             console.error("Profile error:", profileError);
-            await supabase.auth.signOut();
-            queryClient.clear();
-            navigate('/auth');
+            // Don't sign out, just redirect to auth if needed
+            if (!location.pathname.startsWith('/auth')) {
+              navigate('/auth');
+            }
             return;
           }
 
           console.log("Profile loaded:", profile);
+          
+          // If we're on the auth page but have a valid session and profile, redirect to dashboard
+          if (location.pathname.startsWith('/auth')) {
+            navigate('/dashboard');
+          }
         }
       } catch (error) {
         console.error("Auth error:", error);
-        await supabase.auth.signOut();
-        queryClient.clear();
-        navigate('/auth');
+        if (!location.pathname.startsWith('/auth')) {
+          navigate('/auth');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     init();
-  }, [navigate, queryClient, location.pathname]);
+  }, [navigate, location.pathname]);
 
   if (isLoading) {
     return (
