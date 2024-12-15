@@ -116,8 +116,12 @@ export const CreatePostDialog = ({
   };
 
   const handleCancel = () => {
+    console.log('Cancelling post creation');
     // Clean up any media preview URLs
-    mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    mediaPreviewUrls.forEach(url => {
+      console.log('Revoking URL:', url);
+      URL.revokeObjectURL(url);
+    });
     
     // Reset all state
     setContent("");

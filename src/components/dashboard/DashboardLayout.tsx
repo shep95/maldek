@@ -65,6 +65,11 @@ const DashboardLayout = () => {
     toast.success('Post created successfully!');
   };
 
+  const handleOpenChange = (open: boolean) => {
+    console.log('Dialog open state changing to:', open);
+    setIsCreatingPost(open);
+  };
+
   // Don't show create post dialog if profile is still loading
   if (isLoadingProfile) {
     return <div>Loading...</div>;
@@ -98,7 +103,7 @@ const DashboardLayout = () => {
       {profile && (
         <CreatePostDialog
           isOpen={isCreatingPost}
-          onOpenChange={setIsCreatingPost}
+          onOpenChange={handleOpenChange}
           currentUser={currentUser}
           onPostCreated={handlePostCreated}
         />
