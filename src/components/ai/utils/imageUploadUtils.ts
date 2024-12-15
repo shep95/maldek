@@ -84,19 +84,14 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('All chunks uploaded successfully');
 
-    // Get public URL
-    const { data: { publicUrl }, error: urlError } = supabase.storage
+    // Get public URL - Fixed the type error by removing error destructuring
+    const { data } = supabase.storage
       .from('posts')
       .getPublicUrl(filePath);
 
-    if (urlError) {
-      console.error('Error getting public URL:', urlError);
-      throw new Error('Failed to get public URL for uploaded file');
-    }
-
-    console.log('Generated public URL:', publicUrl);
+    console.log('Generated public URL:', data.publicUrl);
     toast.success('Media uploaded successfully!');
-    return publicUrl;
+    return data.publicUrl;
 
   } catch (error: any) {
     console.error('Upload error:', {
