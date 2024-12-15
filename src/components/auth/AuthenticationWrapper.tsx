@@ -15,6 +15,17 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Clear all Supabase auth data from localStorage
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('supabase.auth.')) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Force navigation to auth page
+    navigate('/auth');
+    setIsLoading(false);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
@@ -41,33 +52,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         navigate('/auth');
       }
     });
-
-    // Initial session check
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.log("No active session");
-          if (location.pathname !== '/auth') {
-            navigate('/auth');
-          }
-        } else {
-          console.log("Active session found:", session.user?.id);
-          if (location.pathname === '/auth') {
-            navigate('/dashboard');
-          }
-        }
-      } catch (error) {
-        console.error("Session check error:", error);
-        if (location.pathname !== '/auth') {
-          navigate('/auth');
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
 
     return () => {
       subscription.unsubscribe();
