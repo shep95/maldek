@@ -13,7 +13,7 @@ interface VideoGridProps {
 export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridProps) => {
   const session = useSession();
 
-  const handleVideoClick = (video: any) => {
+  const handleVideoClick = async (video: any) => {
     console.log('Video clicked:', video);
     
     if (!video.video_url) {
@@ -22,9 +22,20 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       return;
     }
 
-    // Simply pass the video URL directly to the dialog
-    console.log('Opening video with URL:', video.video_url);
-    onVideoSelect(video.video_url);
+    try {
+      // Get a fresh public URL for the video
+      const { data: { publicUrl } } = supabase
+        .storage
+        .from('videos')
+        .getPublicUrl(video.video_url.split('/').pop() || '');
+
+      console.log('Opening video with public URL:', publicUrl);
+      onVideoSelect(publicUrl);
+      
+    } catch (error) {
+      console.error('Error handling video click:', error);
+      toast.error("Failed to load video");
+    }
   };
 
   return (

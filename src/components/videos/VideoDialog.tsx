@@ -21,18 +21,26 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
     }
   }, [videoUrl]);
 
-  const handleVideoError = (error: any) => {
-    const errorMessage = 'Failed to load video. Please try again.';
-    console.error('Video playback error:', error, 'URL:', videoUrl);
-    setVideoError(errorMessage);
-    setIsLoading(false);
-    toast.error(errorMessage);
-  };
-
   const handleVideoLoad = () => {
     console.log('Video loaded successfully:', videoUrl);
     setIsLoading(false);
     setVideoError(null);
+  };
+
+  const handleVideoError = (error: any) => {
+    const errorMessage = 'Failed to load video. Please try again.';
+    console.error('Video playback error:', {
+      error,
+      videoElement: error.target,
+      networkState: error.target.networkState,
+      readyState: error.target.readyState,
+      errorCode: error.target.error?.code,
+      errorMessage: error.target.error?.message,
+      url: videoUrl
+    });
+    setVideoError(errorMessage);
+    setIsLoading(false);
+    toast.error(errorMessage);
   };
 
   if (!videoUrl) return null;
@@ -61,11 +69,15 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             controls
             playsInline
             autoPlay
+            preload="metadata"
             className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
             style={{ opacity: isLoading ? 0 : 1 }}
             onLoadedData={handleVideoLoad}
             onError={handleVideoError}
-          />
+          >
+            <source src={videoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
           {videoError && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
               <p className="text-white text-center p-4">{videoError}</p>
