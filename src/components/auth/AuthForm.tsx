@@ -37,17 +37,15 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         .eq('username', username)
         .maybeSingle();
 
-      console.log('Username check query completed:', { data, error });
-
       if (error) {
         console.error('Username check error:', error);
         toast.error('Error checking username availability');
+        setIsCheckingUsername(false);
         return;
       }
 
-      const isTaken = !!data;
-      console.log('Username availability result:', { username, isTaken });
-      setIsUsernameTaken(isTaken);
+      console.log('Username check result:', { username, isTaken: !!data });
+      setIsUsernameTaken(!!data);
     } catch (error) {
       console.error('Unexpected error during username check:', error);
       toast.error('Error checking username availability');
