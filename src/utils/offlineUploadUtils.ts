@@ -8,11 +8,20 @@ interface PendingUpload {
   timestamp: number;
 }
 
+// Extend ServiceWorkerRegistration to include sync
+interface SyncManager {
+  register(tag: string): Promise<void>;
+}
+
+interface ExtendedServiceWorkerRegistration extends ServiceWorkerRegistration {
+  sync: SyncManager;
+}
+
 // Register background sync
 const registerBackgroundSync = async () => {
   try {
     if ('serviceWorker' in navigator) {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.ready as ExtendedServiceWorkerRegistration;
       // Check if sync is supported
       if ('sync' in registration) {
         await registration.sync.register('video-upload');
