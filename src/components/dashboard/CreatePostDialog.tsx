@@ -32,7 +32,6 @@ export const CreatePostDialog = ({
     const files = event.target.files;
     if (!files) return;
 
-    // Accept any file type for testing
     const validFiles = Array.from(files);
     console.log('Files selected:', validFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
 
@@ -40,6 +39,7 @@ export const CreatePostDialog = ({
       setMediaFiles(prev => [...prev, ...validFiles]);
       validFiles.forEach(file => {
         const previewUrl = URL.createObjectURL(file);
+        console.log('Created preview URL:', previewUrl, 'for file:', file.name);
         setMediaPreviewUrls(prev => [...prev, previewUrl]);
       });
     }

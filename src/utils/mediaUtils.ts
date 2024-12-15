@@ -2,7 +2,6 @@ export const createPersistentMediaUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     console.log('Creating persistent URL for file:', file.name, 'Type:', file.type);
     
-    // For testing, accept any file type
     const url = URL.createObjectURL(file);
     console.log('Created URL:', url);
     resolve(url);
