@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -19,20 +19,19 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [username, setUsername] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleUsernameCheck = async (username: string) => {
+  const handleUsernameCheck = useCallback(async (username: string) => {
     if (!username || username.length < 3) {
       setIsUsernameTaken(false);
       setIsCheckingUsername(false);
       return;
     }
 
-    // Set checking state and reset taken state
+    console.log("Checking username:", username);
     setIsCheckingUsername(true);
-    setIsUsernameTaken(false);
 
     try {
-      // Clear any previous check results
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
@@ -40,22 +39,20 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         .maybeSingle();
 
       if (error) {
-        console.error('Username check error:', error);
-        toast.error('Error checking username availability');
-        setIsCheckingUsername(false);
+        console.error("Username check error:", error);
+        toast.error("Error checking username");
         return;
       }
 
-      // Update taken state based on query result
+      console.log("Username check result:", { username, taken: !!data });
       setIsUsernameTaken(!!data);
-      setIsCheckingUsername(false);
-
     } catch (error) {
-      console.error('Unexpected error during username check:', error);
-      toast.error('Error checking username availability');
+      console.error("Username check error:", error);
+      toast.error("Error checking username");
+    } finally {
       setIsCheckingUsername(false);
     }
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,35 +67,35 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
-    onSubmit({
-      email,
-      password,
-      ...(isLogin ? {} : { username }),
-    });
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        email,
+        password,
+        ...(isLogin ? {} : { username }),
+      });
+    } catch (error) {
+      console.error("Form submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
     if (!isLogin && username.length >= 3) {
-      // Clear any existing timeout
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-
-      // Set new timeout for username check
       timeoutId = setTimeout(() => {
         handleUsernameCheck(username);
       }, 500);
     }
 
-    // Cleanup function
     return () => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
     };
-  }, [username, isLogin]);
+  }, [username, isLogin, handleUsernameCheck]);
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto px-4">
@@ -107,15 +104,16 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           <div className="relative">
             <Input
               type="text"
-              placeholder="Username"
+              placeholder="Username (minimum 3 characters)"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className={`${
                 isUsernameTaken ? "border-red-500" : 
-                username.length >= 3 && !isUsernameTaken ? "border-green-500" : ""
+                username.length >= 3 && !isUsernameTaken && !isCheckingUsername ? "border-green-500" : ""
               }`}
               required
               minLength={3}
+              disabled={isSubmitting}
             />
             {username.length >= 3 && (
               <div className="absolute right-3 top-3 text-sm">
@@ -137,6 +135,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           onChange={(e) => setEmail(e.target.value)}
           className="bg-muted/50 w-full"
           required
+          disabled={isSubmitting}
         />
         <Input
           type="password"
@@ -146,12 +145,14 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           className="bg-muted/50 w-full"
           required
           minLength={6}
+          disabled={isSubmitting}
         />
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
+          disabled={isSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken))}
         >
-          {isLogin ? "Sign in" : "Sign up"}
+          {isSubmitting ? "Please wait..." : (isLogin ? "Sign in" : "Sign up")}
         </Button>
       </div>
     </form>

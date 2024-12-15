@@ -17,32 +17,39 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   useEffect(() => {
     console.log("AuthenticationWrapper mounted");
     
-    // Clear all Supabase auth data from localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('supabase.auth.')) {
-        console.log("Removing auth data:", key);
-        localStorage.removeItem(key);
-      }
-    });
+    const clearAuthData = async () => {
+      console.log("Clearing auth data...");
+      
+      // Clear all Supabase auth data from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth.')) {
+          console.log("Removing auth data:", key);
+          localStorage.removeItem(key);
+        }
+      });
 
-    // Force sign out from Supabase
-    const performSignOut = async () => {
+      // Force sign out from Supabase
       try {
         const { error } = await supabase.auth.signOut();
         if (error) {
           console.error("Sign out error:", error);
+          toast.error("Error signing out");
+        } else {
+          console.log("Successfully signed out");
         }
       } catch (error) {
         console.error("Error during sign out:", error);
+        toast.error("Error signing out");
       }
+
+      // Force navigation to auth page
+      navigate('/auth');
+      setIsLoading(false);
     };
 
-    performSignOut();
+    clearAuthData();
 
-    // Force navigation to auth page
-    navigate('/auth');
-    setIsLoading(false);
-
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
@@ -50,6 +57,29 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         if (!session?.user?.id) {
           console.error("No user ID in session");
           return;
+        }
+
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.log("No profile found, creating one...");
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert([{ 
+              id: session.user.id,
+              username: session.user.email?.split('@')[0] || `user_${Date.now()}`
+            }]);
+
+          if (createError) {
+            console.error("Error creating profile:", createError);
+            toast.error("Error creating profile");
+            return;
+          }
         }
 
         navigate('/dashboard');
@@ -61,7 +91,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
   if (isLoading) {
     return (
