@@ -23,12 +23,15 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
+      console.log('Attempting to get public URL for:', video.video_url);
+      
       // Get the full URL from Supabase storage
       const { data } = supabase.storage
         .from('videos')
         .getPublicUrl(video.video_url);
 
       if (!data.publicUrl) {
+        console.error('Failed to generate public URL for:', video.video_url);
         throw new Error('Failed to generate public URL');
       }
 
@@ -36,7 +39,7 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       onVideoSelect(data.publicUrl);
       
     } catch (error) {
-      console.error('Error getting video URL:', error);
+      console.error('Error getting video URL:', error, 'Video data:', video);
       toast.error("Failed to load video");
     }
   };

@@ -62,7 +62,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
         <div className="relative w-full h-full flex items-center justify-center">
           <video
-            key={videoUrl}
+            key={videoUrl} // Force video element recreation when URL changes
             src={videoUrl}
             controls
             playsInline
