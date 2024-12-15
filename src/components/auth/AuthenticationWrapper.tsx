@@ -12,37 +12,63 @@ interface AuthenticationWrapperProps {
 export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationWrapperProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const init = async () => {
       try {
-        // First, sign out any existing session
-        await supabase.auth.signOut();
-        console.log("Signed out any existing session");
+        console.log("Initializing authentication wrapper...");
         
-        // Clear query cache
-        queryClient.clear();
+        // Check if there's an active session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // Reset state
-        setIsAuthenticated(false);
-        
-        // Redirect to auth page
-        if (!location.pathname.startsWith('/auth')) {
+        if (sessionError) {
+          console.error("Session check error:", sessionError);
+          throw sessionError;
+        }
+
+        // If no session and not on auth page, redirect to auth
+        if (!session && !location.pathname.startsWith('/auth')) {
+          console.log("No active session, redirecting to auth page");
           navigate('/auth');
         }
+        
+        // If session exists, check for profile
+        if (session?.user) {
+          console.log("Session found, checking profile...");
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.error("Profile fetch error:", profileError);
+            // Sign out if profile doesn't exist
+            await supabase.auth.signOut();
+            queryClient.clear();
+            toast.error("Error loading profile. Please sign in again.");
+            navigate('/auth');
+            return;
+          }
+
+          console.log("Profile loaded successfully:", profile);
+        }
       } catch (error) {
-        console.error("Error during initialization:", error);
-        toast.error("An error occurred during initialization");
+        console.error("Authentication wrapper error:", error);
+        toast.error("An error occurred. Please try again.");
+        
+        // Clear everything and redirect to auth
+        await supabase.auth.signOut();
+        queryClient.clear();
+        navigate('/auth');
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Run initialization
     init();
-  }, [navigate, queryClient]);
+  }, [navigate, queryClient, location.pathname]);
 
   if (isLoading) {
     return (
