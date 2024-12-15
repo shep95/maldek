@@ -36,7 +36,6 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
           if (profileError) {
             console.error("Profile error:", profileError);
-            // Don't sign out, just redirect to auth if needed
             if (!location.pathname.startsWith('/auth')) {
               navigate('/auth');
             }
@@ -45,7 +44,6 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
           console.log("Profile loaded:", profile);
           
-          // If we're on the auth page but have a valid session and profile, redirect to dashboard
           if (location.pathname.startsWith('/auth')) {
             navigate('/dashboard');
           }
@@ -61,6 +59,21 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
     };
 
     init();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+      
+      if (event === 'SIGNED_IN') {
+        navigate('/dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        navigate('/auth');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, location.pathname]);
 
   if (isLoading) {

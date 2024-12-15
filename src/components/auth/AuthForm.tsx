@@ -44,10 +44,6 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         const isTaken = !!data;
         console.log('Username check result:', { username, isTaken });
         setIsUsernameTaken(isTaken);
-        
-        if (isTaken) {
-          toast.error("This username is already taken");
-        }
       } catch (error) {
         console.error('Username check error:', error);
       } finally {
@@ -67,49 +63,19 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
-    if (!isLogin) {
-      if (!username) {
-        toast.error("Username is required");
-        return;
-      }
+    if (!isLogin && !username) {
+      toast.error("Username is required");
+      return;
+    }
 
-      if (username.length < 3) {
-        toast.error("Username must be at least 3 characters long");
-        return;
-      }
+    if (!isLogin && username.length < 3) {
+      toast.error("Username must be at least 3 characters long");
+      return;
+    }
 
-      if (isUsernameTaken) {
-        toast.error("Username is already taken");
-        return;
-      }
-
-      try {
-        // Sign up the user
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (signUpError) throw signUpError;
-
-        if (authData.user) {
-          // Create profile
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              username,
-            });
-
-          if (profileError) throw profileError;
-        }
-
-        toast.success("Account created successfully!");
-      } catch (error: any) {
-        console.error('Signup error:', error);
-        toast.error(error.message || "Failed to create account");
-        return;
-      }
+    if (!isLogin && isUsernameTaken) {
+      toast.error("Username is already taken");
+      return;
     }
 
     onSubmit({

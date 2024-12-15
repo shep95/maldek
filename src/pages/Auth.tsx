@@ -24,24 +24,38 @@ const Auth = () => {
           password: formData.password,
         });
 
-        if (signInError) {
-          console.error('Sign in error:', signInError);
-          throw signInError;
-        }
+        if (signInError) throw signInError;
 
         console.log('Sign in successful');
         navigate("/dashboard");
+      } else {
+        console.log('Attempting to sign up user:', formData.email);
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (signUpError) throw signUpError;
+
+        if (authData.user) {
+          console.log('Creating user profile...');
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              username: formData.username,
+            });
+
+          if (profileError) throw profileError;
+
+          console.log('Profile created successfully');
+          toast.success("Account created successfully!");
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
-      
-      if (error.message?.includes('Invalid login credentials')) {
-        toast.error("Invalid email or password");
-      } else if (error.message?.includes('Email rate limit exceeded')) {
-        toast.error("Too many attempts. Please try again later");
-      } else {
-        toast.error(error.message || "An error occurred during authentication");
-      }
+      toast.error(error.message || "Authentication failed");
     }
   };
 
