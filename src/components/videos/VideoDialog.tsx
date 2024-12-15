@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -40,6 +40,10 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
   return (
     <Dialog open={!!videoUrl} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[95vw] h-[95vh] flex items-center justify-center bg-black/95 p-0 gap-0 border-none">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Video Player</DialogTitle>
+        </DialogHeader>
+        
         <Button
           variant="ghost"
           size="icon"
@@ -47,6 +51,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
           onClick={onClose}
         >
           <X className="h-6 w-6" />
+          <span className="sr-only">Close video</span>
         </Button>
 
         {isLoading && !videoError && (
@@ -57,7 +62,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
         <div className="relative w-full h-full flex items-center justify-center">
           <video
-            key={videoUrl} // Force video element recreation when URL changes
+            key={videoUrl}
             src={videoUrl}
             controls
             playsInline
@@ -69,6 +74,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             onError={handleVideoError}
             onPlay={() => console.log('Video started playing:', videoUrl)}
             onPause={() => console.log('Video paused:', videoUrl)}
+            aria-label="Video player"
           />
         </div>
       </DialogContent>

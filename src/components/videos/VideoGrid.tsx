@@ -24,21 +24,27 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     
     if (!video.video_url) {
       console.error('No video URL found for video:', video);
+      toast.error("Video URL not found");
       return;
     }
 
-    // Check if the URL is already a public URL or needs to be transformed
-    let playbackUrl = video.video_url;
-    if (!playbackUrl.startsWith('http')) {
-      // If it's a storage path, get the public URL
-      const { data: { publicUrl } } = supabase.storage
+    try {
+      // Always get a fresh public URL from Supabase storage
+      const { data: { publicUrl }, error } = supabase.storage
         .from('videos')
         .getPublicUrl(video.video_url);
-      playbackUrl = publicUrl;
-    }
 
-    console.log('Playing video URL:', playbackUrl);
-    onVideoSelect(playbackUrl);
+      if (error) {
+        throw error;
+      }
+
+      console.log('Generated public URL for video:', publicUrl);
+      onVideoSelect(publicUrl);
+      
+    } catch (error) {
+      console.error('Error getting video URL:', error);
+      toast.error("Failed to load video");
+    }
   };
 
   return (
@@ -52,7 +58,7 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
           <div className="aspect-video relative cursor-pointer">
             <img
               src={video.thumbnail_url}
-              alt={video.title}
+              alt={`Thumbnail for ${video.title}`}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -69,7 +75,7 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
             <div className="flex items-start gap-3">
               <img
                 src={video.profiles?.avatar_url || "/placeholder.svg"}
-                alt={video.profiles?.username}
+                alt={`${video.profiles?.username || 'Unknown user'}'s avatar`}
                 className="w-8 h-8 rounded-full object-cover"
               />
               <div className="flex-1 min-w-0">
