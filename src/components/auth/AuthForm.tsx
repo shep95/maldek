@@ -27,35 +27,32 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
+    // Set checking state and reset taken state
     setIsCheckingUsername(true);
     setIsUsernameTaken(false);
-    console.log('Starting username check for:', username);
 
     try {
-      console.log('Executing Supabase query...');
+      // Clear any previous check results
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', username)
         .maybeSingle();
 
-      console.log('Supabase response:', { data, error });
-
       if (error) {
         console.error('Username check error:', error);
         toast.error('Error checking username availability');
+        setIsCheckingUsername(false);
         return;
       }
 
-      const isTaken = !!data;
-      console.log('Username check result:', { username, isTaken, data });
-      setIsUsernameTaken(isTaken);
+      // Update taken state based on query result
+      setIsUsernameTaken(!!data);
+      setIsCheckingUsername(false);
 
     } catch (error) {
       console.error('Unexpected error during username check:', error);
       toast.error('Error checking username availability');
-    } finally {
-      console.log('Completing username check, setting isCheckingUsername to false');
       setIsCheckingUsername(false);
     }
   };
@@ -81,16 +78,25 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   };
 
   useEffect(() => {
-    console.log('Username effect triggered:', { username, isLogin });
-    const timeoutId = setTimeout(() => {
-      if (!isLogin && username) {
-        handleUsernameCheck(username);
-      }
-    }, 500);
+    let timeoutId: NodeJS.Timeout;
 
+    if (!isLogin && username.length >= 3) {
+      // Clear any existing timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      // Set new timeout for username check
+      timeoutId = setTimeout(() => {
+        handleUsernameCheck(username);
+      }, 500);
+    }
+
+    // Cleanup function
     return () => {
-      console.log('Cleaning up username check timeout');
-      clearTimeout(timeoutId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [username, isLogin]);
 
@@ -103,10 +109,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
               type="text"
               placeholder="Username"
               value={username}
-              onChange={(e) => {
-                console.log('Username input changed:', e.target.value);
-                setUsername(e.target.value);
-              }}
+              onChange={(e) => setUsername(e.target.value)}
               className={`${
                 isUsernameTaken ? "border-red-500" : 
                 username.length >= 3 && !isUsernameTaken ? "border-green-500" : ""
