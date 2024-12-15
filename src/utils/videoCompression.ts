@@ -10,7 +10,9 @@ const loadFFmpeg = async () => {
   ffmpeg = new FFmpeg();
   
   try {
-    // Load FFmpeg
+    console.log('Loading FFmpeg...');
+    toast.info('Initializing video processor...');
+    
     const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
     await ffmpeg.load({
       coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
@@ -20,12 +22,18 @@ const loadFFmpeg = async () => {
     return ffmpeg;
   } catch (error) {
     console.error('Error loading FFmpeg:', error);
+    toast.error('Failed to initialize video processor');
     throw new Error('Failed to load video compression library');
   }
 };
 
 export const compressVideo = async (file: File): Promise<File> => {
-  console.log('Starting video compression for file:', file.name);
+  console.log('Starting video compression for file:', {
+    name: file.name,
+    size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+    type: file.type
+  });
+  
   const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 
   if (file.size <= MAX_SIZE) {
@@ -34,11 +42,14 @@ export const compressVideo = async (file: File): Promise<File> => {
   }
 
   try {
+    console.log('Initializing compression...');
+    toast.info('Preparing to compress video... This may take a few minutes.');
+    
     const ffmpeg = await loadFFmpeg();
     const inputFileName = 'input' + file.name.substring(file.name.lastIndexOf('.'));
     const outputFileName = 'output.mp4';
 
-    // Write the file to FFmpeg's virtual filesystem
+    console.log('Writing file to FFmpeg filesystem...');
     await ffmpeg.writeFile(inputFileName, await fetchFile(file));
 
     // Calculate target bitrate based on desired file size
@@ -46,8 +57,13 @@ export const compressVideo = async (file: File): Promise<File> => {
     const duration = await getVideoDuration(file);
     const targetBitrateKbps = Math.floor((targetSize * 8) / (duration * 1024));
 
-    console.log('Compressing video with target bitrate:', targetBitrateKbps, 'kbps');
-    toast.info('Compressing video... This may take a moment.');
+    console.log('Compressing video with settings:', {
+      targetBitrateKbps,
+      duration: `${duration.toFixed(2)}s`,
+      targetSize: `${(targetSize / (1024 * 1024)).toFixed(2)}MB`
+    });
+
+    toast.info('Compressing video... Please wait.');
 
     // Run FFmpeg compression
     await ffmpeg.exec([
@@ -60,7 +76,7 @@ export const compressVideo = async (file: File): Promise<File> => {
       outputFileName
     ]);
 
-    // Read the compressed file
+    console.log('Reading compressed file...');
     const data = await ffmpeg.readFile(outputFileName);
     const compressedBlob = new Blob([data], { type: 'video/mp4' });
     const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, '') + '_compressed.mp4', {
@@ -68,11 +84,12 @@ export const compressVideo = async (file: File): Promise<File> => {
     });
 
     console.log('Compression complete:', {
-      originalSize: file.size,
-      compressedSize: compressedFile.size,
-      compressionRatio: (compressedFile.size / file.size * 100).toFixed(2) + '%'
+      originalSize: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+      compressedSize: `${(compressedFile.size / (1024 * 1024)).toFixed(2)}MB`,
+      compressionRatio: `${(compressedFile.size / file.size * 100).toFixed(2)}%`
     });
 
+    toast.success('Video compression complete!');
     return compressedFile;
   } catch (error) {
     console.error('Video compression error:', error);

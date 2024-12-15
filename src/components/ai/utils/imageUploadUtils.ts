@@ -7,9 +7,9 @@ export const handleImageUpload = async (file: File, userId: string) => {
     console.log('Starting media upload for user:', userId);
     console.log('File details:', { 
       name: file.name, 
-      size: file.size, 
+      size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`, 
       type: file.type,
-      lastModified: file.lastModified
+      lastModified: new Date(file.lastModified).toISOString()
     });
 
     let processedFile = file;
@@ -26,7 +26,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     // Verify final file size
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (processedFile.size > maxSize) {
-      console.error('File still too large after compression:', processedFile.size);
+      console.error('File still too large after compression:', `${(processedFile.size / (1024 * 1024)).toFixed(2)}MB`);
       toast.error(`File size must be less than 50MB. Please try a smaller file.`);
       return null;
     }
@@ -36,7 +36,8 @@ export const handleImageUpload = async (file: File, userId: string) => {
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
-    console.log('Uploading file to path:', filePath);
+    console.log('Starting upload to path:', filePath);
+    toast.info('Uploading file...');
 
     // Upload file
     const { error: uploadError, data } = await supabase.storage
