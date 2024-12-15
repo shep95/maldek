@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     }
 
     setIsCheckingUsername(true);
+    setIsUsernameTaken(false);
 
     try {
       const { data, error } = await supabase
@@ -43,7 +44,13 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         return;
       }
 
-      setIsUsernameTaken(!!data);
+      if (data) {
+        console.log("Username is taken:", username);
+        setIsUsernameTaken(true);
+      } else {
+        console.log("Username is available:", username);
+        setIsUsernameTaken(false);
+      }
     } finally {
       setIsCheckingUsername(false);
     }
@@ -63,6 +70,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     }
 
     setIsSubmitting(true);
+    console.log("Starting form submission...");
 
     try {
       await onSubmit({
@@ -81,6 +89,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (!isLogin && username.length >= 3) {
+        console.log("Checking username availability:", username);
         handleUsernameCheck(username);
       }
     }, 500);
