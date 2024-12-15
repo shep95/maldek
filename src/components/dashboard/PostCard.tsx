@@ -34,6 +34,11 @@ export const PostCard = ({
   const [userLanguage, setUserLanguage] = useState<string>('en');
 
   useEffect(() => {
+    console.log('PostCard - Post data:', post);
+    console.log('PostCard - Media URLs:', post.media_urls);
+  }, [post]);
+
+  useEffect(() => {
     const checkEditability = () => {
       const now = new Date();
       const postTime = new Date(post.timestamp);
@@ -82,7 +87,6 @@ export const PostCard = ({
   };
 
   const handlePostClick = (e: React.MouseEvent) => {
-    // Check if the click was on or inside an interactive element
     const target = e.target as HTMLElement;
     if (
       target.tagName === 'BUTTON' ||
@@ -141,7 +145,10 @@ export const PostCard = ({
         )}
 
         {post.media_urls && post.media_urls.length > 0 && (
-          <PostMedia mediaUrls={post.media_urls} onMediaClick={onMediaClick} />
+          <>
+            {console.log('Rendering PostMedia with URLs:', post.media_urls)}
+            <PostMedia mediaUrls={post.media_urls} onMediaClick={onMediaClick} />
+          </>
         )}
 
         <PostActions

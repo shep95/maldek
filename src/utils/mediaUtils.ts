@@ -23,8 +23,11 @@ export const createPersistentMediaUrl = (file: File): Promise<string> => {
 };
 
 export const isVideoFile = (url: string): boolean => {
+  console.log('Checking if URL is video:', url);
+  
   // Check if it's a blob URL for video
   if (url.startsWith('blob:')) {
+    console.log('Blob URL detected');
     return true;
   }
   
@@ -34,13 +37,16 @@ export const isVideoFile = (url: string): boolean => {
   
   // Check file extensions
   if (videoExtensions.some(ext => lowercaseUrl.endsWith(ext))) {
+    console.log('Video extension detected');
     return true;
   }
   
   // Check if URL contains video-specific paths or identifiers
   if (lowercaseUrl.includes('/videos/') || lowercaseUrl.includes('video')) {
+    console.log('Video path detected');
     return true;
   }
   
+  console.log('Not a video URL');
   return false;
 };

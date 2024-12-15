@@ -15,7 +15,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   useEffect(() => {
-    console.log('Media URLs to display:', mediaUrls);
+    console.log('PostMedia - Media URLs:', mediaUrls);
   }, [mediaUrls]);
 
   useEffect(() => {
@@ -75,6 +75,11 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
       {mediaUrls.map((url, i) => {
         console.log(`Rendering media ${i + 1}:`, url, 'isVideo:', isVideoFile(url));
         
+        if (!url) {
+          console.log(`Skipping empty URL at index ${i}`);
+          return null;
+        }
+
         return (
           <div key={url} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
             {isVideoFile(url) ? (
