@@ -26,13 +26,19 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Uploading file to path:', filePath);
 
-    // Enhanced upload configuration
+    // Determine content type based on file type
+    const isVideo = file.type.startsWith('video/');
+    const contentType = isVideo ? 'video/mp4' : file.type;
+
+    console.log('Using content type:', contentType, 'for file type:', file.type);
+
+    // Upload with forced content type for videos
     const { error: uploadError, data } = await supabase.storage
       .from('posts')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
-        contentType: file.type.startsWith('video/') ? 'video/mp4' : file.type // Force video/mp4 for videos
+        contentType: contentType // Force video/mp4 for all video files
       });
 
     if (uploadError) {
@@ -46,11 +52,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     // Get public URL with cache busting
     const { data: { publicUrl } } = supabase.storage
       .from('posts')
-      .getPublicUrl(filePath, {
-        transform: {
-          quality: file.type.startsWith('video/') ? undefined : 75
-        }
-      });
+      .getPublicUrl(filePath);
 
     console.log('Generated public URL:', publicUrl);
     toast.success('Media uploaded successfully!');
