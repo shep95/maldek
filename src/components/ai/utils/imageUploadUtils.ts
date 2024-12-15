@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressVideo } from "@/utils/videoCompression";
+import { handleOfflineUpload } from "@/utils/offlineUploadUtils";
 
 export const handleImageUpload = async (file: File, userId: string) => {
   try {
@@ -28,6 +29,16 @@ export const handleImageUpload = async (file: File, userId: string) => {
     if (processedFile.size > maxSize) {
       console.error('File still too large after compression:', `${(processedFile.size / (1024 * 1024)).toFixed(2)}MB`);
       toast.error(`File size must be less than 50MB. Please try a smaller file.`);
+      return null;
+    }
+
+    // Check if device is offline and handle offline upload
+    const canUploadNow = await handleOfflineUpload(processedFile, userId, {
+      type: processedFile.type,
+      originalName: file.name
+    });
+
+    if (!canUploadNow) {
       return null;
     }
 
