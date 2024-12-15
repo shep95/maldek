@@ -3,11 +3,8 @@ import { toast } from "sonner";
 
 export const handleImageUpload = async (file: File, userId: string) => {
   try {
-    console.log('Starting image upload for user:', userId);
+    console.log('Starting media upload for user:', userId);
     console.log('File details:', { name: file.name, size: file.size, type: file.type });
-
-    // Validate file type - allow any file type for testing
-    console.log('File type validation passed:', file.type);
 
     // Increase size limit to 500MB for testing
     const maxSize = 500 * 1024 * 1024; // 500MB
@@ -17,17 +14,25 @@ export const handleImageUpload = async (file: File, userId: string) => {
       return null;
     }
 
+    // Determine if it's a video file
+    const isVideo = file.type.startsWith('video/');
+    console.log('File type:', isVideo ? 'video' : 'image');
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
     console.log('Uploading file to path:', filePath);
 
+    // Use the videos bucket for video files, posts bucket for images
+    const bucket = isVideo ? 'videos' : 'posts';
+    console.log('Using storage bucket:', bucket);
+
     const { error: uploadError, data } = await supabase.storage
-      .from('posts')
+      .from(bucket)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true // Changed to true to handle potential conflicts
+        upsert: true
       });
 
     if (uploadError) {
@@ -39,7 +44,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     console.log('File uploaded successfully, data:', data);
 
     const { data: { publicUrl } } = supabase.storage
-      .from('posts')
+      .from(bucket)
       .getPublicUrl(filePath);
 
     console.log('Generated public URL:', publicUrl);
