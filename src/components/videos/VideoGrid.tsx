@@ -37,10 +37,12 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Play className="h-12 w-12 text-white" />
             </div>
-            <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded-md text-sm flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatDuration(video.duration)}
-            </div>
+            {video.duration && (
+              <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded-md text-sm flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDuration(video.duration)}
+              </div>
+            )}
           </div>
           <div className="p-4">
             <div className="flex items-start gap-3">
@@ -64,7 +66,10 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => onDeleteVideo(video.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteVideo(video.id);
+                  }}
                 >
                   Delete
                 </Button>
