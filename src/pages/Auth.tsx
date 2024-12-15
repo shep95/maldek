@@ -28,6 +28,26 @@ const Auth = () => {
         console.log('Sign in successful');
         navigate("/dashboard");
       } else {
+        // Check if username is taken before proceeding with signup
+        if (formData.username) {
+          console.log('Checking username availability:', formData.username);
+          const { data: existingUser, error: checkError } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('username', formData.username)
+            .maybeSingle();
+
+          if (checkError) {
+            console.error('Username check error:', checkError);
+            throw new Error('Failed to check username availability');
+          }
+
+          if (existingUser) {
+            console.log('Username is taken:', formData.username);
+            throw new Error('Username is already taken');
+          }
+        }
+
         console.log('Attempting to sign up user:', formData.email);
         const { error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
