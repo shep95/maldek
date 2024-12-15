@@ -28,15 +28,18 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     }
 
     setIsCheckingUsername(true);
-    setIsUsernameTaken(false); // Reset the taken state while checking
+    setIsUsernameTaken(false);
     console.log('Starting username check for:', username);
 
     try {
+      console.log('Executing Supabase query...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', username)
         .maybeSingle();
+
+      console.log('Supabase response:', { data, error });
 
       if (error) {
         console.error('Username check error:', error);
@@ -45,13 +48,14 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       }
 
       const isTaken = !!data;
+      console.log('Username check result:', { username, isTaken, data });
       setIsUsernameTaken(isTaken);
-      console.log('Username check completed:', { username, isTaken });
 
     } catch (error) {
       console.error('Unexpected error during username check:', error);
       toast.error('Error checking username availability');
     } finally {
+      console.log('Completing username check, setting isCheckingUsername to false');
       setIsCheckingUsername(false);
     }
   };
@@ -77,13 +81,17 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   };
 
   useEffect(() => {
+    console.log('Username effect triggered:', { username, isLogin });
     const timeoutId = setTimeout(() => {
       if (!isLogin && username) {
         handleUsernameCheck(username);
       }
     }, 500);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      console.log('Cleaning up username check timeout');
+      clearTimeout(timeoutId);
+    };
   }, [username, isLogin]);
 
   return (
@@ -95,7 +103,10 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
               type="text"
               placeholder="Username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                console.log('Username input changed:', e.target.value);
+                setUsername(e.target.value);
+              }}
               className={`${
                 isUsernameTaken ? "border-red-500" : 
                 username.length >= 3 && !isUsernameTaken ? "border-green-500" : ""
