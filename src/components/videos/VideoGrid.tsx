@@ -2,6 +2,7 @@ import { Play, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface VideoGridProps {
   videos: any[];
@@ -11,13 +12,6 @@ interface VideoGridProps {
 
 export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridProps) => {
   const session = useSession();
-
-  const formatDuration = (seconds: number) => {
-    if (!seconds) return '0:00';
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
 
   const handleVideoClick = async (video: any) => {
     console.log('Video clicked:', video);
@@ -30,7 +24,7 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
 
     try {
       // Always get a fresh public URL from Supabase storage
-      const { data: { publicUrl }, error } = supabase.storage
+      const { data, error } = await supabase.storage
         .from('videos')
         .getPublicUrl(video.video_url);
 
@@ -38,8 +32,8 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
         throw error;
       }
 
-      console.log('Generated public URL for video:', publicUrl);
-      onVideoSelect(publicUrl);
+      console.log('Generated public URL for video:', data.publicUrl);
+      onVideoSelect(data.publicUrl);
       
     } catch (error) {
       console.error('Error getting video URL:', error);
@@ -104,4 +98,11 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       ))}
     </div>
   );
+};
+
+const formatDuration = (seconds: number) => {
+  if (!seconds) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
