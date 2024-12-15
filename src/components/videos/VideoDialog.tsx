@@ -62,7 +62,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
         <div className="relative w-full h-full flex items-center justify-center">
           <video
-            key={videoUrl}
+            key={videoUrl} // Add key to force re-render when URL changes
             src={videoUrl}
             controls
             playsInline
@@ -75,7 +75,10 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             onPlay={() => console.log('Video started playing:', videoUrl)}
             onPause={() => console.log('Video paused:', videoUrl)}
             aria-label="Video player"
-          />
+          >
+            <source src={videoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
           {videoError && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
               <p className="text-white text-center p-4">{videoError}</p>
