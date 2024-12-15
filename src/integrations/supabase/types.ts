@@ -524,7 +524,7 @@ export type Database = {
           created_at?: string
           preferred_language?: string
           updated_at?: string
-          user_id?: string
+          user_id: string
         }
         Relationships: [
           {
@@ -553,7 +553,7 @@ export type Database = {
         Insert: {
           created_at?: string
           ends_at: string
-          id?: string
+          id: string
           mentions_remaining?: number
           mentions_used?: number
           starts_at?: string
@@ -606,7 +606,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          description: string
+          description?: string
           duration: number
           id?: string
           thumbnail_url: string
@@ -621,7 +621,7 @@ export type Database = {
           id?: string
           thumbnail_url?: string
           title?: string
-          user_id?: string
+          user_id: string
           video_url?: string
         }
         Relationships: [
@@ -665,6 +665,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      track_video_watch_time: {
+        Args: {
+          post_id: string
+          watch_seconds: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -684,7 +691,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
