@@ -15,60 +15,73 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
       if (event === 'SIGNED_IN') {
-        // Check if profile exists, if not create it
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          console.log("No profile found, attempting to create one");
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: session.user.id,
-                username: session.user.email?.split('@')[0] || `user_${Math.random().toString(36).slice(2, 7)}`,
-              }
-            ]);
-
-          if (createError) {
-            console.error("Error creating profile:", createError);
-            toast.error("Error setting up profile, but you can still use the app");
-          }
+        if (!session?.user?.id) {
+          console.error("No user ID in session");
+          return;
         }
 
-        navigate('/dashboard');
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            console.log("Creating new profile for user:", session.user.id);
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert([{
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || `user_${Math.random().toString(36).slice(2, 7)}`,
+              }]);
+
+            if (createError) {
+              console.error("Profile creation error:", createError);
+              // Continue anyway - user can still use the app
+            }
+          }
+
+          // Always navigate to dashboard on successful sign in
+          navigate('/dashboard');
+        } catch (error) {
+          console.error("Error during profile check:", error);
+          // Continue anyway - user can still use the app
+          navigate('/dashboard');
+        }
       } else if (event === 'SIGNED_OUT') {
         navigate('/auth');
       }
     });
 
-    // Initial check
-    const init = async () => {
+    // Initial session check
+    const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          console.log("No session found, redirecting to auth");
+          console.log("No active session");
           if (location.pathname !== '/auth') {
             navigate('/auth');
           }
+        } else {
+          console.log("Active session found:", session.user?.id);
+          navigate('/dashboard');
         }
       } catch (error) {
-        console.error("Auth error:", error);
-        toast.error("An error occurred, please try again");
+        console.error("Session check error:", error);
+        if (location.pathname !== '/auth') {
+          navigate('/auth');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    init();
+    checkSession();
 
     return () => {
       subscription.unsubscribe();

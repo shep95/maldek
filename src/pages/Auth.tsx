@@ -15,65 +15,55 @@ const Auth = () => {
     username?: string;
   }) => {
     try {
-      console.log('Starting authentication process...');
-      
       if (isLogin) {
-        console.log('Attempting to sign in user:', formData.email);
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
 
         if (signInError) throw signInError;
-        console.log('Sign in successful');
-        navigate("/dashboard");
       } else {
-        // Check if username is taken before proceeding with signup
-        if (formData.username) {
-          console.log('Checking username availability:', formData.username);
-          const { data: existingUser, error: checkError } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('username', formData.username)
-            .maybeSingle();
-
-          if (checkError) {
-            console.error('Username check error:', checkError);
-            throw new Error('Failed to check username availability');
-          }
-
-          if (existingUser) {
-            console.log('Username is taken:', formData.username);
-            throw new Error('Username is already taken');
-          }
+        if (!formData.username) {
+          throw new Error('Username is required');
         }
 
-        console.log('Attempting to sign up user:', formData.email);
-        const { error: signUpError } = await supabase.auth.signUp({
+        // Check username availability one last time
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', formData.username)
+          .maybeSingle();
+
+        if (existingUser) {
+          throw new Error('Username is already taken');
+        }
+
+        const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
 
         if (signUpError) throw signUpError;
 
-        // Create profile with username after successful signup
+        if (!signUpData.user?.id) {
+          throw new Error('Failed to create user');
+        }
+
+        // Create profile
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([
-            {
-              id: (await supabase.auth.getUser()).data.user?.id,
-              username: formData.username,
-            }
-          ]);
+          .insert([{
+            id: signUpData.user.id,
+            username: formData.username,
+          }]);
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
-          toast.error("Account created but profile setup failed. You can set it up later.");
+          toast.error("Account created but profile setup failed. Please try again.");
+          return;
         }
 
-        console.log('Sign up successful');
         toast.success("Account created successfully!");
-        navigate("/dashboard");
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
