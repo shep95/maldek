@@ -8,6 +8,7 @@ import { MentionInput } from "./post/MentionInput";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
 
 interface CreatePostDialogProps {
   isOpen: boolean;
@@ -65,27 +66,15 @@ export const CreatePostDialog = ({
       if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
           console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `${currentUser.id}/${fileName}`;
-
-          console.log('Attempting to upload file to:', filePath);
-          const { error: uploadError, data } = await supabase.storage
-            .from('posts')
-            .upload(filePath, file);
-
-          if (uploadError) {
-            console.error('Upload error details:', uploadError);
-            throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+          
+          // Use handleImageUpload utility which now handles both images and videos
+          const publicUrl = await handleImageUpload(file, currentUser.id);
+          
+          if (!publicUrl) {
+            throw new Error(`Failed to upload ${file.name}`);
           }
 
-          console.log('Upload successful. Response:', data);
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('posts')
-            .getPublicUrl(filePath);
-
-          console.log('Generated public URL:', publicUrl);
+          console.log('Upload successful. Public URL:', publicUrl);
           mediaUrls.push(publicUrl);
         }
       }
