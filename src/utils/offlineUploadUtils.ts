@@ -1,13 +1,24 @@
 import { toast } from "sonner";
 
+interface PendingUpload {
+  id: string;
+  file: File;
+  userId: string;
+  metadata: any;
+  timestamp: number;
+}
+
 // Register background sync
 const registerBackgroundSync = async () => {
   try {
-    if ('serviceWorker' in navigator && 'sync' in window.registration) {
+    if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.ready;
-      await registration.sync.register('video-upload');
-      console.log('Background sync registered for video upload');
-      return true;
+      // Check if sync is supported
+      if ('sync' in registration) {
+        await registration.sync.register('video-upload');
+        console.log('Background sync registered for video upload');
+        return true;
+      }
     }
     return false;
   } catch (error) {
@@ -20,7 +31,10 @@ const registerBackgroundSync = async () => {
 const storeForOfflineUpload = async (file: File, userId: string, metadata: any) => {
   try {
     const db = await openDB();
-    await db.put('pendingUploads', {
+    const transaction = db.transaction('pendingUploads', 'readwrite');
+    const store = transaction.objectStore('pendingUploads');
+    
+    await store.put({
       id: crypto.randomUUID(),
       file,
       userId,
@@ -37,15 +51,15 @@ const storeForOfflineUpload = async (file: File, userId: string, metadata: any) 
 };
 
 // Open IndexedDB database
-const openDB = async () => {
+const openDB = async (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open('offlineUploads', 1);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
 
-    request.onupgradeneeded = (event: any) => {
-      const db = event.target.result;
+    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains('pendingUploads')) {
         db.createObjectStore('pendingUploads', { keyPath: 'id' });
       }
@@ -59,7 +73,11 @@ export const processPendingUploads = async () => {
     const db = await openDB();
     const transaction = db.transaction('pendingUploads', 'readwrite');
     const store = transaction.objectStore('pendingUploads');
-    const pendingUploads = await store.getAll();
+    const pendingUploads: PendingUpload[] = await new Promise((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
 
     console.log('Processing pending uploads:', pendingUploads.length);
 
@@ -76,7 +94,11 @@ export const processPendingUploads = async () => {
         });
 
         // After successful upload, remove from IndexedDB
-        await store.delete(upload.id);
+        await new Promise<void>((resolve, reject) => {
+          const request = store.delete(upload.id);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
         toast.success('Offline video upload completed');
       } catch (error) {
         console.error('Error processing offline upload:', error);
