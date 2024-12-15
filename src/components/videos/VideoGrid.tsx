@@ -34,17 +34,17 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       const bucketPath = video.video_url.replace('videos/', '');
       console.log('Getting public URL for path:', bucketPath);
       
-      const { data: { publicUrl }, error } = supabase.storage
+      const { data } = supabase.storage
         .from('videos')
         .getPublicUrl(bucketPath);
 
-      if (error || !publicUrl) {
-        console.error('Error getting video URL:', error);
+      if (!data.publicUrl) {
+        console.error('Failed to generate public URL for path:', bucketPath);
         throw new Error('Failed to generate public URL');
       }
 
-      console.log('Generated public URL:', publicUrl);
-      onVideoSelect(publicUrl);
+      console.log('Generated public URL:', data.publicUrl);
+      onVideoSelect(data.publicUrl);
       
     } catch (error) {
       console.error('Error handling video click:', error);
