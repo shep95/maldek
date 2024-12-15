@@ -29,8 +29,8 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Uploading file to path:', filePath);
 
-    // Use the videos bucket for video files, posts bucket for images
-    const bucket = isVideo ? 'videos' : 'posts';
+    // Use the posts bucket for all media (both images and videos)
+    const bucket = 'posts';
     console.log('Using storage bucket:', bucket);
 
     // Log the upload attempt
