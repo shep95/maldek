@@ -23,12 +23,19 @@ export const VideoPlayer = ({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    console.log('VideoPlayer mounted with URL:', videoUrl);
+    console.log('VideoPlayer - Initial mount with URL:', videoUrl);
+    console.log('VideoPlayer - URL type:', typeof videoUrl);
+    console.log('VideoPlayer - URL structure:', {
+      isAbsolute: videoUrl?.startsWith('http'),
+      containsStoragePath: videoUrl?.includes('storage/v1/object'),
+      fullUrl: videoUrl
+    });
+
     setIsLoading(true);
     setError(null);
 
     if (!videoUrl) {
-      console.error('Invalid video URL:', videoUrl);
+      console.error('VideoPlayer - Invalid video URL:', videoUrl);
       setError('Invalid video URL');
       setIsLoading(false);
       return;
@@ -37,13 +44,13 @@ export const VideoPlayer = ({
     const loadAd = async () => {
       try {
         const relevantAd = await fetchRelevantAd();
-        console.log('Loaded ad:', relevantAd);
+        console.log('VideoPlayer - Loaded ad:', relevantAd);
         setAd(relevantAd);
         if (relevantAd) {
           setIsAdPlaying(true);
         }
       } catch (err) {
-        console.error('Error loading ad:', err);
+        console.error('VideoPlayer - Error loading ad:', err);
         setIsAdPlaying(false);
       }
     };
@@ -52,35 +59,47 @@ export const VideoPlayer = ({
   }, [videoUrl]);
 
   const handleVideoError = (e: any) => {
-    console.error('Video playback error:', {
-      error: e.target.error,
-      networkState: e.target.networkState,
-      readyState: e.target.readyState,
-      currentSrc: e.target.currentSrc,
-      videoUrl
+    const videoElement = e.target as HTMLVideoElement;
+    console.error('VideoPlayer - Playback error:', {
+      error: videoElement.error,
+      errorMessage: videoElement.error?.message,
+      errorCode: videoElement.error?.code,
+      networkState: videoElement.networkState,
+      readyState: videoElement.readyState,
+      currentSrc: videoElement.currentSrc,
+      videoUrl,
+      mimeType: videoElement.canPlayType('video/mp4'),
+      webmSupport: videoElement.canPlayType('video/webm'),
+      oggSupport: videoElement.canPlayType('video/ogg')
     });
+    
     setError('Failed to load video. Please try again.');
     setIsLoading(false);
   };
 
   const handleVideoLoaded = () => {
-    console.log('Video loaded successfully:', {
-      url: videoUrl,
-      duration: videoRef.current?.duration,
-      readyState: videoRef.current?.readyState,
-      networkState: videoRef.current?.networkState,
-      currentSrc: videoRef.current?.currentSrc
-    });
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      console.log('VideoPlayer - Video loaded successfully:', {
+        url: videoUrl,
+        duration: videoElement.duration,
+        readyState: videoElement.readyState,
+        networkState: videoElement.networkState,
+        currentSrc: videoElement.currentSrc,
+        videoWidth: videoElement.videoWidth,
+        videoHeight: videoElement.videoHeight
+      });
+    }
     setIsLoading(false);
     setError(null);
   };
 
   const handleAdEnded = () => {
-    console.log('Ad playback ended');
+    console.log('VideoPlayer - Ad playback ended');
     setIsAdPlaying(false);
     if (videoRef.current) {
       videoRef.current.play().catch(err => {
-        console.error('Error playing main video after ad:', err);
+        console.error('VideoPlayer - Error playing main video after ad:', err);
         setError('Failed to play video after ad');
       });
     }
@@ -98,6 +117,7 @@ export const VideoPlayer = ({
             onError={handleVideoError}
             onLoadedData={handleVideoLoaded}
             playsInline
+            preload="metadata"
           />
           <Button
             className="absolute bottom-4 right-4 gap-2 bg-accent hover:bg-accent/90"
