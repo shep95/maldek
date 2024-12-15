@@ -79,11 +79,15 @@ export const CreatePostDialog = ({
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${currentUser.id}/${fileName}`;
 
-          const { error: uploadError, data } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('posts')
-            .upload(filePath, file);
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
 
           if (uploadError) {
+            console.error('Upload error:', uploadError);
             toast.error(`Failed to upload media: ${uploadError.message}`);
             throw uploadError;
           }
@@ -107,10 +111,12 @@ export const CreatePostDialog = ({
         .single();
 
       if (postError) {
+        console.error('Post creation error:', postError);
         toast.error(`Failed to create post: ${postError.message}`);
         throw postError;
       }
 
+      // Clean up
       setContent("");
       mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setMediaPreviewUrls([]);
