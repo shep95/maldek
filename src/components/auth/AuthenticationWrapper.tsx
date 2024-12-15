@@ -15,33 +15,6 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        console.log("Signing out all users...");
-        
-        // Clear all Supabase-related items from localStorage
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('supabase.auth.')) {
-            localStorage.removeItem(key);
-          }
-        });
-        
-        // Force sign out
-        await supabase.auth.signOut();
-        
-        console.log("All users signed out, redirecting to auth");
-        navigate('/auth');
-        
-      } catch (error) {
-        console.error("Auth error:", error);
-        toast.error("Some features might be limited, but you can continue using the app");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    init();
-
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
@@ -52,6 +25,24 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
         navigate('/auth');
       }
     });
+
+    // Initial check
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          console.log("No session found, redirecting to auth");
+          navigate('/auth');
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        toast.error("An error occurred, please try again");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    init();
 
     return () => {
       subscription.unsubscribe();

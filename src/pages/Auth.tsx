@@ -25,33 +25,19 @@ const Auth = () => {
         });
 
         if (signInError) throw signInError;
-
         console.log('Sign in successful');
         navigate("/dashboard");
       } else {
         console.log('Attempting to sign up user:', formData.email);
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
 
         if (signUpError) throw signUpError;
-
-        if (authData.user) {
-          console.log('Creating user profile...');
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              username: formData.username,
-            });
-
-          if (profileError) throw profileError;
-
-          console.log('Profile created successfully');
-          toast.success("Account created successfully!");
-          navigate("/dashboard");
-        }
+        console.log('Sign up successful');
+        toast.success("Account created successfully!");
+        navigate("/dashboard");
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
