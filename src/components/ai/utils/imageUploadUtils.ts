@@ -6,11 +6,11 @@ export const handleImageUpload = async (file: File, userId: string) => {
     console.log('Starting media upload for user:', userId);
     console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
-    // Increase size limit to 500MB for testing
-    const maxSize = 500 * 1024 * 1024; // 500MB
+    // Increase size limit to 2GB for testing
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
     if (file.size > maxSize) {
       console.error('File too large:', file.size);
-      toast.error(`File size must be less than 500MB`);
+      toast.error(`File size must be less than 2GB`);
       return null;
     }
 
