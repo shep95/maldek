@@ -23,6 +23,19 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           console.error("No user ID in session");
           return;
         }
+
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Profile check error:", profileError);
+          // Continue to dashboard even if profile check fails
+        }
+
         navigate('/dashboard');
       } else if (event === 'SIGNED_OUT') {
         navigate('/auth');
