@@ -27,6 +27,14 @@ export const VideoPlayer = ({
     setIsLoading(true);
     setError(null);
 
+    // Check if the video URL is valid
+    if (!videoUrl) {
+      console.error('Invalid video URL:', videoUrl);
+      setError('Invalid video URL');
+      setIsLoading(false);
+      return;
+    }
+
     const loadAd = async () => {
       try {
         const relevantAd = await fetchRelevantAd();
@@ -37,7 +45,6 @@ export const VideoPlayer = ({
         }
       } catch (err) {
         console.error('Error loading ad:', err);
-        // Continue without ad if there's an error
         setIsAdPlaying(false);
       }
     };
@@ -51,6 +58,45 @@ export const VideoPlayer = ({
     };
   }, [videoUrl]);
 
+  const handleVideoError = (e: any) => {
+    const videoElement = e.target as HTMLVideoElement;
+    console.error('Video playback error:', {
+      originalError: e,
+      videoUrl,
+      networkState: videoElement.networkState,
+      readyState: videoElement.readyState,
+      errorMessage: videoElement.error?.message || 'Unknown error',
+      errorCode: videoElement.error?.code,
+      mimeType: videoElement.currentSrc ? getMimeType(videoElement.currentSrc) : 'unknown'
+    });
+    
+    let errorMessage = 'Failed to load video: ';
+    if (videoElement.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+      errorMessage += 'Video format not supported';
+    } else if (videoElement.error?.code === MediaError.MEDIA_ERR_DECODE) {
+      errorMessage += 'Video format error';
+    } else {
+      errorMessage += videoElement.error?.message || 'Unknown error';
+    }
+    
+    setError(errorMessage);
+    setIsLoading(false);
+  };
+
+  const getMimeType = (url: string): string => {
+    const extension = url.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'mp4':
+        return 'video/mp4';
+      case 'webm':
+        return 'video/webm';
+      case 'ogg':
+        return 'video/ogg';
+      default:
+        return 'unknown';
+    }
+  };
+
   const handleAdEnded = () => {
     console.log('Ad playback ended');
     setIsAdPlaying(false);
@@ -62,21 +108,14 @@ export const VideoPlayer = ({
     }
   };
 
-  const handleVideoError = (e: any) => {
-    const videoElement = e.target as HTMLVideoElement;
-    console.error('Video playback error:', {
-      originalError: e,
-      videoUrl,
-      networkState: videoElement.networkState,
-      readyState: videoElement.readyState,
-      errorMessage: videoElement.error?.message || 'Unknown error'
-    });
-    setError(`Failed to load video: ${videoElement.error?.message || 'Unknown error'}`);
-    setIsLoading(false);
-  };
-
   const handleVideoLoaded = () => {
-    console.log('Video loaded successfully:', videoUrl);
+    console.log('Video loaded successfully:', {
+      url: videoUrl,
+      duration: videoRef.current?.duration,
+      videoWidth: videoRef.current?.videoWidth,
+      videoHeight: videoRef.current?.videoHeight,
+      mimeType: videoRef.current?.currentSrc ? getMimeType(videoRef.current.currentSrc) : 'unknown'
+    });
     setIsLoading(false);
     setError(null);
   };
@@ -114,6 +153,7 @@ export const VideoPlayer = ({
           onError={handleVideoError}
           onLoadedData={handleVideoLoaded}
           playsInline
+          preload="metadata"
         />
       )}
 
