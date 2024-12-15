@@ -32,25 +32,11 @@ export const CreatePostDialog = ({
     const files = event.target.files;
     if (!files) return;
 
-    const validFiles = Array.from(files).filter(file => {
-      const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
-      const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
-      
-      if (!isValid) {
-        toast.error(`Invalid file type: ${file.name}`);
-        return false;
-      }
-      
-      if (file.size > maxSize) {
-        toast.error(`File too large: ${file.name} (max ${file.type.startsWith('video/') ? '100MB' : '5MB'})`);
-        return false;
-      }
-      
-      return true;
-    });
+    // Accept any file type for testing
+    const validFiles = Array.from(files);
+    console.log('Files selected:', validFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
 
     if (validFiles.length > 0) {
-      console.log('Valid files selected:', validFiles.map(f => ({ name: f.name, type: f.type })));
       setMediaFiles(prev => [...prev, ...validFiles]);
       validFiles.forEach(file => {
         const previewUrl = URL.createObjectURL(file);
@@ -97,6 +83,7 @@ export const CreatePostDialog = ({
           }
 
           console.log('File uploaded successfully:', filePath);
+          console.log('Upload response data:', data);
 
           const { data: { publicUrl } } = supabase.storage
             .from('posts')
@@ -139,7 +126,7 @@ export const CreatePostDialog = ({
 
     } catch (error) {
       console.error('Error creating post:', error);
-      toast.error("Failed to create post. Please try again.");
+      toast.error(`Failed to create post: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }

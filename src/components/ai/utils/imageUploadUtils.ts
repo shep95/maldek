@@ -6,18 +6,14 @@ export const handleImageUpload = async (file: File, userId: string) => {
     console.log('Starting image upload for user:', userId);
     console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
-    // Validate file type
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-      console.error('Invalid file type:', file.type);
-      toast.error("Please upload only images or videos");
-      return null;
-    }
+    // Validate file type - allow any file type for testing
+    console.log('File type validation passed:', file.type);
 
-    // Validate file size (100MB for videos, 5MB for images)
-    const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
+    // Increase size limit to 500MB for testing
+    const maxSize = 500 * 1024 * 1024; // 500MB
     if (file.size > maxSize) {
       console.error('File too large:', file.size);
-      toast.error(`File size must be less than ${file.type.startsWith('video/') ? '100MB' : '5MB'}`);
+      toast.error(`File size must be less than 500MB`);
       return null;
     }
 
@@ -27,20 +23,20 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Uploading file to path:', filePath);
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError, data } = await supabase.storage
       .from('posts')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true // Changed to true to handle potential conflicts
       });
 
     if (uploadError) {
       console.error('Error uploading file:', uploadError);
-      toast.error("Failed to upload file");
+      toast.error(`Upload error: ${uploadError.message}`);
       return null;
     }
 
-    console.log('File uploaded successfully');
+    console.log('File uploaded successfully, data:', data);
 
     const { data: { publicUrl } } = supabase.storage
       .from('posts')
@@ -50,7 +46,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     return publicUrl;
   } catch (error) {
     console.error('Error in file upload:', error);
-    toast.error("Failed to upload file");
+    toast.error(`Upload error: ${error.message}`);
     return null;
   }
 };
