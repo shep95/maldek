@@ -50,14 +50,16 @@ export const handleImageUpload = async (file: File, userId: string) => {
       const chunk = file.slice(start, end);
       const chunkPath = `${filePath}_chunk_${i}`;
 
-      uploadPromises.push(
-        supabase.storage
-          .from('posts')
-          .upload(chunkPath, chunk, {
-            cacheControl: '3600',
-            upsert: true
-          })
-      );
+      console.log(`Uploading chunk ${i + 1}/${chunks}, size: ${(chunk.size / 1024).toFixed(2)}KB`);
+
+      const uploadPromise = supabase.storage
+        .from('posts')
+        .upload(chunkPath, chunk, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      uploadPromises.push(uploadPromise);
 
       // Update progress
       const progress = Math.round((i + 1) / chunks * 100);
@@ -72,25 +74,48 @@ export const handleImageUpload = async (file: File, userId: string) => {
     const errors = results.filter(result => result.error);
 
     if (errors.length > 0) {
-      console.error('Chunk upload errors:', errors);
-      toast.error('Upload failed. Please try again.');
-      return null;
+      console.error('Chunk upload errors:', errors.map(e => ({
+        message: e.error.message,
+        statusCode: e.error.statusCode,
+        name: e.error.name
+      })));
+      throw new Error('Failed to upload one or more chunks');
     }
 
     console.log('All chunks uploaded successfully');
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl }, error: urlError } = supabase.storage
       .from('posts')
       .getPublicUrl(filePath);
+
+    if (urlError) {
+      console.error('Error getting public URL:', urlError);
+      throw new Error('Failed to get public URL for uploaded file');
+    }
 
     console.log('Generated public URL:', publicUrl);
     toast.success('Media uploaded successfully!');
     return publicUrl;
 
   } catch (error: any) {
-    console.error('Upload error:', error);
-    toast.error(`Upload failed: ${error.message}`);
+    console.error('Upload error:', {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      stack: error.stack
+    });
+    
+    // More specific error messages based on error type
+    if (error?.message?.includes('storage/object-not-found')) {
+      toast.error('Upload failed: Storage bucket not found');
+    } else if (error?.message?.includes('permission denied')) {
+      toast.error('Upload failed: Permission denied');
+    } else if (error?.message?.includes('network')) {
+      toast.error('Upload failed: Network error');
+    } else {
+      toast.error(`Upload failed: ${error.message}`);
+    }
     return null;
   }
 };
