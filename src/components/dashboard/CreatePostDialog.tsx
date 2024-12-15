@@ -64,11 +64,12 @@ export const CreatePostDialog = ({
 
       if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
-          console.log('Uploading file:', file.name, 'Type:', file.type);
+          console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
           const fileExt = file.name.split('.').pop();
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${currentUser.id}/${fileName}`;
 
+          console.log('Attempting to upload file to:', filePath);
           const { error: uploadError, data } = await supabase.storage
             .from('posts')
             .upload(filePath, file, {
@@ -77,13 +78,11 @@ export const CreatePostDialog = ({
             });
 
           if (uploadError) {
-            console.error('Upload error:', uploadError);
-            toast.error(`Failed to upload media: ${uploadError.message}`);
-            throw uploadError;
+            console.error('Upload error details:', uploadError);
+            throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
           }
 
-          console.log('File uploaded successfully:', filePath);
-          console.log('Upload response data:', data);
+          console.log('Upload successful. Response:', data);
 
           const { data: { publicUrl } } = supabase.storage
             .from('posts')
@@ -108,8 +107,7 @@ export const CreatePostDialog = ({
 
       if (postError) {
         console.error('Post creation error:', postError);
-        toast.error(`Failed to create post: ${postError.message}`);
-        throw postError;
+        throw new Error(`Failed to create post: ${postError.message}`);
       }
 
       console.log('Post created successfully:', newPost);
@@ -125,8 +123,8 @@ export const CreatePostDialog = ({
       toast.success("Post created successfully!");
 
     } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error(`Failed to create post: ${error.message}`);
+      console.error('Detailed error:', error);
+      toast.error(error.message || "Failed to create post");
     } finally {
       setIsSubmitting(false);
     }

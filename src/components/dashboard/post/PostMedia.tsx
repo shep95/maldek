@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize } from "lucide-react";
-import { isVideoFile } from "@/utils/mediaUtils";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -13,6 +12,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
   useEffect(() => {
+    console.log('PostMedia - Rendering media URLs:', mediaUrls);
     const observers: IntersectionObserver[] = [];
 
     mediaUrls.forEach((url) => {
@@ -24,8 +24,8 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
               if (!video) return;
 
               if (entry.isIntersecting) {
-                video.play().catch(() => {
-                  console.log('Auto-play prevented');
+                video.play().catch((error) => {
+                  console.error('Video autoplay error:', error);
                 });
               } else {
                 video.pause();
@@ -45,9 +45,40 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     };
   }, [mediaUrls]);
 
-  if (!mediaUrls || mediaUrls.length === 0) return null;
+  if (!mediaUrls || mediaUrls.length === 0) {
+    console.log('PostMedia - No media URLs provided');
+    return null;
+  }
 
-  console.log('Rendering media URLs:', mediaUrls);
+  const isVideoFile = (url: string): boolean => {
+    console.log('Checking if URL is video:', url);
+    
+    // Check if it's a blob URL for video
+    if (url.startsWith('blob:')) {
+      console.log('Blob URL detected');
+      return true;
+    }
+    
+    // Check common video file extensions
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v'];
+    const lowercaseUrl = url.toLowerCase();
+    
+    // Check file extensions
+    const hasVideoExtension = videoExtensions.some(ext => lowercaseUrl.endsWith(ext));
+    if (hasVideoExtension) {
+      console.log('Video extension detected:', lowercaseUrl);
+      return true;
+    }
+    
+    // Check if URL contains video-specific paths or identifiers
+    if (lowercaseUrl.includes('/videos/') || lowercaseUrl.includes('video')) {
+      console.log('Video path detected');
+      return true;
+    }
+    
+    console.log('Not a video URL');
+    return false;
+  };
 
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
@@ -66,7 +97,8 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                   playsInline
                   preload="metadata"
                   className="w-full h-full object-contain bg-black rounded-lg"
-                  onError={(e) => console.error('Video error:', e)}
+                  onError={(e) => console.error('Video loading error:', e)}
+                  onLoadedData={() => console.log('Video loaded successfully:', url)}
                 />
               </AspectRatio>
             ) : (
@@ -76,7 +108,8 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                     src={url}
                     alt={`Post media ${i + 1}`}
                     className="w-full h-full object-cover rounded-lg transition-opacity hover:opacity-90"
-                    onError={(e) => console.error('Image error:', e)}
+                    onError={(e) => console.error('Image loading error:', e)}
+                    onLoad={() => console.log('Image loaded successfully:', url)}
                   />
                   <Button
                     variant="ghost"
