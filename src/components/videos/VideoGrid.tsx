@@ -23,18 +23,29 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Get a fresh public URL for the video
-      const { data: { publicUrl } } = supabase
+      // Extract the file path from the video URL
+      const filePath = video.video_url.split('/').pop();
+      
+      if (!filePath) {
+        throw new Error('Invalid video URL format');
+      }
+
+      // Get a fresh signed URL for the video
+      const { data: { signedUrl }, error } = await supabase
         .storage
         .from('videos')
-        .getPublicUrl(video.video_url.split('/').pop() || '');
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
 
-      console.log('Opening video with public URL:', publicUrl);
-      onVideoSelect(publicUrl);
+      if (error || !signedUrl) {
+        throw error || new Error('Failed to generate signed URL');
+      }
+
+      console.log('Opening video with signed URL:', signedUrl);
+      onVideoSelect(signedUrl);
       
     } catch (error) {
       console.error('Error handling video click:', error);
-      toast.error("Failed to load video");
+      toast.error("Failed to load video. Please try again.");
     }
   };
 
