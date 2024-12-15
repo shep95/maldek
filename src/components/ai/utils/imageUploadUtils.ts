@@ -19,91 +19,42 @@ export const handleImageUpload = async (file: File, userId: string) => {
       return null;
     }
 
-    // Determine if it's a video file
-    const isVideo = file.type.startsWith('video/');
-    console.log('File type:', isVideo ? 'video' : 'image');
-
+    // Generate file path
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
     console.log('Uploading file to path:', filePath);
 
-    // Use the posts bucket for all media (both images and videos)
-    const bucket = 'posts';
-    console.log('Using storage bucket:', bucket);
-
-    // Log the upload attempt
-    console.log('Attempting upload with config:', {
-      bucket,
-      filePath,
-      fileSize: file.size,
-      fileType: file.type,
-      cacheControl: '3600',
-      upsert: true
-    });
-
-    // Test bucket access before upload
-    const { data: bucketInfo, error: bucketError } = await supabase
-      .storage
-      .getBucket(bucket);
-
-    if (bucketError) {
-      console.error('Bucket access error:', bucketError);
-      toast.error(`Storage bucket access error: ${bucketError.message}`);
-      return null;
-    }
-
-    console.log('Bucket info:', bucketInfo);
-
-    // Attempt the upload with content type
+    // Simple direct upload to posts bucket
     const { error: uploadError, data } = await supabase.storage
-      .from(bucket)
+      .from('posts')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
-        contentType: file.type // Explicitly set content type
+        contentType: file.type
       });
 
     if (uploadError) {
-      console.error('Upload error details:', {
-        name: uploadError.name,
-        message: uploadError.message,
-        stack: uploadError.stack
-      });
-      toast.error(`Upload error: ${uploadError.message}`);
+      console.error('Upload error:', uploadError);
+      toast.error(`Upload failed: ${uploadError.message}`);
       return null;
     }
 
     console.log('File uploaded successfully, data:', data);
 
+    // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
+      .from('posts')
       .getPublicUrl(filePath);
 
     console.log('Generated public URL:', publicUrl);
-    
-    // Verify the uploaded file
-    const { data: fileData, error: fileError } = await supabase.storage
-      .from(bucket)
-      .download(filePath);
-
-    if (fileError) {
-      console.error('File verification error:', fileError);
-      toast.error('File uploaded but verification failed');
-      return null;
-    }
-
-    console.log('File verified successfully');
-    toast.success(`${isVideo ? 'Video' : 'Image'} uploaded successfully!`);
+    toast.success('Media uploaded successfully!');
     return publicUrl;
 
   } catch (error: any) {
-    console.error('Detailed error in file upload:', error);
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    toast.error(`Upload error: ${error.message}`);
+    console.error('Upload error:', error);
+    toast.error(`Upload failed: ${error.message}`);
     return null;
   }
 };
