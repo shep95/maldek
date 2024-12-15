@@ -26,10 +26,14 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Uploading file to path:', filePath);
 
-    // Upload directly to posts bucket with minimal configuration
+    // Enhanced upload configuration
     const { error: uploadError, data } = await supabase.storage
       .from('posts')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type.startsWith('video/') ? 'video/mp4' : file.type // Force video/mp4 for videos
+      });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -39,10 +43,14 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('File uploaded successfully, data:', data);
 
-    // Get public URL
+    // Get public URL with cache busting
     const { data: { publicUrl } } = supabase.storage
       .from('posts')
-      .getPublicUrl(filePath);
+      .getPublicUrl(filePath, {
+        transform: {
+          quality: file.type.startsWith('video/') ? undefined : 75
+        }
+      });
 
     console.log('Generated public URL:', publicUrl);
     toast.success('Media uploaded successfully!');
