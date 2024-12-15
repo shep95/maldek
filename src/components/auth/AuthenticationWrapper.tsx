@@ -27,7 +27,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           return;
         }
 
-        // If we have a session, check for profile
+        // If we have a session, attempt to get or create profile
         if (session?.user) {
           console.log("Session found, checking profile");
           const { data: profile, error: profileError } = await supabase
@@ -36,36 +36,31 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
             .eq('id', session.user.id)
             .single();
 
-          if (profileError) {
-            console.error("Profile error:", profileError);
-            // Only create profile if it doesn't exist
-            if (profileError.code === 'PGRST116') {
-              console.log("Profile not found, creating new profile");
-              const { error: createError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: session.user.id,
-                  username: session.user.email?.split('@')[0] || `user_${Date.now()}`
-                });
+          // If profile doesn't exist, try to create it but don't block access
+          if (profileError && profileError.code === 'PGRST116') {
+            console.log("Profile not found, attempting to create");
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || `user_${Date.now()}`
+              });
 
-              if (createError) {
-                console.error("Error creating profile:", createError);
-                toast.error("Error setting up profile");
-                return;
-              }
+            if (createError) {
+              console.error("Error creating profile:", createError);
+              toast.error("Profile setup incomplete, but you can still use the app");
             }
           }
 
-          console.log("Profile verified");
-          
-          // If on auth page with valid session, redirect to dashboard
+          // Always redirect to dashboard if on auth page with valid session
           if (location.pathname.startsWith('/auth')) {
+            console.log("Valid session found, redirecting to dashboard");
             navigate('/dashboard');
           }
         }
       } catch (error) {
         console.error("Auth error:", error);
-        toast.error("Authentication error occurred");
+        toast.error("Some features might be limited, but you can continue using the app");
       } finally {
         setIsLoading(false);
       }
