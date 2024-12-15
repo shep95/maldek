@@ -8,17 +8,19 @@ interface AuthFormProps {
   onSubmit: (formData: {
     email: string;
     password: string;
+    username?: string;
   }) => void;
 }
 
 export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!email || !password || (!isLogin && !username)) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -26,12 +28,24 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     onSubmit({
       email,
       password,
+      ...(isLogin ? {} : { username }),
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto px-4">
       <div className="space-y-4">
+        {!isLogin && (
+          <Input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="bg-muted/50 w-full"
+            required
+            minLength={3}
+          />
+        )}
         <Input
           type="email"
           placeholder="Email"

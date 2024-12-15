@@ -35,6 +35,22 @@ const Auth = () => {
         });
 
         if (signUpError) throw signUpError;
+
+        // Create profile with username after successful signup
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: (await supabase.auth.getUser()).data.user?.id,
+              username: formData.username,
+            }
+          ]);
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          toast.error("Account created but profile setup failed. You can set it up later.");
+        }
+
         console.log('Sign up successful');
         toast.success("Account created successfully!");
         navigate("/dashboard");
