@@ -23,12 +23,24 @@ export const createPersistentMediaUrl = (file: File): Promise<string> => {
 };
 
 export const isVideoFile = (url: string): boolean => {
-  // Check if it's an object URL for video
+  // Check if it's a blob URL for video
   if (url.startsWith('blob:')) {
     return true;
   }
   
-  // Check file extensions as fallback
+  // Check common video file extensions
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
-  return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
+  const lowercaseUrl = url.toLowerCase();
+  
+  // Check file extensions
+  if (videoExtensions.some(ext => lowercaseUrl.endsWith(ext))) {
+    return true;
+  }
+  
+  // Check if URL contains video-specific paths or identifiers
+  if (lowercaseUrl.includes('/videos/') || lowercaseUrl.includes('video')) {
+    return true;
+  }
+  
+  return false;
 };

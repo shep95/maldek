@@ -65,86 +65,67 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     setVideoLoaded(prev => ({ ...prev, [url]: true }));
   };
 
+  if (!mediaUrls || mediaUrls.length === 0) {
+    console.log('No media URLs provided');
+    return null;
+  }
+
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
-      <style>
-        {`
-          video::-webkit-media-controls-timeline {
-            margin: 0 10px;
-          }
-          video::-webkit-media-controls-play-button {
-            margin: 0 5px;
-          }
-          video::-webkit-media-controls-current-time-display,
-          video::-webkit-media-controls-time-remaining-display {
-            margin: 0 5px;
-          }
-          video::-webkit-media-controls-progress-bar {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            height: 3px;
-          }
-          video::-webkit-media-controls-progress-inner-element {
-            border-radius: 2px;
-          }
-          video::-webkit-media-controls-progress {
-            background: linear-gradient(to right, #FFFFFF, #F97316);
-            border-radius: 2px;
-            height: 3px;
-          }
-        `}
-      </style>
-      {mediaUrls.map((url, i) => (
-        <div key={i} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
-          {isVideoFile(url) ? (
-            <AspectRatio ratio={16 / 9}>
-              <video
-                ref={(el) => videoRefs.current[url] = el}
-                src={url}
-                controls
-                playsInline
-                loop
-                muted
-                onError={() => handleMediaError(url)}
-                onLoadedData={() => handleVideoLoad(url)}
-                className={`w-full h-full object-contain bg-black rounded-lg ${
-                  loadError[url] ? 'opacity-50' : ''
-                }`}
-              />
-            </AspectRatio>
-          ) : (
-            <div 
-              className="cursor-pointer" 
-              onClick={() => onMediaClick(url)}
-            >
+      {mediaUrls.map((url, i) => {
+        console.log(`Rendering media ${i + 1}:`, url, 'isVideo:', isVideoFile(url));
+        
+        return (
+          <div key={url} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
+            {isVideoFile(url) ? (
               <AspectRatio ratio={16 / 9}>
-                <img
+                <video
+                  ref={(el) => videoRefs.current[url] = el}
                   src={url}
-                  alt={`Post media ${i + 1}`}
-                  onError={() => handleMediaError(url)}
-                  className={`w-full h-full object-cover rounded-lg transition-opacity ${
-                    loadError[url] ? 'opacity-50' : 'hover:opacity-90'
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className={`w-full h-full object-contain bg-black rounded-lg ${
+                    loadError[url] ? 'opacity-50' : ''
                   }`}
+                  onError={() => handleMediaError(url)}
+                  onLoadedData={() => handleVideoLoad(url)}
                 />
-                {!loadError[url] && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
-                  >
-                    <Maximize className="h-4 w-4 text-white" />
-                  </Button>
-                )}
               </AspectRatio>
-              {loadError[url] && (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-                  Failed to load media
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+            ) : (
+              <div 
+                className="cursor-pointer" 
+                onClick={() => onMediaClick(url)}
+              >
+                <AspectRatio ratio={16 / 9}>
+                  <img
+                    src={url}
+                    alt={`Post media ${i + 1}`}
+                    onError={() => handleMediaError(url)}
+                    className={`w-full h-full object-cover rounded-lg transition-opacity ${
+                      loadError[url] ? 'opacity-50' : 'hover:opacity-90'
+                    }`}
+                  />
+                  {!loadError[url] && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
+                    >
+                      <Maximize className="h-4 w-4 text-white" />
+                    </Button>
+                  )}
+                </AspectRatio>
+                {loadError[url] && (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+                    Failed to load media
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
