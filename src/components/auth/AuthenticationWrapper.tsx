@@ -16,76 +16,33 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const init = async () => {
       try {
-        console.log("Starting authentication check...");
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // First, sign out any existing session
+        await supabase.auth.signOut();
+        console.log("Signed out any existing session");
         
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          setIsAuthenticated(false);
-          if (!location.pathname.startsWith('/auth')) {
-            navigate('/auth');
-          }
-          return;
-        }
-
-        if (!session) {
-          console.log("No active session found");
-          setIsAuthenticated(false);
-          if (!location.pathname.startsWith('/auth')) {
-            navigate('/auth');
-          }
-          return;
-        }
-
-        console.log("Valid session found:", session);
-        setIsAuthenticated(true);
-        if (location.pathname === '/auth') {
-          navigate('/');
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        toast.error("Authentication error occurred");
+        // Clear query cache
+        queryClient.clear();
+        
+        // Reset state
         setIsAuthenticated(false);
+        
+        // Redirect to auth page
         if (!location.pathname.startsWith('/auth')) {
           navigate('/auth');
         }
+      } catch (error) {
+        console.error("Error during initialization:", error);
+        toast.error("An error occurred during initialization");
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Initial auth check
-    checkAuth();
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
-      
-      if (event === 'SIGNED_OUT' || !session) {
-        console.log("User signed out or session ended");
-        setIsAuthenticated(false);
-        queryClient.clear();
-        if (!location.pathname.startsWith('/auth')) {
-          navigate('/auth');
-        }
-        return;
-      }
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        console.log("User signed in or token refreshed");
-        setIsAuthenticated(true);
-        if (location.pathname === '/auth') {
-          navigate('/');
-        }
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, location.pathname, queryClient]);
+    // Run initialization
+    init();
+  }, [navigate, queryClient]);
 
   if (isLoading) {
     return (
