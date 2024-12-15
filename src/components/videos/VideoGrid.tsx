@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from "date-fns";
 import { Play, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -20,20 +19,26 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const handleVideoClick = (video: any) => {
+  const handleVideoClick = async (video: any) => {
     console.log('Video clicked:', video);
+    
     if (!video.video_url) {
       console.error('No video URL found for video:', video);
       return;
     }
 
-    // Get public URL for video
-    const { data: { publicUrl } } = supabase.storage
-      .from('videos')
-      .getPublicUrl(video.video_url);
+    // Check if the URL is already a public URL or needs to be transformed
+    let playbackUrl = video.video_url;
+    if (!playbackUrl.startsWith('http')) {
+      // If it's a storage path, get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(video.video_url);
+      playbackUrl = publicUrl;
+    }
 
-    console.log('Playing video URL:', publicUrl);
-    onVideoSelect(publicUrl);
+    console.log('Playing video URL:', playbackUrl);
+    onVideoSelect(playbackUrl);
   };
 
   return (
@@ -71,11 +76,8 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
                 <h3 className="font-semibold text-lg leading-tight truncate mb-1">
                   {video.title}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="text-sm text-muted-foreground">
                   {video.profiles?.username || 'Unknown user'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(video.created_at), { addSuffix: true })}
                 </p>
               </div>
               {session?.user?.id === video.user_id && (
