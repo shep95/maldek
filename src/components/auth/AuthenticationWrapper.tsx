@@ -29,7 +29,9 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
             localStorage.removeItem(key);
           }
         });
-        navigate('/auth');
+        if (location.pathname !== '/auth') {
+          navigate('/auth');
+        }
       } catch (error) {
         console.error("Error during sign out:", error);
       }
