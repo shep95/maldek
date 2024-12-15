@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { VideoUploadDialog } from "@/components/videos/VideoUploadDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Play, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useSession } from "@supabase/auth-helpers-react";
 import { Input } from "@/components/ui/input";
 import { debounce } from "lodash";
 import { VideoDialog } from "@/components/videos/VideoDialog";
@@ -15,7 +14,6 @@ const Videos = () => {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const session = useSession();
   const queryClient = useQueryClient();
 
   const { data: videos, isLoading } = useQuery({
@@ -39,6 +37,7 @@ const Videos = () => {
         throw error;
       }
 
+      console.log('Fetched videos:', data);
       return data;
     }
   });
@@ -84,6 +83,7 @@ const Videos = () => {
             Watch and share videos with the community
           </p>
         </div>
+
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:flex-initial">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -117,7 +117,6 @@ const Videos = () => {
         />
       ) : (
         <div className="text-center py-12 bg-card rounded-lg">
-          <Play className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No videos found</h3>
           <p className="text-muted-foreground mb-4">
             {searchQuery ? 'Try a different search term' : 'Be the first to share a video with the community'}

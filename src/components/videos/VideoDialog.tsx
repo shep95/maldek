@@ -2,7 +2,6 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 interface VideoDialogProps {
   videoUrl: string | null;
@@ -21,16 +20,13 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
           variant="ghost"
           size="icon"
           className="absolute right-4 top-4 text-white hover:bg-white/10 z-50"
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
         >
           <X className="h-6 w-6" />
         </Button>
-
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
-          </div>
-        )}
 
         <div className="relative w-full h-full flex items-center justify-center">
           <video
@@ -38,7 +34,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             controls
             playsInline
             autoPlay
-            className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
+            className="max-h-full max-w-full rounded-lg"
             style={{ opacity: isLoading ? 0 : 1 }}
             onLoadedData={() => {
               console.log('Video loaded successfully');
@@ -47,13 +43,17 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             onError={(e) => {
               console.error('Video playback error:', e);
               setIsLoading(false);
-              toast.error("Failed to load video");
             }}
+            onClick={(e) => e.stopPropagation()}
           />
+
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default VideoDialog;
