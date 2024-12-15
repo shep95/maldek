@@ -17,32 +17,28 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     console.log('Video clicked:', video);
     
     if (!video.video_url) {
-      console.error('No video URL found for video:', video);
+      console.error('No video URL found:', video);
       toast.error("Video URL not found");
       return;
     }
 
     try {
-      // Check if the URL is already a full URL
-      if (video.video_url.startsWith('http')) {
-        console.log('Using existing video URL:', video.video_url);
-        onVideoSelect(video.video_url);
-        return;
-      }
+      // Get the storage path from the video_url
+      const storagePath = video.video_url.replace('videos/', '');
+      console.log('Getting public URL for storage path:', storagePath);
 
-      // Get the public URL for the video if it's a storage path
-      const { data } = supabase.storage
+      const { data, error } = await supabase.storage
         .from('videos')
-        .getPublicUrl(video.video_url);
+        .createSignedUrl(storagePath, 3600); // 1 hour expiry
 
-      if (!data?.publicUrl) {
-        console.error('Failed to get public URL for video:', video.video_url);
+      if (error || !data?.signedUrl) {
+        console.error('Error getting signed URL:', error);
         toast.error("Failed to load video");
         return;
       }
 
-      console.log('Using public video URL:', data.publicUrl);
-      onVideoSelect(data.publicUrl);
+      console.log('Successfully generated signed URL:', data.signedUrl);
+      onVideoSelect(data.signedUrl);
       
     } catch (error) {
       console.error('Error handling video click:', error);
@@ -59,11 +55,21 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
           onClick={() => handleVideoClick(video)}
         >
           <div className="aspect-video relative cursor-pointer">
-            <img
-              src={video.thumbnail_url}
-              alt={`Thumbnail for ${video.title}`}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+            {video.thumbnail_url ? (
+              <img
+                src={video.thumbnail_url}
+                alt={`Thumbnail for ${video.title}`}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  console.error('Thumbnail load error:', e);
+                  e.currentTarget.src = "/placeholder.svg";
+                }}
+              />
+            ) : (
+              <div className="w-full h-full bg-black/20 flex items-center justify-center">
+                <Play className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Play className="h-12 w-12 text-white" />
             </div>
