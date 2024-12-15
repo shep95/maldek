@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 interface VideoDialogProps {
@@ -11,16 +11,31 @@ interface VideoDialogProps {
 
 export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
   const [isLoading, setIsLoading] = useState(true);
+  const [videoError, setVideoError] = useState<string | null>(null);
 
-  if (!videoUrl) return null;
-
-  console.log('VideoDialog - Attempting to play video:', videoUrl);
+  useEffect(() => {
+    if (videoUrl) {
+      console.log('VideoDialog - Attempting to load video:', videoUrl);
+      setIsLoading(true);
+      setVideoError(null);
+    }
+  }, [videoUrl]);
 
   const handleVideoError = (error: any) => {
     console.error('Video playback error:', error);
+    const errorMessage = 'Failed to load video. Please try again.';
+    setVideoError(errorMessage);
     setIsLoading(false);
-    toast.error('Failed to load video. Please try again.');
+    toast.error(errorMessage);
   };
+
+  const handleVideoLoad = () => {
+    console.log('Video loaded successfully');
+    setIsLoading(false);
+    setVideoError(null);
+  };
+
+  if (!videoUrl) return null;
 
   return (
     <Dialog open={!!videoUrl} onOpenChange={onClose}>
@@ -34,7 +49,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
           <X className="h-6 w-6" />
         </Button>
 
-        {isLoading && (
+        {isLoading && !videoError && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
           </div>
@@ -42,19 +57,17 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
         <div className="relative w-full h-full flex items-center justify-center">
           <video
+            key={videoUrl} // Force video element recreation when URL changes
             src={videoUrl}
             controls
             playsInline
-            preload="auto"
+            autoPlay
             className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
             style={{ opacity: isLoading ? 0 : 1 }}
-            onLoadedData={() => {
-              console.log('Video loaded successfully:', videoUrl);
-              setIsLoading(false);
-            }}
+            onLoadedData={handleVideoLoad}
             onError={handleVideoError}
-            onPlay={() => console.log('Video started playing')}
-            onPause={() => console.log('Video paused')}
+            onPlay={() => console.log('Video started playing:', videoUrl)}
+            onPause={() => console.log('Video paused:', videoUrl)}
           />
         </div>
       </DialogContent>

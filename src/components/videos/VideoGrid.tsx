@@ -19,72 +19,74 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  console.log('VideoGrid - Rendering videos:', videos);
+  const handleVideoClick = (video: any) => {
+    console.log('Video clicked:', video);
+    if (!video.video_url) {
+      console.error('No video URL found for video:', video);
+      return;
+    }
+    console.log('Playing video URL:', video.video_url);
+    onVideoSelect(video.video_url);
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {videos.map((video: any) => {
-        console.log('Rendering video:', video);
-        return (
-          <div
-            key={video.id}
-            className="group bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in"
-            onClick={() => {
-              console.log('Video clicked, URL:', video.video_url);
-              onVideoSelect(video.video_url);
-            }}
-          >
-            <div className="aspect-video relative cursor-pointer">
-              <img
-                src={video.thumbnail_url}
-                alt={video.title}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Play className="h-12 w-12 text-white" />
+      {videos.map((video: any) => (
+        <div
+          key={video.id}
+          className="group bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in"
+          onClick={() => handleVideoClick(video)}
+        >
+          <div className="aspect-video relative cursor-pointer">
+            <img
+              src={video.thumbnail_url}
+              alt={video.title}
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Play className="h-12 w-12 text-white" />
+            </div>
+            {video.duration && (
+              <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded-md text-sm flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDuration(video.duration)}
               </div>
-              {video.duration && (
-                <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded-md text-sm flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {formatDuration(video.duration)}
-                </div>
+            )}
+          </div>
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <img
+                src={video.profiles?.avatar_url || "/placeholder.svg"}
+                alt={video.profiles?.username}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-lg leading-tight truncate mb-1">
+                  {video.title}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {video.profiles?.username || 'Unknown user'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(video.created_at), { addSuffix: true })}
+                </p>
+              </div>
+              {session?.user?.id === video.user_id && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteVideo(video.id);
+                  }}
+                >
+                  Delete
+                </Button>
               )}
             </div>
-            <div className="p-4">
-              <div className="flex items-start gap-3">
-                <img
-                  src={video.profiles?.avatar_url || "/placeholder.svg"}
-                  alt={video.profiles?.username}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-lg leading-tight truncate mb-1">
-                    {video.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {video.profiles?.username || 'Unknown user'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(video.created_at), { addSuffix: true })}
-                  </p>
-                </div>
-                {session?.user?.id === video.user_id && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteVideo(video.id);
-                    }}
-                  >
-                    Delete
-                  </Button>
-                )}
-              </div>
-            </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 };
