@@ -28,6 +28,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     }
 
     setIsCheckingUsername(true);
+    setIsUsernameTaken(false); // Reset the taken state while checking
     console.log('Starting username check for:', username);
 
     try {
@@ -43,8 +44,9 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         return;
       }
 
-      setIsUsernameTaken(!!data);
-      console.log('Username check completed:', { username, isTaken: !!data });
+      const isTaken = !!data;
+      setIsUsernameTaken(isTaken);
+      console.log('Username check completed:', { username, isTaken });
 
     } catch (error) {
       console.error('Unexpected error during username check:', error);
