@@ -20,6 +20,30 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       console.log("Auth state changed:", event, session?.user?.id);
       
       if (event === 'SIGNED_IN') {
+        // Check if profile exists, if not create it
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.log("No profile found, attempting to create one");
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || `user_${Math.random().toString(36).slice(2, 7)}`,
+              }
+            ]);
+
+          if (createError) {
+            console.error("Error creating profile:", createError);
+            toast.error("Error setting up profile, but you can still use the app");
+          }
+        }
+
         navigate('/dashboard');
       } else if (event === 'SIGNED_OUT') {
         navigate('/auth');
@@ -32,7 +56,9 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
           console.log("No session found, redirecting to auth");
-          navigate('/auth');
+          if (location.pathname !== '/auth') {
+            navigate('/auth');
+          }
         }
       } catch (error) {
         console.error("Auth error:", error);
