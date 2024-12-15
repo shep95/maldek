@@ -17,25 +17,17 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
   useEffect(() => {
     const init = async () => {
       try {
-        console.log("Initializing authentication wrapper...");
-        
-        // Check if there's an active session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("Session check error:", sessionError);
-          throw sessionError;
+        console.log("Checking authentication status...");
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session && !location.pathname.startsWith('/auth')) {
+          console.log("No session found, redirecting to auth");
+          navigate('/auth');
+          return;
         }
 
-        // If no session and not on auth page, redirect to auth
-        if (!session && !location.pathname.startsWith('/auth')) {
-          console.log("No active session, redirecting to auth page");
-          navigate('/auth');
-        }
-        
-        // If session exists, check for profile
         if (session?.user) {
-          console.log("Session found, checking profile...");
+          console.log("Session found, checking profile");
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -43,22 +35,17 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
             .single();
 
           if (profileError) {
-            console.error("Profile fetch error:", profileError);
-            // Sign out if profile doesn't exist
+            console.error("Profile error:", profileError);
             await supabase.auth.signOut();
             queryClient.clear();
-            toast.error("Error loading profile. Please sign in again.");
             navigate('/auth');
             return;
           }
 
-          console.log("Profile loaded successfully:", profile);
+          console.log("Profile loaded:", profile);
         }
       } catch (error) {
-        console.error("Authentication wrapper error:", error);
-        toast.error("An error occurred. Please try again.");
-        
-        // Clear everything and redirect to auth
+        console.error("Auth error:", error);
         await supabase.auth.signOut();
         queryClient.clear();
         navigate('/auth');
