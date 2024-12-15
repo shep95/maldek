@@ -46,6 +46,7 @@ const Auth = () => {
         }
 
         if (data.user) {
+          console.log('Creating user profile...');
           let avatarUrl = null;
 
           if (formData.profilePicture) {
@@ -53,35 +54,37 @@ const Auth = () => {
             const fileExt = formData.profilePicture.name.split('.').pop();
             const fileName = `${Math.random()}.${fileExt}`;
 
-            const { error: uploadError } = await supabase.storage
+            const { error: uploadError, data: uploadData } = await supabase.storage
               .from('avatars')
               .upload(fileName, formData.profilePicture);
 
             if (uploadError) {
               console.error('Profile picture upload error:', uploadError);
-              throw uploadError;
+              // Continue with profile creation even if image upload fails
+              toast.error("Failed to upload profile picture, but continuing with profile creation");
+            } else {
+              const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+              avatarUrl = publicUrl;
             }
-
-            const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(fileName);
-
-            avatarUrl = publicUrl;
           }
 
-          console.log('Creating user profile');
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
               id: data.user.id,
-              username: formData.username,
+              username: formData.username || data.user.email?.split('@')[0],
               avatar_url: avatarUrl,
               bio: formData.bio || '',
             });
 
           if (profileError) {
             console.error('Profile creation error:', profileError);
-            throw profileError;
+            // Don't throw the error, just show a toast
+            toast.error("Failed to create profile, but account was created. Please try logging in.");
+          } else {
+            console.log('Profile created successfully');
           }
         }
 
@@ -91,7 +94,6 @@ const Auth = () => {
     } catch (error: any) {
       console.error('Authentication error:', error);
       
-      // Handle specific error messages
       if (error.message?.includes('Invalid login credentials')) {
         toast.error("Invalid email or password");
       } else if (error.message?.includes('Email rate limit exceeded')) {
