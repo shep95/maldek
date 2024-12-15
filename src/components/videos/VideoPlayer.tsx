@@ -49,38 +49,28 @@ export const VideoPlayer = ({
     };
 
     loadAd();
-
-    return () => {
-      setIsLoading(true);
-      setError(null);
-    };
   }, [videoUrl]);
 
   const handleVideoError = (e: any) => {
-    const videoElement = e.target as HTMLVideoElement;
     console.error('Video playback error:', {
-      error: videoElement.error,
-      networkState: videoElement.networkState,
-      readyState: videoElement.readyState,
-      currentSrc: videoElement.currentSrc,
+      error: e.target.error,
+      networkState: e.target.networkState,
+      readyState: e.target.readyState,
+      currentSrc: e.target.currentSrc,
       videoUrl
     });
-    
     setError('Failed to load video. Please try again.');
     setIsLoading(false);
   };
 
   const handleVideoLoaded = () => {
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      console.log('Video loaded successfully:', {
-        url: videoUrl,
-        duration: videoElement.duration,
-        readyState: videoElement.readyState,
-        networkState: videoElement.networkState,
-        currentSrc: videoElement.currentSrc
-      });
-    }
+    console.log('Video loaded successfully:', {
+      url: videoUrl,
+      duration: videoRef.current?.duration,
+      readyState: videoRef.current?.readyState,
+      networkState: videoRef.current?.networkState,
+      currentSrc: videoRef.current?.currentSrc
+    });
     setIsLoading(false);
     setError(null);
   };
@@ -107,6 +97,7 @@ export const VideoPlayer = ({
             onEnded={handleAdEnded}
             onError={handleVideoError}
             onLoadedData={handleVideoLoaded}
+            playsInline
           />
           <Button
             className="absolute bottom-4 right-4 gap-2 bg-accent hover:bg-accent/90"
