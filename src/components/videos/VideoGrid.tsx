@@ -23,28 +23,9 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Check if it's already a full URL
-      if (video.video_url.startsWith('http')) {
-        console.log('Using existing full URL:', video.video_url);
-        onVideoSelect(video.video_url);
-        return;
-      }
-
-      // If it's a path, get the full URL from storage
-      const bucketPath = video.video_url.replace('videos/', '');
-      console.log('Getting public URL for path:', bucketPath);
-      
-      const { data } = supabase.storage
-        .from('videos')
-        .getPublicUrl(bucketPath);
-
-      if (!data.publicUrl) {
-        console.error('Failed to generate public URL for path:', bucketPath);
-        throw new Error('Failed to generate public URL');
-      }
-
-      console.log('Generated public URL:', data.publicUrl);
-      onVideoSelect(data.publicUrl);
+      // Just pass the video URL directly since it's already complete
+      console.log('Using video URL:', video.video_url);
+      onVideoSelect(video.video_url);
       
     } catch (error) {
       console.error('Error handling video click:', error);
