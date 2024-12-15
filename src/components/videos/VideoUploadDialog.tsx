@@ -169,21 +169,40 @@ export const VideoUploadDialog = ({
       console.log('Generated public URLs:', { videoUrl, thumbnailUrl });
 
       // Create video record
-      const { error: dbError } = await supabase.from('videos').insert({
-        user_id: session.user.id,
-        title: title.trim(),
-        description: description.trim(),
-        video_url: videoUrl,
-        thumbnail_url: thumbnailUrl,
-        duration: Math.round(videoRef.current?.duration || 0)
-      });
+      const { data: newVideo, error: dbError } = await supabase
+        .from('videos')
+        .insert({
+          user_id: session.user.id,
+          title: title.trim(),
+          description: description.trim(),
+          video_url: videoUrl,
+          thumbnail_url: thumbnailUrl,
+          duration: Math.round(videoRef.current?.duration || 0)
+        })
+        .select()
+        .single();
 
       if (dbError) {
         console.error('Database insert error:', dbError);
         throw dbError;
       }
 
-      console.log('Video record created successfully');
+      console.log('Video record created successfully:', newVideo);
+
+      // Create a notification for followers
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          recipient_id: session.user.id,
+          actor_id: session.user.id,
+          type: 'new_video',
+          post_id: newVideo.id // Using the video ID directly
+        });
+
+      if (notificationError) {
+        console.error('Error creating notification:', notificationError);
+        // Don't throw here, as the video upload was successful
+      }
 
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       toast.success("Video uploaded successfully!");
