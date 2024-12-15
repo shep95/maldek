@@ -9,7 +9,7 @@ interface AuthenticationWrapperProps {
   queryClient: QueryClient;
 }
 
-export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationWrapperProps) => {
+export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
@@ -24,35 +24,8 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           return;
         }
 
-        try {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError) {
-            console.log("Creating new profile for user:", session.user.id);
-            const { error: createError } = await supabase
-              .from('profiles')
-              .insert([{
-                id: session.user.id,
-                username: session.user.email?.split('@')[0] || `user_${Math.random().toString(36).slice(2, 7)}`,
-              }]);
-
-            if (createError) {
-              console.error("Profile creation error:", createError);
-              // Continue anyway - user can still use the app
-            }
-          }
-
-          // Always navigate to dashboard on successful sign in
-          navigate('/dashboard');
-        } catch (error) {
-          console.error("Error during profile check:", error);
-          // Continue anyway - user can still use the app
-          navigate('/dashboard');
-        }
+        // Always navigate to dashboard on successful sign in
+        navigate('/dashboard');
       } else if (event === 'SIGNED_OUT') {
         navigate('/auth');
       }
@@ -69,7 +42,9 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           }
         } else {
           console.log("Active session found:", session.user?.id);
-          navigate('/dashboard');
+          if (location.pathname === '/auth') {
+            navigate('/dashboard');
+          }
         }
       } catch (error) {
         console.error("Session check error:", error);

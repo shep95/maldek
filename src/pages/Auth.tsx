@@ -22,6 +22,9 @@ const Auth = () => {
         });
 
         if (signInError) throw signInError;
+        
+        toast.success("Successfully signed in!");
+        navigate('/dashboard');
       } else {
         if (!formData.username) {
           throw new Error('Username is required');
@@ -64,6 +67,7 @@ const Auth = () => {
         }
 
         toast.success("Account created successfully!");
+        navigate('/dashboard');
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
