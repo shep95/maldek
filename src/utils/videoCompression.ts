@@ -43,7 +43,7 @@ export const compressVideo = async (file: File): Promise<File> => {
 
   try {
     console.log('Initializing compression...');
-    toast.info('Preparing to compress video... This may take a few minutes.');
+    toast.info('Preparing to compress video...');
     
     const ffmpeg = await loadFFmpeg();
     const inputFileName = 'input' + file.name.substring(file.name.lastIndexOf('.'));
@@ -53,7 +53,7 @@ export const compressVideo = async (file: File): Promise<File> => {
     await ffmpeg.writeFile(inputFileName, await fetchFile(file));
 
     // Calculate target bitrate based on desired file size
-    const targetSize = MAX_SIZE * 0.95; // Aim for 95% of max size to be safe
+    const targetSize = MAX_SIZE * 0.95; // Aim for 95% of max size
     const duration = await getVideoDuration(file);
     const targetBitrateKbps = Math.floor((targetSize * 8) / (duration * 1024));
 
@@ -63,17 +63,16 @@ export const compressVideo = async (file: File): Promise<File> => {
       targetSize: `${(targetSize / (1024 * 1024)).toFixed(2)}MB`
     });
 
-    toast.info('Compressing video... Please wait.');
-
-    // Run FFmpeg compression
+    // Optimized FFmpeg compression settings
     await ffmpeg.exec([
       '-i', inputFileName,
       '-c:v', 'libx264',
-      '-b:v', `${targetBitrateKbps}k`,
-      '-preset', 'medium',
-      '-pass', '1',
-      '-f', 'mp4',
-      outputFileName
+      '-preset', 'veryfast', // Changed from 'medium' to 'veryfast'
+      '-crf', '28', // Slightly reduced quality for faster compression
+      '-maxrate', `${targetBitrateKbps}k`,
+      '-bufsize', `${targetBitrateKbps * 2}k`,
+      '-movflags', '+faststart', // Enable fast start for quicker playback
+      '-y', outputFileName
     ]);
 
     console.log('Reading compressed file...');

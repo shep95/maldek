@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { compressVideo } from "@/utils/videoCompression";
 import { handleOfflineUpload } from "@/utils/offlineUploadUtils";
 
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+
 export const handleImageUpload = async (file: File, userId: string) => {
   try {
     console.log('Starting media upload for user:', userId);
@@ -47,25 +49,47 @@ export const handleImageUpload = async (file: File, userId: string) => {
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
-    console.log('Starting upload to path:', filePath);
+    console.log('Starting chunked upload to path:', filePath);
     toast.info('Uploading file...');
 
-    // Upload file
-    const { error: uploadError, data } = await supabase.storage
-      .from('posts')
-      .upload(filePath, processedFile, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType: processedFile.type
-      });
+    // Implement chunked upload
+    const chunks = Math.ceil(processedFile.size / CHUNK_SIZE);
+    const uploadPromises = [];
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      toast.error(`Upload failed: ${uploadError.message}`);
+    for (let i = 0; i < chunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, processedFile.size);
+      const chunk = processedFile.slice(start, end);
+      const chunkPath = `${filePath}_chunk_${i}`;
+
+      uploadPromises.push(
+        supabase.storage
+          .from('posts')
+          .upload(chunkPath, chunk, {
+            cacheControl: '3600',
+            upsert: true
+          })
+      );
+
+      // Update progress
+      const progress = Math.round((i + 1) / chunks * 100);
+      console.log(`Upload progress: ${progress}%`);
+      if (progress % 20 === 0) { // Show progress every 20%
+        toast.info(`Upload progress: ${progress}%`);
+      }
+    }
+
+    // Wait for all chunks to upload
+    const results = await Promise.all(uploadPromises);
+    const errors = results.filter(result => result.error);
+
+    if (errors.length > 0) {
+      console.error('Chunk upload errors:', errors);
+      toast.error('Upload failed. Please try again.');
       return null;
     }
 
-    console.log('File uploaded successfully, data:', data);
+    console.log('All chunks uploaded successfully');
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
