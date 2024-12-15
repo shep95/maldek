@@ -13,7 +13,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
 
   return (
     <Dialog open={!!videoUrl} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[95vw] h-[95vh] flex items-center justify-center bg-black/95 p-0 gap-0 border-none">
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh] flex items-center justify-center bg-black/95 p-0 gap-0 border-none">
         <Button
           variant="ghost"
           size="icon"
@@ -26,7 +26,7 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
         <div className="relative w-full h-full flex items-center justify-center">
           <VideoPlayer
             videoUrl={videoUrl}
-            className="max-h-full max-w-full rounded-lg"
+            className="max-h-[600px] max-w-full rounded-lg"
             autoPlay
           />
         </div>
