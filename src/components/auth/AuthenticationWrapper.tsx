@@ -15,30 +15,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // First, sign out any existing session
-    const signOutExistingSession = async () => {
-      try {
-        console.log("Signing out existing session...");
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error("Error signing out:", error);
-        }
-        // Clear any local storage items related to auth
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('supabase.auth.')) {
-            localStorage.removeItem(key);
-          }
-        });
-        if (location.pathname !== '/auth') {
-          navigate('/auth');
-        }
-      } catch (error) {
-        console.error("Error during sign out:", error);
-      }
-    };
-
-    signOutExistingSession();
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
@@ -47,8 +23,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           console.error("No user ID in session");
           return;
         }
-
-        // Always navigate to dashboard on successful sign in
         navigate('/dashboard');
       } else if (event === 'SIGNED_OUT') {
         navigate('/auth');
