@@ -23,15 +23,7 @@ export const VideoPlayer = ({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    console.log('VideoPlayer - Initial mount with URL:', videoUrl);
-    console.log('VideoPlayer - URL type:', typeof videoUrl);
-    console.log('VideoPlayer - URL structure:', {
-      isAbsolute: videoUrl?.startsWith('http'),
-      containsStoragePath: videoUrl?.includes('storage/v1/object'),
-      fullUrl: videoUrl,
-      urlParams: new URL(videoUrl).searchParams.toString()
-    });
-
+    console.log('VideoPlayer - Loading video:', videoUrl);
     setIsLoading(true);
     setError(null);
 
@@ -41,29 +33,6 @@ export const VideoPlayer = ({
       setIsLoading(false);
       return;
     }
-
-    // Test video loading
-    const testVideo = document.createElement('video');
-    testVideo.src = videoUrl;
-    testVideo.load();
-    
-    testVideo.addEventListener('loadedmetadata', () => {
-      console.log('VideoPlayer - Test video metadata loaded:', {
-        duration: testVideo.duration,
-        videoWidth: testVideo.videoWidth,
-        videoHeight: testVideo.videoHeight
-      });
-    });
-
-    testVideo.addEventListener('error', (e) => {
-      console.error('VideoPlayer - Test video error:', {
-        error: testVideo.error,
-        errorCode: testVideo.error?.code,
-        errorMessage: testVideo.error?.message,
-        networkState: testVideo.networkState,
-        readyState: testVideo.readyState
-      });
-    });
 
     const loadAd = async () => {
       try {
@@ -90,11 +59,7 @@ export const VideoPlayer = ({
       errorCode: videoElement.error?.code,
       networkState: videoElement.networkState,
       readyState: videoElement.readyState,
-      currentSrc: videoElement.currentSrc,
-      videoUrl,
-      mimeType: videoElement.canPlayType('video/mp4'),
-      webmSupport: videoElement.canPlayType('video/webm'),
-      oggSupport: videoElement.canPlayType('video/ogg')
+      videoUrl
     });
     
     setError('Failed to load video. Please try again.');
@@ -102,18 +67,12 @@ export const VideoPlayer = ({
   };
 
   const handleVideoLoaded = () => {
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      console.log('VideoPlayer - Video loaded successfully:', {
-        url: videoUrl,
-        duration: videoElement.duration,
-        readyState: videoElement.readyState,
-        networkState: videoElement.networkState,
-        currentSrc: videoElement.currentSrc,
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight
-      });
-    }
+    console.log('VideoPlayer - Video loaded successfully:', {
+      url: videoUrl,
+      duration: videoRef.current?.duration,
+      readyState: videoRef.current?.readyState,
+      networkState: videoRef.current?.networkState
+    });
     setIsLoading(false);
     setError(null);
   };
@@ -165,7 +124,6 @@ export const VideoPlayer = ({
           onLoadedData={handleVideoLoaded}
           playsInline
           preload="metadata"
-          crossOrigin="anonymous"
         />
       )}
 
