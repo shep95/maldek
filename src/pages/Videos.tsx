@@ -1,27 +1,37 @@
 import { useState } from "react";
 import { VideoUploadDialog } from "@/components/videos/VideoUploadDialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Play, Clock } from "lucide-react";
+import { Plus, Play, Clock, Search } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useSession } from "@supabase/auth-helpers-react";
+import { Input } from "@/components/ui/input";
+import { debounce } from "lodash";
 
 const Videos = () => {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const session = useSession();
   const queryClient = useQueryClient();
 
   const { data: videos, isLoading } = useQuery({
-    queryKey: ['videos'],
+    queryKey: ['videos', searchQuery],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Fetching videos with search:', searchQuery);
+      let query = supabase
         .from('videos')
         .select('*, profiles:user_id(username, avatar_url)')
         .order('created_at', { ascending: false });
+
+      if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching videos:', error);
@@ -50,6 +60,11 @@ const Videos = () => {
     }
   };
 
+  const handleSearch = debounce((value: string) => {
+    console.log('Searching videos:', value);
+    setSearchQuery(value);
+  }, 300);
+
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -76,20 +91,30 @@ const Videos = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">Videos</h1>
           <p className="text-muted-foreground">
             Watch and share videos with the community
           </p>
         </div>
-        <Button
-          onClick={() => setIsUploadingVideo(true)}
-          className="gap-2 bg-accent hover:bg-accent/90"
-        >
-          <Plus className="h-4 w-4" />
-          Upload Video
-        </Button>
+        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <div className="relative flex-1 md:flex-initial">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search videos..."
+              className="pl-10 w-full md:w-[300px]"
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => setIsUploadingVideo(true)}
+            className="gap-2 bg-accent hover:bg-accent/90"
+          >
+            <Plus className="h-4 w-4" />
+            Upload Video
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -157,9 +182,9 @@ const Videos = () => {
       ) : (
         <div className="text-center py-12 bg-card rounded-lg">
           <Play className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No videos yet</h3>
+          <h3 className="text-lg font-semibold mb-2">No videos found</h3>
           <p className="text-muted-foreground mb-4">
-            Be the first to share a video with the community
+            {searchQuery ? 'Try a different search term' : 'Be the first to share a video with the community'}
           </p>
           <Button
             onClick={() => setIsUploadingVideo(true)}
