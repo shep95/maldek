@@ -65,11 +65,11 @@ export const VideoPlayer = ({
   const handleVideoError = (e: any) => {
     const videoElement = e.target as HTMLVideoElement;
     console.error('Video playback error:', {
-      error: e,
+      originalError: e,
       videoUrl,
       networkState: videoElement.networkState,
       readyState: videoElement.readyState,
-      error: videoElement.error?.message || 'Unknown error'
+      errorMessage: videoElement.error?.message || 'Unknown error'
     });
     setError(`Failed to load video: ${videoElement.error?.message || 'Unknown error'}`);
     setIsLoading(false);
