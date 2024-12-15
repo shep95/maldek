@@ -1,22 +1,11 @@
 export const createPersistentMediaUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    if (file.type.startsWith('video/')) {
-      const url = URL.createObjectURL(file);
-      console.log('Created video URL:', url);
-      resolve(url);
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      console.log('Created image URL (base64)');
-      resolve(reader.result as string);
-    };
-    reader.onerror = () => {
-      console.error('Error reading file:', file.name);
-      reject(new Error(`Failed to read file: ${file.name}`));
-    };
-    reader.readAsDataURL(file);
+    console.log('Creating persistent URL for file:', file.name, 'Type:', file.type);
+    
+    // For testing, accept any file type
+    const url = URL.createObjectURL(file);
+    console.log('Created URL:', url);
+    resolve(url);
   });
 };
 
@@ -43,6 +32,12 @@ export const isVideoFile = (url: string): boolean => {
   // Check if URL contains video-specific paths or identifiers
   if (lowercaseUrl.includes('/videos/') || lowercaseUrl.includes('video')) {
     console.log('Video path detected');
+    return true;
+  }
+  
+  // For testing, check if the URL contains any video-related terms
+  if (lowercaseUrl.includes('video') || lowercaseUrl.includes('mp4') || lowercaseUrl.includes('mov')) {
+    console.log('Video-related term detected in URL');
     return true;
   }
   
