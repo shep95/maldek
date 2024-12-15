@@ -23,22 +23,9 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Extract just the filename from the video URL
-      const filename = video.video_url.split('/').pop();
-      console.log('Extracted filename:', filename);
-
-      const { data, error: signedUrlError } = await supabase.storage
-        .from('videos')
-        .createSignedUrl(filename, 3600);
-
-      if (signedUrlError || !data?.signedUrl) {
-        console.error('Error getting signed URL:', signedUrlError);
-        toast.error("Failed to load video");
-        return;
-      }
-
-      console.log('Successfully generated signed URL');
-      onVideoSelect(data.signedUrl);
+      // Simply pass the video URL directly to the dialog
+      console.log('Opening video with URL:', video.video_url);
+      onVideoSelect(video.video_url);
       
     } catch (error) {
       console.error('Error handling video click:', error);
@@ -121,3 +108,5 @@ const formatDuration = (seconds: number) => {
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
+
+export default VideoGrid;

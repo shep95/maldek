@@ -86,3 +86,5 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
     </Dialog>
   );
 };
+
+export default VideoDialog;
