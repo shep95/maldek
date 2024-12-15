@@ -47,9 +47,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
       {mediaUrls.map((url, i) => {
-        if (!url) return null;
-
-        const isVideo = url.toLowerCase().match(/\.(mp4|webm|ogg)$/) !== null;
+        const isVideo = url.toLowerCase().match(/\.(mp4|webm|ogg)$/);
 
         return (
           <div key={url} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
