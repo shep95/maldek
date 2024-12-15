@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
+import { VideoPlayer } from "./VideoPlayer";
 
 interface VideoGridProps {
   videos: any[];
@@ -32,15 +33,10 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
           onClick={() => handleVideoClick(video)}
         >
           <div className="aspect-video relative cursor-pointer">
-            {/* Video Thumbnail */}
-            <img
-              src={video.thumbnail_url || "/placeholder.svg"}
-              alt={video.title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              onError={(e) => {
-                console.error('Thumbnail load error');
-                e.currentTarget.src = "/placeholder.svg";
-              }}
+            <VideoPlayer
+              videoUrl={video.video_url}
+              className="w-full h-full object-cover"
+              controls={false}
             />
             
             {/* Play Button Overlay */}

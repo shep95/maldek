@@ -1,7 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { VideoPlayer } from "./VideoPlayer";
 
 interface VideoDialogProps {
   videoUrl: string | null;
@@ -9,8 +9,6 @@ interface VideoDialogProps {
 }
 
 export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-
   if (!videoUrl) return null;
 
   return (
@@ -20,38 +18,17 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
           variant="ghost"
           size="icon"
           className="absolute right-4 top-4 text-white hover:bg-white/10 z-50"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
+          onClick={onClose}
         >
           <X className="h-6 w-6" />
         </Button>
 
         <div className="relative w-full h-full flex items-center justify-center">
-          <video
-            src={videoUrl}
-            controls
-            playsInline
-            autoPlay
+          <VideoPlayer
+            videoUrl={videoUrl}
             className="max-h-full max-w-full rounded-lg"
-            style={{ opacity: isLoading ? 0 : 1 }}
-            onLoadedData={() => {
-              console.log('Video loaded successfully');
-              setIsLoading(false);
-            }}
-            onError={(e) => {
-              console.error('Video playback error:', e);
-              setIsLoading(false);
-            }}
-            onClick={(e) => e.stopPropagation()}
+            autoPlay
           />
-
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
