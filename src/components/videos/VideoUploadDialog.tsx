@@ -28,18 +28,34 @@ export const VideoUploadDialog = ({
   const handleVideoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('Selected video file:', { name: file.name, size: file.size, type: file.type });
+      
       // Create a URL for the video to check its duration
       const videoElement = document.createElement('video');
       videoElement.preload = 'metadata';
       
       videoElement.onloadedmetadata = () => {
         const duration = Math.round(videoElement.duration);
-        if (duration < 60) { // Less than 1 minute
+        console.log('Video duration:', duration);
+        
+        if (duration < 60) {
           toast.error("Video must be at least 1 minute long");
           return;
         }
+
+        // Check file size (100MB limit)
+        if (file.size > 100 * 1024 * 1024) {
+          toast.error("Video file size must be less than 100MB");
+          return;
+        }
+
         setVideoFile(file);
         toast.success("Video selected");
+      };
+      
+      videoElement.onerror = (error) => {
+        console.error('Error loading video metadata:', error);
+        toast.error("Error validating video file");
       };
       
       videoElement.src = URL.createObjectURL(file);
@@ -49,10 +65,19 @@ export const VideoUploadDialog = ({
   const handleThumbnailSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('Selected thumbnail file:', { name: file.name, size: file.size, type: file.type });
+      
       if (!file.type.startsWith('image/')) {
         toast.error("Please select an image file for the thumbnail");
         return;
       }
+
+      // Check thumbnail size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Thumbnail file size must be less than 5MB");
+        return;
+      }
+
       setThumbnailFile(file);
       toast.success("Thumbnail selected");
     }
@@ -65,6 +90,7 @@ export const VideoUploadDialog = ({
     }
 
     setIsUploading(true);
+    console.log('Starting video upload process...');
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -73,35 +99,64 @@ export const VideoUploadDialog = ({
         return;
       }
 
+      console.log('Authenticated user:', user.id);
+
       // Upload video
       const videoPath = `${user.id}/${Date.now()}_${videoFile.name}`;
-      const { error: videoError } = await supabase.storage
+      console.log('Uploading video to path:', videoPath);
+      
+      const { error: videoError, data: videoData } = await supabase.storage
         .from('videos')
         .upload(videoPath, videoFile);
-      if (videoError) throw videoError;
+
+      if (videoError) {
+        console.error('Video upload error:', videoError);
+        throw new Error(`Failed to upload video: ${videoError.message}`);
+      }
+
+      console.log('Video uploaded successfully:', videoData);
 
       // Upload thumbnail
       const thumbnailPath = `${user.id}/${Date.now()}_${thumbnailFile.name}`;
-      const { error: thumbnailError } = await supabase.storage
+      console.log('Uploading thumbnail to path:', thumbnailPath);
+      
+      const { error: thumbnailError, data: thumbnailData } = await supabase.storage
         .from('videos')
         .upload(thumbnailPath, thumbnailFile);
-      if (thumbnailError) throw thumbnailError;
+
+      if (thumbnailError) {
+        console.error('Thumbnail upload error:', thumbnailError);
+        // Clean up video if thumbnail upload fails
+        await supabase.storage.from('videos').remove([videoPath]);
+        throw new Error(`Failed to upload thumbnail: ${thumbnailError.message}`);
+      }
+
+      console.log('Thumbnail uploaded successfully:', thumbnailData);
 
       // Get public URLs
       const videoUrl = supabase.storage.from('videos').getPublicUrl(videoPath).data.publicUrl;
       const thumbnailUrl = supabase.storage.from('videos').getPublicUrl(thumbnailPath).data.publicUrl;
 
+      console.log('Generated public URLs:', { videoUrl, thumbnailUrl });
+
       // Create video record
       const { error: dbError } = await supabase.from('videos').insert({
         user_id: user.id,
-        title,
-        description,
+        title: title.trim(),
+        description: description.trim(),
         video_url: videoUrl,
         thumbnail_url: thumbnailUrl,
         duration: Math.round(videoRef.current?.duration || 0)
       });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database insert error:', dbError);
+        // Clean up uploaded files if database insert fails
+        await supabase.storage.from('videos').remove([videoPath, thumbnailPath]);
+        throw dbError;
+      }
+
+      console.log('Video record created successfully');
 
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       toast.success("Video uploaded successfully!");
@@ -111,8 +166,8 @@ export const VideoUploadDialog = ({
       setVideoFile(null);
       setThumbnailFile(null);
     } catch (error) {
-      console.error('Error uploading video:', error);
-      toast.error("Failed to upload video");
+      console.error('Detailed upload error:', error);
+      toast.error(error.message || "Failed to upload video");
     } finally {
       setIsUploading(false);
     }
