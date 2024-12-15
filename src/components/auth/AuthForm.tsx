@@ -27,26 +27,30 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
-    console.log('Checking username:', username);
+    console.log('Starting username check for:', username);
     setIsCheckingUsername(true);
 
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('username')
+        .select('id') // Only select id to minimize data transfer
         .eq('username', username)
-        .maybeSingle();
+        .limit(1) // Limit to 1 result since we only need to know if it exists
+        .single();
 
-      if (error) {
+      console.log('Username check query completed:', { data, error });
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows returned
         console.error('Username check error:', error);
         toast.error('Error checking username availability');
         return;
       }
 
-      console.log('Username check result:', { username, isTaken: !!data });
-      setIsUsernameTaken(!!data);
+      const isTaken = !!data;
+      console.log('Username availability result:', { username, isTaken });
+      setIsUsernameTaken(isTaken);
     } catch (error) {
-      console.error('Username check error:', error);
+      console.error('Unexpected error during username check:', error);
       toast.error('Error checking username availability');
     } finally {
       setIsCheckingUsername(false);
@@ -73,13 +77,12 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     });
   };
 
-  // Debounce username check
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (!isLogin && username) {
         handleUsernameCheck(username);
       }
-    }, 500); // Wait 500ms after user stops typing
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [username, isLogin]);
