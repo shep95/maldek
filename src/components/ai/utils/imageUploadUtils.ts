@@ -11,11 +11,11 @@ export const handleImageUpload = async (file: File, userId: string) => {
       lastModified: file.lastModified
     });
 
-    // Increase size limit to 2GB for testing
-    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
+    // Limit file size to 50MB (Supabase's default limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
       console.error('File too large:', file.size);
-      toast.error(`File size must be less than 2GB`);
+      toast.error(`File size must be less than 50MB`);
       return null;
     }
 
@@ -26,19 +26,13 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Uploading file to path:', filePath);
 
-    // Determine content type based on file type
-    const isVideo = file.type.startsWith('video/');
-    const contentType = isVideo ? 'video/mp4' : file.type;
-
-    console.log('Using content type:', contentType, 'for file type:', file.type);
-
-    // Upload with forced content type for videos
+    // Upload file with original content type
     const { error: uploadError, data } = await supabase.storage
       .from('posts')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
-        contentType: contentType // Force video/mp4 for all video files
+        contentType: file.type
       });
 
     if (uploadError) {
@@ -49,7 +43,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('File uploaded successfully, data:', data);
 
-    // Get public URL with cache busting
+    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('posts')
       .getPublicUrl(filePath);
