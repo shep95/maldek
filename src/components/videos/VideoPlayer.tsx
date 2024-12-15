@@ -60,41 +60,39 @@ export const VideoPlayer = ({
 
   const handleVideoError = (e: any) => {
     const videoElement = e.target as HTMLVideoElement;
+    const videoSource = videoElement.currentSrc || videoUrl;
+    const fileExtension = videoSource.split('.').pop()?.toLowerCase();
+    
     console.error('Video playback error:', {
       originalError: e,
-      videoUrl,
+      videoUrl: videoSource,
+      fileExtension,
       networkState: videoElement.networkState,
       readyState: videoElement.readyState,
       errorMessage: videoElement.error?.message || 'Unknown error',
       errorCode: videoElement.error?.code,
-      mimeType: videoElement.currentSrc ? getMimeType(videoElement.currentSrc) : 'unknown'
+      supportedTypes: videoElement.canPlayType('video/mp4'),
+      currentTime: videoElement.currentTime,
+      paused: videoElement.paused,
+      videoWidth: videoElement.videoWidth,
+      videoHeight: videoElement.videoHeight
     });
     
     let errorMessage = 'Failed to load video: ';
     if (videoElement.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-      errorMessage += 'Video format not supported';
+      errorMessage += `Format not supported (${fileExtension}). Please try converting to MP4.`;
     } else if (videoElement.error?.code === MediaError.MEDIA_ERR_DECODE) {
-      errorMessage += 'Video format error';
+      errorMessage += 'Video file is corrupted or uses an unsupported codec';
+    } else if (videoElement.error?.code === MediaError.MEDIA_ERR_NETWORK) {
+      errorMessage += 'Network error occurred while loading';
+    } else if (videoElement.error?.code === MediaError.MEDIA_ERR_ABORTED) {
+      errorMessage += 'Video loading was aborted';
     } else {
       errorMessage += videoElement.error?.message || 'Unknown error';
     }
     
     setError(errorMessage);
     setIsLoading(false);
-  };
-
-  const getMimeType = (url: string): string => {
-    const extension = url.split('.').pop()?.toLowerCase();
-    switch (extension) {
-      case 'mp4':
-        return 'video/mp4';
-      case 'webm':
-        return 'video/webm';
-      case 'ogg':
-        return 'video/ogg';
-      default:
-        return 'unknown';
-    }
   };
 
   const handleAdEnded = () => {
@@ -109,13 +107,19 @@ export const VideoPlayer = ({
   };
 
   const handleVideoLoaded = () => {
-    console.log('Video loaded successfully:', {
-      url: videoUrl,
-      duration: videoRef.current?.duration,
-      videoWidth: videoRef.current?.videoWidth,
-      videoHeight: videoRef.current?.videoHeight,
-      mimeType: videoRef.current?.currentSrc ? getMimeType(videoRef.current.currentSrc) : 'unknown'
-    });
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      console.log('Video loaded successfully:', {
+        url: videoUrl,
+        duration: videoElement.duration,
+        videoWidth: videoElement.videoWidth,
+        videoHeight: videoElement.videoHeight,
+        readyState: videoElement.readyState,
+        networkState: videoElement.networkState,
+        error: videoElement.error,
+        currentSrc: videoElement.currentSrc
+      });
+    }
     setIsLoading(false);
     setError(null);
   };
@@ -154,7 +158,13 @@ export const VideoPlayer = ({
           onLoadedData={handleVideoLoaded}
           playsInline
           preload="metadata"
-        />
+          type="video/mp4"
+        >
+          <source src={videoUrl} type="video/mp4" />
+          <source src={videoUrl} type="video/webm" />
+          <source src={videoUrl} type="video/ogg" />
+          Your browser does not support the video tag.
+        </video>
       )}
 
       {isLoading && !error && (
