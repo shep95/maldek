@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize } from "lucide-react";
+import { isVideoFile } from "@/utils/mediaUtils";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -23,7 +24,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
               if (!video) return;
 
               if (entry.isIntersecting) {
-                video.play().catch(() => {});
+                video.play().catch(() => {
+                  console.log('Auto-play prevented');
+                });
               } else {
                 video.pause();
               }
@@ -44,10 +47,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
 
   if (!mediaUrls || mediaUrls.length === 0) return null;
 
+  console.log('Rendering media URLs:', mediaUrls);
+
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
       {mediaUrls.map((url, i) => {
-        const isVideo = url.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/);
+        const isVideo = isVideoFile(url);
+        console.log(`Media ${i + 1}:`, { url, isVideo });
 
         return (
           <div key={url} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
@@ -60,6 +66,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                   playsInline
                   preload="metadata"
                   className="w-full h-full object-contain bg-black rounded-lg"
+                  onError={(e) => console.error('Video error:', e)}
                 />
               </AspectRatio>
             ) : (
@@ -69,6 +76,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                     src={url}
                     alt={`Post media ${i + 1}`}
                     className="w-full h-full object-cover rounded-lg transition-opacity hover:opacity-90"
+                    onError={(e) => console.error('Image error:', e)}
                   />
                   <Button
                     variant="ghost"

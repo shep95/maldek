@@ -1,6 +1,5 @@
 export const createPersistentMediaUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    // For videos, create an object URL instead of base64
     if (file.type.startsWith('video/')) {
       const url = URL.createObjectURL(file);
       console.log('Created video URL:', url);
@@ -8,7 +7,6 @@ export const createPersistentMediaUrl = (file: File): Promise<string> => {
       return;
     }
 
-    // For images, use base64 as before
     const reader = new FileReader();
     reader.onloadend = () => {
       console.log('Created image URL (base64)');
@@ -32,12 +30,13 @@ export const isVideoFile = (url: string): boolean => {
   }
   
   // Check common video file extensions
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov'];
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v'];
   const lowercaseUrl = url.toLowerCase();
   
   // Check file extensions
-  if (videoExtensions.some(ext => lowercaseUrl.endsWith(ext))) {
-    console.log('Video extension detected');
+  const hasVideoExtension = videoExtensions.some(ext => lowercaseUrl.endsWith(ext));
+  if (hasVideoExtension) {
+    console.log('Video extension detected:', lowercaseUrl);
     return true;
   }
   

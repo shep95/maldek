@@ -50,6 +50,7 @@ export const CreatePostDialog = ({
     });
 
     if (validFiles.length > 0) {
+      console.log('Valid files selected:', validFiles.map(f => ({ name: f.name, type: f.type })));
       setMediaFiles(prev => [...prev, ...validFiles]);
       validFiles.forEach(file => {
         const previewUrl = URL.createObjectURL(file);
@@ -60,6 +61,7 @@ export const CreatePostDialog = ({
 
   const handleCreatePost = async () => {
     if (!currentUser?.id) {
+      console.error('No user ID found');
       toast.error("User authentication error. Please try logging in again.");
       return;
     }
@@ -71,15 +73,17 @@ export const CreatePostDialog = ({
 
     try {
       setIsSubmitting(true);
+      console.log('Starting post creation with media files:', mediaFiles.length);
       const mediaUrls: string[] = [];
 
       if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
+          console.log('Uploading file:', file.name, 'Type:', file.type);
           const fileExt = file.name.split('.').pop();
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${currentUser.id}/${fileName}`;
 
-          const { error: uploadError } = await supabase.storage
+          const { error: uploadError, data } = await supabase.storage
             .from('posts')
             .upload(filePath, file, {
               cacheControl: '3600',
@@ -92,13 +96,18 @@ export const CreatePostDialog = ({
             throw uploadError;
           }
 
+          console.log('File uploaded successfully:', filePath);
+
           const { data: { publicUrl } } = supabase.storage
             .from('posts')
             .getPublicUrl(filePath);
 
+          console.log('Generated public URL:', publicUrl);
           mediaUrls.push(publicUrl);
         }
       }
+
+      console.log('Creating post with media URLs:', mediaUrls);
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
@@ -115,6 +124,8 @@ export const CreatePostDialog = ({
         toast.error(`Failed to create post: ${postError.message}`);
         throw postError;
       }
+
+      console.log('Post created successfully:', newPost);
 
       // Clean up
       setContent("");
