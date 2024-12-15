@@ -27,8 +27,8 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
-    console.log('Starting username check for:', username);
     setIsCheckingUsername(true);
+    console.log('Starting username check for:', username);
 
     try {
       const { data, error } = await supabase
@@ -40,12 +40,12 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       if (error) {
         console.error('Username check error:', error);
         toast.error('Error checking username availability');
-        setIsCheckingUsername(false);
         return;
       }
 
-      console.log('Username check result:', { username, isTaken: !!data });
       setIsUsernameTaken(!!data);
+      console.log('Username check completed:', { username, isTaken: !!data });
+
     } catch (error) {
       console.error('Unexpected error during username check:', error);
       toast.error('Error checking username availability');
