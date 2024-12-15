@@ -150,7 +150,6 @@ export const VideoPlayer = ({
       ) : (
         <video
           ref={videoRef}
-          src={videoUrl}
           className={className}
           controls={controls}
           autoPlay={autoPlay}
@@ -158,7 +157,6 @@ export const VideoPlayer = ({
           onLoadedData={handleVideoLoaded}
           playsInline
           preload="metadata"
-          type="video/mp4"
         >
           <source src={videoUrl} type="video/mp4" />
           <source src={videoUrl} type="video/webm" />
