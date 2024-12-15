@@ -32,7 +32,7 @@ const Auth = () => {
         }
 
         console.log('Sign in successful');
-        navigate("/dashboard");
+        navigate("/");
       } else {
         console.log('Attempting to sign up user:', formData.email);
         const { error: signUpError, data } = await supabase.auth.signUp({

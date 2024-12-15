@@ -39,35 +39,10 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           return;
         }
 
-        // Check if user has a profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.error("Profile error or not found:", profileError);
-          // If no profile exists, create one
-          const { error: createProfileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              username: session.user.email?.split('@')[0], // Temporary username from email
-              created_at: new Date().toISOString(),
-            });
-
-          if (createProfileError) {
-            console.error("Error creating profile:", createProfileError);
-            toast.error("Failed to create user profile");
-            return;
-          }
-        }
-
         console.log("Valid session found:", session);
         setIsAuthenticated(true);
         if (location.pathname === '/auth') {
-          navigate('/dashboard');
+          navigate('/');
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -100,34 +75,9 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         console.log("User signed in or token refreshed");
-        // Check for profile after sign in
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.error("Profile check error after sign in:", profileError);
-          // Create profile if it doesn't exist
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              username: session.user.email?.split('@')[0],
-              created_at: new Date().toISOString(),
-            });
-
-          if (createError) {
-            console.error("Error creating profile after sign in:", createError);
-            toast.error("Failed to create user profile");
-            return;
-          }
-        }
-
         setIsAuthenticated(true);
         if (location.pathname === '/auth') {
-          navigate('/dashboard');
+          navigate('/');
         }
       }
     });
