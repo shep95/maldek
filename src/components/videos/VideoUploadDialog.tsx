@@ -41,36 +41,8 @@ export const VideoUploadDialog = ({
       return;
     }
 
-    const maxSize = 100 * 1024 * 1024; // 100MB in bytes
-    if (file.size > maxSize) {
-      toast.error("Video file size must be less than 100MB");
-      return;
-    }
-
-    const videoElement = document.createElement('video');
-    videoElement.preload = 'metadata';
-    
-    videoElement.onloadedmetadata = () => {
-      const duration = Math.round(videoElement.duration);
-      console.log('Video duration:', duration);
-      
-      if (duration < 1) {
-        toast.error("Video must be at least 1 second long");
-        URL.revokeObjectURL(videoElement.src);
-        return;
-      }
-
-      setVideoFile(file);
-      toast.success("Video selected successfully");
-    };
-    
-    videoElement.onerror = () => {
-      console.error('Error loading video metadata');
-      toast.error("Error validating video file");
-      URL.revokeObjectURL(videoElement.src);
-    };
-    
-    videoElement.src = URL.createObjectURL(file);
+    setVideoFile(file);
+    toast.success("Video selected successfully");
   };
 
   const handleThumbnailSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,12 +53,6 @@ export const VideoUploadDialog = ({
     
     if (!file.type.startsWith('image/')) {
       toast.error("Please select an image file for the thumbnail");
-      return;
-    }
-
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file.size > maxSize) {
-      toast.error("Thumbnail file size must be less than 5MB");
       return;
     }
 

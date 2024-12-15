@@ -72,10 +72,7 @@ export const CreatePostDialog = ({
           console.log('Attempting to upload file to:', filePath);
           const { error: uploadError, data } = await supabase.storage
             .from('posts')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: true
-            });
+            .upload(filePath, file);
 
           if (uploadError) {
             console.error('Upload error details:', uploadError);

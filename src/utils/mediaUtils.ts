@@ -18,7 +18,7 @@ export const isVideoFile = (url: string): boolean => {
   }
   
   // Check common video file extensions
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v'];
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '.avi', '.wmv', '.flv', '.mkv'];
   const lowercaseUrl = url.toLowerCase();
   
   // Check file extensions
@@ -31,12 +31,6 @@ export const isVideoFile = (url: string): boolean => {
   // Check if URL contains video-specific paths or identifiers
   if (lowercaseUrl.includes('/videos/') || lowercaseUrl.includes('video')) {
     console.log('Video path detected');
-    return true;
-  }
-  
-  // For testing, check if the URL contains any video-related terms
-  if (lowercaseUrl.includes('video') || lowercaseUrl.includes('mp4') || lowercaseUrl.includes('mov')) {
-    console.log('Video-related term detected in URL');
     return true;
   }
   
