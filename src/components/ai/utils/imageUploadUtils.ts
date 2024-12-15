@@ -45,9 +45,8 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     if (uploadError) {
       console.error('Detailed upload error:', uploadError);
-      console.error('Error code:', uploadError.error);
+      console.error('Error name:', uploadError.name);
       console.error('Error message:', uploadError.message);
-      console.error('Error status:', uploadError.statusCode);
       toast.error(`Upload error: ${uploadError.message}`);
       return null;
     }
@@ -60,7 +59,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Generated public URL:', publicUrl);
     return publicUrl;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Detailed error in file upload:', error);
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
