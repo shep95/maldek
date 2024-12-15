@@ -28,7 +28,8 @@ export const VideoPlayer = ({
     console.log('VideoPlayer - URL structure:', {
       isAbsolute: videoUrl?.startsWith('http'),
       containsStoragePath: videoUrl?.includes('storage/v1/object'),
-      fullUrl: videoUrl
+      fullUrl: videoUrl,
+      urlParams: new URL(videoUrl).searchParams.toString()
     });
 
     setIsLoading(true);
@@ -40,6 +41,29 @@ export const VideoPlayer = ({
       setIsLoading(false);
       return;
     }
+
+    // Test video loading
+    const testVideo = document.createElement('video');
+    testVideo.src = videoUrl;
+    testVideo.load();
+    
+    testVideo.addEventListener('loadedmetadata', () => {
+      console.log('VideoPlayer - Test video metadata loaded:', {
+        duration: testVideo.duration,
+        videoWidth: testVideo.videoWidth,
+        videoHeight: testVideo.videoHeight
+      });
+    });
+
+    testVideo.addEventListener('error', (e) => {
+      console.error('VideoPlayer - Test video error:', {
+        error: testVideo.error,
+        errorCode: testVideo.error?.code,
+        errorMessage: testVideo.error?.message,
+        networkState: testVideo.networkState,
+        readyState: testVideo.readyState
+      });
+    });
 
     const loadAd = async () => {
       try {
@@ -141,6 +165,7 @@ export const VideoPlayer = ({
           onLoadedData={handleVideoLoaded}
           playsInline
           preload="metadata"
+          crossOrigin="anonymous"
         />
       )}
 
