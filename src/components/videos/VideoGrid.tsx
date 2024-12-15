@@ -23,14 +23,10 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Always get a fresh public URL from Supabase storage
-      const { data, error } = await supabase.storage
+      // The getPublicUrl method doesn't actually make an API call, it just returns the URL
+      const { data } = supabase.storage
         .from('videos')
         .getPublicUrl(video.video_url);
-
-      if (error) {
-        throw error;
-      }
 
       console.log('Generated public URL for video:', data.publicUrl);
       onVideoSelect(data.publicUrl);
