@@ -69,9 +69,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
       console.error('Upload error details:', {
         name: uploadError.name,
         message: uploadError.message,
-        stack: uploadError.stack,
-        status: uploadError.status,
-        statusText: uploadError.statusText
+        stack: uploadError.stack
       });
       toast.error(`Upload error: ${uploadError.message}`);
       return null;
