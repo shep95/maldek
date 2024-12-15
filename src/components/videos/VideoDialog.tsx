@@ -2,6 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface VideoDialogProps {
   videoUrl: string | null;
@@ -12,6 +13,14 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   if (!videoUrl) return null;
+
+  console.log('VideoDialog - Attempting to play video:', videoUrl);
+
+  const handleVideoError = (error: any) => {
+    console.error('Video playback error:', error);
+    setIsLoading(false);
+    toast.error('Failed to load video. Please try again.');
+  };
 
   return (
     <Dialog open={!!videoUrl} onOpenChange={onClose}>
@@ -36,16 +45,16 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
             src={videoUrl}
             controls
             playsInline
+            preload="auto"
             className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
             style={{ opacity: isLoading ? 0 : 1 }}
             onLoadedData={() => {
-              console.log('Video loaded successfully');
+              console.log('Video loaded successfully:', videoUrl);
               setIsLoading(false);
             }}
-            onError={(e) => {
-              console.error('Video loading error:', e);
-              setIsLoading(false);
-            }}
+            onError={handleVideoError}
+            onPlay={() => console.log('Video started playing')}
+            onPause={() => console.log('Video paused')}
           />
         </div>
       </DialogContent>
