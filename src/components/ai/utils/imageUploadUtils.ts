@@ -26,14 +26,10 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     console.log('Uploading file to path:', filePath);
 
-    // Simple direct upload to posts bucket
+    // Upload directly to posts bucket with minimal configuration
     const { error: uploadError, data } = await supabase.storage
       .from('posts')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType: file.type
-      });
+      .upload(filePath, file);
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
