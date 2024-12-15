@@ -20,12 +20,14 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
         console.log("Checking authentication status...");
         const { data: { session } } = await supabase.auth.getSession();
 
+        // If no session and not on auth page, redirect to auth
         if (!session && !location.pathname.startsWith('/auth')) {
           console.log("No session found, redirecting to auth");
           navigate('/auth');
           return;
         }
 
+        // If we have a session, check for profile
         if (session?.user) {
           console.log("Session found, checking profile");
           const { data: profile, error: profileError } = await supabase
@@ -36,23 +38,34 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
 
           if (profileError) {
             console.error("Profile error:", profileError);
-            if (!location.pathname.startsWith('/auth')) {
-              navigate('/auth');
+            // Only create profile if it doesn't exist
+            if (profileError.code === 'PGRST116') {
+              console.log("Profile not found, creating new profile");
+              const { error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  username: session.user.email?.split('@')[0] || `user_${Date.now()}`
+                });
+
+              if (createError) {
+                console.error("Error creating profile:", createError);
+                toast.error("Error setting up profile");
+                return;
+              }
             }
-            return;
           }
 
-          console.log("Profile loaded:", profile);
+          console.log("Profile verified");
           
+          // If on auth page with valid session, redirect to dashboard
           if (location.pathname.startsWith('/auth')) {
             navigate('/dashboard');
           }
         }
       } catch (error) {
         console.error("Auth error:", error);
-        if (!location.pathname.startsWith('/auth')) {
-          navigate('/auth');
-        }
+        toast.error("Authentication error occurred");
       } finally {
         setIsLoading(false);
       }
