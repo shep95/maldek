@@ -23,10 +23,13 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const handleUsernameCheck = async (username: string) => {
     if (!username || username.length < 3) {
       setIsUsernameTaken(false);
+      setIsCheckingUsername(false);
       return;
     }
 
+    console.log('Checking username:', username);
     setIsCheckingUsername(true);
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -36,12 +39,15 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
       if (error) {
         console.error('Username check error:', error);
+        toast.error('Error checking username availability');
         return;
       }
 
+      console.log('Username check result:', { username, isTaken: !!data });
       setIsUsernameTaken(!!data);
     } catch (error) {
       console.error('Username check error:', error);
+      toast.error('Error checking username availability');
     } finally {
       setIsCheckingUsername(false);
     }
@@ -67,10 +73,15 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     });
   };
 
+  // Debounce username check
   useEffect(() => {
-    if (!isLogin && username) {
-      handleUsernameCheck(username);
-    }
+    const timeoutId = setTimeout(() => {
+      if (!isLogin && username) {
+        handleUsernameCheck(username);
+      }
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timeoutId);
   }, [username, isLogin]);
 
   return (
