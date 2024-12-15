@@ -23,25 +23,28 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     }
 
     try {
-      // Extract the file path from the full URL
-      const fullUrl = new URL(video.video_url);
-      const pathParts = fullUrl.pathname.split('/');
-      const bucketName = pathParts[2]; // 'videos'
-      const filePath = pathParts.slice(3).join('/'); // Everything after the bucket name
+      // Get the file path from the video URL
+      const urlParts = video.video_url.split('/');
+      const bucketIndex = urlParts.indexOf('videos');
+      if (bucketIndex === -1) {
+        throw new Error('Invalid video URL format');
+      }
+      
+      // Extract everything after 'videos/' as the file path
+      const filePath = urlParts.slice(bucketIndex + 1).join('/');
+      console.log('Extracted file path:', filePath);
 
-      console.log('Getting signed URL for:', { bucketName, filePath });
+      const { data, error: signedUrlError } = await supabase.storage
+        .from('videos')
+        .createSignedUrl(filePath, 3600);
 
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .createSignedUrl(filePath, 3600); // 1 hour expiry
-
-      if (error || !data?.signedUrl) {
-        console.error('Error getting signed URL:', error);
+      if (signedUrlError || !data?.signedUrl) {
+        console.error('Error getting signed URL:', signedUrlError);
         toast.error("Failed to load video");
         return;
       }
 
-      console.log('Successfully generated signed URL:', data.signedUrl);
+      console.log('Successfully generated signed URL');
       onVideoSelect(data.signedUrl);
       
     } catch (error) {
