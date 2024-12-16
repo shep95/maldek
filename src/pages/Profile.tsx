@@ -30,7 +30,22 @@ const Profile = () => {
       // If no username provided and user is logged in, use current user's profile
       if (!cleanUsername && session?.user?.id) {
         console.log('No username provided, using current user:', session.user.id);
-        return { id: session.user.id };
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching current user profile:", error);
+          return null;
+        }
+
+        // Redirect to the @username URL format
+        if (data.username) {
+          navigate(`/@${data.username}`, { replace: true });
+        }
+        return data;
       }
 
       // If username is provided, fetch the corresponding user ID
@@ -38,8 +53,8 @@ const Profile = () => {
         console.log("Fetching user ID for username:", cleanUsername);
         const { data, error } = await supabase
           .from('profiles')
-          .select('id')
-          .eq('username', cleanUsername)
+          .select('id, username')
+          .eq('username', cleanUsername.toLowerCase())
           .single();
 
         if (error) {
