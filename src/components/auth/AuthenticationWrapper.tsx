@@ -12,39 +12,43 @@ interface AuthenticationWrapperProps {
 export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     console.log("AuthenticationWrapper mounted");
     
     const clearAuthData = async () => {
-      console.log("Clearing auth data...");
-      
-      // Clear all Supabase auth data from localStorage
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.auth.')) {
-          console.log("Removing auth data:", key);
-          localStorage.removeItem(key);
-        }
-      });
+      // Only clear auth data if we're not already on the auth page
+      if (location.pathname !== '/auth') {
+        console.log("Clearing auth data...");
+        setIsLoading(true);
+        
+        // Clear all Supabase auth data from localStorage
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.auth.')) {
+            console.log("Removing auth data:", key);
+            localStorage.removeItem(key);
+          }
+        });
 
-      // Force sign out from Supabase
-      try {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error("Sign out error:", error);
+        // Force sign out from Supabase
+        try {
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error("Sign out error:", error);
+            toast.error("Error signing out");
+          } else {
+            console.log("Successfully signed out");
+          }
+        } catch (error) {
+          console.error("Error during sign out:", error);
           toast.error("Error signing out");
-        } else {
-          console.log("Successfully signed out");
         }
-      } catch (error) {
-        console.error("Error during sign out:", error);
-        toast.error("Error signing out");
-      }
 
-      // Force navigation to auth page
-      navigate('/auth');
-      setIsLoading(false);
+        // Force navigation to auth page
+        navigate('/auth');
+        setIsLoading(false);
+      }
     };
 
     clearAuthData();
@@ -91,7 +95,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   if (isLoading) {
     return (
