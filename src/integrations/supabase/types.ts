@@ -639,6 +639,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_username_availability: {
+        Args: {
+          username_to_check: string
+        }
+        Returns: boolean
+      }
       delete_user_account: {
         Args: Record<PropertyKey, never>
         Returns: undefined
