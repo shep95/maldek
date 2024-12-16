@@ -19,16 +19,23 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     
     const handleSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          throw sessionError;
+        }
+
         if (!session) {
           console.log("No session found, redirecting to auth");
-          navigate('/auth');
+          if (location.pathname !== '/auth') {
+            navigate('/auth');
+          }
           setIsLoading(false);
           return;
         }
 
-        console.log("Session found, checking profile");
+        console.log("Session found:", session.user.id);
         
         // Check if profile exists
         const { data: profile, error: profileError } = await supabase
@@ -53,8 +60,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
             if (createError) {
               console.error("Error creating profile:", createError);
               toast.error("Error creating profile");
-              await supabase.auth.signOut();
-              navigate('/auth');
               return;
             }
 
