@@ -18,33 +18,40 @@ const Profile = () => {
   // Remove @ from username if present
   const cleanUsername = username?.replace('@', '');
 
+  console.log('Profile component rendered with:', {
+    username: cleanUsername,
+    sessionUserId: session?.user?.id
+  });
+
   // First, get the user ID for the profile we want to view
   const { data: targetUser, isLoading: isLoadingUserId } = useQuery({
     queryKey: ['user-id', cleanUsername],
     queryFn: async () => {
-      if (!cleanUsername && !session?.user?.id) {
-        console.log('No username or session ID provided');
-        return null;
+      // If no username provided and user is logged in, use current user's profile
+      if (!cleanUsername && session?.user?.id) {
+        console.log('No username provided, using current user:', session.user.id);
+        return { id: session.user.id };
       }
 
-      // If no username provided, use current user's profile
-      if (!cleanUsername) {
-        return { id: session?.user?.id };
+      // If username is provided, fetch the corresponding user ID
+      if (cleanUsername) {
+        console.log("Fetching user ID for username:", cleanUsername);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', cleanUsername)
+          .single();
+
+        if (error) {
+          console.error("Error fetching user ID:", error);
+          return null;
+        }
+
+        return data;
       }
 
-      console.log("Fetching user ID for username:", cleanUsername);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', cleanUsername)
-        .single();
-
-      if (error) {
-        console.error("Error fetching user ID:", error);
-        return null;
-      }
-
-      return data;
+      console.log('No username or session ID provided');
+      return null;
     },
     retry: 1
   });
