@@ -17,78 +17,46 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   useEffect(() => {
     console.log("AuthenticationWrapper mounted");
     
-    const handleAuth = async () => {
+    const clearAuthData = async () => {
+      console.log("Clearing auth data...");
+      setIsLoading(true);
+      
+      // Clear all Supabase auth data from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.auth.')) {
+          console.log("Removing auth data:", key);
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Force sign out from Supabase
       try {
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Current session:", session?.user?.id);
-
-        if (!session?.user?.id) {
-          console.log("No active session, redirecting to auth");
-          if (location.pathname !== '/auth') {
-            navigate('/auth');
-          }
-          setIsLoading(false);
-          return;
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error("Sign out error:", error);
+          toast.error("Error signing out");
+        } else {
+          console.log("Successfully signed out");
         }
-
-        // Check if profile exists
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-          // Don't redirect to auth if profile fetch fails
-          setIsLoading(false);
-          return;
-        }
-
-        if (!profile) {
-          console.log("No profile found, creating one...");
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert([{ 
-              id: session.user.id,
-              username: session.user.email?.split('@')[0] || `user_${Date.now()}`
-            }]);
-
-          if (createError) {
-            console.error("Error creating profile:", createError);
-            toast.error("Error creating profile");
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        // If we're on the auth page and have a valid session, redirect to dashboard
-        if (location.pathname === '/auth') {
-          console.log("Valid session found, redirecting to dashboard");
-          navigate('/dashboard');
-        }
-        
-        setIsLoading(false);
       } catch (error) {
-        console.error("Auth handling error:", error);
-        setIsLoading(false);
+        console.error("Error during sign out:", error);
+        toast.error("Error signing out");
       }
+
+      // Force navigation to auth page
+      navigate('/auth');
+      setIsLoading(false);
     };
 
-    handleAuth();
+    // Execute clear auth data
+    clearAuthData();
 
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
-      if (event === 'SIGNED_IN') {
-        if (!session?.user?.id) {
-          console.error("No user ID in session");
-          return;
-        }
-        navigate('/dashboard');
-      } else if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT') {
+        console.log("User signed out, redirecting to auth");
         navigate('/auth');
       }
     });
@@ -96,7 +64,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
   if (isLoading) {
     return (
