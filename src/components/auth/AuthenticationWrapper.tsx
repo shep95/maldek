@@ -60,6 +60,10 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
             if (createError) {
               console.error("Error creating profile:", createError);
               toast.error("Error creating profile");
+              if (location.pathname !== '/auth') {
+                navigate('/auth');
+              }
+              setIsLoading(false);
               return;
             }
 
@@ -67,6 +71,10 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           } else {
             console.error("Error checking profile:", profileError);
             toast.error("Error checking profile");
+            if (location.pathname !== '/auth') {
+              navigate('/auth');
+            }
+            setIsLoading(false);
             return;
           }
         }
@@ -75,10 +83,13 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           console.log("User is authenticated, redirecting to dashboard");
           navigate('/dashboard');
         }
+        setIsLoading(false);
       } catch (error) {
         console.error("Session handling error:", error);
         toast.error("Authentication error");
-      } finally {
+        if (location.pathname !== '/auth') {
+          navigate('/auth');
+        }
         setIsLoading(false);
       }
     };
