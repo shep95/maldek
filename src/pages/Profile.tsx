@@ -19,15 +19,17 @@ const Profile = () => {
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['profile', cleanUsername || session?.user?.id],
     queryFn: async () => {
+      if (!cleanUsername && !session?.user?.id) {
+        console.log('No username or session ID provided');
+        return null;
+      }
+
       console.log("Fetching profile for:", cleanUsername || session?.user?.id);
-
-      const query = supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .select('*');
-
-      const { data, error } = await (cleanUsername 
-        ? query.eq('username', cleanUsername).single()
-        : query.eq('id', session?.user?.id).single());
+        .select('*')
+        .eq(cleanUsername ? 'username' : 'id', cleanUsername || session?.user?.id)
+        .single();
 
       if (error) {
         console.error("Profile fetch error:", error);

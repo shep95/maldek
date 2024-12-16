@@ -23,15 +23,19 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         
         if (sessionError) {
           console.error("Session error:", sessionError);
-          throw sessionError;
+          setIsLoading(false);
+          if (location.pathname !== '/auth') {
+            navigate('/auth');
+          }
+          return;
         }
 
         if (!session) {
           console.log("No session found, redirecting to auth");
+          setIsLoading(false);
           if (location.pathname !== '/auth') {
             navigate('/auth');
           }
-          setIsLoading(false);
           return;
         }
 
@@ -60,9 +64,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
             if (createError) {
               console.error("Error creating profile:", createError);
               toast.error("Error creating profile");
-              if (location.pathname !== '/auth') {
-                navigate('/auth');
-              }
               setIsLoading(false);
               return;
             }
@@ -70,27 +71,22 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
             console.log("Profile created successfully");
           } else {
             console.error("Error checking profile:", profileError);
-            toast.error("Error checking profile");
-            if (location.pathname !== '/auth') {
-              navigate('/auth');
-            }
             setIsLoading(false);
             return;
           }
         }
 
+        setIsLoading(false);
         if (location.pathname === '/auth') {
           console.log("User is authenticated, redirecting to dashboard");
           navigate('/dashboard');
         }
-        setIsLoading(false);
       } catch (error) {
         console.error("Session handling error:", error);
-        toast.error("Authentication error");
+        setIsLoading(false);
         if (location.pathname !== '/auth') {
           navigate('/auth');
         }
-        setIsLoading(false);
       }
     };
 
