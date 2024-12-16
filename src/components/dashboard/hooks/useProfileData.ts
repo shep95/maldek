@@ -18,31 +18,37 @@ export const useProfileData = () => {
       console.log('Checking if profile exists for user:', session.user.id);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, created_at')
         .eq('id', session.user.id)
         .single();
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, might still be creating...');
+          return null;
+        }
         console.error('Error checking profile:', error);
         return null;
       }
 
+      console.log('Profile exists check result:', data);
       return data;
     },
-    retry: 1,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000),
     staleTime: 1000 * 60 * 5 // Cache for 5 minutes
   });
 
   // Then fetch full profile data
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
-    queryKey: ['profile', session?.user?.id, profileExists?.id],
+    queryKey: ['profile', session?.user?.id, profileExists?.created_at],
     queryFn: async () => {
       if (!session?.user?.id) {
         console.log('No session user ID found');
         return null;
       }
 
-      console.log('Fetching profile for user:', session.user.id);
+      console.log('Fetching full profile for user:', session.user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -55,17 +61,17 @@ export const useProfileData = () => {
         return null;
       }
 
-      console.log('Profile fetched:', data);
+      console.log('Full profile fetched:', data);
       return data;
     },
     enabled: !!session?.user?.id && !!profileExists,
-    retry: 1,
+    retry: 2,
     staleTime: 1000 * 60 * 5 // Cache for 5 minutes
   });
 
   return {
     profile,
     isLoading: isCheckingProfile || isLoadingProfile,
-    error: !profile && !isLoadingProfile
+    error: !profile && !isLoadingProfile && !!profileExists
   };
 };
