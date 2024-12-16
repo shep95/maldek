@@ -45,49 +45,16 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         // Handle root path
         if (location.pathname === '/') {
           console.log("On root path, redirecting to dashboard");
-          setIsLoading(false);
           navigate('/dashboard');
+          setIsLoading(false);
           return;
         }
 
         console.log("Session found:", session.user.id);
-        
-        // Check if profile exists
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileError) {
-          if (profileError.code === 'PGRST116') {
-            console.log("Profile not found, creating new profile");
-            const { error: createError } = await supabase
-              .from('profiles')
-              .insert([{
-                id: session.user.id,
-                username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
-                created_at: new Date().toISOString(),
-                follower_count: 0
-              }]);
-
-            if (createError) {
-              console.error("Error creating profile:", createError);
-              toast.error("Error creating profile");
-              setIsLoading(false);
-              return;
-            }
-            console.log("Profile created successfully");
-          } else {
-            console.error("Error checking profile:", profileError);
-            setIsLoading(false);
-            return;
-          }
-        }
-
         setIsLoading(false);
       } catch (error) {
         console.error("Session handling error:", error);
+        toast.error("Authentication error occurred");
         setIsLoading(false);
         navigate('/auth');
       }
