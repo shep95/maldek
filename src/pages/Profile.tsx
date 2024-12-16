@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
-  const { toast } = useToast();
   const session = useSession();
   const { username } = useParams();
   const navigate = useNavigate();
@@ -44,7 +43,7 @@ const Profile = () => {
 
         if (error) {
           console.error("Error fetching user ID:", error);
-          toast.error("Profile not found");
+          toast("Profile not found");
           navigate('/dashboard');
           return null;
         }
@@ -90,7 +89,7 @@ const Profile = () => {
 
       if (error) {
         console.error("Profile fetch error:", error);
-        toast.error("Error loading profile");
+        toast("Error loading profile");
         return null;
       }
 
@@ -118,11 +117,7 @@ const Profile = () => {
   const handleUpdateProfile = async () => {
     try {
       if (!session?.user?.id || !profile?.isCurrentUser) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to update your profile",
-          variant: "destructive",
-        });
+        toast("You must be logged in to update your profile");
         return;
       }
 
@@ -134,17 +129,10 @@ const Profile = () => {
       if (error) throw error;
       
       setIsEditing(false);
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
+      toast("Profile updated successfully");
     } catch (error: any) {
       console.error("Update profile error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update profile",
-        variant: "destructive",
-      });
+      toast(error.message || "Failed to update profile");
     }
   };
 
