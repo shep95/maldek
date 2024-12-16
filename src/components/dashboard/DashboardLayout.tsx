@@ -118,42 +118,58 @@ const DashboardLayout = () => {
     name: profile?.username || ''
   };
 
-  const handlePostCreated = (newPost: any) => {
-    console.log('New post created:', newPost);
-    setIsCreatingPost(false);
-    toast.success('Post created successfully!');
-  };
-
-  const handleOpenChange = (open: boolean) => {
-    console.log('Dialog open state changing to:', open);
-    setIsCreatingPost(open);
-  };
-
   // Show loading state while checking/creating profile
-  if (isCheckingProfile) {
+  if (isCheckingProfile || isLoadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
-          <p className="text-muted-foreground">Setting up your profile...</p>
+      <div className="min-h-screen flex flex-col md:flex-row bg-background">
+        <Sidebar setIsCreatingPost={setIsCreatingPost} />
+        <div className={cn(
+          "flex-1 transition-all duration-200",
+          "md:ml-64",
+          location.pathname === '/dashboard' && "lg:mr-80"
+        )}>
+          <main className="min-h-screen pb-20 md:pb-0 px-4 md:px-8">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="text-center space-y-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
+                  <p className="text-muted-foreground">Loading your profile...</p>
+                </div>
+              </div>
+            </div>
+          </main>
         </div>
+        {location.pathname === '/dashboard' && <RightSidebar />}
+        <MobileNav />
       </div>
     );
   }
 
-  // Show loading state while fetching profile data
-  if (isLoadingProfile) {
+  // Show error state if profile loading failed
+  if (!profile && !isLoadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
-          <p className="text-muted-foreground">Loading profile...</p>
+      <div className="min-h-screen flex flex-col md:flex-row bg-background">
+        <Sidebar setIsCreatingPost={setIsCreatingPost} />
+        <div className={cn(
+          "flex-1 transition-all duration-200",
+          "md:ml-64",
+          location.pathname === '/dashboard' && "lg:mr-80"
+        )}>
+          <main className="min-h-screen pb-20 md:pb-0 px-4 md:px-8">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="text-center space-y-4">
+                  <p className="text-muted-foreground">Error loading profile. Please try refreshing the page.</p>
+                </div>
+              </div>
+            </div>
+          </main>
         </div>
+        {location.pathname === '/dashboard' && <RightSidebar />}
+        <MobileNav />
       </div>
     );
   }
-
-  const showRightSidebar = location.pathname === '/dashboard';
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,7 +178,7 @@ const DashboardLayout = () => {
         <div className={cn(
           "flex-1 transition-all duration-200",
           "md:ml-64",
-          showRightSidebar && "lg:mr-80"
+          location.pathname === '/dashboard' && "lg:mr-80"
         )}>
           <main className="min-h-screen pb-20 md:pb-0 px-4 md:px-8">
             <div className="max-w-3xl mx-auto">
@@ -170,14 +186,21 @@ const DashboardLayout = () => {
             </div>
           </main>
         </div>
-        {showRightSidebar && <RightSidebar />}
+        {location.pathname === '/dashboard' && <RightSidebar />}
       </div>
       {profile && (
         <CreatePostDialog
           isOpen={isCreatingPost}
-          onOpenChange={handleOpenChange}
+          onOpenChange={(open) => {
+            console.log('Dialog open state changing to:', open);
+            setIsCreatingPost(open);
+          }}
           currentUser={currentUser}
-          onPostCreated={handlePostCreated}
+          onPostCreated={(newPost) => {
+            console.log('New post created:', newPost);
+            setIsCreatingPost(false);
+            toast.success('Post created successfully!');
+          }}
         />
       )}
       <MobileNav />
