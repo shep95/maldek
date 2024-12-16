@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { FollowButton } from "./FollowButton";
 import { MessageDialog } from "./MessageDialog";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 
 interface ProfileInfoProps {
   username: string;
@@ -42,6 +43,7 @@ export const ProfileInfo = ({
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', userId],
     queryFn: async () => {
+      console.log('Fetching subscription for user:', userId);
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -57,6 +59,7 @@ export const ProfileInfo = ({
         return null;
       }
 
+      console.log('Found subscription:', data);
       return data;
     },
   });
@@ -86,6 +89,8 @@ export const ProfileInfo = ({
       return word + ' ';
     });
   };
+
+  const joinDate = createdAt ? format(new Date(createdAt), 'MMMM d, yyyy') : 'Recently';
 
   return (
     <div className="px-4 py-4 space-y-4">
@@ -133,8 +138,17 @@ export const ProfileInfo = ({
               size="sm"
               onClick={() => isEditing ? onSaveChanges() : onSaveChanges()}
             >
-              <Edit2 className="h-4 w-4 mr-2" />
-              {isEditing ? "Save Changes" : "Edit Profile"}
+              {isEditing ? (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Save Changes
+                </>
+              ) : (
+                <>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -157,7 +171,7 @@ export const ProfileInfo = ({
 
       <div className="flex items-center gap-4 text-sm text-muted-foreground">
         <span>{followerCount} followers</span>
-        <span>Joined {new Date(createdAt).toLocaleDateString()}</span>
+        <span>Joined {joinDate}</span>
       </div>
 
       <MessageDialog

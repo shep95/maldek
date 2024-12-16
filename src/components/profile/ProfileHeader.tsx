@@ -24,6 +24,14 @@ export const ProfileHeader = ({
   userId,
   onImageUpdate
 }: ProfileHeaderProps) => {
+  console.log('ProfileHeader render:', {
+    isCurrentUser,
+    isEditing,
+    userId,
+    avatarUrl,
+    bannerUrl
+  });
+
   return (
     <>
       <div className="pt-6">
@@ -41,7 +49,7 @@ export const ProfileHeader = ({
             <div className="relative">
               <Avatar className="h-24 w-24 rounded-xl border-4 border-background shadow-lg ring-2 ring-accent/50">
                 <AvatarImage src={avatarUrl || ''} alt={username} />
-                <AvatarFallback className="bg-accent/10 text-2xl rounded-xl">{username?.[0]}</AvatarFallback>
+                <AvatarFallback className="bg-accent/10 text-2xl rounded-xl">{username?.[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
               {isCurrentUser && isEditing && (
                 <div className="absolute -bottom-2 -right-2">

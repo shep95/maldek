@@ -30,6 +30,20 @@ export const ImageUpload = ({ userId, type, currentUrl, onUploadComplete }: Imag
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}-${type}.${fileExt}`;
 
+      // Delete old file if it exists
+      if (currentUrl) {
+        const oldFilePath = currentUrl.split('/').pop();
+        if (oldFilePath) {
+          const { error: deleteError } = await supabase.storage
+            .from('avatars')
+            .remove([oldFilePath]);
+          
+          if (deleteError) {
+            console.warn(`Error deleting old ${type}:`, deleteError);
+          }
+        }
+      }
+
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
