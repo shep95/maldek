@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
@@ -25,8 +25,58 @@ const DashboardLayout = () => {
   // Make setIsCreatingPost available globally for the mobile nav
   window.setIsCreatingPost = setIsCreatingPost;
 
+  // First, ensure profile exists
+  const { data: profileExists } = useQuery({
+    queryKey: ['profile-exists', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) {
+        console.log('No session user ID found');
+        return null;
+      }
+
+      console.log('Checking if profile exists for user:', session.user.id);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Profile doesn't exist, create it
+          console.log('Profile not found, creating new profile...');
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([{
+              id: session.user.id,
+              username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
+              created_at: new Date().toISOString(),
+              follower_count: 0
+            }])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            toast.error('Error creating profile');
+            return null;
+          }
+
+          console.log('New profile created:', newProfile);
+          return newProfile;
+        }
+        console.error('Error checking profile:', error);
+        return null;
+      }
+
+      return data;
+    },
+    retry: 1
+  });
+
+  // Then fetch full profile data
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
+    queryKey: ['profile', session?.user?.id, profileExists?.id],
     queryFn: async () => {
       if (!session?.user?.id) {
         console.log('No session user ID found');
@@ -49,7 +99,8 @@ const DashboardLayout = () => {
       console.log('Profile fetched:', data);
       return data;
     },
-    enabled: !!session?.user?.id
+    enabled: !!session?.user?.id && !!profileExists,
+    retry: 1
   });
 
   const currentUser: Author = {
@@ -70,15 +121,15 @@ const DashboardLayout = () => {
     setIsCreatingPost(open);
   };
 
-  // Don't show create post dialog if profile is still loading
   if (isLoadingProfile) {
-    return <div>Loading...</div>;
-  }
-
-  // Don't show create post dialog if no profile data
-  if (!profile) {
-    console.error('No profile data available');
-    return <div>Error loading profile</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   const showRightSidebar = location.pathname === '/dashboard';
