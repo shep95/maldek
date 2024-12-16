@@ -97,6 +97,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       
       if (event === 'SIGNED_OUT') {
         console.log("User signed out, redirecting to auth");
+        setIsLoading(false);
         navigate('/auth');
       } else if (event === 'SIGNED_IN') {
         console.log("User signed in, handling session");
