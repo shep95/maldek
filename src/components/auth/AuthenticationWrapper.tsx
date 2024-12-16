@@ -15,14 +15,22 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthenticationWrapper mounted, current path:", location.pathname);
+    console.log("AuthenticationWrapper mounted, path:", location.pathname);
     
     const handleSession = async () => {
       try {
-        // If we're already on the auth page, don't show loading
+        // Clear loading state for auth page
         if (location.pathname === '/auth') {
-          console.log("Already on auth page, clearing loading state");
+          console.log("On auth page, no need to check session");
           setIsLoading(false);
+          return;
+        }
+
+        // Handle root path
+        if (location.pathname === '/') {
+          console.log("On root path, redirecting to dashboard");
+          setIsLoading(false);
+          navigate('/dashboard');
           return;
         }
 
@@ -54,7 +62,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         if (profileError) {
           if (profileError.code === 'PGRST116') {
             console.log("Profile not found, creating new profile");
-            // Create profile if it doesn't exist
             const { error: createError } = await supabase
               .from('profiles')
               .insert([{
@@ -70,7 +77,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
               setIsLoading(false);
               return;
             }
-
             console.log("Profile created successfully");
           } else {
             console.error("Error checking profile:", profileError);
@@ -80,10 +86,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         }
 
         setIsLoading(false);
-        if (location.pathname === '/auth') {
-          console.log("User is authenticated, redirecting to dashboard");
-          navigate('/dashboard');
-        }
       } catch (error) {
         console.error("Session handling error:", error);
         setIsLoading(false);
