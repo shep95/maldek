@@ -16,6 +16,7 @@ const Auth = () => {
   }) => {
     try {
       if (isLogin) {
+        console.log("Attempting to sign in user:", formData.email);
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
@@ -23,6 +24,7 @@ const Auth = () => {
 
         if (signInError) throw signInError;
         
+        console.log("Sign in successful");
         toast.success("Successfully signed in!");
         navigate('/dashboard');
       } else {
@@ -30,9 +32,12 @@ const Auth = () => {
           throw new Error('Username is required');
         }
 
-        console.log("Starting signup process with:", { email: formData.email, username: formData.username });
+        console.log("Starting signup process:", { 
+          email: formData.email, 
+          username: formData.username 
+        });
 
-        // First check if username is available using the database function
+        // First check if username is available
         const { data: isAvailable, error: checkError } = await supabase
           .rpc('check_username_availability', {
             username_to_check: formData.username
@@ -48,13 +53,15 @@ const Auth = () => {
           throw new Error('Username is already taken');
         }
 
-        // Then create the auth user with the username in metadata
+        console.log("Username is available, proceeding with signup");
+
+        // Create the auth user with the username in metadata
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
             data: {
-              username: formData.username // Store username in metadata
+              username: formData.username
             }
           }
         });
@@ -70,8 +77,8 @@ const Auth = () => {
         }
 
         console.log("User created successfully:", signUpData.user.id);
-        toast.success("Account created successfully!");
-        navigate('/dashboard');
+        toast.success("Account created successfully! You can now sign in.");
+        setIsLogin(true); // Switch to login view
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
