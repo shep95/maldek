@@ -30,40 +30,26 @@ const Auth = () => {
           throw new Error('Username is required');
         }
 
-        // Check username availability one last time
-        const { data: existingUser } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', formData.username)
-          .maybeSingle();
-
-        if (existingUser) {
-          throw new Error('Username is already taken');
-        }
-
-        const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+        // First create the auth user
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
 
         if (signUpError) throw signUpError;
+        if (!signUpData.user?.id) throw new Error('Failed to create user');
 
-        if (!signUpData.user?.id) {
-          throw new Error('Failed to create user');
-        }
-
-        // Create profile
+        // Then create the profile
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([{
+          .insert({
             id: signUpData.user.id,
             username: formData.username,
-          }]);
+          });
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
-          toast.error("Account created but profile setup failed. Please try again.");
-          return;
+          throw new Error('Username is already taken');
         }
 
         toast.success("Account created successfully!");
