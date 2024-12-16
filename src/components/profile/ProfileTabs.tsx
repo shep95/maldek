@@ -12,64 +12,32 @@ import { FollowingTab } from "./tabs/FollowingTab";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 export const ProfileTabs = () => {
-  const { username } = useParams();
+  const { userId } = useParams();
   const session = useSession();
+  const isCurrentUser = session?.user?.id === userId;
   const isMobile = useIsMobile();
 
-  // Get the profile ID for the username in the URL
-  const { data: profile } = useQuery({
-    queryKey: ['profile-id', username],
-    queryFn: async () => {
-      console.log('Fetching profile ID for username:', username);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', username?.replace('@', ''))
-        .single();
+  const targetUserId = userId || session?.user?.id;
 
-      if (error) {
-        console.error('Error fetching profile:', error);
-        throw error;
-      }
-
-      console.log('Found profile:', data);
-      return data;
-    },
-    enabled: !!username
-  });
-
-  if (!profile?.id) {
-    console.log('No profile ID found for username:', username);
-    return null;
-  }
-
-  const isCurrentUser = session?.user?.id === profile.id;
-  console.log('Profile tabs - Current user check:', { 
-    sessionUserId: session?.user?.id, 
-    profileId: profile.id,
-    isCurrentUser 
-  });
+  if (!targetUserId) return null;
 
   const tabs = [
-    { value: "posts", label: "Posts", component: <PostsTab userId={profile.id} /> },
-    { value: "replies", label: "Replies", component: <RepliesTab userId={profile.id} /> },
-    { value: "media", label: "Media", component: <MediaTab userId={profile.id} /> },
-    { value: "videos", label: "Videos", component: <VideosTab userId={profile.id} /> },
-    { value: "likes", label: "Likes", component: <LikesTab userId={profile.id} /> },
-    { value: "followers", label: "Followers", component: <FollowersTab userId={profile.id} /> },
-    { value: "following", label: "Following", component: <FollowingTab userId={profile.id} /> },
+    { value: "posts", label: "Posts", component: <PostsTab userId={targetUserId} /> },
+    { value: "replies", label: "Replies", component: <RepliesTab userId={targetUserId} /> },
+    { value: "media", label: "Media", component: <MediaTab userId={targetUserId} /> },
+    { value: "videos", label: "Videos", component: <VideosTab userId={targetUserId} /> },
+    { value: "likes", label: "Likes", component: <LikesTab userId={targetUserId} /> },
+    { value: "followers", label: "Followers", component: <FollowersTab userId={targetUserId} /> },
+    { value: "following", label: "Following", component: <FollowingTab userId={targetUserId} /> },
   ];
 
-  // Only show analytics tab for the current user's profile
   if (isCurrentUser) {
     tabs.push({ 
       value: "analytics", 
       label: "Analytics", 
-      component: <AnalyticsTab userId={profile.id} /> 
+      component: <AnalyticsTab userId={targetUserId} /> 
     });
   }
 
