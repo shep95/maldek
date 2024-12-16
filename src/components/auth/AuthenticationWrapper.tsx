@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
-import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 interface AuthenticationWrapperProps {
   children: React.ReactNode;
-  queryClient: QueryClient;
 }
 
 export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
