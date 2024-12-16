@@ -19,12 +19,13 @@ const Profile = () => {
 
   console.log('Profile component rendered with:', {
     username: cleanUsername,
-    sessionUserId: session?.user?.id
+    sessionUserId: session?.user?.id,
+    isCurrentUser: !cleanUsername && !!session?.user?.id
   });
 
   // First, get the user ID for the profile we want to view
   const { data: targetUser, isLoading: isLoadingUserId } = useQuery({
-    queryKey: ['user-id', cleanUsername],
+    queryKey: ['user-id', cleanUsername, session?.user?.id],
     queryFn: async () => {
       // If no username provided and user is logged in, use current user's profile
       if (!cleanUsername && session?.user?.id) {
@@ -42,14 +43,12 @@ const Profile = () => {
           .single();
 
         if (error) {
+          console.error("Error fetching user ID:", error);
           if (error.code === 'PGRST116') {
-            // Profile not found
-            console.log("Profile not found for username:", cleanUsername);
             toast.error("Profile not found");
             navigate('/dashboard');
             return null;
           }
-          console.error("Error fetching user ID:", error);
           toast.error("Error loading profile");
           return null;
         }
@@ -57,17 +56,13 @@ const Profile = () => {
         return data;
       }
 
-      // If no username and no session, redirect to dashboard
-      console.log('No username or session ID provided');
-      navigate('/dashboard');
       return null;
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000)
+    retry: false
   });
 
   // Then fetch the full profile data
-  const { data: profile, isLoading, error } = useQuery({
+  const { data: profile, isLoading } = useQuery({
     queryKey: ['profile-data', targetUser?.id],
     queryFn: async () => {
       if (!targetUser?.id) {
@@ -78,38 +73,11 @@ const Profile = () => {
       console.log("Fetching profile for user:", targetUser.id);
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          followers!followers_following_id_fkey (
-            follower_id
-          ),
-          following:followers!followers_follower_id_fkey (
-            following_id
-          ),
-          posts (
-            id
-          )
-        `)
+        .select('*')
         .eq('id', targetUser.id)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // Profile might still be creating
-          console.log("Profile might still be creating for:", targetUser.id);
-          return {
-            id: targetUser.id,
-            username: 'New User',
-            bio: '',
-            avatar_url: null,
-            banner_url: null,
-            follower_count: 0,
-            followers: [],
-            following: [],
-            posts: [],
-            isCurrentUser: session?.user?.id === targetUser.id
-          };
-        }
         console.error("Profile fetch error:", error);
         toast.error("Error loading profile");
         return null;
@@ -120,15 +88,11 @@ const Profile = () => {
       
       return {
         ...data,
-        followerCount: data.followers?.length || 0,
-        followingCount: data.following?.length || 0,
-        postCount: data.posts?.length || 0,
         isCurrentUser: session?.user?.id === data.id
       };
     },
     enabled: !!targetUser?.id,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000)
+    retry: 2
   });
 
   const handleUpdateProfile = async () => {
@@ -174,7 +138,7 @@ const Profile = () => {
     );
   }
 
-  if (error || !profile) {
+  if (!profile) {
     return (
       <div className="animate-fade-in py-4 text-center">
         <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
