@@ -13,48 +13,42 @@ const Profile = () => {
   const session = useSession();
   const { username } = useParams();
   
-  // Remove @ from username if present, or use current user's profile if no username provided
-  const cleanUsername = username?.replace('@', '') || '';
+  // Remove @ from username if present
+  const cleanUsername = username?.replace('@', '');
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, error } = useQuery({
     queryKey: ['profile', cleanUsername || session?.user?.id],
     queryFn: async () => {
       console.log("Fetching profile for:", cleanUsername || session?.user?.id);
 
-      let query = supabase
+      const query = supabase
         .from('profiles')
         .select('*');
 
-      // If username is provided, query by username, otherwise query by current user's ID
-      if (cleanUsername) {
-        query = query.eq('username', cleanUsername);
-      } else if (session?.user?.id) {
-        query = query.eq('id', session.user.id);
-      } else {
-        throw new Error('No username or session ID provided');
+      const { data, error } = await (cleanUsername 
+        ? query.eq('username', cleanUsername).single()
+        : query.eq('id', session?.user?.id).single());
+
+      if (error) {
+        console.error("Profile fetch error:", error);
+        throw error;
       }
 
-      const { data: profileData, error: profileError } = await query.single();
-
-      if (profileError) {
-        console.error("Profile fetch error:", profileError);
-        return null;
-      }
-
-      if (!profileData) {
+      if (!data) {
         console.log("No profile found");
         return null;
       }
 
-      console.log("Found profile:", profileData);
+      console.log("Found profile:", data);
       
-      // Set whether this is the current user's profile
-      const isCurrentUser = session?.user?.id === profileData.id;
-      setEditBio(profileData.bio || "");
+      // Set initial bio state
+      const isCurrentUser = session?.user?.id === data.id;
+      setEditBio(data.bio || "");
 
-      return { ...profileData, isCurrentUser };
+      return { ...data, isCurrentUser };
     },
-    retry: 1
+    retry: 1,
+    enabled: !!(cleanUsername || session?.user?.id)
   });
 
   const handleUpdateProfile = async () => {
@@ -80,11 +74,11 @@ const Profile = () => {
         title: "Success",
         description: "Profile updated successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update profile error:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: error.message || "Failed to update profile",
         variant: "destructive",
       });
     }
@@ -94,6 +88,18 @@ const Profile = () => {
     return (
       <div className="animate-fade-in py-4">
         <div className="animate-pulse text-accent">Loading profile...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.error("Profile error:", error);
+    return (
+      <div className="animate-fade-in py-4 text-center">
+        <h2 className="text-xl font-semibold mb-2">Error Loading Profile</h2>
+        <p className="text-muted-foreground">
+          There was an error loading this profile. Please try again later.
+        </p>
       </div>
     );
   }
@@ -119,7 +125,10 @@ const Profile = () => {
       onEditClick={() => setIsEditing(!isEditing)}
       onEditBioChange={setEditBio}
       onSaveChanges={handleUpdateProfile}
-      onImageUpdate={(type, url) => {}}
+      onImageUpdate={(type, url) => {
+        // This will be implemented when needed
+        console.log("Image update:", type, url);
+      }}
     />
   );
 };
