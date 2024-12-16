@@ -44,16 +44,21 @@ const Profile = () => {
 
         if (error) {
           console.error("Error fetching user ID:", error);
+          toast.error("Profile not found");
+          navigate('/dashboard');
           return null;
         }
 
         return data;
       }
 
+      // If no username and no session, redirect to dashboard
       console.log('No username or session ID provided');
+      navigate('/dashboard');
       return null;
     },
-    retry: 1
+    retry: 1,
+    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
   });
 
   // Then fetch the full profile data
@@ -85,7 +90,8 @@ const Profile = () => {
 
       if (error) {
         console.error("Profile fetch error:", error);
-        throw error;
+        toast.error("Error loading profile");
+        return null;
       }
 
       if (!data) {
@@ -105,7 +111,8 @@ const Profile = () => {
       };
     },
     enabled: !!targetUser?.id,
-    retry: 1
+    retry: 1,
+    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
   });
 
   const handleUpdateProfile = async () => {

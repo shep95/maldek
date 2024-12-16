@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
 import { CreatePostDialog } from "./CreatePostDialog";
@@ -21,12 +21,13 @@ const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Make setIsCreatingPost available globally for the mobile nav
   window.setIsCreatingPost = setIsCreatingPost;
 
   // First, ensure profile exists
-  const { data: profileExists } = useQuery({
+  const { data: profileExists, isLoading: isCheckingProfile } = useQuery({
     queryKey: ['profile-exists', session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) {
@@ -51,7 +52,12 @@ const DashboardLayout = () => {
               id: session.user.id,
               username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
               created_at: new Date().toISOString(),
-              follower_count: 0
+              follower_count: 0,
+              bio: '',
+              total_posts: 0,
+              total_media: 0,
+              total_likes_received: 0,
+              total_views: 0
             }])
             .select()
             .single();
@@ -71,7 +77,8 @@ const DashboardLayout = () => {
 
       return data;
     },
-    retry: 1
+    retry: 1,
+    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
   });
 
   // Then fetch full profile data
@@ -86,7 +93,7 @@ const DashboardLayout = () => {
       console.log('Fetching profile for user:', session.user.id);
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, avatar_url')
+        .select('*')
         .eq('id', session.user.id)
         .single();
 
@@ -100,7 +107,8 @@ const DashboardLayout = () => {
       return data;
     },
     enabled: !!session?.user?.id && !!profileExists,
-    retry: 1
+    retry: 1,
+    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
   });
 
   const currentUser: Author = {
@@ -121,6 +129,19 @@ const DashboardLayout = () => {
     setIsCreatingPost(open);
   };
 
+  // Show loading state while checking/creating profile
+  if (isCheckingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
+          <p className="text-muted-foreground">Setting up your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while fetching profile data
   if (isLoadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
