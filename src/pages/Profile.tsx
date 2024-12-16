@@ -2,7 +2,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, useSession } from "@supabase/auth-helpers-react";
+import { useParams } from "react-router-dom";
+import { useSession } from '@supabase/auth-helpers-react';
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
 
 const Profile = () => {
@@ -20,21 +21,20 @@ const Profile = () => {
     queryFn: async () => {
       console.log("Fetching profile for:", cleanUsername || session?.user?.id);
 
-      const query = supabase
+      let query = supabase
         .from('profiles')
-        .select('*')
-        .single();
+        .select('*');
 
       // If username is provided, query by username, otherwise query by current user's ID
       if (cleanUsername) {
-        query.eq('username', cleanUsername);
+        query = query.eq('username', cleanUsername);
       } else if (session?.user?.id) {
-        query.eq('id', session.user.id);
+        query = query.eq('id', session.user.id);
       } else {
         throw new Error('No username or session ID provided');
       }
 
-      const { data: profileData, error: profileError } = await query;
+      const { data: profileData, error: profileError } = await query.single();
 
       if (profileError) {
         console.error("Profile fetch error:", profileError);
