@@ -32,6 +32,6 @@ export const useProfileNavigation = () => {
   });
 
   return {
-    profilePath: profile?.username ? `/${profile.username}` : '/settings',
+    profilePath: profile?.username ? `/@${profile.username}` : '/profile',
   };
 };

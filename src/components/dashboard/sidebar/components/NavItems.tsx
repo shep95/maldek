@@ -54,8 +54,8 @@ export const NavItems = ({
     { 
       icon: User, 
       label: "Profile", 
-      path: profilePath,
-      active: location.pathname.startsWith('/profile')
+      path: profilePath || "/profile",
+      active: location.pathname.includes('profile') || location.pathname.startsWith('/@')
     },
     {
       icon: BrainCircuit,

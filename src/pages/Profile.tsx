@@ -15,7 +15,7 @@ const Profile = () => {
   const navigate = useNavigate();
   
   // Remove @ from username if present
-  const cleanUsername = username?.replace('@', '');
+  const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
 
   console.log('Profile component rendered with:', {
     username: cleanUsername,
@@ -43,7 +43,7 @@ const Profile = () => {
 
         if (error) {
           console.error("Error fetching user ID:", error);
-          toast("Profile not found");
+          toast.error("Profile not found");
           navigate('/dashboard');
           return null;
         }
@@ -56,13 +56,12 @@ const Profile = () => {
       navigate('/dashboard');
       return null;
     },
-    retry: 1,
-    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
+    retry: 1
   });
 
   // Then fetch the full profile data
   const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['profile', targetUser?.id],
+    queryKey: ['profile-data', targetUser?.id],
     queryFn: async () => {
       if (!targetUser?.id) {
         console.log('No target user ID found');
@@ -89,12 +88,7 @@ const Profile = () => {
 
       if (error) {
         console.error("Profile fetch error:", error);
-        toast("Error loading profile");
-        return null;
-      }
-
-      if (!data) {
-        console.log("No profile found");
+        toast.error("Error loading profile");
         return null;
       }
 
@@ -110,8 +104,7 @@ const Profile = () => {
       };
     },
     enabled: !!targetUser?.id,
-    retry: 1,
-    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
+    retry: 1
   });
 
   const handleUpdateProfile = async () => {
@@ -140,15 +133,15 @@ const Profile = () => {
     return (
       <div className="w-full max-w-4xl mx-auto animate-fade-in">
         <div className="space-y-4">
-          <Skeleton className="h-48 w-full" /> {/* Banner */}
+          <Skeleton className="h-48 w-full" />
           <div className="px-6">
-            <Skeleton className="h-32 w-32 rounded-full -mt-16 border-4 border-background" /> {/* Avatar */}
+            <Skeleton className="h-32 w-32 rounded-full -mt-16 border-4 border-background" />
             <div className="mt-4 space-y-4">
-              <Skeleton className="h-8 w-48" /> {/* Username */}
-              <Skeleton className="h-4 w-64" /> {/* Bio */}
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
               <div className="flex gap-4">
-                <Skeleton className="h-4 w-24" /> {/* Followers */}
-                <Skeleton className="h-4 w-24" /> {/* Following */}
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-24" />
               </div>
             </div>
           </div>
@@ -157,7 +150,7 @@ const Profile = () => {
     );
   }
 
-  if (error || !targetUser || !profile) {
+  if (error || !profile) {
     return (
       <div className="animate-fade-in py-4 text-center">
         <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
