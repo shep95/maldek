@@ -12,54 +12,23 @@ interface AuthenticationWrapperProps {
 export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     console.log("AuthenticationWrapper mounted");
     
-    const clearAuthData = async () => {
-      // Only clear auth data if we're not already on the auth page
-      if (location.pathname !== '/auth') {
-        console.log("Clearing auth data...");
-        setIsLoading(true);
-        
-        // Clear all Supabase auth data from localStorage
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('supabase.auth.')) {
-            console.log("Removing auth data:", key);
-            localStorage.removeItem(key);
-          }
-        });
+    const handleAuth = async () => {
+      try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Current session:", session?.user?.id);
 
-        // Force sign out from Supabase
-        try {
-          const { error } = await supabase.auth.signOut();
-          if (error) {
-            console.error("Sign out error:", error);
-            toast.error("Error signing out");
-          } else {
-            console.log("Successfully signed out");
-          }
-        } catch (error) {
-          console.error("Error during sign out:", error);
-          toast.error("Error signing out");
-        }
-
-        // Force navigation to auth page
-        navigate('/auth');
-        setIsLoading(false);
-      }
-    };
-
-    clearAuthData();
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.id);
-      
-      if (event === 'SIGNED_IN') {
         if (!session?.user?.id) {
-          console.error("No user ID in session");
+          console.log("No active session, redirecting to auth");
+          if (location.pathname !== '/auth') {
+            navigate('/auth');
+          }
+          setIsLoading(false);
           return;
         }
 
@@ -70,7 +39,14 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           .eq('id', session.user.id)
           .single();
 
-        if (profileError || !profile) {
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          // Don't redirect to auth if profile fetch fails
+          setIsLoading(false);
+          return;
+        }
+
+        if (!profile) {
           console.log("No profile found, creating one...");
           const { error: createError } = await supabase
             .from('profiles')
@@ -82,10 +58,35 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           if (createError) {
             console.error("Error creating profile:", createError);
             toast.error("Error creating profile");
+            setIsLoading(false);
             return;
           }
         }
 
+        // If we're on the auth page and have a valid session, redirect to dashboard
+        if (location.pathname === '/auth') {
+          console.log("Valid session found, redirecting to dashboard");
+          navigate('/dashboard');
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Auth handling error:", error);
+        setIsLoading(false);
+      }
+    };
+
+    handleAuth();
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id);
+      
+      if (event === 'SIGNED_IN') {
+        if (!session?.user?.id) {
+          console.error("No user ID in session");
+          return;
+        }
         navigate('/dashboard');
       } else if (event === 'SIGNED_OUT') {
         navigate('/auth');
