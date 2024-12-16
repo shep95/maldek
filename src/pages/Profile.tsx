@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
 
@@ -12,23 +12,56 @@ const Profile = () => {
   const { toast } = useToast();
   const session = useSession();
   const { username } = useParams();
+  const navigate = useNavigate();
   
   // Remove @ from username if present
   const cleanUsername = username?.replace('@', '');
 
-  const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['profile', cleanUsername || session?.user?.id],
+  // First, get the user ID for the profile we want to view
+  const { data: targetUser, isLoading: isLoadingUserId } = useQuery({
+    queryKey: ['user-id', cleanUsername],
     queryFn: async () => {
       if (!cleanUsername && !session?.user?.id) {
         console.log('No username or session ID provided');
         return null;
       }
 
-      console.log("Fetching profile for:", cleanUsername || session?.user?.id);
+      // If no username provided, use current user's profile
+      if (!cleanUsername) {
+        return { id: session?.user?.id };
+      }
+
+      console.log("Fetching user ID for username:", cleanUsername);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', cleanUsername)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user ID:", error);
+        return null;
+      }
+
+      return data;
+    },
+    retry: 1
+  });
+
+  // Then fetch the full profile data
+  const { data: profile, isLoading, error } = useQuery({
+    queryKey: ['profile', targetUser?.id],
+    queryFn: async () => {
+      if (!targetUser?.id) {
+        console.log('No target user ID found');
+        return null;
+      }
+
+      console.log("Fetching profile for user:", targetUser.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq(cleanUsername ? 'username' : 'id', cleanUsername || session?.user?.id)
+        .eq('id', targetUser.id)
         .single();
 
       if (error) {
@@ -42,15 +75,15 @@ const Profile = () => {
       }
 
       console.log("Found profile:", data);
-      
-      // Set initial bio state
-      const isCurrentUser = session?.user?.id === data.id;
       setEditBio(data.bio || "");
-
-      return { ...data, isCurrentUser };
+      
+      return {
+        ...data,
+        isCurrentUser: session?.user?.id === data.id
+      };
     },
-    retry: 1,
-    enabled: !!(cleanUsername || session?.user?.id)
+    enabled: !!targetUser?.id,
+    retry: 1
   });
 
   const handleUpdateProfile = async () => {
@@ -86,7 +119,7 @@ const Profile = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoadingUserId || isLoading) {
     return (
       <div className="animate-fade-in py-4">
         <div className="animate-pulse text-accent">Loading profile...</div>
@@ -94,13 +127,13 @@ const Profile = () => {
     );
   }
 
-  if (error) {
+  if (error || !targetUser) {
     console.error("Profile error:", error);
     return (
       <div className="animate-fade-in py-4 text-center">
-        <h2 className="text-xl font-semibold mb-2">Error Loading Profile</h2>
+        <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
         <p className="text-muted-foreground">
-          There was an error loading this profile. Please try again later.
+          The profile you're looking for doesn't exist or has been removed.
         </p>
       </div>
     );
@@ -128,7 +161,6 @@ const Profile = () => {
       onEditBioChange={setEditBio}
       onSaveChanges={handleUpdateProfile}
       onImageUpdate={(type, url) => {
-        // This will be implemented when needed
         console.log("Image update:", type, url);
       }}
     />
