@@ -31,12 +31,18 @@ export const MediaTab = ({ userId }: MediaTabProps) => {
 
       if (error) {
         console.error('Error fetching media posts:', error);
+        // Don't throw error for new users with no media
+        if (error.code === 'PGRST116') {
+          return [];
+        }
         throw error;
       }
       console.log('Fetched media posts:', data);
       return data;
     },
-    enabled: !!userId
+    enabled: !!userId,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000)
   });
 
   if (isLoading) {

@@ -41,12 +41,18 @@ export const PostsTab = ({ userId }: PostsTabProps) => {
 
       if (error) {
         console.error('Error fetching posts:', error);
+        // Don't throw error for new users with no posts
+        if (error.code === 'PGRST116') {
+          return [];
+        }
         throw error;
       }
       console.log('Fetched posts:', data);
       return data;
     },
-    enabled: !!userId
+    enabled: !!userId,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000)
   });
 
   if (isLoading) {
