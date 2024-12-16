@@ -2,9 +2,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, useSession } from "@supabase/auth-helpers-react";
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
-import { useSession } from '@supabase/auth-helpers-react';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -13,25 +12,29 @@ const Profile = () => {
   const session = useSession();
   const { username } = useParams();
   
-  // Remove @ from username if present and handle undefined
+  // Remove @ from username if present, or use current user's profile if no username provided
   const cleanUsername = username?.replace('@', '') || '';
 
-  // Redirect to dashboard if no username
-  if (!cleanUsername) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['profile', cleanUsername],
+    queryKey: ['profile', cleanUsername || session?.user?.id],
     queryFn: async () => {
-      console.log("Fetching profile for username:", cleanUsername);
+      console.log("Fetching profile for:", cleanUsername || session?.user?.id);
 
-      // Get profile by username
-      const { data: profileData, error: profileError } = await supabase
+      const query = supabase
         .from('profiles')
         .select('*')
-        .eq('username', cleanUsername)
         .single();
+
+      // If username is provided, query by username, otherwise query by current user's ID
+      if (cleanUsername) {
+        query.eq('username', cleanUsername);
+      } else if (session?.user?.id) {
+        query.eq('id', session.user.id);
+      } else {
+        throw new Error('No username or session ID provided');
+      }
+
+      const { data: profileData, error: profileError } = await query;
 
       if (profileError) {
         console.error("Profile fetch error:", profileError);
@@ -39,7 +42,7 @@ const Profile = () => {
       }
 
       if (!profileData) {
-        console.log("No profile found for username:", cleanUsername);
+        console.log("No profile found");
         return null;
       }
 
@@ -116,7 +119,7 @@ const Profile = () => {
       onEditClick={() => setIsEditing(!isEditing)}
       onEditBioChange={setEditBio}
       onSaveChanges={handleUpdateProfile}
-      onImageUpdate={() => {}}
+      onImageUpdate={(type, url) => {}}
     />
   );
 };
