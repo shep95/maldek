@@ -12,7 +12,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthenticationWrapper mounted, signing out all users");
+    console.log("AuthenticationWrapper mounted");
     
     const signOutAllUsers = async () => {
       try {

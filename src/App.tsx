@@ -23,7 +23,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <TooltipProvider>
-            <AuthenticationWrapper queryClient={queryClient}>
+            <AuthenticationWrapper>
               <AppRoutes />
             </AuthenticationWrapper>
             <Toaster />
