@@ -17,54 +17,85 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   useEffect(() => {
     console.log("AuthenticationWrapper mounted");
     
-    const clearAuthData = async () => {
-      console.log("Clearing auth data...");
-      setIsLoading(true);
-      
-      // Clear all Supabase auth data from localStorage
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.auth.')) {
-          console.log("Removing auth data:", key);
-          localStorage.removeItem(key);
-        }
-      });
-
-      // Force sign out from Supabase
+    const handleSession = async () => {
       try {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error("Sign out error:", error);
-          toast.error("Error signing out");
-        } else {
-          console.log("Successfully signed out");
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log("No session found, redirecting to auth");
+          navigate('/auth');
+          setIsLoading(false);
+          return;
+        }
+
+        console.log("Session found, checking profile");
+        
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          if (profileError.code === 'PGRST116') {
+            console.log("Profile not found, creating new profile");
+            // Create profile if it doesn't exist
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert([{
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
+                created_at: new Date().toISOString(),
+                follower_count: 0
+              }]);
+
+            if (createError) {
+              console.error("Error creating profile:", createError);
+              toast.error("Error creating profile");
+              await supabase.auth.signOut();
+              navigate('/auth');
+              return;
+            }
+
+            console.log("Profile created successfully");
+          } else {
+            console.error("Error checking profile:", profileError);
+            toast.error("Error checking profile");
+            return;
+          }
+        }
+
+        if (location.pathname === '/auth') {
+          console.log("User is authenticated, redirecting to dashboard");
+          navigate('/dashboard');
         }
       } catch (error) {
-        console.error("Error during sign out:", error);
-        toast.error("Error signing out");
+        console.error("Session handling error:", error);
+        toast.error("Authentication error");
+      } finally {
+        setIsLoading(false);
       }
-
-      // Force navigation to auth page
-      navigate('/auth');
-      setIsLoading(false);
     };
 
-    // Execute clear auth data
-    clearAuthData();
+    handleSession();
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       
       if (event === 'SIGNED_OUT') {
         console.log("User signed out, redirecting to auth");
         navigate('/auth');
+      } else if (event === 'SIGNED_IN') {
+        console.log("User signed in, handling session");
+        await handleSession();
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   if (isLoading) {
     return (
