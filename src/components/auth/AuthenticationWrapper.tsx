@@ -19,10 +19,26 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     
     const handleSession = async () => {
       try {
-        // Clear loading state for auth page
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        console.log("Session check result:", session ? "Found session" : "No session");
+
+        // Handle auth page access
         if (location.pathname === '/auth') {
-          console.log("On auth page, no need to check session");
+          console.log("On auth page");
+          if (session) {
+            console.log("User is authenticated, redirecting to dashboard");
+            navigate('/dashboard');
+          }
           setIsLoading(false);
+          return;
+        }
+
+        // Handle no session
+        if (!session || sessionError) {
+          console.log("No valid session, redirecting to auth");
+          setIsLoading(false);
+          navigate('/auth');
           return;
         }
 
@@ -31,22 +47,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           console.log("On root path, redirecting to dashboard");
           setIsLoading(false);
           navigate('/dashboard');
-          return;
-        }
-
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          setIsLoading(false);
-          navigate('/auth');
-          return;
-        }
-
-        if (!session) {
-          console.log("No session found, redirecting to auth");
-          setIsLoading(false);
-          navigate('/auth');
           return;
         }
 
