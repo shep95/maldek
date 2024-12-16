@@ -42,9 +42,15 @@ const Profile = () => {
           .single();
 
         if (error) {
+          if (error.code === 'PGRST116') {
+            // Profile not found
+            console.log("Profile not found for username:", cleanUsername);
+            toast.error("Profile not found");
+            navigate('/dashboard');
+            return null;
+          }
           console.error("Error fetching user ID:", error);
-          toast.error("Profile not found");
-          navigate('/dashboard');
+          toast.error("Error loading profile");
           return null;
         }
 
@@ -56,7 +62,8 @@ const Profile = () => {
       navigate('/dashboard');
       return null;
     },
-    retry: 1
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000)
   });
 
   // Then fetch the full profile data
@@ -87,6 +94,22 @@ const Profile = () => {
         .single();
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          // Profile might still be creating
+          console.log("Profile might still be creating for:", targetUser.id);
+          return {
+            id: targetUser.id,
+            username: 'New User',
+            bio: '',
+            avatar_url: null,
+            banner_url: null,
+            follower_count: 0,
+            followers: [],
+            following: [],
+            posts: [],
+            isCurrentUser: session?.user?.id === targetUser.id
+          };
+        }
         console.error("Profile fetch error:", error);
         toast.error("Error loading profile");
         return null;
@@ -104,13 +127,14 @@ const Profile = () => {
       };
     },
     enabled: !!targetUser?.id,
-    retry: 1
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000)
   });
 
   const handleUpdateProfile = async () => {
     try {
       if (!session?.user?.id || !profile?.isCurrentUser) {
-        toast("You must be logged in to update your profile");
+        toast.error("You must be logged in to update your profile");
         return;
       }
 
@@ -122,10 +146,10 @@ const Profile = () => {
       if (error) throw error;
       
       setIsEditing(false);
-      toast("Profile updated successfully");
+      toast.success("Profile updated successfully");
     } catch (error: any) {
       console.error("Update profile error:", error);
-      toast(error.message || "Failed to update profile");
+      toast.error(error.message || "Failed to update profile");
     }
   };
 
