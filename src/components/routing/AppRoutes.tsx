@@ -22,8 +22,8 @@ export const AppRoutes = () => {
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
-        <Route path="/profile" element={<Profile />} />
         <Route path="/@:username" element={<Profile />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/subscription" element={<Subscription />} />

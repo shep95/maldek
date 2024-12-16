@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
 import { ProfileContainer } from "@/components/profile/ProfileContainer";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -60,7 +61,18 @@ const Profile = () => {
       console.log("Fetching profile for user:", targetUser.id);
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          followers!followers_following_id_fkey (
+            follower_id
+          ),
+          following:followers!followers_follower_id_fkey (
+            following_id
+          ),
+          posts (
+            id
+          )
+        `)
         .eq('id', targetUser.id)
         .single();
 
@@ -79,6 +91,9 @@ const Profile = () => {
       
       return {
         ...data,
+        followerCount: data.followers?.length || 0,
+        followingCount: data.following?.length || 0,
+        postCount: data.posts?.length || 0,
         isCurrentUser: session?.user?.id === data.id
       };
     },
@@ -121,25 +136,26 @@ const Profile = () => {
 
   if (isLoadingUserId || isLoading) {
     return (
-      <div className="animate-fade-in py-4">
-        <div className="animate-pulse text-accent">Loading profile...</div>
+      <div className="w-full max-w-4xl mx-auto animate-fade-in">
+        <div className="space-y-4">
+          <Skeleton className="h-48 w-full" /> {/* Banner */}
+          <div className="px-6">
+            <Skeleton className="h-32 w-32 rounded-full -mt-16 border-4 border-background" /> {/* Avatar */}
+            <div className="mt-4 space-y-4">
+              <Skeleton className="h-8 w-48" /> {/* Username */}
+              <Skeleton className="h-4 w-64" /> {/* Bio */}
+              <div className="flex gap-4">
+                <Skeleton className="h-4 w-24" /> {/* Followers */}
+                <Skeleton className="h-4 w-24" /> {/* Following */}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (error || !targetUser) {
-    console.error("Profile error:", error);
-    return (
-      <div className="animate-fade-in py-4 text-center">
-        <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
-        <p className="text-muted-foreground">
-          The profile you're looking for doesn't exist or has been removed.
-        </p>
-      </div>
-    );
-  }
-
-  if (!profile) {
+  if (error || !targetUser || !profile) {
     return (
       <div className="animate-fade-in py-4 text-center">
         <h2 className="text-xl font-semibold mb-2">Profile Not Found</h2>
