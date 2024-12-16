@@ -15,77 +15,43 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthenticationWrapper mounted, path:", location.pathname);
+    console.log("AuthenticationWrapper mounted, signing out all users");
     
-    const handleSession = async () => {
+    const signOutAllUsers = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        console.log("Session check result:", session ? "Found session" : "No session");
-
-        // Handle auth page access
-        if (location.pathname === '/auth') {
-          console.log("On auth page");
-          if (session) {
-            console.log("User is authenticated, redirecting to dashboard");
-            navigate('/dashboard');
+        // Clear all Supabase-related items from localStorage
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.auth.')) {
+            localStorage.removeItem(key);
           }
-          setIsLoading(false);
-          return;
-        }
+        });
 
-        // Handle no session
-        if (!session || sessionError) {
-          console.log("No valid session, redirecting to auth");
-          setIsLoading(false);
+        // Force sign out through Supabase
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error("Error signing out:", error);
+          toast.error("Error signing out");
+        } else {
+          console.log("Successfully signed out all users");
           navigate('/auth');
-          return;
         }
-
-        // Handle root path
-        if (location.pathname === '/') {
-          console.log("On root path, redirecting to dashboard");
-          navigate('/dashboard');
-          setIsLoading(false);
-          return;
-        }
-
-        console.log("Session found:", session.user.id);
-        setIsLoading(false);
       } catch (error) {
-        console.error("Session handling error:", error);
-        toast.error("Authentication error occurred");
+        console.error("Error in sign out process:", error);
+        toast.error("Error signing out");
+      } finally {
         setIsLoading(false);
-        navigate('/auth');
       }
     };
 
-    handleSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.id);
-      
-      if (event === 'SIGNED_OUT') {
-        console.log("User signed out, redirecting to auth");
-        setIsLoading(false);
-        navigate('/auth');
-      } else if (event === 'SIGNED_IN') {
-        console.log("User signed in, handling session");
-        await handleSession();
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, location.pathname]);
+    signOutAllUsers();
+  }, [navigate]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Signing out...</p>
         </div>
       </div>
     );
