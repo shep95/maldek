@@ -15,27 +15,30 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("AuthenticationWrapper mounted");
+    console.log("AuthenticationWrapper mounted, current path:", location.pathname);
     
     const handleSession = async () => {
       try {
+        // If we're already on the auth page, don't show loading
+        if (location.pathname === '/auth') {
+          console.log("Already on auth page, clearing loading state");
+          setIsLoading(false);
+          return;
+        }
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Session error:", sessionError);
           setIsLoading(false);
-          if (location.pathname !== '/auth') {
-            navigate('/auth');
-          }
+          navigate('/auth');
           return;
         }
 
         if (!session) {
           console.log("No session found, redirecting to auth");
           setIsLoading(false);
-          if (location.pathname !== '/auth') {
-            navigate('/auth');
-          }
+          navigate('/auth');
           return;
         }
 
@@ -84,9 +87,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       } catch (error) {
         console.error("Session handling error:", error);
         setIsLoading(false);
-        if (location.pathname !== '/auth') {
-          navigate('/auth');
-        }
+        navigate('/auth');
       }
     };
 
