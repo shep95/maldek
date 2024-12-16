@@ -30,28 +30,46 @@ const Auth = () => {
           throw new Error('Username is required');
         }
 
-        // First create the auth user
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-        });
+        console.log("Starting signup process with:", { email: formData.email, username: formData.username });
 
-        if (signUpError) throw signUpError;
-        if (!signUpData.user?.id) throw new Error('Failed to create user');
-
-        // Then create the profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: signUpData.user.id,
-            username: formData.username,
+        // First check if username is available using the database function
+        const { data: isAvailable, error: checkError } = await supabase
+          .rpc('check_username_availability', {
+            username_to_check: formData.username
           });
 
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
+        if (checkError) {
+          console.error("Username check error:", checkError);
+          throw new Error('Error checking username availability');
+        }
+
+        if (!isAvailable) {
+          console.error("Username is taken");
           throw new Error('Username is already taken');
         }
 
+        // Then create the auth user with the username in metadata
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              username: formData.username // Store username in metadata
+            }
+          }
+        });
+
+        if (signUpError) {
+          console.error("Signup error:", signUpError);
+          throw signUpError;
+        }
+
+        if (!signUpData.user?.id) {
+          console.error("No user ID returned from signup");
+          throw new Error('Failed to create user');
+        }
+
+        console.log("User created successfully:", signUpData.user.id);
         toast.success("Account created successfully!");
         navigate('/dashboard');
       }
