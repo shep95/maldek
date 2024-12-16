@@ -38,17 +38,18 @@ const Auth = () => {
         });
 
         // First check if username is available
-        const { data: isAvailable, error: checkError } = await supabase
-          .rpc('check_username_availability', {
-            username_to_check: formData.username
-          });
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', formData.username.toLowerCase())
+          .maybeSingle();
 
         if (checkError) {
           console.error("Username check error:", checkError);
           throw new Error('Error checking username availability');
         }
 
-        if (!isAvailable) {
+        if (existingUser) {
           console.error("Username is taken");
           throw new Error('Username is already taken');
         }
@@ -61,7 +62,7 @@ const Auth = () => {
           password: formData.password,
           options: {
             data: {
-              username: formData.username
+              username: formData.username.toLowerCase() // Store username in lowercase
             }
           }
         });
@@ -76,8 +77,24 @@ const Auth = () => {
           throw new Error('Failed to create user');
         }
 
-        console.log("User created successfully:", signUpData.user.id);
-        toast.success("Account created successfully! You can now sign in.");
+        // Wait a moment for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Verify the profile was created
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', signUpData.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("Profile verification error:", profileError);
+          toast.error("Account created but profile setup failed. Please try logging in.");
+        } else {
+          console.log("Profile created successfully:", profile);
+          toast.success("Account created successfully! You can now sign in.");
+        }
+
         setIsLogin(true); // Switch to login view
       }
     } catch (error: any) {
