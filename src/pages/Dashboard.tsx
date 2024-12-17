@@ -25,7 +25,25 @@ const Dashboard = () => {
         console.log('Fetching profile for user:', session.user.id);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, username, avatar_url, bio')
+          .select(`
+            id,
+            username,
+            avatar_url,
+            bio,
+            follower_count,
+            banner_url,
+            location,
+            website,
+            social_links,
+            theme_preference,
+            total_posts,
+            total_media,
+            total_likes_received,
+            total_views,
+            badges,
+            achievements,
+            last_active
+          `)
           .eq('id', session.user.id)
           .maybeSingle();
 
@@ -44,7 +62,20 @@ const Dashboard = () => {
               id: session.user.id,
               username: defaultUsername,
               avatar_url: null,
-              bio: ''
+              bio: '',
+              follower_count: 0,
+              banner_url: null,
+              location: '',
+              website: '',
+              social_links: {},
+              theme_preference: 'default',
+              total_posts: 0,
+              total_media: 0,
+              total_likes_received: 0,
+              total_views: 0,
+              badges: [],
+              achievements: [],
+              last_active: new Date().toISOString()
             })
             .select()
             .single();
