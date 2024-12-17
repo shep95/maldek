@@ -43,6 +43,10 @@ export const PostContent = ({
     }
   };
 
+  const handleUsernameClick = (username: string) => {
+    navigate(`/@${username}`);
+  };
+
   const renderContent = (text: string) => {
     // URL regex pattern
     const urlPattern = /(https?:\/\/[^\s]+)/g;
@@ -58,7 +62,7 @@ export const PostContent = ({
               className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/${username}`);
+                handleUsernameClick(username);
               }}
             >
               {word}

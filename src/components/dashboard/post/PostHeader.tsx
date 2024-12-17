@@ -3,6 +3,7 @@ import { Author } from "@/utils/postUtils";
 import { Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface PostHeaderProps {
   author: Author;
@@ -10,6 +11,8 @@ interface PostHeaderProps {
 }
 
 export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
+  const navigate = useNavigate();
+  
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
@@ -62,18 +65,31 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
     return `${Math.floor(diffInDays / 365)}y`;
   };
 
+  const handleUsernameClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/@${author.username}`);
+  };
+
   const timeAgo = getTimeAgo(new Date(timestamp));
 
   return (
     <div className="flex items-start gap-3">
-      <Avatar className="h-10 w-10">
+      <Avatar 
+        className="h-10 w-10 cursor-pointer" 
+        onClick={handleUsernameClick}
+      >
         <AvatarImage src={author.avatar_url || ''} alt={author.name} />
         <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
         <div className="flex items-baseline gap-2">
           <div className="flex items-center gap-1">
-            <h3 className="font-semibold">{author.name}</h3>
+            <button
+              onClick={handleUsernameClick}
+              className="font-semibold hover:underline"
+            >
+              {author.name}
+            </button>
             {subscription?.tier?.name === 'Creator' && (
               <div className="group relative">
                 <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.6)] border-2 border-orange-500 bg-black/50 backdrop-blur-sm">
@@ -95,7 +111,12 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
               </div>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">@{author.username}</p>
+          <button
+            onClick={handleUsernameClick}
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            @{author.username}
+          </button>
         </div>
       </div>
       <span className="text-sm text-muted-foreground">{timeAgo}</span>

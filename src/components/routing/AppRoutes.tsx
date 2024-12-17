@@ -21,7 +21,7 @@ export const AppRoutes = () => {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
-        <Route path="/:username" element={<Profiles />} />
+        <Route path="/@:username" element={<Profiles />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
