@@ -8,6 +8,7 @@ import PostDetail from "@/pages/PostDetail";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Settings from "@/pages/Settings";
 import DaarpAI from "@/pages/DaarpAI";
+import Profiles from "@/pages/Profiles";
 
 export const AppRoutes = () => {
   return (
@@ -19,6 +20,7 @@ export const AppRoutes = () => {
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
+        <Route path="/profiles" element={<Profiles />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
