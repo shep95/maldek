@@ -17,38 +17,70 @@ export const useAudioStream = () => {
         }
       });
       
-      console.log('Microphone access granted');
+      console.log('Microphone access granted, checking audio tracks...');
+      const audioTrack = stream.getAudioTracks()[0];
+      
+      if (!audioTrack) {
+        throw new Error('No audio track found in stream');
+      }
+
+      if (audioTrack.muted) {
+        console.warn('Audio track is muted by system');
+        toast.warning('Your microphone appears to be muted by your system');
+      }
+
+      // Check if the audio track is actually receiving input
+      if (!audioTrack.enabled) {
+        console.warn('Audio track is disabled');
+        toast.warning('Your microphone is disabled. Please check your system settings');
+      }
+
       // Mute by default
-      stream.getAudioTracks()[0].enabled = false;
+      audioTrack.enabled = false;
       setIsMuted(true);
       setIsStreaming(true);
       setError(null);
       
       // Add audio track event listeners
-      stream.getAudioTracks()[0].onended = () => {
+      audioTrack.onended = () => {
         console.log('Audio track ended');
         setIsStreaming(false);
-        setError('Audio track ended unexpectedly');
+        setError('Audio connection lost');
         toast.error('Audio connection lost. Please try reconnecting.');
       };
 
-      stream.getAudioTracks()[0].onmute = () => {
+      audioTrack.onmute = () => {
         console.log('Audio track muted by system');
         setIsMuted(true);
+        toast.info('Your microphone was muted by the system');
       };
 
-      stream.getAudioTracks()[0].onunmute = () => {
+      audioTrack.onunmute = () => {
         console.log('Audio track unmuted by system');
         setIsMuted(false);
+        toast.info('Your microphone is now active');
       };
 
       return stream;
     } catch (err) {
       console.error('Error accessing microphone:', err);
       const errorMessage = err instanceof Error ? err.message : 'Could not access microphone';
-      setError(errorMessage);
+      
+      // Provide more specific error messages
+      let userMessage = 'Could not access your microphone. ';
+      if (errorMessage.includes('Permission')) {
+        userMessage += 'Please allow microphone access in your browser settings.';
+      } else if (errorMessage.includes('NotFoundError')) {
+        userMessage += 'No microphone found. Please check your device connections.';
+      } else if (errorMessage.includes('NotReadableError')) {
+        userMessage += 'Your microphone is being used by another application.';
+      } else if (errorMessage.includes('network')) {
+        userMessage += 'Please check your internet connection.';
+      }
+      
+      setError(userMessage);
       setIsStreaming(false);
-      toast.error(`Microphone error: ${errorMessage}`);
+      toast.error(userMessage);
       return null;
     }
   };
@@ -56,7 +88,7 @@ export const useAudioStream = () => {
   const toggleMute = (stream: MediaStream | null) => {
     if (!stream) {
       console.error('No audio stream available');
-      toast.error('No audio stream available. Please try rejoining the space.');
+      toast.error('No audio connection available. Please try rejoining the space.');
       return;
     }
 
@@ -76,6 +108,13 @@ export const useAudioStream = () => {
           toast.error('Audio connection lost. Please try rejoining the space.');
           return;
         }
+
+        // Additional connection checks
+        if (!navigator.onLine) {
+          setError('Internet connection lost');
+          toast.error('Internet connection lost. Please check your connection.');
+          return;
+        }
       } catch (err) {
         console.error('Error toggling microphone:', err);
         const errorMessage = err instanceof Error ? err.message : 'Error toggling microphone';
@@ -84,7 +123,7 @@ export const useAudioStream = () => {
       }
     } else {
       console.error('No audio track found');
-      toast.error('No audio track found. Please try rejoining the space.');
+      toast.error('No microphone found. Please check your device connections.');
     }
   };
 
