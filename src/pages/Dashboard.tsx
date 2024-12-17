@@ -25,7 +25,7 @@ const Dashboard = () => {
         console.log('Fetching profile for user:', session.user.id);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('username, avatar_url, name')
+          .select('id, username, avatar_url, bio')
           .eq('id', session.user.id)
           .maybeSingle();
 
@@ -36,15 +36,15 @@ const Dashboard = () => {
 
         if (!profileData) {
           console.log('No profile found, creating default profile...');
-          const username = session.user.email?.split('@')[0] || 'user';
+          const defaultUsername = session.user.email?.split('@')[0] || 'user';
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
               id: session.user.id,
-              username: username,
+              username: defaultUsername,
               avatar_url: null,
-              name: username
+              bio: ''
             })
             .select()
             .single();
@@ -54,6 +54,7 @@ const Dashboard = () => {
             throw createError;
           }
 
+          console.log('Created new profile:', newProfile);
           return newProfile;
         }
 
@@ -82,7 +83,7 @@ const Dashboard = () => {
     id: session?.user?.id || '',
     username: profile?.username || '',
     avatar_url: profile?.avatar_url || '',
-    name: profile?.name || profile?.username || ''
+    name: profile?.username || '' // Using username as name since we don't have a separate name field
   };
 
   const handlePostCreated = (newPost: any) => {
