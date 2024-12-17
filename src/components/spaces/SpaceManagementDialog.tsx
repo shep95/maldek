@@ -40,44 +40,44 @@ export const SpaceManagementDialog = ({
     toggleMute
   } = useAgoraRTC(spaceId);
 
+  const fetchData = async () => {
+    try {
+      const [participantsData, requestsData, userRoleData] = await Promise.all([
+        supabase
+          .from('space_participants')
+          .select('*, profile:profiles(*)')
+          .eq('space_id', spaceId),
+        isHost ? supabase
+          .from('space_speaker_requests')
+          .select('*, profile:profiles(*)')
+          .eq('space_id', spaceId)
+          .eq('status', 'pending') : null,
+        supabase
+          .from('space_participants')
+          .select('role')
+          .eq('space_id', spaceId)
+          .eq('user_id', session?.user?.id)
+          .single()
+      ]);
+
+      if (participantsData.error) throw participantsData.error;
+      setParticipants(participantsData.data || []);
+      
+      if (requestsData && !requestsData.error) {
+        setSpeakerRequests(requestsData.data || []);
+      }
+
+      if (userRoleData.data) {
+        setUserRole(userRoleData.data.role);
+      }
+    } catch (error) {
+      console.error('Error fetching space data:', error);
+      toast.error("Failed to load space data");
+    }
+  };
+
   useEffect(() => {
     if (!isOpen || !spaceId || !session?.user?.id) return;
-
-    const fetchData = async () => {
-      try {
-        const [participantsData, requestsData, userRoleData] = await Promise.all([
-          supabase
-            .from('space_participants')
-            .select('*, profile:profiles(*)')
-            .eq('space_id', spaceId),
-          isHost ? supabase
-            .from('space_speaker_requests')
-            .select('*, profile:profiles(*)')
-            .eq('space_id', spaceId)
-            .eq('status', 'pending') : null,
-          supabase
-            .from('space_participants')
-            .select('role')
-            .eq('space_id', spaceId)
-            .eq('user_id', session?.user?.id)
-            .single()
-        ]);
-
-        if (participantsData.error) throw participantsData.error;
-        setParticipants(participantsData.data || []);
-        
-        if (requestsData && !requestsData.error) {
-          setSpeakerRequests(requestsData.data || []);
-        }
-
-        if (userRoleData.data) {
-          setUserRole(userRoleData.data.role);
-        }
-      } catch (error) {
-        console.error('Error fetching space data:', error);
-        toast.error("Failed to load space data");
-      }
-    };
 
     fetchData();
     joinChannel(session.user.id);
@@ -211,7 +211,12 @@ export const SpaceManagementDialog = ({
               onLeave={onLeave}
               onEndSpace={handleEndSpace}
             />
-            <SpaceParticipantsList participants={participants} />
+            <SpaceParticipantsList 
+              participants={participants}
+              spaceId={spaceId}
+              isHost={isHost}
+              onParticipantUpdate={fetchData}
+            />
           </TabsContent>
 
           <TabsContent value="requests" className="mt-4">

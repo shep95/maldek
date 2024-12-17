@@ -896,6 +896,21 @@ export type Database = {
         }
         Returns: undefined
       }
+      mute_all_speakers: {
+        Args: {
+          space_id: string
+          admin_user_id: string
+        }
+        Returns: boolean
+      }
+      mute_participant: {
+        Args: {
+          space_id: string
+          target_user_id: string
+          admin_user_id: string
+        }
+        Returns: boolean
+      }
       track_video_watch_time: {
         Args: {
           post_id: string
