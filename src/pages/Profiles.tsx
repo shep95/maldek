@@ -6,24 +6,34 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfilePosts } from "@/components/profile/ProfilePosts";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
+import { useParams } from "react-router-dom";
 
 const Profiles = () => {
   const session = useSession();
+  const { username } = useParams();
 
+  // Fetch profile by username if provided, otherwise fetch current user's profile
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
-    queryKey: ['profile', session?.user?.id],
+    queryKey: ['profile', username || session?.user?.id],
     queryFn: async () => {
-      console.log('Fetching user profile...', session?.user?.id);
-      if (!session?.user?.id) {
-        console.error('No user ID available');
-        throw new Error('No user ID available');
-      }
-
-      const { data, error } = await supabase
+      console.log('Fetching profile...', { username, userId: session?.user?.id });
+      
+      const query = supabase
         .from('profiles')
         .select('*')
-        .eq('id', session.user.id)
         .single();
+
+      // If username is provided, fetch by username, otherwise fetch by user ID
+      if (username) {
+        query.eq('username', username);
+      } else if (session?.user?.id) {
+        query.eq('id', session.user.id);
+      } else {
+        console.error('No username or user ID available');
+        throw new Error('No username or user ID available');
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -39,13 +49,12 @@ const Profiles = () => {
       console.log('Profile fetched:', data);
       return data;
     },
-    enabled: !!session?.user?.id,
     retry: 3,
     retryDelay: 1000,
   });
 
   const { data: posts, isLoading: postsLoading } = useQuery({
-    queryKey: ['user-posts', session?.user?.id],
+    queryKey: ['user-posts', profile?.id],
     queryFn: async () => {
       console.log('Fetching user posts...');
       const { data, error } = await supabase
@@ -69,7 +78,7 @@ const Profiles = () => {
             id
           )
         `)
-        .eq('user_id', session?.user?.id)
+        .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -81,7 +90,7 @@ const Profiles = () => {
       console.log('Posts fetched:', data);
       return data;
     },
-    enabled: !!session?.user?.id,
+    enabled: !!profile?.id,
   });
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
