@@ -38,8 +38,28 @@ const Profile = () => {
 
         if (error) {
           console.error("Error fetching current user profile:", error);
-          toast.error("Error loading profile");
-          return null;
+          // Create profile if it doesn't exist
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || 'user_' + Math.random().toString(36).slice(2, 7),
+                created_at: new Date().toISOString(),
+                follower_count: 0,
+                bio: ''
+              }
+            ])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            toast.error('Error creating profile');
+            return null;
+          }
+
+          return newProfile;
         }
 
         // Redirect to the @username URL format

@@ -16,23 +16,45 @@ export const useProfileData = () => {
       }
 
       console.log('Checking if profile exists for user:', session.user.id);
-      const { data, error } = await supabase
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('id, created_at')
         .eq('id', session.user.id)
         .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('Profile not found, might still be creating...');
-          return null;
+      if (checkError) {
+        if (checkError.code === 'PGRST116') {
+          console.log('Profile not found, creating new profile...');
+          // Attempt to create profile if it doesn't exist
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || 'user_' + Math.random().toString(36).slice(2, 7),
+                created_at: new Date().toISOString(),
+                follower_count: 0,
+                bio: ''
+              }
+            ])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            toast.error('Error creating profile');
+            return null;
+          }
+
+          console.log('New profile created:', newProfile);
+          return newProfile;
         }
-        console.error('Error checking profile:', error);
+        console.error('Error checking profile:', checkError);
         return null;
       }
 
-      console.log('Profile exists check result:', data);
-      return data;
+      console.log('Profile exists:', existingProfile);
+      return existingProfile;
     },
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * (2 ** attemptIndex), 10000),
