@@ -27,42 +27,51 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const checkUsername = async () => {
       if (!username || username.length < 3) {
         setIsUsernameTaken(false);
+        setIsCheckingUsername(false);
         return;
       }
 
       setIsCheckingUsername(true);
       try {
         console.log("Checking username availability:", username);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', username)
-          .maybeSingle();
+        const { data: { available } } = await supabase
+          .rpc('check_username_availability', {
+            username_to_check: username
+          });
 
-        if (error) {
-          console.error('Username check error:', error);
-          return;
-        }
-
-        const isTaken = !!data;
-        console.log('Username check result:', { username, isTaken });
-        setIsUsernameTaken(isTaken);
+        console.log('Username availability result:', { username, available });
+        setIsUsernameTaken(!available);
         
-        if (isTaken) {
+        if (!available) {
           toast.error("This username is already taken");
         }
       } catch (error) {
         console.error('Username check error:', error);
+        setIsUsernameTaken(false);
       } finally {
         setIsCheckingUsername(false);
       }
     };
 
-    const debounceTimer = setTimeout(checkUsername, 500);
-    return () => clearTimeout(debounceTimer);
+    // Clear any existing timeout
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    // Set new timeout for debouncing
+    timeoutId = setTimeout(checkUsername, 500);
+
+    // Cleanup function
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [username]);
 
   const handleSubmit = (e: React.FormEvent) => {
