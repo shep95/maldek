@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -55,6 +55,13 @@ export const NavItems = ({
       path: "/profiles",
       active: location.pathname === "/profiles",
       description: "Browse user profiles"
+    },
+    {
+      icon: LayoutGrid,
+      label: "Spaces",
+      path: "/spaces",
+      active: location.pathname === "/spaces",
+      description: "Join community spaces"
     },
     {
       icon: BrainCircuit,

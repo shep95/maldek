@@ -9,6 +9,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Settings from "@/pages/Settings";
 import DaarpAI from "@/pages/DaarpAI";
 import Profiles from "@/pages/Profiles";
+import Spaces from "@/pages/Spaces";
 
 export const AppRoutes = () => {
   return (
@@ -21,6 +22,7 @@ export const AppRoutes = () => {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
+        <Route path="/spaces" element={<Spaces />} />
         <Route path="/@:username" element={<Profiles />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
