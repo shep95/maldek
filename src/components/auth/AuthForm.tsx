@@ -39,11 +39,15 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       setIsCheckingUsername(true);
       try {
         console.log("Checking username availability:", username);
-        const { data: { available } } = await supabase
+        const { data, error } = await supabase
           .rpc('check_username_availability', {
             username_to_check: username
           });
 
+        if (error) throw error;
+
+        // Now TypeScript knows data is a boolean
+        const available = data as boolean;
         console.log('Username availability result:', { username, available });
         setIsUsernameTaken(!available);
         
