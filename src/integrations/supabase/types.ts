@@ -513,6 +513,144 @@ export type Database = {
         }
         Relationships: []
       }
+      space_participants: {
+        Row: {
+          joined_at: string | null
+          role: Database["public"]["Enums"]["space_role"]
+          space_id: string
+          user_id: string
+        }
+        Insert: {
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["space_role"]
+          space_id: string
+          user_id: string
+        }
+        Update: {
+          joined_at?: string | null
+          role?: Database["public"]["Enums"]["space_role"]
+          space_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_participants_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_speaker_requests: {
+        Row: {
+          id: string
+          requested_at: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          space_id: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          requested_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          space_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          requested_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          space_id?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_speaker_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_speaker_requests_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_speaker_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spaces: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          ended_at: string | null
+          host_id: string
+          id: string
+          max_speakers: number | null
+          scheduled_start: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["space_status"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          host_id: string
+          id?: string
+          max_speakers?: number | null
+          scheduled_start?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["space_status"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          host_id?: string
+          id?: string
+          max_speakers?: number | null
+          scheduled_start?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["space_status"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spaces_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_tiers: {
         Row: {
           checkmark_color: string
@@ -713,7 +851,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      space_role: "host" | "co_host" | "speaker" | "listener"
+      space_status: "scheduled" | "live" | "ended"
     }
     CompositeTypes: {
       [_ in never]: never
