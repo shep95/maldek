@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { User } from '@supabase/supabase-js';
 
 export const logoutAllUsers = async () => {
   try {
@@ -37,13 +38,15 @@ export const deleteUserByEmail = async (email: string) => {
     console.log("Starting user deletion process for:", email);
     
     // First, get the user's ID from their email
-    const { data: { users }, error: userError } = await supabase.auth.admin.listUsers();
+    const { data, error: userError } = await supabase.auth.admin.listUsers();
     
     if (userError) {
       console.error("Error fetching users:", userError);
       throw userError;
     }
 
+    // Type assertion to handle the users array
+    const users = data?.users as User[] | undefined;
     const userToDelete = users?.find(user => user.email === email);
     
     if (!userToDelete) {
