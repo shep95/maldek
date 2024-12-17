@@ -30,6 +30,17 @@ export const SpaceManagementControls = ({
     }
   };
 
+  const handleLeave = () => {
+    // If the user is a host, end the space when they leave
+    if (isHost) {
+      console.log('Host is leaving, ending space');
+      onEndSpace();
+    } else {
+      console.log('Participant is leaving space');
+      onLeave();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -63,23 +74,13 @@ export const SpaceManagementControls = ({
         )}
 
         <Button 
-          onClick={onLeave}
+          onClick={handleLeave}
           variant="destructive"
           className="flex-1"
         >
-          Leave Space
+          {isHost ? "End & Leave Space" : "Leave Space"}
         </Button>
       </div>
-
-      {isHost && (
-        <Button 
-          onClick={onEndSpace}
-          className="w-full"
-          variant="destructive"
-        >
-          End Space
-        </Button>
-      )}
     </div>
   );
 };
