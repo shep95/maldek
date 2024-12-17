@@ -1,116 +1,30 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { handleOfflineUpload } from "@/utils/offlineUploadUtils";
-
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
 
 export const handleImageUpload = async (file: File, userId: string) => {
   try {
-    console.log('Starting media upload for user:', userId);
-    console.log('File details:', { 
-      name: file.name, 
-      size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`, 
-      type: file.type,
-      lastModified: new Date(file.lastModified).toISOString()
-    });
-
-    // Verify file size
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    if (file.size > maxSize) {
-      console.error('File too large:', `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
-      toast.error(`File size must be less than 50MB. Please try a smaller file.`);
-      return null;
-    }
-
-    // Check if device is offline and handle offline upload
-    const canUploadNow = await handleOfflineUpload(file, userId, {
-      type: file.type,
-      originalName: file.name
-    });
-
-    if (!canUploadNow) {
-      return null;
-    }
-
-    // Generate file path
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
-    console.log('Starting chunked upload to path:', filePath);
-    toast.info('Uploading file...');
+    const { error: uploadError } = await supabase.storage
+      .from('chat-images')
+      .upload(filePath, file);
 
-    // Implement chunked upload
-    const chunks = Math.ceil(file.size / CHUNK_SIZE);
-    const uploadPromises = [];
-
-    for (let i = 0; i < chunks; i++) {
-      const start = i * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunk = file.slice(start, end);
-      const chunkPath = `${filePath}_chunk_${i}`;
-
-      console.log(`Uploading chunk ${i + 1}/${chunks}, size: ${(chunk.size / 1024).toFixed(2)}KB`);
-
-      const uploadPromise = supabase.storage
-        .from('posts')
-        .upload(chunkPath, chunk, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      uploadPromises.push(uploadPromise);
-
-      // Update progress
-      const progress = Math.round((i + 1) / chunks * 100);
-      console.log(`Upload progress: ${progress}%`);
-      if (progress % 20 === 0) { // Show progress every 20%
-        toast.info(`Upload progress: ${progress}%`);
-      }
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      toast.error("Failed to upload image");
+      return null;
     }
 
-    // Wait for all chunks to upload
-    const results = await Promise.all(uploadPromises);
-    const errors = results.filter(result => result.error);
-
-    if (errors.length > 0) {
-      console.error('Chunk upload errors:', errors.map(e => ({
-        message: e.error.message,
-        statusCode: e.error.statusCode,
-        name: e.error.name
-      })));
-      throw new Error('Failed to upload one or more chunks');
-    }
-
-    console.log('All chunks uploaded successfully');
-
-    // Get public URL - Fixed the type error by removing error destructuring
-    const { data } = supabase.storage
-      .from('posts')
+    const { data: { publicUrl } } = supabase.storage
+      .from('chat-images')
       .getPublicUrl(filePath);
 
-    console.log('Generated public URL:', data.publicUrl);
-    toast.success('Media uploaded successfully!');
-    return data.publicUrl;
-
-  } catch (error: any) {
-    console.error('Upload error:', {
-      message: error.message,
-      name: error.name,
-      code: error.code,
-      stack: error.stack
-    });
-    
-    // More specific error messages based on error type
-    if (error?.message?.includes('storage/object-not-found')) {
-      toast.error('Upload failed: Storage bucket not found');
-    } else if (error?.message?.includes('permission denied')) {
-      toast.error('Upload failed: Permission denied');
-    } else if (error?.message?.includes('network')) {
-      toast.error('Upload failed: Network error');
-    } else {
-      toast.error(`Upload failed: ${error.message}`);
-    }
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in image upload:', error);
+    toast.error("Failed to upload image");
     return null;
   }
 };

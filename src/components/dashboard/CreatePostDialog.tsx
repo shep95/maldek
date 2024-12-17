@@ -1,14 +1,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, X } from "lucide-react";
+import { Send } from "lucide-react";
 import type { Author } from "@/utils/postUtils";
 import { MediaUpload } from "./post/MediaUpload";
 import { MentionInput } from "./post/MentionInput";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
 
 interface CreatePostDialogProps {
   isOpen: boolean;
@@ -29,40 +28,51 @@ export const CreatePostDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mentionedUser, setMentionedUser] = useState("");
 
+  console.log('CreatePostDialog rendered with currentUser:', currentUser);
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const validFiles = Array.from(files);
-    console.log('Files selected:', validFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
+    const validFiles = Array.from(files).filter(file => {
+      const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
+      if (!isValid) {
+        toast.error(`Invalid file type: ${file.name}`);
+      }
+      return isValid;
+    });
 
-    if (validFiles.length > 0) {
-      setMediaFiles(prev => [...prev, ...validFiles]);
-      validFiles.forEach(file => {
-        const previewUrl = URL.createObjectURL(file);
-        console.log('Created preview URL:', previewUrl, 'for file:', file.name);
-        setMediaPreviewUrls(prev => [...prev, previewUrl]);
-      });
+    setMediaFiles(prev => [...prev, ...validFiles]);
+    validFiles.forEach(file => {
+      const previewUrl = URL.createObjectURL(file);
+      setMediaPreviewUrls(prev => [...prev, previewUrl]);
+    });
+  };
+
+  const removeMedia = (index: number) => {
+    URL.revokeObjectURL(mediaPreviewUrls[index]);
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+    setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleMentionUser = () => {
+    if (mentionedUser) {
+      setContent(prev => `${prev} @${mentionedUser} `);
+      setMentionedUser("");
     }
   };
 
-  const resetFormState = () => {
-    console.log('Resetting form state');
-    setContent("");
-    setIsSubmitting(false);
-    mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
-    setMediaPreviewUrls([]);
-    setMediaFiles([]);
-    setMentionedUser("");
-  };
-
   const handleCreatePost = async () => {
+    console.log('Starting post creation with:', { content, mediaFiles, currentUser });
+    
+    // Validate user data
     if (!currentUser?.id) {
-      console.error('No user ID found');
+      console.error('No user ID available:', currentUser);
       toast.error("User authentication error. Please try logging in again.");
       return;
     }
 
+    // Validate content
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -70,26 +80,42 @@ export const CreatePostDialog = ({
 
     try {
       setIsSubmitting(true);
-      console.log('Starting post creation with media files:', mediaFiles.length);
       const mediaUrls: string[] = [];
 
+      // Upload media files if any
       if (mediaFiles.length > 0) {
+        console.log('Uploading media files:', mediaFiles.length);
+        
         for (const file of mediaFiles) {
-          console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
-          
-          const publicUrl = await handleImageUpload(file, currentUser.id);
-          
-          if (!publicUrl) {
-            throw new Error(`Failed to upload ${file.name}`);
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `${currentUser.id}/${fileName}`;
+
+          console.log('Uploading file:', { fileName, filePath });
+
+          const { error: uploadError, data: uploadData } = await supabase.storage
+            .from('posts')
+            .upload(filePath, file);
+
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            throw new Error(`Failed to upload file: ${uploadError.message}`);
           }
 
-          console.log('Upload successful. Public URL:', publicUrl);
+          console.log('Upload successful:', uploadData);
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('posts')
+            .getPublicUrl(filePath);
+
+          console.log('File uploaded successfully:', publicUrl);
           mediaUrls.push(publicUrl);
         }
       }
 
       console.log('Creating post with media URLs:', mediaUrls);
 
+      // Create post
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert({
@@ -106,26 +132,24 @@ export const CreatePostDialog = ({
       }
 
       console.log('Post created successfully:', newPost);
+
+      // Reset form
+      setContent("");
+      mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      setMediaPreviewUrls([]);
+      setMediaFiles([]);
       
-      resetFormState();
+      // Close dialog and notify success
       onPostCreated(newPost);
       onOpenChange(false);
       toast.success("Post created successfully!");
 
     } catch (error) {
-      console.error('Detailed error:', error);
-      toast.error(error.message || "Failed to create post");
+      console.error('Detailed error in post creation:', error);
+      toast.error(error.message || "Failed to create post. Please try again.");
+    } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log('Cancelling post creation');
-    resetFormState();
-    onOpenChange(false);
   };
 
   return (
@@ -148,45 +172,24 @@ export const CreatePostDialog = ({
           <MentionInput
             mentionedUser={mentionedUser}
             onMentionChange={setMentionedUser}
-            onMentionSubmit={() => {
-              if (mentionedUser) {
-                setContent(prev => `${prev} @${mentionedUser} `);
-                setMentionedUser("");
-              }
-            }}
+            onMentionSubmit={handleMentionUser}
           />
           
           <MediaUpload
             mediaFiles={mediaFiles}
             mediaPreviewUrls={mediaPreviewUrls}
             onFileUpload={handleFileUpload}
-            onRemoveMedia={(index) => {
-              URL.revokeObjectURL(mediaPreviewUrls[index]);
-              setMediaFiles(prev => prev.filter((_, i) => i !== index));
-              setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
-            }}
+            onRemoveMedia={removeMedia}
           />
           
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleCancel}
-              variant="outline"
-              className="w-full gap-2"
-              type="button"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreatePost} 
-              className="w-full gap-2"
-              disabled={isSubmitting}
-              type="button"
-            >
-              <Send className="h-4 w-4" />
-              {isSubmitting ? 'Creating...' : 'Create Post'}
-            </Button>
-          </div>
+          <Button 
+            onClick={handleCreatePost} 
+            className="w-full gap-2"
+            disabled={isSubmitting}
+          >
+            <Send className="h-4 w-4" />
+            {isSubmitting ? 'Creating...' : 'Create Post'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

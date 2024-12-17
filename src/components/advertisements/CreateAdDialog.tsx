@@ -5,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Video, Upload, DollarSign, Calendar } from "lucide-react";
+import { Video, Upload, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
 
 interface CreateAdDialogProps {
   isOpen: boolean;
@@ -22,9 +21,6 @@ export const CreateAdDialog = ({ isOpen, onOpenChange }: CreateAdDialogProps) =>
   const [targetUrl, setTargetUrl] = useState("");
   const [dailyBudget, setDailyBudget] = useState(50);
   const [isUploading, setIsUploading] = useState(false);
-  const [campaignDuration, setCampaignDuration] = useState(1);
-  const [startDate, setStartDate] = useState("");
-  const [startTime, setStartTime] = useState("");
 
   const handleVideoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,7 +43,7 @@ export const CreateAdDialog = ({ isOpen, onOpenChange }: CreateAdDialogProps) =>
   };
 
   const handleSubmit = async () => {
-    if (!videoFile || !title.trim() || !description.trim() || !targetUrl.trim() || !startDate || !startTime) {
+    if (!videoFile || !title.trim() || !description.trim() || !targetUrl.trim()) {
       toast.error("Please fill in all fields and select a video");
       return;
     }
@@ -60,10 +56,6 @@ export const CreateAdDialog = ({ isOpen, onOpenChange }: CreateAdDialogProps) =>
         toast.error("Please sign in to create advertisements");
         return;
       }
-
-      // Convert start date and time to UTC timestamp
-      const startDateTime = new Date(`${startDate}T${startTime}`);
-      console.log('Campaign start time (local):', startDateTime);
 
       // Upload video
       const videoPath = `${user.id}/${Date.now()}_${videoFile.name}`;
@@ -83,22 +75,15 @@ export const CreateAdDialog = ({ isOpen, onOpenChange }: CreateAdDialogProps) =>
         video_url: videoUrl,
         target_url: targetUrl,
         duration: 30,
-        budget: dailyBudget * campaignDuration,
-        daily_budget: dailyBudget,
-        campaign_start_time: startDateTime.toISOString(),
-        campaign_duration_days: campaignDuration
+        budget: dailyBudget,
+        daily_budget: dailyBudget
       }).select().single();
 
       if (adError) throw adError;
 
       // Create Stripe checkout session
       const { data: sessionData, error: sessionError } = await supabase.functions.invoke('create-ad-payment', {
-        body: { 
-          dailyBudget, 
-          userId: user.id, 
-          adId: ad.id,
-          campaignDuration
-        }
+        body: { dailyBudget, userId: user.id, adId: ad.id }
       });
 
       if (sessionError) throw sessionError;
@@ -150,41 +135,6 @@ export const CreateAdDialog = ({ isOpen, onOpenChange }: CreateAdDialogProps) =>
           </div>
 
           <div className="space-y-2">
-            <Label>Campaign Duration (Days)</Label>
-            <div className="flex items-center gap-4">
-              <Slider
-                value={[campaignDuration]}
-                onValueChange={(value) => setCampaignDuration(value[0])}
-                max={30}
-                min={1}
-                step={1}
-                className="flex-1"
-              />
-              <span className="min-w-[60px] text-right">{campaignDuration} days</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                min={format(new Date(), 'yyyy-MM-dd')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Start Time (EST)</Label>
-              <Input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
             <Label>Daily Budget (USD)</Label>
             <div className="flex items-center gap-4">
               <Slider
@@ -198,7 +148,7 @@ export const CreateAdDialog = ({ isOpen, onOpenChange }: CreateAdDialogProps) =>
               <span className="min-w-[60px] text-right">${dailyBudget}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Total campaign cost: ${dailyBudget * campaignDuration}
+              You will be charged $1.00 per click, up to your daily budget
             </p>
           </div>
 
@@ -238,7 +188,7 @@ export const CreateAdDialog = ({ isOpen, onOpenChange }: CreateAdDialogProps) =>
             ) : (
               <>
                 <DollarSign className="h-4 w-4" />
-                Create Advertisement ({campaignDuration} days: ${dailyBudget * campaignDuration})
+                Create Advertisement
               </>
             )}
           </Button>

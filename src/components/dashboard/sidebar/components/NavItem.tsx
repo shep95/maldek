@@ -13,7 +13,6 @@ interface NavItemProps {
   description?: string;
   subscription?: any;
   onNavigate: (path?: string) => void;
-  badge?: number;
 }
 
 export const NavItem = ({
@@ -26,8 +25,7 @@ export const NavItem = ({
   premium,
   description,
   subscription,
-  onNavigate,
-  badge
+  onNavigate
 }: NavItemProps) => {
   const handleClick = () => {
     if (onClick) {
@@ -45,7 +43,6 @@ export const NavItem = ({
         "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
         "text-sm font-medium",
         "min-h-[2.5rem] py-2 px-3",
-        "relative",
         active && "bg-accent/10 text-accent",
         premium && "text-accent font-medium",
         className
@@ -71,11 +68,6 @@ export const NavItem = ({
       </div>
       {premium && !subscription && (
         <span className="ml-2 text-xs whitespace-nowrap shrink-0">From $8/mo</span>
-      )}
-      {badge && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[20px] h-5 rounded-full bg-accent text-white text-xs flex items-center justify-center px-1.5">
-          {badge > 99 ? '99+' : badge}
-        </span>
       )}
     </Button>
   );
