@@ -4,24 +4,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfilePosts } from "@/components/profile/ProfilePosts";
+import { DashboardError } from "@/components/dashboard/error/DashboardError";
+import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
 
 const Profiles = () => {
   const session = useSession();
 
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['profile', session?.user?.id],
     queryFn: async () => {
-      console.log('Fetching user profile...');
+      console.log('Fetching user profile...', session?.user?.id);
+      if (!session?.user?.id) {
+        console.error('No user ID available');
+        throw new Error('No user ID available');
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', session?.user?.id)
+        .eq('id', session.user.id)
         .single();
 
       if (error) {
         console.error('Error fetching profile:', error);
         toast.error('Failed to load profile');
         throw error;
+      }
+
+      if (!data) {
+        console.error('No profile found');
+        throw new Error('Profile not found');
       }
 
       console.log('Profile fetched:', data);
@@ -88,6 +100,14 @@ const Profiles = () => {
       toast.error(`Failed to ${action} post`);
     }
   };
+
+  if (profileError) {
+    return <DashboardError />;
+  }
+
+  if (profileLoading) {
+    return <DashboardLoading />;
+  }
 
   return (
     <div className="min-h-screen">
