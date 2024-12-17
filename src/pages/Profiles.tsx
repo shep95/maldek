@@ -7,6 +7,7 @@ import { ProfilePosts } from "@/components/profile/ProfilePosts";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
 import { useParams } from "react-router-dom";
+import { useEffect } from "react";
 
 const Profiles = () => {
   const session = useSession();
@@ -91,6 +92,32 @@ const Profiles = () => {
     },
     enabled: !!profile?.id,
   });
+
+  // Subscribe to real-time updates for profile changes
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase.channel('profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${profile.id}`
+        },
+        (payload) => {
+          console.log('Profile updated:', payload);
+          // Invalidate the profile query to trigger a refresh
+          queryClient.invalidateQueries({ queryKey: ['profile', username || session?.user?.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, username, session?.user?.id]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {
