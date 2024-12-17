@@ -3,15 +3,9 @@ import { useLocation } from "react-router-dom";
 import { Sidebar } from "../Sidebar";
 import { RightSidebar } from "../RightSidebar";
 import { MobileNav } from "../MobileNav";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
 
 export const DashboardError = () => {
   const location = useLocation();
-
-  const handleRefresh = () => {
-    window.location.reload();
-  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
@@ -25,11 +19,7 @@ export const DashboardError = () => {
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center justify-center min-h-[50vh]">
               <div className="text-center space-y-4">
-                <p className="text-muted-foreground mb-4">Error loading profile. Please try refreshing the page.</p>
-                <Button onClick={handleRefresh} variant="outline" className="gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Refresh Page
-                </Button>
+                <p className="text-muted-foreground">Error loading profile. Please try refreshing the page.</p>
               </div>
             </div>
           </div>

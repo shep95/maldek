@@ -6,115 +6,38 @@ import { toast } from "sonner";
 import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
 import { PostList } from "@/components/dashboard/PostList";
 import { Author } from "@/utils/postUtils";
-import { DashboardError } from "@/components/dashboard/error/DashboardError";
-import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
 
-  const { data: profile, isLoading, error } = useQuery({
+  const { data: profile } = useQuery({
     queryKey: ['profile', session?.user?.id],
     queryFn: async () => {
-      if (!session?.user?.id) {
-        console.log('No user session found');
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading profile:', error);
+        toast.error('Error loading profile');
         return null;
       }
-      
-      try {
-        console.log('Fetching profile for user:', session.user.id);
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select(`
-            id,
-            username,
-            avatar_url,
-            bio,
-            follower_count,
-            banner_url,
-            location,
-            website,
-            social_links,
-            theme_preference,
-            total_posts,
-            total_media,
-            total_likes_received,
-            total_views,
-            badges,
-            achievements,
-            last_active
-          `)
-          .eq('id', session.user.id)
-          .maybeSingle();
 
-        if (profileError) {
-          console.error('Error loading profile:', profileError);
-          throw profileError;
-        }
-
-        if (!profileData) {
-          console.log('No profile found, creating default profile...');
-          const defaultUsername = session.user.email?.split('@')[0] || 'user';
-          
-          const { data: newProfile, error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              username: defaultUsername,
-              avatar_url: null,
-              bio: '',
-              follower_count: 0,
-              banner_url: null,
-              location: '',
-              website: '',
-              social_links: {},
-              theme_preference: 'default',
-              total_posts: 0,
-              total_media: 0,
-              total_likes_received: 0,
-              total_views: 0,
-              badges: [],
-              achievements: [],
-              last_active: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            throw createError;
-          }
-
-          console.log('Created new profile:', newProfile);
-          return newProfile;
-        }
-
-        console.log('Profile loaded successfully:', profileData);
-        return profileData;
-      } catch (error) {
-        console.error('Error in profile query:', error);
-        throw error;
-      }
+      return data;
     },
-    retry: 3,
-    retryDelay: 1000,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    enabled: !!session?.user?.id
   });
-
-  if (error) {
-    console.error('Profile loading error:', error);
-    return <DashboardError />;
-  }
-
-  if (isLoading) {
-    return <DashboardLoading />;
-  }
 
   const currentUser: Author = {
     id: session?.user?.id || '',
     username: profile?.username || '',
     avatar_url: profile?.avatar_url || '',
-    name: profile?.username || '' // Using username as name since we don't have a separate name field
+    name: profile?.username || ''
   };
 
   const handlePostCreated = (newPost: any) => {
@@ -122,6 +45,8 @@ const Dashboard = () => {
     setIsCreatingPost(false);
     toast.success('Post created successfully!');
   };
+
+  console.log('Dashboard render - isCreatingPost:', isCreatingPost);
 
   return (
     <div className="min-h-screen bg-background">
