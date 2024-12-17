@@ -1,14 +1,14 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mic, MicOff, UserPlus, Users } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSpaceRTC } from "@/hooks/useSpaceRTC";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SpaceManagementControls } from "./SpaceManagementControls";
+import { SpaceParticipantsList } from "./SpaceParticipantsList";
+import { SpaceSpeakerRequests } from "./SpaceSpeakerRequests";
 
 interface SpaceManagementDialogProps {
   isOpen: boolean;
@@ -34,47 +34,32 @@ export const SpaceManagementDialog = ({
   useEffect(() => {
     if (!isOpen || !spaceId) return;
 
-    // Fetch participants
-    const fetchParticipants = async () => {
-      const { data, error } = await supabase
-        .from('space_participants')
-        .select(`
-          *,
-          profile:profiles(*)
-        `)
-        .eq('space_id', spaceId);
+    const fetchData = async () => {
+      const [participantsData, requestsData] = await Promise.all([
+        supabase
+          .from('space_participants')
+          .select('*, profile:profiles(*)')
+          .eq('space_id', spaceId),
+        isHost ? supabase
+          .from('space_speaker_requests')
+          .select('*, profile:profiles(*)')
+          .eq('space_id', spaceId)
+          .eq('status', 'pending') : null
+      ]);
 
-      if (error) {
-        console.error('Error fetching participants:', error);
+      if (participantsData.error) {
+        console.error('Error fetching participants:', participantsData.error);
         return;
       }
-      setParticipants(data);
-    };
 
-    // Fetch speaker requests
-    const fetchSpeakerRequests = async () => {
-      const { data, error } = await supabase
-        .from('space_speaker_requests')
-        .select(`
-          *,
-          profile:profiles(*)
-        `)
-        .eq('space_id', spaceId)
-        .eq('status', 'pending');
-
-      if (error) {
-        console.error('Error fetching speaker requests:', error);
-        return;
+      setParticipants(participantsData.data || []);
+      if (requestsData && !requestsData.error) {
+        setSpeakerRequests(requestsData.data || []);
       }
-      setSpeakerRequests(data);
     };
 
-    fetchParticipants();
-    if (isHost) {
-      fetchSpeakerRequests();
-    }
+    fetchData();
 
-    // Subscribe to real-time updates
     const channel = supabase.channel('space-updates')
       .on(
         'postgres_changes',
@@ -84,7 +69,7 @@ export const SpaceManagementDialog = ({
           table: 'space_participants',
           filter: `space_id=eq.${spaceId}`
         },
-        () => fetchParticipants()
+        () => fetchData()
       )
       .on(
         'postgres_changes',
@@ -94,7 +79,7 @@ export const SpaceManagementDialog = ({
           table: 'space_speaker_requests',
           filter: `space_id=eq.${spaceId}`
         },
-        () => fetchSpeakerRequests()
+        () => fetchData()
       )
       .subscribe();
 
@@ -164,6 +149,7 @@ export const SpaceManagementDialog = ({
       if (error) throw error;
       toast.success("Space ended successfully");
       onOpenChange(false);
+      onLeave();
     } catch (error) {
       console.error('Error ending space:', error);
       toast.error("Failed to end space");
@@ -190,129 +176,23 @@ export const SpaceManagementDialog = ({
           </TabsList>
 
           <TabsContent value="participants" className="mt-4">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Your Controls</h3>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => toggleMute()}
-                  className={isMuted ? "bg-destructive/10" : "bg-green-500/10"}
-                >
-                  {isMuted ? (
-                    <MicOff className="h-4 w-4" />
-                  ) : (
-                    <Mic className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-
-              <div className="flex gap-2">
-                {!isHost && (
-                  <Button 
-                    onClick={handleRequestToSpeak}
-                    className="flex-1"
-                    variant="secondary"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Request to Speak
-                  </Button>
-                )}
-
-                <Button 
-                  onClick={onLeave}
-                  variant="destructive"
-                  className="flex-1"
-                >
-                  Leave Space
-                </Button>
-              </div>
-
-              {isHost && (
-                <Button 
-                  onClick={handleEndSpace}
-                  className="w-full"
-                  variant="destructive"
-                >
-                  End Space
-                </Button>
-              )}
-
-              <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                <div className="space-y-4">
-                  {participants.map((participant) => (
-                    <div key={participant.user_id} className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={participant.profile?.avatar_url} />
-                        <AvatarFallback>
-                          {participant.profile?.username?.[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">
-                          {participant.profile?.username}
-                        </span>
-                        <span className="text-xs text-muted-foreground capitalize">
-                          {participant.role}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
+            <SpaceManagementControls
+              isMuted={isMuted}
+              isHost={isHost}
+              toggleMute={toggleMute}
+              onRequestSpeak={handleRequestToSpeak}
+              onLeave={onLeave}
+              onEndSpace={handleEndSpace}
+            />
+            <SpaceParticipantsList participants={participants} />
           </TabsContent>
 
           <TabsContent value="requests" className="mt-4">
-            {isHost ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Speaker Requests</h3>
-                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                  <div className="space-y-4">
-                    {speakerRequests.length === 0 ? (
-                      <p className="text-muted-foreground text-sm">
-                        No pending requests
-                      </p>
-                    ) : (
-                      speakerRequests.map((request) => (
-                        <div key={request.id} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={request.profile?.avatar_url} />
-                              <AvatarFallback>
-                                {request.profile?.username?.[0]?.toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">
-                              {request.profile?.username}
-                            </span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleSpeakerRequest(request.id, request.user_id, false)}
-                            >
-                              Decline
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleSpeakerRequest(request.id, request.user_id, true)}
-                            >
-                              Accept
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Only hosts can view speaker requests
-              </p>
-            )}
+            <SpaceSpeakerRequests
+              isHost={isHost}
+              speakerRequests={speakerRequests}
+              onHandleRequest={handleSpeakerRequest}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>
