@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack } from 'agora-rtc-sdk-ng';
 import { toast } from 'sonner';
 
-const appId = ''; // We'll get this from Supabase secrets
+const appId = import.meta.env.VITE_AGORA_APP_ID || ''; // We'll get this from Supabase secrets
 
 export const useAgoraRTC = (channelName: string) => {
   const [isConnected, setIsConnected] = useState(false);
@@ -21,7 +21,7 @@ export const useAgoraRTC = (channelName: string) => {
           codec: 'vp8'
         });
 
-        // Initialize audio track - Fix for the TypeScript error
+        // Initialize audio track
         const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         audioTrackRef.current = audioTrack;
         audioTrack.setEnabled(false); // Start muted
