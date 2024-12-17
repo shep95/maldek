@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSpaceRTC } from "@/hooks/useSpaceRTC";
+import { useAgoraRTC } from "@/hooks/spaces/useAgoraRTC";
 import { SpaceManagementControls } from "./SpaceManagementControls";
 import { SpaceParticipantsList } from "./SpaceParticipantsList";
 import { SpaceSpeakerRequests } from "./SpaceSpeakerRequests";
@@ -30,10 +30,18 @@ export const SpaceManagementDialog = ({
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string>("listener");
-  const { isMuted, toggleMute, error } = useSpaceRTC(spaceId);
+  
+  const {
+    isConnected,
+    isMuted,
+    error,
+    joinChannel,
+    leaveChannel,
+    toggleMute
+  } = useAgoraRTC(spaceId);
 
   useEffect(() => {
-    if (!isOpen || !spaceId) return;
+    if (!isOpen || !spaceId || !session?.user?.id) return;
 
     const fetchData = async () => {
       try {
@@ -72,6 +80,7 @@ export const SpaceManagementDialog = ({
     };
 
     fetchData();
+    joinChannel(session.user.id);
 
     // Subscribe to real-time updates
     const channel = supabase.channel('space-updates')
@@ -99,8 +108,9 @@ export const SpaceManagementDialog = ({
 
     return () => {
       supabase.removeChannel(channel);
+      leaveChannel();
     };
-  }, [spaceId, isOpen, isHost, session?.user?.id]);
+  }, [spaceId, isOpen, session?.user?.id]);
 
   const handleRequestToSpeak = async () => {
     try {
