@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
+import { toast } from 'sonner';
 
 interface SignalingState {
   isConnected: boolean;
@@ -13,6 +14,8 @@ export const useSpaceSignaling = (spaceId: string) => {
     error: null
   });
   const websocketRef = useRef<WebSocket | null>(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 3;
 
   const connectToSignalingServer = async () => {
     try {
@@ -20,37 +23,57 @@ export const useSpaceSignaling = (spaceId: string) => {
         throw new Error('No access token available');
       }
 
+      console.log('Connecting to signaling server...');
       const wsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/spaces-signaling?spaceId=${spaceId}&jwt=${session.access_token}`;
       websocketRef.current = new WebSocket(wsUrl);
 
       websocketRef.current.onopen = () => {
         console.log('Connected to signaling server');
-        setState(prev => ({ ...prev, isConnected: true }));
+        setState(prev => ({ ...prev, isConnected: true, error: null }));
+        reconnectAttempts.current = 0;
+        toast.success('Connected to space');
       };
 
       websocketRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setState(prev => ({ ...prev, error: 'Connection error' }));
+        toast.error('Connection error occurred');
       };
 
       websocketRef.current.onclose = () => {
         console.log('Disconnected from signaling server');
         setState(prev => ({ ...prev, isConnected: false }));
+        
+        // Attempt to reconnect if not at max attempts
+        if (reconnectAttempts.current < maxReconnectAttempts) {
+          console.log(`Attempting to reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
+          reconnectAttempts.current++;
+          setTimeout(connectToSignalingServer, 2000);
+        } else {
+          toast.error('Unable to connect to space. Please try rejoining.');
+        }
       };
 
     } catch (err) {
       console.error('Error connecting to space:', err);
-      setState(prev => ({ ...prev, error: err instanceof Error ? err.message : 'Unknown error' }));
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setState(prev => ({ ...prev, error: errorMessage }));
+      toast.error(`Failed to connect: ${errorMessage}`);
     }
   };
 
   const sendSignalingMessage = (message: any) => {
     if (websocketRef.current?.readyState === WebSocket.OPEN) {
+      console.log('Sending signaling message:', message);
       websocketRef.current.send(JSON.stringify(message));
+    } else {
+      console.error('WebSocket not connected');
+      toast.error('Connection lost. Please try rejoining the space.');
     }
   };
 
   const cleanup = () => {
+    console.log('Cleaning up signaling connection');
     if (websocketRef.current) {
       websocketRef.current.close();
       websocketRef.current = null;
