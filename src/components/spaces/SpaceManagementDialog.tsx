@@ -15,13 +15,15 @@ interface SpaceManagementDialogProps {
   onOpenChange: (open: boolean) => void;
   spaceId: string;
   isHost: boolean;
+  onLeave: () => void;
 }
 
 export const SpaceManagementDialog = ({
   isOpen,
   onOpenChange,
   spaceId,
-  isHost
+  isHost,
+  onLeave
 }: SpaceManagementDialogProps) => {
   const session = useSession();
   const [activeTab, setActiveTab] = useState("participants");
@@ -205,16 +207,26 @@ export const SpaceManagementDialog = ({
                 </Button>
               </div>
 
-              {!isHost && (
+              <div className="flex gap-2">
+                {!isHost && (
+                  <Button 
+                    onClick={handleRequestToSpeak}
+                    className="flex-1"
+                    variant="secondary"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Request to Speak
+                  </Button>
+                )}
+
                 <Button 
-                  onClick={handleRequestToSpeak}
-                  className="w-full"
-                  variant="secondary"
+                  onClick={onLeave}
+                  variant="destructive"
+                  className="flex-1"
                 >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Request to Speak
+                  Leave Space
                 </Button>
-              )}
+              </div>
 
               {isHost && (
                 <Button 

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { SpaceManagementDialog } from "@/components/spaces/SpaceManagementDialog";
 import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
 import { SpaceCard } from "@/components/spaces/SpaceCard";
+import { SpaceHistoryCard } from "@/components/spaces/SpaceHistoryCard";
 
 const Spaces = () => {
   const session = useSession();
@@ -73,6 +74,36 @@ const Spaces = () => {
     }
   });
 
+  // Fetch user's space history
+  const { data: spaceHistory } = useQuery({
+    queryKey: ['space-history'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('spaces')
+        .select(`
+          *,
+          host:profiles!spaces_host_id_fkey(
+            id,
+            username,
+            avatar_url
+          ),
+          participants:space_participants(
+            user_id,
+            role,
+            profile:profiles(
+              username,
+              avatar_url
+            )
+          )
+        `)
+        .eq('status', 'ended')
+        .order('ended_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const handleCreateSpace = () => {
     if (!subscription) {
       toast.error("You need a premium subscription to create spaces", {
@@ -107,17 +138,49 @@ const Spaces = () => {
         if (joinError) throw joinError;
       }
 
-      const { data: space } = await supabase
-        .from('spaces')
-        .select('host_id')
-        .eq('id', spaceId)
-        .single();
-
       setSelectedSpaceId(spaceId);
       setIsManagementOpen(true);
     } catch (error) {
       console.error("Error joining space:", error);
       toast.error("Failed to join space");
+    }
+  };
+
+  const handleLeaveSpace = async (spaceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('space_participants')
+        .delete()
+        .eq('space_id', spaceId)
+        .eq('user_id', session?.user?.id);
+
+      if (error) throw error;
+      toast.success("Left space successfully");
+      refetchSpaces();
+    } catch (error) {
+      console.error("Error leaving space:", error);
+      toast.error("Failed to leave space");
+    }
+  };
+
+  const handlePurchaseRecording = async (spaceId: string) => {
+    try {
+      const response = await fetch('/api/create-recording-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ spaceId })
+      });
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error("Error initiating recording purchase:", error);
+      toast.error("Failed to initiate purchase");
     }
   };
 
@@ -154,6 +217,8 @@ const Spaces = () => {
                       key={space.id}
                       space={space}
                       onJoin={handleJoinSpace}
+                      onLeave={handleLeaveSpace}
+                      currentUserId={session?.user?.id}
                     />
                   ))}
                 </div>
@@ -161,9 +226,22 @@ const Spaces = () => {
             </TabsContent>
 
             <TabsContent value="history" className="mt-4 space-y-4">
-              <p className="text-muted-foreground text-center py-8">
-                You haven't joined any spaces yet
-              </p>
+              {!spaceHistory?.length ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No space history yet
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {spaceHistory.map((space) => (
+                    <SpaceHistoryCard
+                      key={space.id}
+                      space={space}
+                      onPurchaseRecording={handlePurchaseRecording}
+                      currentUserId={session?.user?.id}
+                    />
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
 
@@ -173,6 +251,10 @@ const Spaces = () => {
               onOpenChange={setIsManagementOpen}
               spaceId={selectedSpaceId}
               isHost={liveSpaces?.find(s => s.id === selectedSpaceId)?.host_id === session?.user?.id}
+              onLeave={() => {
+                handleLeaveSpace(selectedSpaceId);
+                setIsManagementOpen(false);
+              }}
             />
           )}
 
