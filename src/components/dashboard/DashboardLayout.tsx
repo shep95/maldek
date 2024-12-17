@@ -7,9 +7,6 @@ import { useSession } from '@supabase/auth-helpers-react';
 import { Author } from "@/utils/postUtils";
 import { RightSidebar } from "./RightSidebar";
 import { cn } from "@/lib/utils";
-import { DashboardLoading } from "./loading/DashboardLoading";
-import { DashboardError } from "./error/DashboardError";
-import { useProfileData } from "./hooks/useProfileData";
 
 declare global {
   interface Window {
@@ -25,23 +22,11 @@ const DashboardLayout = () => {
   // Make setIsCreatingPost available globally for the mobile nav
   window.setIsCreatingPost = setIsCreatingPost;
 
-  const { profile, isLoading, error } = useProfileData();
-
-  // Show loading state while checking/creating profile
-  if (isLoading) {
-    return <DashboardLoading />;
-  }
-
-  // Show error state if profile loading failed
-  if (error) {
-    return <DashboardError />;
-  }
-
   const currentUser: Author = {
     id: session?.user?.id || '',
-    username: profile?.username || '',
-    avatar_url: profile?.avatar_url || '',
-    name: profile?.username || ''
+    username: session?.user?.email?.split('@')[0] || '',
+    avatar_url: '',
+    name: session?.user?.email?.split('@')[0] || ''
   };
 
   return (
@@ -61,20 +46,18 @@ const DashboardLayout = () => {
         </div>
         {location.pathname === '/dashboard' && <RightSidebar />}
       </div>
-      {profile && (
-        <CreatePostDialog
-          isOpen={isCreatingPost}
-          onOpenChange={(open) => {
-            console.log('Dialog open state changing to:', open);
-            setIsCreatingPost(open);
-          }}
-          currentUser={currentUser}
-          onPostCreated={(newPost) => {
-            console.log('New post created:', newPost);
-            setIsCreatingPost(false);
-          }}
-        />
-      )}
+      <CreatePostDialog
+        isOpen={isCreatingPost}
+        onOpenChange={(open) => {
+          console.log('Dialog open state changing to:', open);
+          setIsCreatingPost(open);
+        }}
+        currentUser={currentUser}
+        onPostCreated={(newPost) => {
+          console.log('New post created:', newPost);
+          setIsCreatingPost(false);
+        }}
+      />
       <MobileNav />
     </div>
   );

@@ -6,8 +6,6 @@ import Notifications from "@/pages/Notifications";
 import Videos from "@/pages/Videos";
 import PostDetail from "@/pages/PostDetail";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import Analytics from "@/pages/Analytics";
-import Subscription from "@/pages/Subscription";
 import Settings from "@/pages/Settings";
 import DaarpAI from "@/pages/DaarpAI";
 
@@ -22,8 +20,6 @@ export const AppRoutes = () => {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/post/:postId" element={<PostDetail />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/subscription" element={<Subscription />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
       </Route>
