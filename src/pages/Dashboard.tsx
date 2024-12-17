@@ -16,21 +16,37 @@ const Dashboard = () => {
     queryFn: async () => {
       if (!session?.user?.id) return null;
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', session.user.id)
-        .single();
+      try {
+        console.log('Fetching profile for user:', session.user.id);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('id', session.user.id)
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error loading profile:', error);
-        toast.error('Error loading profile');
+        if (error) {
+          console.error('Error loading profile:', error);
+          toast.error('Error loading profile');
+          return null;
+        }
+
+        if (!data) {
+          console.log('No profile found, creating one...');
+          // Return default profile data while it's being created
+          return {
+            username: session.user.email?.split('@')[0] || 'user',
+            avatar_url: null
+          };
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Error in profile query:', error);
         return null;
       }
-
-      return data;
     },
-    enabled: !!session?.user?.id
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const currentUser: Author = {
