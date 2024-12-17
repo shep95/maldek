@@ -25,9 +25,9 @@ const Dashboard = () => {
         console.log('Fetching profile for user:', session.user.id);
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('username, avatar_url, name')
+          .select('id, username, avatar_url')
           .eq('id', session.user.id)
-          .maybeSingle();
+          .single();
 
         if (profileError) {
           console.error('Error loading profile:', profileError);
@@ -43,8 +43,7 @@ const Dashboard = () => {
             .insert({
               id: session.user.id,
               username: username,
-              avatar_url: null,
-              name: username
+              avatar_url: null
             })
             .select()
             .single();
@@ -82,7 +81,7 @@ const Dashboard = () => {
     id: session?.user?.id || '',
     username: profile?.username || '',
     avatar_url: profile?.avatar_url || '',
-    name: profile?.name || profile?.username || ''
+    name: profile?.username || '' // Using username as name since we don't have a separate name field
   };
 
   const handlePostCreated = (newPost: any) => {
