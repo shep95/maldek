@@ -22,8 +22,10 @@ export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: 
 
   const handleDownload = async () => {
     try {
+      console.log('Initiating recording download process for space:', space.id);
+      
       // Check if user has already purchased
-      const { data: purchases } = await supabase
+      const { data: purchases, error: purchaseError } = await supabase
         .from('space_recording_purchases')
         .select('*')
         .eq('space_id', space.id)
@@ -31,7 +33,13 @@ export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: 
         .eq('status', 'completed')
         .single();
 
+      if (purchaseError) {
+        console.error('Error checking purchase status:', purchaseError);
+        throw new Error('Failed to verify purchase status');
+      }
+
       if (purchases) {
+        console.log('Recording already purchased, initiating download');
         // If purchased, download directly
         if (space.recording_url) {
           const link = document.createElement('a');
@@ -45,12 +53,13 @@ export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: 
           toast.error("Recording not available");
         }
       } else {
+        console.log('Recording not purchased, initiating purchase flow');
         // If not purchased, initiate purchase
         onPurchaseRecording(space.id);
       }
     } catch (error) {
       console.error('Error handling recording:', error);
-      toast.error("Failed to process recording");
+      toast.error("Failed to process recording. Please try again.");
     }
   };
 
