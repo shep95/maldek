@@ -13,25 +13,37 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
-      console.log('Fetching subscription for user:', author.id);
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          tier:subscription_tiers(*)
-        `)
-        .eq('user_id', author.id)
-        .eq('status', 'active')
-        .single();
+      try {
+        console.log('Fetching subscription for user:', author.id);
+        const { data: subscriptionData, error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            tier:subscription_tiers(*)
+          `)
+          .eq('user_id', author.id)
+          .eq('status', 'active')
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching subscription:', error);
+        if (subscriptionError) {
+          console.error('Error fetching subscription:', subscriptionError);
+          return null;
+        }
+
+        if (!subscriptionData) {
+          console.log('No active subscription found for user');
+          return null;
+        }
+
+        console.log('Subscription data:', subscriptionData);
+        return subscriptionData;
+      } catch (error) {
+        console.error('Error in subscription query:', error);
         return null;
       }
-
-      console.log('Subscription data:', data);
-      return data;
     },
+    retry: false,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const getTimeAgo = (date: Date) => {
