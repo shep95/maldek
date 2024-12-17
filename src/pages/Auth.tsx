@@ -13,93 +13,92 @@ const Auth = () => {
     email: string;
     password: string;
     username?: string;
+    bio?: string;
+    profilePicture?: File | null;
   }) => {
     try {
+      console.log('Starting authentication process...');
+      
       if (isLogin) {
-        console.log("Attempting to sign in user:", formData.email);
+        console.log('Attempting to sign in user:', formData.email);
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
 
-        if (signInError) throw signInError;
-        
-        console.log("Sign in successful");
-        toast.success("Successfully signed in!");
-        navigate('/dashboard');
+        if (signInError) {
+          console.error('Sign in error:', signInError);
+          throw signInError;
+        }
+
+        console.log('Sign in successful, navigating to dashboard');
+        navigate("/dashboard");
       } else {
-        if (!formData.username) {
-          throw new Error('Username is required');
-        }
-
-        console.log("Starting signup process:", { 
-          email: formData.email, 
-          username: formData.username 
-        });
-
-        // First check if username is available
-        const { data: existingUser, error: checkError } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', formData.username.toLowerCase())
-          .maybeSingle();
-
-        if (checkError) {
-          console.error("Username check error:", checkError);
-          throw new Error('Error checking username availability');
-        }
-
-        if (existingUser) {
-          console.error("Username is taken");
-          throw new Error('Username is already taken');
-        }
-
-        console.log("Username is available, proceeding with signup");
-
-        // Create the auth user with the username in metadata
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        console.log('Attempting to sign up user:', formData.email);
+        const { error: signUpError, data } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
-          options: {
-            data: {
-              username: formData.username.toLowerCase() // Store username in lowercase
-            }
-          }
         });
 
         if (signUpError) {
-          console.error("Signup error:", signUpError);
+          console.error('Sign up error:', signUpError);
           throw signUpError;
         }
 
-        if (!signUpData.user?.id) {
-          console.error("No user ID returned from signup");
-          throw new Error('Failed to create user');
+        if (data.user) {
+          let avatarUrl = null;
+
+          if (formData.profilePicture) {
+            console.log('Uploading profile picture');
+            const fileExt = formData.profilePicture.name.split('.').pop();
+            const fileName = `${Math.random()}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from('avatars')
+              .upload(fileName, formData.profilePicture);
+
+            if (uploadError) {
+              console.error('Profile picture upload error:', uploadError);
+              throw uploadError;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+
+            avatarUrl = publicUrl;
+          }
+
+          console.log('Creating user profile');
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              username: formData.username,
+              avatar_url: avatarUrl,
+              bio: formData.bio || '',
+            });
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            throw profileError;
+          }
         }
 
-        // Wait a moment for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Verify the profile was created
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', signUpData.user.id)
-          .single();
-
-        if (profileError || !profile) {
-          console.error("Profile verification error:", profileError);
-          toast.error("Account created but profile setup failed. Please try logging in.");
-        } else {
-          console.log("Profile created successfully:", profile);
-          toast.success("Account created successfully! You can now sign in.");
-        }
-
-        setIsLogin(true); // Switch to login view
+        toast.success("Account created successfully! Please check your email to verify your account.");
+        setIsLogin(true);
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
-      toast.error(error.message || "Authentication failed");
+      
+      // Handle specific error messages
+      if (error.message?.includes('Invalid login credentials')) {
+        toast.error("Invalid email or password");
+      } else if (error.message?.includes('Email rate limit exceeded')) {
+        toast.error("Too many attempts. Please try again later");
+      } else {
+        toast.error(error.message || "An error occurred during authentication");
+      }
     }
   };
 

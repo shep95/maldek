@@ -1,7 +1,8 @@
-import { Play } from "lucide-react";
+import { Play, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { VideoPlayer } from "./VideoPlayer";
 
 interface VideoGridProps {
   videos: any[];
@@ -12,7 +13,7 @@ interface VideoGridProps {
 export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridProps) => {
   const session = useSession();
 
-  const handleVideoClick = (video: any) => {
+  const handleVideoClick = async (video: any) => {
     console.log('Video clicked:', video);
     
     if (!video.video_url) {
@@ -21,7 +22,31 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       return;
     }
 
-    onVideoSelect(video.video_url);
+    try {
+      // Extract the file path from the video URL
+      const filePath = video.video_url.split('/').pop();
+      
+      if (!filePath) {
+        throw new Error('Invalid video URL format');
+      }
+
+      // Get a fresh signed URL for the video
+      const { data: { signedUrl }, error } = await supabase
+        .storage
+        .from('videos')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error || !signedUrl) {
+        throw error || new Error('Failed to generate signed URL');
+      }
+
+      console.log('Opening video with signed URL:', signedUrl);
+      onVideoSelect(signedUrl);
+      
+    } catch (error) {
+      console.error('Error handling video click:', error);
+      toast.error("Failed to load video. Please try again.");
+    }
   };
 
   return (
@@ -29,44 +54,61 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
       {videos.map((video: any) => (
         <div
           key={video.id}
-          className="group relative bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300"
+          className="group bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in"
           onClick={() => handleVideoClick(video)}
         >
           <div className="aspect-video relative cursor-pointer">
-            <VideoPlayer
-              videoUrl={video.video_url}
-              className="w-full h-full object-cover"
-              controls={false}
-            />
-            
-            {/* Play Button Overlay */}
+            {video.thumbnail_url ? (
+              <img
+                src={video.thumbnail_url}
+                alt={`Thumbnail for ${video.title}`}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={(e) => {
+                  console.error('Thumbnail load error:', e);
+                  e.currentTarget.src = "/placeholder.svg";
+                }}
+              />
+            ) : (
+              <div className="w-full h-full bg-black/20 flex items-center justify-center">
+                <Play className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Play className="h-12 w-12 text-white" />
             </div>
+            {video.duration && (
+              <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded-md text-sm flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatDuration(video.duration)}
+              </div>
+            )}
           </div>
-
-          {/* Video Info */}
           <div className="p-4">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <img
+                src={video.profiles?.avatar_url || "/placeholder.svg"}
+                alt={`${video.profiles?.username || 'Unknown user'}'s avatar`}
+                className="w-8 h-8 rounded-full object-cover"
+              />
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg leading-tight truncate">
+                <h3 className="font-semibold text-lg leading-tight truncate mb-1">
                   {video.title}
                 </h3>
-                <p className="text-sm text-muted-foreground truncate">
-                  {video.description}
+                <p className="text-sm text-muted-foreground">
+                  {video.profiles?.username || 'Unknown user'}
                 </p>
               </div>
-              
               {session?.user?.id === video.user_id && (
-                <button
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDeleteVideo(video.id);
                   }}
-                  className="text-red-500 hover:text-red-600 px-2 py-1 rounded"
                 >
                   Delete
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -75,3 +117,12 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
     </div>
   );
 };
+
+const formatDuration = (seconds: number) => {
+  if (!seconds) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
+
+export default VideoGrid;

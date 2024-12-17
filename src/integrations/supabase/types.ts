@@ -452,64 +452,31 @@ export type Database = {
       }
       profiles: {
         Row: {
-          achievements: Json | null
           avatar_url: string | null
-          badges: Json | null
           banner_url: string | null
           bio: string | null
           created_at: string
           follower_count: number
           id: string
-          last_active: string | null
-          location: string | null
-          social_links: Json | null
-          theme_preference: string | null
-          total_likes_received: number | null
-          total_media: number | null
-          total_posts: number | null
-          total_views: number | null
           username: string
-          website: string | null
         }
         Insert: {
-          achievements?: Json | null
           avatar_url?: string | null
-          badges?: Json | null
           banner_url?: string | null
           bio?: string | null
           created_at?: string
           follower_count?: number
           id: string
-          last_active?: string | null
-          location?: string | null
-          social_links?: Json | null
-          theme_preference?: string | null
-          total_likes_received?: number | null
-          total_media?: number | null
-          total_posts?: number | null
-          total_views?: number | null
           username: string
-          website?: string | null
         }
         Update: {
-          achievements?: Json | null
           avatar_url?: string | null
-          badges?: Json | null
           banner_url?: string | null
           bio?: string | null
           created_at?: string
           follower_count?: number
           id?: string
-          last_active?: string | null
-          location?: string | null
-          social_links?: Json | null
-          theme_preference?: string | null
-          total_likes_received?: number | null
-          total_media?: number | null
-          total_posts?: number | null
-          total_views?: number | null
           username?: string
-          website?: string | null
         }
         Relationships: []
       }
@@ -672,12 +639,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_username_availability: {
-        Args: {
-          username_to_check: string
-        }
-        Returns: boolean
-      }
       delete_user_account: {
         Args: Record<PropertyKey, never>
         Returns: undefined
