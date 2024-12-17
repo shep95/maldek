@@ -6,9 +6,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface SpaceCardProps {
   space: any;
   onJoin: (spaceId: string) => void;
+  onLeave: (spaceId: string) => void;
+  currentUserId?: string;
 }
 
-export const SpaceCard = ({ space, onJoin }: SpaceCardProps) => {
+export const SpaceCard = ({ space, onJoin, onLeave, currentUserId }: SpaceCardProps) => {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'host':
@@ -22,6 +24,10 @@ export const SpaceCard = ({ space, onJoin }: SpaceCardProps) => {
     }
   };
 
+  const isParticipant = space.participants?.some(
+    (p: any) => p.user_id === currentUserId
+  );
+
   return (
     <div className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
       <div className="space-y-4">
@@ -34,13 +40,23 @@ export const SpaceCard = ({ space, onJoin }: SpaceCardProps) => {
               </p>
             )}
           </div>
-          <Button 
-            variant="secondary" 
-            size="sm"
-            onClick={() => onJoin(space.id)}
-          >
-            Join
-          </Button>
+          {isParticipant ? (
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={() => onLeave(space.id)}
+            >
+              Leave
+            </Button>
+          ) : (
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={() => onJoin(space.id)}
+            >
+              Join
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
