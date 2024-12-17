@@ -1,18 +1,39 @@
 import { useState, useEffect, useRef } from 'react';
 import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack } from 'agora-rtc-sdk-ng';
 import { toast } from 'sonner';
-
-const appId = import.meta.env.VITE_AGORA_APP_ID || ''; // We'll get this from Supabase secrets
+import { supabase } from '@/integrations/supabase/client';
 
 export const useAgoraRTC = (channelName: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [appId, setAppId] = useState<string | null>(null);
   
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const audioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
 
   useEffect(() => {
+    const fetchAppId = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-agora-credentials');
+        if (error) throw error;
+        if (data.appId) {
+          console.log('Successfully fetched Agora credentials');
+          setAppId(data.appId);
+        }
+      } catch (err) {
+        console.error('Error fetching Agora credentials:', err);
+        setError('Failed to initialize audio system');
+        toast.error('Failed to initialize audio system');
+      }
+    };
+
+    fetchAppId();
+  }, []);
+
+  useEffect(() => {
+    if (!appId) return;
+
     const initializeAgora = async () => {
       try {
         // Create Agora client
@@ -39,18 +60,17 @@ export const useAgoraRTC = (channelName: string) => {
     return () => {
       cleanup();
     };
-  }, []);
+  }, [appId]);
 
   const joinChannel = async (uid: string) => {
-    if (!clientRef.current || !audioTrackRef.current) {
+    if (!clientRef.current || !audioTrackRef.current || !appId) {
       console.error('Agora client not initialized');
       return;
     }
 
     try {
       // Join the channel
-      const token = null; // For testing only. In production, get token from server
-      await clientRef.current.join(appId, channelName, token, uid);
+      await clientRef.current.join(appId, channelName, null, uid);
       
       // Publish audio track
       await clientRef.current.publish(audioTrackRef.current);
