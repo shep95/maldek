@@ -1,5 +1,8 @@
 import { PostCard } from "../dashboard/PostCard";
 import { useSession } from '@supabase/auth-helpers-react';
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ProfilePostsProps {
   posts: any[];
@@ -9,6 +12,42 @@ interface ProfilePostsProps {
 
 export const ProfilePosts = ({ posts, isLoading, onPostAction }: ProfilePostsProps) => {
   const session = useSession();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // Subscribe to real-time updates for posts
+    const channel = supabase
+      .channel('profile-posts')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'posts'
+        },
+        () => {
+          console.log('Posts updated, invalidating query');
+          queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        },
+        () => {
+          console.log('Post likes updated');
+          queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   if (isLoading) {
     return (

@@ -1,6 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -8,6 +10,78 @@ interface ProfileHeaderProps {
 }
 
 export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [totalLikes, setTotalLikes] = useState(0);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    // Set initial values
+    setFollowerCount(profile.follower_count || 0);
+    setTotalLikes(profile.total_likes_received || 0);
+
+    // Get following count
+    const fetchFollowingCount = async () => {
+      const { count } = await supabase
+        .from('followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', profile.id);
+      setFollowingCount(count || 0);
+    };
+    fetchFollowingCount();
+
+    // Subscribe to real-time updates
+    const channel = supabase.channel('profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'followers',
+          filter: `following_id=eq.${profile.id}`
+        },
+        () => {
+          console.log('Follower count updated');
+          // Refetch follower count
+          supabase
+            .from('profiles')
+            .select('follower_count')
+            .eq('id', profile.id)
+            .single()
+            .then(({ data }) => {
+              if (data) setFollowerCount(data.follower_count);
+            });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes',
+          filter: `user_id=eq.${profile.id}`
+        },
+        () => {
+          console.log('Likes updated');
+          // Refetch total likes
+          supabase
+            .from('profiles')
+            .select('total_likes_received')
+            .eq('id', profile.id)
+            .single()
+            .then(({ data }) => {
+              if (data) setTotalLikes(data.total_likes_received);
+            });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id]);
+
   if (isLoading) {
     return (
       <div className="animate-pulse">
@@ -59,9 +133,10 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
             <p className="text-lg">{profile?.bio || 'No bio yet'}</p>
 
             <div className="flex gap-6 text-sm text-muted-foreground">
-              <span>{profile?.follower_count || 0} followers</span>
+              <span>{followerCount} followers</span>
+              <span>{followingCount} following</span>
               <span>{profile?.total_posts || 0} posts</span>
-              <span>{profile?.total_likes_received || 0} likes</span>
+              <span>{totalLikes} likes received</span>
             </div>
           </div>
         </div>
