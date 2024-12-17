@@ -19,23 +19,28 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
     const checkAuth = async () => {
       try {
         console.log("Starting authentication check...");
+        
+        // If we're already on the auth page, don't show loading
+        if (location.pathname === '/auth') {
+          console.log("Already on auth page, skipping check");
+          setIsLoading(false);
+          setIsAuthenticated(false);
+          return;
+        }
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Session error:", sessionError);
           setIsAuthenticated(false);
-          if (!location.pathname.startsWith('/auth')) {
-            navigate('/auth');
-          }
+          navigate('/auth');
           return;
         }
 
         if (!session) {
           console.log("No active session found");
           setIsAuthenticated(false);
-          if (!location.pathname.startsWith('/auth')) {
-            navigate('/auth');
-          }
+          navigate('/auth');
           return;
         }
 
@@ -55,7 +60,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           return;
         }
 
-        console.log("Valid session and profile found:", session);
+        console.log("Valid session and profile found");
         setIsAuthenticated(true);
         if (location.pathname === '/auth') {
           navigate('/dashboard');
@@ -64,9 +69,7 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
         console.error("Auth check error:", error);
         toast.error("Authentication error occurred");
         setIsAuthenticated(false);
-        if (!location.pathname.startsWith('/auth')) {
-          navigate('/auth');
-        }
+        navigate('/auth');
       } finally {
         setIsLoading(false);
       }
@@ -117,6 +120,11 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname, queryClient]);
+
+  // If we're on the auth page, don't show loading
+  if (location.pathname === '/auth') {
+    return children;
+  }
 
   if (isLoading) {
     return (
