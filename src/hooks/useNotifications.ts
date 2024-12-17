@@ -12,7 +12,7 @@ export type Notification = {
     avatar_url: string | null;
   };
   post_id: string;
-  type: 'like' | 'comment' | 'share' | 'bookmark' | 'repost';
+  type: 'like' | 'comment' | 'share' | 'bookmark' | 'repost' | 'new_follow';
   read: boolean;
   created_at: string;
 };

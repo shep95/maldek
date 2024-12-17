@@ -1,29 +1,28 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { logoutAllUsers } from "@/utils/authUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleInitialActions = async () => {
-      console.log("Starting cleanup process...");
-      await logoutAllUsers();
-      console.log("Cleanup complete, redirecting to auth page...");
-      navigate("/auth");
+    const checkSession = async () => {
+      console.log("Checking session status...");
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        console.log("Active session found, redirecting to dashboard");
+        navigate("/dashboard", { replace: true });
+      } else {
+        console.log("No active session, redirecting to auth");
+        navigate("/auth", { replace: true });
+      }
     };
 
-    handleInitialActions();
+    checkSession();
   }, [navigate]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
-        <p className="text-muted-foreground">Cleaning up...</p>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 export default Index;

@@ -42,15 +42,9 @@ export const PostDetailContent = ({
         <PostMedia mediaUrls={post.media_urls} onMediaClick={() => {}} />
       )}
       <PostActions
-        postId={post.id}
-        likes={post.likes}
-        comments={post.comments}
-        reposts={post.reposts}
-        isLiked={post.isLiked}
-        isBookmarked={post.isBookmarked}
-        authorId={post.user_id}
+        post={post}
         currentUserId={currentUserId}
-        onPostAction={onPostAction}
+        onAction={onPostAction}
       />
     </Card>
   );

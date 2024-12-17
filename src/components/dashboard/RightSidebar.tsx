@@ -11,33 +11,55 @@ import { TrendingUsers } from "./sidebar/TrendingUsers";
 export const RightSidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Search users
+  // Search users and posts
   const { data: searchResults, isLoading: isLoadingSearch } = useQuery({
     queryKey: ['search', searchQuery],
     queryFn: async () => {
-      if (!searchQuery) return { users: [] };
+      if (!searchQuery) return { users: [], posts: [] };
 
       console.log("Searching for:", searchQuery);
       
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
         console.log("No active session, skipping search");
-        return { users: [] };
+        return { users: [], posts: [] };
       }
       
+      // Search users
       const usersResponse = await supabase
         .from('profiles')
         .select('id, username, avatar_url')
         .ilike('username', `%${searchQuery}%`)
         .limit(5);
 
+      // Search posts
+      const postsResponse = await supabase
+        .from('posts')
+        .select(`
+          id,
+          content,
+          created_at,
+          profiles (
+            username,
+            avatar_url
+          )
+        `)
+        .ilike('content', `%${searchQuery}%`)
+        .limit(5);
+
       if (usersResponse.error) {
-        console.error("Search error:", usersResponse.error);
+        console.error("Search users error:", usersResponse.error);
         throw usersResponse.error;
       }
 
+      if (postsResponse.error) {
+        console.error("Search posts error:", postsResponse.error);
+        throw postsResponse.error;
+      }
+
       return {
-        users: usersResponse.data || []
+        users: usersResponse.data || [],
+        posts: postsResponse.data || []
       };
     },
     enabled: searchQuery.length > 0
@@ -72,6 +94,7 @@ export const RightSidebar = () => {
   });
 
   const handleSearch = debounce((value: string) => {
+    console.log("Search query:", value);
     setSearchQuery(value);
   }, 300);
 
@@ -80,7 +103,7 @@ export const RightSidebar = () => {
       <Card className="h-[90vh] flex flex-col border-muted bg-[#0d0d0d] backdrop-blur-sm p-4">
         <div className="relative mb-6">
           <Input 
-            placeholder="Search @users" 
+            placeholder="Search @users or posts" 
             className="pl-10 border-accent focus:ring-accent"
             onChange={(e) => handleSearch(e.target.value)}
           />
@@ -92,7 +115,7 @@ export const RightSidebar = () => {
             <h3 className="font-semibold text-lg">Search Results</h3>
             <SearchResults 
               isLoading={isLoadingSearch} 
-              results={searchResults?.users} 
+              results={searchResults}
             />
           </div>
         )}

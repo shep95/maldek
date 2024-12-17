@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface MediaPreviewDialogProps {
   selectedMedia: string | null;
@@ -11,13 +11,6 @@ interface MediaPreviewDialogProps {
 
 export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialogProps) => {
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Reset loading state when media changes
-    if (selectedMedia) {
-      setIsLoading(true);
-    }
-  }, [selectedMedia]);
 
   if (!selectedMedia) return null;
 
@@ -33,29 +26,37 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
           <X className="h-6 w-6" />
         </Button>
 
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
-          </div>
-        )}
-
         <div className="relative w-full h-full flex items-center justify-center">
           {isVideoFile(selectedMedia) ? (
             <video
               src={selectedMedia}
               controls
-              className="max-h-full max-w-full rounded-lg transition-opacity duration-300"
-              style={{ opacity: isLoading ? 0 : 1 }}
+              playsInline
+              className="max-h-full max-w-full rounded-lg"
               onLoadedData={() => setIsLoading(false)}
+              onError={(e) => {
+                console.error('Video error:', e);
+                setIsLoading(false);
+              }}
+              autoPlay
             />
           ) : (
             <img
               src={selectedMedia}
               alt="Full size preview"
-              className="max-h-full max-w-full rounded-lg object-contain transition-opacity duration-300"
-              style={{ opacity: isLoading ? 0 : 1 }}
+              className="max-h-full max-w-full rounded-lg object-contain"
               onLoad={() => setIsLoading(false)}
+              onError={(e) => {
+                console.error('Image error:', e);
+                setIsLoading(false);
+              }}
             />
+          )}
+
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent"></div>
+            </div>
           )}
         </div>
       </DialogContent>

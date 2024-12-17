@@ -1,8 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Button } from "@/components/ui/button";
 import { Maximize } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { useEffect, useState, useRef } from "react";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -10,123 +9,34 @@ interface PostMediaProps {
 }
 
 export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
-  const [loadError, setLoadError] = useState<Record<string, boolean>>({});
-  const [videoLoaded, setVideoLoaded] = useState<Record<string, boolean>>({});
-  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
-
-  useEffect(() => {
-    console.log('Media URLs to display:', mediaUrls);
-  }, [mediaUrls]);
-
-  useEffect(() => {
-    const observers: IntersectionObserver[] = [];
-
-    mediaUrls.forEach((url) => {
-      if (isVideoFile(url) && videoRefs.current[url]) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              const video = videoRefs.current[url];
-              if (!video) return;
-
-              if (entry.isIntersecting) {
-                console.log('Video entering viewport:', url);
-                video.play().catch((error) => {
-                  console.error('Error playing video:', error);
-                });
-              } else {
-                console.log('Video leaving viewport:', url);
-                video.pause();
-              }
-            });
-          },
-          {
-            threshold: 0.5, // 50% of the video must be visible
-          }
-        );
-
-        observer.observe(videoRefs.current[url]!);
-        observers.push(observer);
-      }
-    });
-
-    return () => {
-      observers.forEach((observer) => observer.disconnect());
-    };
-  }, [mediaUrls, videoLoaded]);
-
-  const handleMediaError = (url: string) => {
-    console.error(`Error loading media from URL: ${url}`);
-    setLoadError(prev => ({ ...prev, [url]: true }));
-  };
-
-  const handleVideoLoad = (url: string) => {
-    console.log(`Video loaded successfully: ${url}`);
-    setVideoLoaded(prev => ({ ...prev, [url]: true }));
-  };
+  if (!mediaUrls || mediaUrls.length === 0) return null;
 
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
-      <style>
-        {`
-          video::-webkit-media-controls-timeline {
-            margin: 0 10px;
-          }
-          video::-webkit-media-controls-play-button {
-            margin: 0 5px;
-          }
-          video::-webkit-media-controls-current-time-display,
-          video::-webkit-media-controls-time-remaining-display {
-            margin: 0 5px;
-          }
-          video::-webkit-media-controls-progress-bar {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            height: 3px;
-          }
-          video::-webkit-media-controls-progress-inner-element {
-            border-radius: 2px;
-          }
-          video::-webkit-media-controls-progress {
-            background: linear-gradient(to right, #FFFFFF, #F97316);
-            border-radius: 2px;
-            height: 3px;
-          }
-        `}
-      </style>
-      {mediaUrls.map((url, i) => (
-        <div key={i} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
-          {isVideoFile(url) ? (
-            <AspectRatio ratio={16 / 9}>
-              <video
-                ref={(el) => videoRefs.current[url] = el}
-                src={url}
-                controls
-                playsInline
-                loop
-                muted
-                onError={() => handleMediaError(url)}
-                onLoadedData={() => handleVideoLoad(url)}
-                className={`w-full h-full object-contain bg-black rounded-lg ${
-                  loadError[url] ? 'opacity-50' : ''
-                }`}
-              />
-            </AspectRatio>
-          ) : (
-            <div 
-              className="cursor-pointer" 
-              onClick={() => onMediaClick(url)}
-            >
+      {mediaUrls.map((url, i) => {
+        const isVideo = isVideoFile(url);
+
+        return (
+          <div key={url} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
+            {isVideo ? (
               <AspectRatio ratio={16 / 9}>
-                <img
+                <video
                   src={url}
-                  alt={`Post media ${i + 1}`}
-                  onError={() => handleMediaError(url)}
-                  className={`w-full h-full object-cover rounded-lg transition-opacity ${
-                    loadError[url] ? 'opacity-50' : 'hover:opacity-90'
-                  }`}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full h-full object-contain bg-black rounded-lg"
+                  onClick={(e) => e.stopPropagation()}
                 />
-                {!loadError[url] && (
+              </AspectRatio>
+            ) : (
+              <div onClick={() => onMediaClick(url)}>
+                <AspectRatio ratio={16 / 9}>
+                  <img
+                    src={url}
+                    alt={`Post media ${i + 1}`}
+                    className="w-full h-full object-cover rounded-lg transition-opacity hover:opacity-90"
+                  />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -134,17 +44,12 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                   >
                     <Maximize className="h-4 w-4 text-white" />
                   </Button>
-                )}
-              </AspectRatio>
-              {loadError[url] && (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-                  Failed to load media
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
+                </AspectRatio>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

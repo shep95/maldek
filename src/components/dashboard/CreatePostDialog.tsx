@@ -1,14 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Send, X } from "lucide-react";
 import type { Author } from "@/utils/postUtils";
 import { MediaUpload } from "./post/MediaUpload";
 import { MentionInput } from "./post/MentionInput";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
 
 interface CreatePostDialogProps {
   isOpen: boolean;
@@ -28,61 +28,41 @@ export const CreatePostDialog = ({
   const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mentionedUser, setMentionedUser] = useState("");
-  const navigate = useNavigate();
-
-  console.log('CreatePostDialog rendered with currentUser:', currentUser);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const validFiles = Array.from(files).filter(file => {
-      const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
-      if (!isValid) {
-        toast.error(`Invalid file type: ${file.name}`);
-      }
-      return isValid;
-    });
+    const validFiles = Array.from(files);
+    console.log('Files selected:', validFiles.map(f => ({ name: f.name, type: f.type, size: f.size })));
 
-    setMediaFiles(prev => [...prev, ...validFiles]);
-    validFiles.forEach(file => {
-      const previewUrl = URL.createObjectURL(file);
-      setMediaPreviewUrls(prev => [...prev, previewUrl]);
-    });
-  };
-
-  const removeMedia = (index: number) => {
-    URL.revokeObjectURL(mediaPreviewUrls[index]);
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleMentionUser = () => {
-    if (mentionedUser) {
-      setContent(prev => `${prev} @${mentionedUser} `);
-      setMentionedUser("");
+    if (validFiles.length > 0) {
+      setMediaFiles(prev => [...prev, ...validFiles]);
+      validFiles.forEach(file => {
+        const previewUrl = URL.createObjectURL(file);
+        console.log('Created preview URL:', previewUrl, 'for file:', file.name);
+        setMediaPreviewUrls(prev => [...prev, previewUrl]);
+      });
     }
+  };
+
+  const resetFormState = () => {
+    console.log('Resetting form state');
+    setContent("");
+    setIsSubmitting(false);
+    mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    setMediaPreviewUrls([]);
+    setMediaFiles([]);
+    setMentionedUser("");
   };
 
   const handleCreatePost = async () => {
-    console.log('Starting post creation with:', { content, mediaFiles, currentUser });
-    
-    // Additional profile check
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, username')
-      .eq('id', currentUser.id)
-      .single();
-
-    if (profileError || !profile) {
-      console.error('Profile not found or error:', profileError);
-      toast.error("Unable to create post. Please try signing in again.");
-      onOpenChange(false);
-      navigate('/auth');
+    if (!currentUser?.id) {
+      console.error('No user ID found');
+      toast.error("User authentication error. Please try logging in again.");
       return;
     }
 
-    // Validate content
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -90,42 +70,26 @@ export const CreatePostDialog = ({
 
     try {
       setIsSubmitting(true);
+      console.log('Starting post creation with media files:', mediaFiles.length);
       const mediaUrls: string[] = [];
 
-      // Upload media files if any
       if (mediaFiles.length > 0) {
-        console.log('Uploading media files:', mediaFiles.length);
-        
         for (const file of mediaFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `${currentUser.id}/${fileName}`;
-
-          console.log('Uploading file:', { fileName, filePath });
-
-          const { error: uploadError, data: uploadData } = await supabase.storage
-            .from('posts')
-            .upload(filePath, file);
-
-          if (uploadError) {
-            console.error('File upload error:', uploadError);
-            throw new Error(`Failed to upload file: ${uploadError.message}`);
+          console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
+          
+          const publicUrl = await handleImageUpload(file, currentUser.id);
+          
+          if (!publicUrl) {
+            throw new Error(`Failed to upload ${file.name}`);
           }
 
-          console.log('Upload successful:', uploadData);
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('posts')
-            .getPublicUrl(filePath);
-
-          console.log('File uploaded successfully:', publicUrl);
+          console.log('Upload successful. Public URL:', publicUrl);
           mediaUrls.push(publicUrl);
         }
       }
 
       console.log('Creating post with media URLs:', mediaUrls);
 
-      // Create post
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert({
@@ -142,24 +106,26 @@ export const CreatePostDialog = ({
       }
 
       console.log('Post created successfully:', newPost);
-
-      // Reset form
-      setContent("");
-      mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
-      setMediaPreviewUrls([]);
-      setMediaFiles([]);
       
-      // Close dialog and notify success
+      resetFormState();
       onPostCreated(newPost);
       onOpenChange(false);
       toast.success("Post created successfully!");
 
     } catch (error) {
-      console.error('Detailed error in post creation:', error);
-      toast.error(error.message || "Failed to create post. Please try again.");
-    } finally {
+      console.error('Detailed error:', error);
+      toast.error(error.message || "Failed to create post");
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Cancelling post creation');
+    resetFormState();
+    onOpenChange(false);
   };
 
   return (
@@ -182,24 +148,45 @@ export const CreatePostDialog = ({
           <MentionInput
             mentionedUser={mentionedUser}
             onMentionChange={setMentionedUser}
-            onMentionSubmit={handleMentionUser}
+            onMentionSubmit={() => {
+              if (mentionedUser) {
+                setContent(prev => `${prev} @${mentionedUser} `);
+                setMentionedUser("");
+              }
+            }}
           />
           
           <MediaUpload
             mediaFiles={mediaFiles}
             mediaPreviewUrls={mediaPreviewUrls}
             onFileUpload={handleFileUpload}
-            onRemoveMedia={removeMedia}
+            onRemoveMedia={(index) => {
+              URL.revokeObjectURL(mediaPreviewUrls[index]);
+              setMediaFiles(prev => prev.filter((_, i) => i !== index));
+              setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
+            }}
           />
           
-          <Button 
-            onClick={handleCreatePost} 
-            className="w-full gap-2"
-            disabled={isSubmitting}
-          >
-            <Send className="h-4 w-4" />
-            {isSubmitting ? 'Creating...' : 'Create Post'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleCancel}
+              variant="outline"
+              className="w-full gap-2"
+              type="button"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreatePost} 
+              className="w-full gap-2"
+              disabled={isSubmitting}
+              type="button"
+            >
+              <Send className="h-4 w-4" />
+              {isSubmitting ? 'Creating...' : 'Create Post'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
