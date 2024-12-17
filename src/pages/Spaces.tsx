@@ -21,12 +21,8 @@ const Spaces = () => {
     queryKey: ['user-subscription'],
     queryFn: async () => {
       try {
-        console.log("Fetching user subscription data...");
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.log("No user found");
-          return null;
-        }
+        if (!user) return null;
 
         const { data: subscription, error } = await supabase
           .from('user_subscriptions')
@@ -38,12 +34,7 @@ const Spaces = () => {
           .eq('status', 'active')
           .maybeSingle();
 
-        if (error) {
-          console.error("Error fetching subscription:", error);
-          return null;
-        }
-
-        console.log("Subscription data:", subscription);
+        if (error) throw error;
         return subscription;
       } catch (error) {
         console.error("Error in subscription query:", error);
@@ -52,7 +43,7 @@ const Spaces = () => {
     }
   });
 
-  // Fetch live spaces with host and participant count
+  // Fetch live spaces with host, participants, and their roles
   const { data: liveSpaces, refetch: refetchSpaces } = useQuery({
     queryKey: ['live-spaces'],
     queryFn: async () => {
@@ -61,10 +52,18 @@ const Spaces = () => {
         .select(`
           *,
           host:profiles!spaces_host_id_fkey(
+            id,
             username,
             avatar_url
           ),
-          participants_count
+          participants:space_participants(
+            user_id,
+            role,
+            profile:profiles(
+              username,
+              avatar_url
+            )
+          )
         `)
         .eq('status', 'live')
         .order('created_at', { ascending: false });
@@ -87,10 +86,39 @@ const Spaces = () => {
     setIsCreateOpen(true);
   };
 
-  const handleJoinSpace = (spaceId: string) => {
-    console.log("Joining space:", spaceId);
-    setSelectedSpaceId(spaceId);
-    setIsManagementOpen(true);
+  const handleJoinSpace = async (spaceId: string) => {
+    try {
+      const { data: existingParticipant } = await supabase
+        .from('space_participants')
+        .select('role')
+        .eq('space_id', spaceId)
+        .eq('user_id', session?.user?.id)
+        .maybeSingle();
+
+      if (!existingParticipant) {
+        const { error: joinError } = await supabase
+          .from('space_participants')
+          .insert({
+            space_id: spaceId,
+            user_id: session?.user?.id,
+            role: 'listener'
+          });
+
+        if (joinError) throw joinError;
+      }
+
+      const { data: space } = await supabase
+        .from('spaces')
+        .select('host_id')
+        .eq('id', spaceId)
+        .single();
+
+      setSelectedSpaceId(spaceId);
+      setIsManagementOpen(true);
+    } catch (error) {
+      console.error("Error joining space:", error);
+      toast.error("Failed to join space");
+    }
   };
 
   return (
@@ -115,13 +143,13 @@ const Spaces = () => {
             </TabsList>
 
             <TabsContent value="live" className="mt-4 space-y-4">
-              {liveSpaces?.length === 0 ? (
+              {!liveSpaces?.length ? (
                 <p className="text-muted-foreground text-center py-8">
                   No live spaces at the moment
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {liveSpaces?.map((space) => (
+                  {liveSpaces.map((space) => (
                     <SpaceCard
                       key={space.id}
                       space={space}
@@ -144,7 +172,7 @@ const Spaces = () => {
               isOpen={isManagementOpen}
               onOpenChange={setIsManagementOpen}
               spaceId={selectedSpaceId}
-              isHost={false}
+              isHost={liveSpaces?.find(s => s.id === selectedSpaceId)?.host_id === session?.user?.id}
             />
           )}
 
