@@ -23,23 +23,21 @@ export const UsernameInput = ({ value, onChange, onValidationChange }: UsernameI
 
       setIsCheckingUsername(true);
       try {
-        console.log("Checking username:", value);
+        console.log("Checking username availability:", value);
         const { data, error } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', value)
-          .single();
+          .rpc('check_username_availability', {
+            username_to_check: value
+          });
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Username check error:', error);
           throw error;
         }
 
-        const isTaken = !!data;
-        console.log('Username check result:', { username: value, isTaken });
+        console.log('Username availability result:', { username: value, isAvailable: data });
         
-        setIsUsernameTaken(isTaken);
-        onValidationChange(!isTaken);
+        setIsUsernameTaken(!data);
+        onValidationChange(!!data);
       } catch (error) {
         console.error('Username check error:', error);
         setIsUsernameTaken(false);
