@@ -23,6 +23,7 @@ export const SpaceManagementControls = ({
 }: SpaceManagementControlsProps) => {
   const handleMicToggle = () => {
     try {
+      console.log('Attempting to toggle microphone');
       toggleMute();
     } catch (error) {
       console.error('Error toggling microphone:', error);
@@ -31,7 +32,6 @@ export const SpaceManagementControls = ({
   };
 
   const handleLeave = () => {
-    // If the user is a host, end the space when they leave
     if (isHost) {
       console.log('Host is leaving, ending space');
       onEndSpace();
@@ -50,13 +50,19 @@ export const SpaceManagementControls = ({
             variant="outline"
             size="icon"
             onClick={handleMicToggle}
-            className={isMuted ? "bg-destructive/10" : "bg-green-500/10"}
+            className={`${isMuted ? "bg-destructive/10" : "bg-green-500/10"} relative`}
           >
             {isMuted ? (
               <MicOff className="h-4 w-4" />
             ) : (
               <Mic className="h-4 w-4" />
             )}
+            <span className="sr-only">
+              {isMuted ? "Unmute microphone" : "Mute microphone"}
+            </span>
+            <div className="absolute -top-8 whitespace-nowrap text-xs">
+              {isMuted ? "Click to unmute" : "Click to mute"}
+            </div>
           </Button>
         )}
       </div>
