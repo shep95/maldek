@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface UsernameInputProps {
   value: string;
@@ -14,9 +13,7 @@ export const UsernameInput = ({ value, onChange, onValidationChange }: UsernameI
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const checkUsername = async () => {
+    const timeoutId = setTimeout(async () => {
       if (!value || value.length < 3) {
         setIsUsernameTaken(false);
         setIsCheckingUsername(false);
@@ -26,26 +23,23 @@ export const UsernameInput = ({ value, onChange, onValidationChange }: UsernameI
 
       setIsCheckingUsername(true);
       try {
-        console.log("Checking username availability:", value);
+        console.log("Checking username:", value);
         const { data, error } = await supabase
-          .rpc('check_username_availability', {
-            username_to_check: value
-          });
+          .from('profiles')
+          .select('username')
+          .eq('username', value)
+          .single();
 
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
           console.error('Username check error:', error);
           throw error;
         }
 
-        const isAvailable = Boolean(data);
-        console.log('Username availability result:', { username: value, isAvailable });
+        const isTaken = !!data;
+        console.log('Username check result:', { username: value, isTaken });
         
-        setIsUsernameTaken(!isAvailable);
-        onValidationChange(isAvailable);
-        
-        if (!isAvailable) {
-          toast.error("This username is already taken");
-        }
+        setIsUsernameTaken(isTaken);
+        onValidationChange(!isTaken);
       } catch (error) {
         console.error('Username check error:', error);
         setIsUsernameTaken(false);
@@ -53,22 +47,9 @@ export const UsernameInput = ({ value, onChange, onValidationChange }: UsernameI
       } finally {
         setIsCheckingUsername(false);
       }
-    };
+    }, 500);
 
-    // Clear any existing timeout
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    // Set new timeout for debouncing
-    timeoutId = setTimeout(checkUsername, 500);
-
-    // Cleanup function
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
+    return () => clearTimeout(timeoutId);
   }, [value, onValidationChange]);
 
   return (
