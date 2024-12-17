@@ -8,6 +8,7 @@ import { MentionInput } from "./post/MentionInput";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface CreatePostDialogProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const CreatePostDialog = ({
   const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mentionedUser, setMentionedUser] = useState("");
+  const navigate = useNavigate();
 
   console.log('CreatePostDialog rendered with currentUser:', currentUser);
 
@@ -65,10 +67,18 @@ export const CreatePostDialog = ({
   const handleCreatePost = async () => {
     console.log('Starting post creation with:', { content, mediaFiles, currentUser });
     
-    // Validate user data
-    if (!currentUser?.id) {
-      console.error('No user ID available:', currentUser);
-      toast.error("User authentication error. Please try logging in again.");
+    // Additional profile check
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, username')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('Profile not found or error:', profileError);
+      toast.error("Unable to create post. Please try signing in again.");
+      onOpenChange(false);
+      navigate('/auth');
       return;
     }
 
