@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Download, Users } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
+import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SpaceHistoryCardProps {
   space: any;
@@ -11,8 +14,44 @@ interface SpaceHistoryCardProps {
 }
 
 export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: SpaceHistoryCardProps) => {
+  const session = useSession();
+  
   const formatDate = (date: string) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true });
+  };
+
+  const handleDownload = async () => {
+    try {
+      // Check if user has already purchased
+      const { data: purchases } = await supabase
+        .from('space_recording_purchases')
+        .select('*')
+        .eq('space_id', space.id)
+        .eq('user_id', session?.user?.id)
+        .eq('status', 'completed')
+        .single();
+
+      if (purchases) {
+        // If purchased, download directly
+        if (space.recording_url) {
+          const link = document.createElement('a');
+          link.href = space.recording_url;
+          link.download = `${space.title}-recording.mp3`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          toast.success("Download started!");
+        } else {
+          toast.error("Recording not available");
+        }
+      } else {
+        // If not purchased, initiate purchase
+        onPurchaseRecording(space.id);
+      }
+    } catch (error) {
+      console.error('Error handling recording:', error);
+      toast.error("Failed to process recording");
+    }
   };
 
   return (
@@ -34,7 +73,7 @@ export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: 
             <Button 
               variant="secondary" 
               size="sm"
-              onClick={() => onPurchaseRecording(space.id)}
+              onClick={handleDownload}
               className="gap-2"
             >
               <Download className="h-4 w-4" />
