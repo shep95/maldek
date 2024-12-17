@@ -39,7 +39,23 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
           return;
         }
 
-        console.log("Valid session found:", session);
+        // Check if profile exists
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("Profile error or not found:", profileError);
+          toast.error("Error loading profile. Please sign in again.");
+          await supabase.auth.signOut();
+          setIsAuthenticated(false);
+          navigate('/auth');
+          return;
+        }
+
+        console.log("Valid session and profile found:", session);
         setIsAuthenticated(true);
         if (location.pathname === '/auth') {
           navigate('/dashboard');
@@ -75,6 +91,21 @@ export const AuthenticationWrapper = ({ children, queryClient }: AuthenticationW
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         console.log("User signed in or token refreshed");
+        // Check profile after sign in
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          console.error("Profile error or not found after sign in:", profileError);
+          toast.error("Error loading profile. Please sign in again.");
+          await supabase.auth.signOut();
+          navigate('/auth');
+          return;
+        }
+
         setIsAuthenticated(true);
         if (location.pathname === '/auth') {
           navigate('/dashboard');
