@@ -549,6 +549,51 @@ export type Database = {
           },
         ]
       }
+      space_recording_purchases: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          space_id: string
+          status: string | null
+          stripe_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          space_id: string
+          status?: string | null
+          stripe_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          space_id?: string
+          status?: string | null
+          stripe_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_recording_purchases_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_recording_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_speaker_requests: {
         Row: {
           id: string
@@ -609,6 +654,8 @@ export type Database = {
           host_id: string
           id: string
           max_speakers: number | null
+          recording_price: number | null
+          recording_url: string | null
           scheduled_start: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["space_status"] | null
@@ -622,6 +669,8 @@ export type Database = {
           host_id: string
           id?: string
           max_speakers?: number | null
+          recording_price?: number | null
+          recording_url?: string | null
           scheduled_start?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["space_status"] | null
@@ -635,6 +684,8 @@ export type Database = {
           host_id?: string
           id?: string
           max_speakers?: number | null
+          recording_price?: number | null
+          recording_url?: string | null
           scheduled_start?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["space_status"] | null
