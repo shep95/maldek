@@ -16,11 +16,17 @@ export const useSpaceSignaling = (spaceId: string) => {
   const websocketRef = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 3;
+  const reconnectTimeoutRef = useRef<number | null>(null);
 
   const connectToSignalingServer = async () => {
     try {
       if (!session?.access_token) {
         throw new Error('No access token available');
+      }
+
+      // Clear any existing connection
+      if (websocketRef.current) {
+        websocketRef.current.close();
       }
 
       console.log('Connecting to signaling server...');
@@ -44,13 +50,20 @@ export const useSpaceSignaling = (spaceId: string) => {
         console.log('Disconnected from signaling server');
         setState(prev => ({ ...prev, isConnected: false }));
         
+        // Clear any existing reconnect timeout
+        if (reconnectTimeoutRef.current) {
+          window.clearTimeout(reconnectTimeoutRef.current);
+        }
+        
         // Attempt to reconnect if not at max attempts
         if (reconnectAttempts.current < maxReconnectAttempts) {
           console.log(`Attempting to reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
           reconnectAttempts.current++;
-          setTimeout(connectToSignalingServer, 2000);
+          toast.info(`Reconnecting to space... Attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
+          reconnectTimeoutRef.current = window.setTimeout(connectToSignalingServer, 2000);
         } else {
           toast.error('Unable to connect to space. Please try rejoining.');
+          setState(prev => ({ ...prev, error: 'Maximum reconnection attempts reached' }));
         }
       };
 
@@ -68,12 +81,16 @@ export const useSpaceSignaling = (spaceId: string) => {
       websocketRef.current.send(JSON.stringify(message));
     } else {
       console.error('WebSocket not connected');
-      toast.error('Connection lost. Please try rejoining the space.');
+      toast.error('Connection lost. Attempting to reconnect...');
+      connectToSignalingServer();
     }
   };
 
   const cleanup = () => {
     console.log('Cleaning up signaling connection');
+    if (reconnectTimeoutRef.current) {
+      window.clearTimeout(reconnectTimeoutRef.current);
+    }
     if (websocketRef.current) {
       websocketRef.current.close();
       websocketRef.current = null;

@@ -2,9 +2,44 @@ import { useRef } from 'react';
 import { RTCPeerData } from './types';
 import { toast } from 'sonner';
 
+const ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+];
+
 export const usePeerConnections = () => {
   const peersRef = useRef<Map<string, RTCPeerData>>(new Map());
   const localStreamRef = useRef<MediaStream | null>(null);
+  const connectionTimeoutsRef = useRef<Map<string, number>>(new Map());
+
+  const createPeerConnection = (remoteUserId: string) => {
+    console.log('Creating new peer connection for:', remoteUserId);
+    const peerConnection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+    // Add connection state monitoring
+    peerConnection.onconnectionstatechange = () => {
+      console.log(`Connection state for ${remoteUserId}:`, peerConnection.connectionState);
+      if (peerConnection.connectionState === 'failed') {
+        console.error('Connection failed for peer:', remoteUserId);
+        handleConnectionFailure(remoteUserId);
+      }
+    };
+
+    return peerConnection;
+  };
+
+  const handleConnectionFailure = (remoteUserId: string) => {
+    const peer = peersRef.current.get(remoteUserId);
+    if (peer) {
+      console.log('Attempting to reconnect with peer:', remoteUserId);
+      peer.connection.close();
+      peersRef.current.delete(remoteUserId);
+      toast.error('Connection lost with a participant. Attempting to reconnect...');
+    }
+  };
 
   const initializePeerConnection = async (
     remoteUserId: string,
@@ -13,13 +48,7 @@ export const usePeerConnections = () => {
     console.log('Initializing peer connection for user:', remoteUserId);
     
     try {
-      const peerConnection = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-        ]
-      });
+      const peerConnection = createPeerConnection(remoteUserId);
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
@@ -29,13 +58,6 @@ export const usePeerConnections = () => {
             candidate: event.candidate,
             to: remoteUserId
           });
-        }
-      };
-
-      peerConnection.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', peerConnection.iceConnectionState);
-        if (peerConnection.iceConnectionState === 'failed') {
-          toast.error('Connection failed. Please try reconnecting.');
         }
       };
 
@@ -62,6 +84,16 @@ export const usePeerConnections = () => {
         connection: peerConnection
       });
 
+      // Set connection timeout
+      connectionTimeoutsRef.current.set(remoteUserId, 
+        window.setTimeout(() => {
+          if (peerConnection.connectionState !== 'connected') {
+            console.error('Connection timeout for peer:', remoteUserId);
+            handleConnectionFailure(remoteUserId);
+          }
+        }, 15000) // 15 second timeout
+      );
+
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
       sendSignalingMessage({
@@ -82,13 +114,7 @@ export const usePeerConnections = () => {
     console.log('Handling offer from:', message.from);
     
     try {
-      const peerConnection = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-        ]
-      });
+      const peerConnection = createPeerConnection(message.from);
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
@@ -98,13 +124,6 @@ export const usePeerConnections = () => {
             candidate: event.candidate,
             to: message.from
           });
-        }
-      };
-
-      peerConnection.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', peerConnection.iceConnectionState);
-        if (peerConnection.iceConnectionState === 'failed') {
-          toast.error('Connection failed. Please try reconnecting.');
         }
       };
 
@@ -122,8 +141,6 @@ export const usePeerConnections = () => {
         localStreamRef.current.getTracks().forEach(track => {
           peerConnection.addTrack(track, localStreamRef.current!);
         });
-      } else {
-        console.warn('No local stream available when handling offer');
       }
 
       peersRef.current.set(message.from, {
@@ -148,6 +165,13 @@ export const usePeerConnections = () => {
 
   const cleanupPeerConnections = () => {
     console.log('Cleaning up peer connections');
+    // Clear all connection timeouts
+    connectionTimeoutsRef.current.forEach((timeout) => {
+      window.clearTimeout(timeout);
+    });
+    connectionTimeoutsRef.current.clear();
+
+    // Close all peer connections
     peersRef.current.forEach(peer => {
       peer.connection.close();
     });
