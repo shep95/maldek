@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { UsernameInput } from "./UsernameInput";
 
 interface AuthFormProps {
   isLogin: boolean;
@@ -23,60 +23,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
-  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
-  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const checkUsername = async () => {
-      if (!username || username.length < 3) {
-        setIsUsernameTaken(false);
-        setIsCheckingUsername(false);
-        return;
-      }
-
-      setIsCheckingUsername(true);
-      try {
-        console.log("Checking username availability:", username);
-        const { data, error } = await supabase
-          .rpc('check_username_availability', {
-            username_to_check: username
-          });
-
-        if (error) throw error;
-
-        // Now TypeScript knows data is a boolean
-        const available = data as boolean;
-        console.log('Username availability result:', { username, available });
-        setIsUsernameTaken(!available);
-        
-        if (!available) {
-          toast.error("This username is already taken");
-        }
-      } catch (error) {
-        console.error('Username check error:', error);
-        setIsUsernameTaken(false);
-      } finally {
-        setIsCheckingUsername(false);
-      }
-    };
-
-    // Clear any existing timeout
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-
-    // Set new timeout for debouncing
-    timeoutId = setTimeout(checkUsername, 500);
-
-    // Cleanup function
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [username]);
+  const [isUsernameValid, setIsUsernameValid] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,8 +44,8 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         return;
       }
 
-      if (isUsernameTaken) {
-        toast.error("Username is already taken");
+      if (!isUsernameValid) {
+        toast.error("Please choose a different username");
         return;
       }
     }
@@ -137,31 +84,11 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         />
         {!isLogin && (
           <>
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Username (minimum 3 characters)"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className={`bg-muted/50 w-full ${
-                  isUsernameTaken ? "border-red-500" : 
-                  username.length >= 3 && !isUsernameTaken ? "border-green-500" : ""
-                }`}
-                required
-                minLength={3}
-              />
-              {username.length >= 3 && (
-                <div className="absolute right-3 top-3 text-xs md:text-sm">
-                  {isCheckingUsername ? (
-                    <span className="text-muted-foreground">Checking...</span>
-                  ) : isUsernameTaken ? (
-                    <span className="text-red-500">Username taken</span>
-                  ) : (
-                    <span className="text-green-500">Username available</span>
-                  )}
-                </div>
-              )}
-            </div>
+            <UsernameInput
+              value={username}
+              onChange={setUsername}
+              onValidationChange={setIsUsernameValid}
+            />
             <div className="relative">
               <Input
                 type="file"
@@ -202,7 +129,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={!isLogin && (isUsernameTaken || isCheckingUsername)}
+          disabled={!isLogin && !isUsernameValid}
         >
           {isLogin ? "Sign in" : "Sign up"}
         </Button>
