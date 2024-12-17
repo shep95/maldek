@@ -38,11 +38,12 @@ const Profile = () => {
 
         if (error) {
           console.error("Error fetching current user profile:", error);
+          toast.error("Error loading profile");
           return null;
         }
 
         // Redirect to the @username URL format
-        if (data.username) {
+        if (data?.username) {
           navigate(`/@${data.username}`, { replace: true });
         }
         return data;
@@ -59,11 +60,6 @@ const Profile = () => {
 
         if (error) {
           console.error("Error fetching user ID:", error);
-          if (error.code === 'PGRST116') {
-            toast.error("Profile not found");
-            navigate('/dashboard');
-            return null;
-          }
           toast.error("Error loading profile");
           return null;
         }
@@ -73,7 +69,8 @@ const Profile = () => {
 
       return null;
     },
-    retry: false
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000)
   });
 
   // Then fetch the full profile data
@@ -107,7 +104,8 @@ const Profile = () => {
       };
     },
     enabled: !!targetUser?.id,
-    retry: 2
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000)
   });
 
   const handleUpdateProfile = async () => {
@@ -153,6 +151,7 @@ const Profile = () => {
     );
   }
 
+  // If no profile data is found, show a message
   if (!profile) {
     return (
       <div className="animate-fade-in py-4 text-center">
