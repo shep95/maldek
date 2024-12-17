@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { useState } from "react";
+import { SpaceManagementDialog } from "@/components/spaces/SpaceManagementDialog";
 
 const Spaces = () => {
   const session = useSession();
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
 
   // Fetch user's subscription status
   const { data: subscription } = useQuery({
@@ -106,6 +110,12 @@ const Spaces = () => {
     console.log("Create space clicked");
   };
 
+  const handleJoinSpace = (spaceId: string) => {
+    console.log("Joining space:", spaceId);
+    setSelectedSpaceId(spaceId);
+    setIsManagementOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background animate-fade-in">
       <div className="flex justify-center">
@@ -146,7 +156,11 @@ const Spaces = () => {
                             Hosted by {space.host.username}
                           </p>
                         </div>
-                        <Button variant="secondary" size="sm">
+                        <Button 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={() => handleJoinSpace(space.id)}
+                        >
                           Join
                         </Button>
                       </div>
@@ -190,6 +204,15 @@ const Spaces = () => {
               )}
             </TabsContent>
           </Tabs>
+
+          {selectedSpaceId && (
+            <SpaceManagementDialog
+              isOpen={isManagementOpen}
+              onOpenChange={setIsManagementOpen}
+              spaceId={selectedSpaceId}
+              isHost={false} // This will be determined by checking the user's role
+            />
+          )}
         </main>
       </div>
     </div>
