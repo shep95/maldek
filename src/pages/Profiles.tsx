@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { useEffect } from "react";
 const Profiles = () => {
   const session = useSession();
   const { username } = useParams();
+  const queryClient = useQueryClient();
 
   // Fetch profile by username if provided, otherwise fetch current user's profile
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
@@ -117,7 +118,7 @@ const Profiles = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, username, session?.user?.id]);
+  }, [profile?.id, username, session?.user?.id, queryClient]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {
