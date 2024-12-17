@@ -1,28 +1,29 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { logoutAllUsers, deleteUserByEmail } from "@/utils/authUtils";
 
 const Index = () => {
-  const navigate = useNavigate();
-
   useEffect(() => {
-    const checkSession = async () => {
-      console.log("Checking session status...");
-      const { data: { session } } = await supabase.auth.getSession();
+    const handleInitialActions = async () => {
+      console.log("Starting cleanup process...");
       
-      if (session) {
-        console.log("Active session found, redirecting to dashboard");
-        navigate("/dashboard", { replace: true });
-      } else {
-        console.log("No active session, redirecting to auth");
-        navigate("/auth", { replace: true });
-      }
+      // First delete the specific user
+      await deleteUserByEmail("newtonx2005@gmail.com");
+      
+      // Then logout all users
+      await logoutAllUsers();
     };
 
-    checkSession();
-  }, [navigate]);
+    handleInitialActions();
+  }, []);
 
-  return null;
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent mx-auto"></div>
+        <p className="text-muted-foreground">Cleaning up...</p>
+      </div>
+    </div>
+  );
 };
 
 export default Index;
