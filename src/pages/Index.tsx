@@ -1,15 +1,10 @@
 import { useEffect } from "react";
-import { logoutAllUsers, deleteUserByEmail } from "@/utils/authUtils";
+import { logoutAllUsers } from "@/utils/authUtils";
 
 const Index = () => {
   useEffect(() => {
     const handleInitialActions = async () => {
       console.log("Starting cleanup process...");
-      
-      // First delete the specific user
-      await deleteUserByEmail("newtonx2005@gmail.com");
-      
-      // Then logout all users
       await logoutAllUsers();
     };
 
