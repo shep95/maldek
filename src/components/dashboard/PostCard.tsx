@@ -19,6 +19,11 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     queryFn: async () => {
       try {
         console.log('Fetching user settings for:', currentUserId);
+        if (!currentUserId) {
+          console.log('No user ID provided, using default settings');
+          return { preferred_language: 'en' };
+        }
+
         const { data: settingsData, error } = await supabase
           .from('user_settings')
           .select('preferred_language')
@@ -27,10 +32,25 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
 
         if (error) {
           console.error('Error fetching user settings:', error);
-          return { preferred_language: 'en' }; // Default to English
+          return { preferred_language: 'en' };
         }
 
-        return settingsData || { preferred_language: 'en' };
+        if (!settingsData) {
+          console.log('No settings found, creating default settings');
+          const { error: insertError } = await supabase
+            .from('user_settings')
+            .insert({
+              user_id: currentUserId,
+              preferred_language: 'en'
+            });
+
+          if (insertError) {
+            console.error('Error creating default settings:', insertError);
+          }
+          return { preferred_language: 'en' };
+        }
+
+        return settingsData;
       } catch (error) {
         console.error('Error in settings query:', error);
         return { preferred_language: 'en' };
