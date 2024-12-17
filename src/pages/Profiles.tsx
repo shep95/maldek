@@ -18,22 +18,21 @@ const Profiles = () => {
     queryFn: async () => {
       console.log('Fetching profile...', { username, userId: session?.user?.id });
       
-      const query = supabase
+      let query = supabase
         .from('profiles')
-        .select('*')
-        .single();
+        .select();
 
       // If username is provided, fetch by username, otherwise fetch by user ID
       if (username) {
-        query.eq('username', username);
+        query = query.eq('username', username);
       } else if (session?.user?.id) {
-        query.eq('id', session.user.id);
+        query = query.eq('id', session.user.id);
       } else {
         console.error('No username or user ID available');
         throw new Error('No username or user ID available');
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.single();
 
       if (error) {
         console.error('Error fetching profile:', error);
