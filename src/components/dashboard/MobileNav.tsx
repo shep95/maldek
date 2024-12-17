@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Home, MessageCircle, Bell, Video, User, Menu } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, Menu } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
@@ -39,7 +39,6 @@ export const MobileNav = () => {
 
   const handleNavigation = (path: string) => {
     try {
-      // Prevent navigation if we're already on the path
       if (location.pathname === path) {
         console.log('Already on path:', path);
         return;
@@ -47,13 +46,8 @@ export const MobileNav = () => {
 
       console.log('Mobile navigation: Navigating to', path);
       
-      // Close the sheet if it's open
       setIsOpen(false);
-      
-      // Navigate to the new path
       navigate(path);
-      
-      // Reset scroll position
       window.scrollTo(0, 0);
       
     } catch (error) {
@@ -67,7 +61,6 @@ export const MobileNav = () => {
     { icon: MessageCircle, label: "Messages", path: "/messages" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
     { icon: Video, label: "Videos", path: "/videos" },
-    { icon: User, label: "Profile", path: "/profile" },
   ];
 
   return (
@@ -113,7 +106,7 @@ export const MobileNav = () => {
                 "text-muted-foreground",
                 "active:scale-95 transition-transform",
                 "touch-manipulation select-none",
-                "min-w-[44px] min-h-[44px]", // Larger touch target
+                "min-w-[44px] min-h-[44px]",
                 location.pathname === item.path && "text-accent bg-accent/10"
               )}
             >

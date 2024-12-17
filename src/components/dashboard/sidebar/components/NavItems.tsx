@@ -1,6 +1,5 @@
-import { Home, MessageCircle, Bell, Video, User, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { useProfileNavigation } from "../utils/profileUtils";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 
@@ -22,7 +21,6 @@ export const NavItems = ({
   onNavigate
 }: NavItemsProps) => {
   const location = useLocation();
-  const { profilePath } = useProfileNavigation();
   const unreadCount = useNotificationCount(userId);
 
   const navItems = [
@@ -50,12 +48,6 @@ export const NavItems = ({
       label: "Videos", 
       path: "/videos", 
       active: location.pathname === "/videos" 
-    },
-    { 
-      icon: User, 
-      label: "Profile", 
-      path: profilePath || "/profile",
-      active: location.pathname.includes('profile') || location.pathname.startsWith('/@')
     },
     {
       icon: BrainCircuit,
