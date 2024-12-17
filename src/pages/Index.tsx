@@ -1,15 +1,20 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { logoutAllUsers } from "@/utils/authUtils";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     const handleInitialActions = async () => {
       console.log("Starting cleanup process...");
       await logoutAllUsers();
+      console.log("Cleanup complete, redirecting to auth page...");
+      navigate("/auth");
     };
 
     handleInitialActions();
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

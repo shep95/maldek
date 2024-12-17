@@ -24,9 +24,6 @@ export const logoutAllUsers = async () => {
     console.log("Global logout successful");
     toast.success("Successfully logged out all users");
     
-    // Force reload the page to ensure clean state
-    window.location.href = '/auth';
-    
   } catch (error) {
     console.error("Global logout error:", error);
     toast.error("An error occurred during logout");
