@@ -32,12 +32,11 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     setIsUsernameTaken(false);
 
     try {
-      console.log("Starting username check for:", username);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', username)
-        .maybeSingle();
+      console.log("Checking username availability:", username);
+      const { data, error } = await supabase.rpc(
+        'check_username_availability',
+        { username_to_check: username }
+      );
 
       if (error) {
         console.error("Username check error:", error);
@@ -45,8 +44,8 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         return;
       }
 
-      console.log("Username check result:", { username, exists: !!data });
-      setIsUsernameTaken(!!data);
+      console.log("Username availability result:", { username, isAvailable: data });
+      setIsUsernameTaken(!data); // data is true if username is available
     } catch (error) {
       console.error("Username check failed:", error);
       toast.error("Failed to check username availability");
@@ -69,7 +68,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     }
 
     setIsSubmitting(true);
-    console.log("Starting form submission...");
+    console.log("Starting form submission with username:", username);
 
     try {
       await onSubmit({
