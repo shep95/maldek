@@ -7,11 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useState } from "react";
 import { SpaceManagementDialog } from "@/components/spaces/SpaceManagementDialog";
+import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
+import { SpaceCard } from "@/components/spaces/SpaceCard";
 
 const Spaces = () => {
   const session = useSession();
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
   const [isManagementOpen, setIsManagementOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Fetch user's subscription status
   const { data: subscription } = useQuery({
@@ -49,8 +52,8 @@ const Spaces = () => {
     }
   });
 
-  // Fetch live spaces
-  const { data: liveSpaces } = useQuery({
+  // Fetch live spaces with host and participant count
+  const { data: liveSpaces, refetch: refetchSpaces } = useQuery({
     queryKey: ['live-spaces'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -60,7 +63,8 @@ const Spaces = () => {
           host:profiles!spaces_host_id_fkey(
             username,
             avatar_url
-          )
+          ),
+          participants_count
         `)
         .eq('status', 'live')
         .order('created_at', { ascending: false });
@@ -68,32 +72,6 @@ const Spaces = () => {
       if (error) throw error;
       return data;
     }
-  });
-
-  // Fetch user's space history
-  const { data: spaceHistory } = useQuery({
-    queryKey: ['space-history', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return [];
-
-      const { data, error } = await supabase
-        .from('space_participants')
-        .select(`
-          space:spaces(
-            *,
-            host:profiles!spaces_host_id_fkey(
-              username,
-              avatar_url
-            )
-          )
-        `)
-        .eq('user_id', session.user.id)
-        .order('joined_at', { ascending: false });
-
-      if (error) throw error;
-      return data?.map(item => item.space) || [];
-    },
-    enabled: !!session?.user?.id
   });
 
   const handleCreateSpace = () => {
@@ -106,8 +84,7 @@ const Spaces = () => {
       });
       return;
     }
-    // TODO: Implement space creation dialog
-    console.log("Create space clicked");
+    setIsCreateOpen(true);
   };
 
   const handleJoinSpace = (spaceId: string) => {
@@ -145,63 +122,20 @@ const Spaces = () => {
               ) : (
                 <div className="space-y-4">
                   {liveSpaces?.map((space) => (
-                    <div 
-                      key={space.id} 
-                      className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{space.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Hosted by {space.host.username}
-                          </p>
-                        </div>
-                        <Button 
-                          variant="secondary" 
-                          size="sm"
-                          onClick={() => handleJoinSpace(space.id)}
-                        >
-                          Join
-                        </Button>
-                      </div>
-                    </div>
+                    <SpaceCard
+                      key={space.id}
+                      space={space}
+                      onJoin={handleJoinSpace}
+                    />
                   ))}
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="history" className="mt-4 space-y-4">
-              {spaceHistory?.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  You haven't joined any spaces yet
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {spaceHistory?.map((space) => (
-                    <div 
-                      key={space.id} 
-                      className="p-4 rounded-lg border bg-card"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{space.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Hosted by {space.host.username}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(space.ended_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        {space.recording_url && (
-                          <Button variant="secondary" size="sm">
-                            Download Recording ($2.00)
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="text-muted-foreground text-center py-8">
+                You haven't joined any spaces yet
+              </p>
             </TabsContent>
           </Tabs>
 
@@ -210,9 +144,15 @@ const Spaces = () => {
               isOpen={isManagementOpen}
               onOpenChange={setIsManagementOpen}
               spaceId={selectedSpaceId}
-              isHost={false} // This will be determined by checking the user's role
+              isHost={false}
             />
           )}
+
+          <CreateSpaceDialog
+            isOpen={isCreateOpen}
+            onOpenChange={setIsCreateOpen}
+            onSpaceCreated={refetchSpaces}
+          />
         </main>
       </div>
     </div>

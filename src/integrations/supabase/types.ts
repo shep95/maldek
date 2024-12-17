@@ -654,6 +654,7 @@ export type Database = {
           host_id: string
           id: string
           max_speakers: number | null
+          participants_count: number | null
           recording_price: number | null
           recording_url: string | null
           scheduled_start: string | null
@@ -669,6 +670,7 @@ export type Database = {
           host_id: string
           id?: string
           max_speakers?: number | null
+          participants_count?: number | null
           recording_price?: number | null
           recording_url?: string | null
           scheduled_start?: string | null
@@ -684,6 +686,7 @@ export type Database = {
           host_id?: string
           id?: string
           max_speakers?: number | null
+          participants_count?: number | null
           recording_price?: number | null
           recording_url?: string | null
           scheduled_start?: string | null
