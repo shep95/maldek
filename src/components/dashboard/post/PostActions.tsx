@@ -3,69 +3,58 @@ import { CommentAction } from "./actions/CommentAction";
 import { RepostAction } from "./actions/RepostAction";
 import { BookmarkAction } from "./actions/BookmarkAction";
 import { DeleteAction } from "./actions/DeleteAction";
+import { Post } from "@/utils/postUtils";
 
 interface PostActionsProps {
-  postId: string;
-  likes: number;
-  comments: number;
-  reposts: number;
-  isLiked: boolean;
-  isBookmarked: boolean;
-  authorId: string;
+  post: Post;
   currentUserId: string;
-  onPostAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => void;
+  onAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => void;
 }
 
 export const PostActions = ({
-  postId,
-  likes,
-  comments,
-  reposts,
-  isLiked,
-  isBookmarked,
-  authorId,
+  post,
   currentUserId,
-  onPostAction,
+  onAction,
 }: PostActionsProps) => {
   return (
     <div className="mt-4 flex items-center justify-between">
       <div className="flex gap-4">
         <LikeAction
-          postId={postId}
-          authorId={authorId}
+          postId={post.id}
+          authorId={post.author.id}
           currentUserId={currentUserId}
-          likes={likes}
-          isLiked={isLiked}
-          onAction={onPostAction}
+          likes={post.likes || 0}
+          isLiked={post.isLiked}
+          onAction={onAction}
         />
 
         <CommentAction
-          postId={postId}
-          comments={comments}
+          postId={post.id}
+          comments={post.comments}
         />
 
         <RepostAction
-          postId={postId}
-          authorId={authorId}
+          postId={post.id}
+          authorId={post.author.id}
           currentUserId={currentUserId}
-          reposts={reposts}
-          onAction={onPostAction}
+          reposts={post.reposts || 0}
+          onAction={onAction}
         />
 
         <BookmarkAction
-          postId={postId}
-          authorId={authorId}
+          postId={post.id}
+          authorId={post.author.id}
           currentUserId={currentUserId}
-          isBookmarked={isBookmarked}
-          onAction={onPostAction}
+          isBookmarked={post.isBookmarked}
+          onAction={onAction}
         />
       </div>
 
       <DeleteAction
-        postId={postId}
-        authorId={authorId}
+        postId={post.id}
+        authorId={post.author.id}
         currentUserId={currentUserId}
-        onAction={onPostAction}
+        onAction={onAction}
       />
     </div>
   );
