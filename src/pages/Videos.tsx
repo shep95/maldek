@@ -9,24 +9,39 @@ import { Input } from "@/components/ui/input";
 import { debounce } from "lodash";
 import { VideoDialog } from "@/components/videos/VideoDialog";
 import { VideoGrid } from "@/components/videos/VideoGrid";
+import { VideoControls } from "@/components/videos/controls/VideoControls";
 
 const Videos = () => {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState('newest');
   const queryClient = useQueryClient();
 
   const { data: videos, isLoading } = useQuery({
-    queryKey: ['videos', searchQuery],
+    queryKey: ['videos', searchQuery, sortBy],
     queryFn: async () => {
       console.log('Fetching videos with search:', searchQuery);
       let query = supabase
         .from('videos')
-        .select('*, profiles:user_id(username, avatar_url)')
-        .order('created_at', { ascending: false });
+        .select('*, profiles:user_id(username, avatar_url)');
 
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`);
+      }
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+        case 'views':
+          query = query.order('view_count', { ascending: false });
+          break;
+        case 'newest':
+        default:
+          query = query.order('created_at', { ascending: false });
       }
 
       const { data, error } = await query;
@@ -103,10 +118,22 @@ const Videos = () => {
         </div>
       </div>
 
+      <VideoControls
+        viewMode={viewMode}
+        sortBy={sortBy}
+        onViewModeChange={setViewMode}
+        onSortChange={setSortBy}
+      />
+
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+        <div className={cn(
+          "grid gap-6",
+          viewMode === 'grid' 
+            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" 
+            : "grid-cols-1"
+        )}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-card rounded-lg h-[300px]" />
+            <div key={i} className="bg-card rounded-lg h-[300px] animate-pulse" />
           ))}
         </div>
       ) : videos && videos.length > 0 ? (
@@ -114,6 +141,7 @@ const Videos = () => {
           videos={videos}
           onVideoSelect={setSelectedVideo}
           onDeleteVideo={handleDeleteVideo}
+          viewMode={viewMode}
         />
       ) : (
         <div className="text-center py-12 bg-card rounded-lg">

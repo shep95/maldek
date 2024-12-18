@@ -2,14 +2,22 @@ import { Play } from "lucide-react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { VideoPlayer } from "./VideoPlayer";
+import { VideoMetadata } from "./VideoMetadata";
+import { cn } from "@/lib/utils";
 
 interface VideoGridProps {
   videos: any[];
   onVideoSelect: (url: string) => void;
   onDeleteVideo: (id: string) => void;
+  viewMode?: 'grid' | 'list';
 }
 
-export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridProps) => {
+export const VideoGrid = ({ 
+  videos, 
+  onVideoSelect, 
+  onDeleteVideo,
+  viewMode = 'grid' 
+}: VideoGridProps) => {
   const session = useSession();
 
   const handleVideoClick = (video: any) => {
@@ -25,14 +33,25 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className={cn(
+      "grid gap-6",
+      viewMode === 'grid' 
+        ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" 
+        : "grid-cols-1"
+    )}>
       {videos.map((video: any) => (
         <div
           key={video.id}
-          className="group relative bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300"
+          className={cn(
+            "group relative bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300",
+            viewMode === 'list' && "flex gap-4"
+          )}
           onClick={() => handleVideoClick(video)}
         >
-          <div className="aspect-video relative cursor-pointer">
+          <div className={cn(
+            "relative cursor-pointer",
+            viewMode === 'grid' ? "aspect-video" : "w-64 aspect-video"
+          )}>
             <VideoPlayer
               videoUrl={video.video_url}
               className="w-full h-full object-cover"
@@ -43,18 +62,28 @@ export const VideoGrid = ({ videos, onVideoSelect, onDeleteVideo }: VideoGridPro
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <Play className="h-12 w-12 text-white" />
             </div>
+
+            {/* Duration Badge */}
+            <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs text-white">
+              {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+            </div>
           </div>
 
           {/* Video Info */}
-          <div className="p-4">
+          <div className="p-4 flex-1">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-lg leading-tight truncate">
                   {video.title}
                 </h3>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                   {video.description}
                 </p>
+                <VideoMetadata
+                  views={video.view_count}
+                  createdAt={video.created_at}
+                  duration={video.duration}
+                />
               </div>
               
               {session?.user?.id === video.user_id && (
