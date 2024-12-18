@@ -36,6 +36,25 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     return null;
   }
 
+  const extractFilePathFromUrl = (url: string): string => {
+    try {
+      // Handle both full Supabase URLs and relative paths
+      const matches = url.match(/\/storage\/v\d\/object\/public\/posts\/(.+)/) || 
+                     url.match(/\/posts\/(.+)/);
+      if (matches && matches[1]) {
+        console.log('Extracted file path:', matches[1]);
+        return matches[1];
+      }
+      // Fallback to just the filename if no pattern matches
+      const fileName = url.split('/').pop();
+      console.log('Fallback file path:', fileName);
+      return fileName || '';
+    } catch (error) {
+      console.error('Error extracting file path:', error);
+      return '';
+    }
+  };
+
   const handleImageError = async (url: string, error: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error('Image loading error for URL:', url);
     console.error('Error details:', {
@@ -47,14 +66,16 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     });
     
     try {
-      // Extract the file path from the URL
-      const urlParts = url.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      console.log('Attempting to refresh URL for file:', fileName);
+      const filePath = extractFilePathFromUrl(url);
+      console.log('Attempting to refresh URL for file:', filePath);
+
+      if (!filePath) {
+        throw new Error('Could not extract file path from URL');
+      }
 
       const { data } = supabase.storage
         .from('posts')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
       
       if (data?.publicUrl) {
         console.log('Generated fresh public URL:', data.publicUrl);
