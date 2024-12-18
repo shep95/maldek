@@ -35,5 +35,5 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     signOutAllUsers();
   }, []); // Empty dependency array to run only once
 
-  return null; // Return null while signing out
+  return children; // Return children instead of null to prevent black screen
 };
