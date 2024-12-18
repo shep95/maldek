@@ -5,10 +5,12 @@ import { Bell, Heart, MessageCircle, Share2, Bookmark, Repeat, UserPlus } from "
 import type { Notification } from "@/hooks/useNotifications";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -51,9 +53,12 @@ const getNotificationText = (type: Notification['type'], username: string) => {
 interface NotificationListProps {
   notifications: Notification[];
   isLoading?: boolean;
+  onBulkAction?: (action: 'read' | 'archive' | 'delete', ids: string[]) => void;
 }
 
-export const NotificationList = ({ notifications, isLoading }: NotificationListProps) => {
+export const NotificationList = ({ notifications, isLoading, onBulkAction }: NotificationListProps) => {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,13 +88,25 @@ export const NotificationList = ({ notifications, isLoading }: NotificationListP
     markNotificationsAsRead();
   }, []);
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (notification.type === 'new_follow') {
-      navigate(`/@${notification.actor.username}`);
+  const handleSelectAll = () => {
+    if (selectedIds.length === notifications.length) {
+      setSelectedIds([]);
     } else {
-      navigate(`/post/${notification.post_id}`);
+      setSelectedIds(notifications.map(n => n.id));
     }
   };
+
+  const handleBulkAction = (action: 'read' | 'archive' | 'delete') => {
+    if (selectedIds.length === 0) return;
+    onBulkAction?.(action, selectedIds);
+    setSelectedIds([]);
+  };
+
+  const sortedNotifications = [...notifications].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime();
+    const dateB = new Date(b.created_at).getTime();
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
 
   if (isLoading) {
     return (
@@ -122,50 +139,102 @@ export const NotificationList = ({ notifications, isLoading }: NotificationListP
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-16rem)]">
-      <div className="space-y-3 pr-4">
-        {notifications.map((notification) => (
-          <Card
-            key={notification.id}
-            className={cn(
-              "p-4 transition-all duration-200 hover:bg-accent/5 cursor-pointer",
-              !notification.read && "bg-accent/5"
-            )}
-            onClick={() => handleNotificationClick(notification)}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={selectedIds.length === notifications.length}
+            onCheckedChange={handleSelectAll}
+          />
+          <span className="text-sm text-muted-foreground">
+            {selectedIds.length} selected
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction('read')}
+            disabled={selectedIds.length === 0}
           >
-            <div className="flex items-start gap-4">
-              <Avatar className="h-10 w-10 border-2 border-background">
-                <AvatarImage src={notification.actor.avatar_url || undefined} />
-                <AvatarFallback className="bg-accent text-accent-foreground">
-                  {notification.actor.username.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center gap-2">
-                  {getNotificationIcon(notification.type)}
-                  <p className="text-sm font-medium">
-                    {getNotificationText(notification.type, notification.actor.username)}
+            Mark as Read
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction('archive')}
+            disabled={selectedIds.length === 0}
+          >
+            Archive
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction('delete')}
+            disabled={selectedIds.length === 0}
+          >
+            Delete
+          </Button>
+          <Select
+            value={sortOrder}
+            onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="desc">Newest first</SelectItem>
+              <SelectItem value="asc">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <ScrollArea className="h-[calc(100vh-16rem)]">
+        <div className="space-y-3 pr-4">
+          {sortedNotifications.map((notification) => (
+            <Card
+              key={notification.id}
+              className={cn(
+                "p-4 transition-all duration-200 hover:bg-accent/5 cursor-pointer",
+                !notification.read && "bg-accent/5",
+                selectedIds.includes(notification.id) && "border-accent"
+              )}
+            >
+              <div className="flex items-start gap-4">
+                <Checkbox
+                  checked={selectedIds.includes(notification.id)}
+                  onCheckedChange={(checked) => {
+                    setSelectedIds(prev =>
+                      checked
+                        ? [...prev, notification.id]
+                        : prev.filter(id => id !== notification.id)
+                    );
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <Avatar className="h-10 w-10 border-2 border-background">
+                  <AvatarImage src={notification.actor.avatar_url || undefined} />
+                  <AvatarFallback className="bg-accent text-accent-foreground">
+                    {notification.actor.username.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    {getNotificationIcon(notification.type)}
+                    <p className="text-sm font-medium">
+                      {getNotificationText(notification.type, notification.actor.username)}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                   </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="opacity-0 group-hover:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNotificationClick(notification);
-                }}
-              >
-                <Bell className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </ScrollArea>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
   );
 };

@@ -405,30 +405,89 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_enabled: boolean | null
+          enabled: boolean | null
+          id: string
+          muted_until: string | null
+          notification_type: string
+          push_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          enabled?: boolean | null
+          id?: string
+          muted_until?: string | null
+          notification_type: string
+          push_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          enabled?: boolean | null
+          id?: string
+          muted_until?: string | null
+          notification_type?: string
+          push_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string
+          archived: boolean | null
+          category: string | null
           created_at: string
+          deleted_at: string | null
           id: string
+          metadata: Json | null
           post_id: string
+          priority: string | null
           read: boolean | null
           recipient_id: string
           type: string
         }
         Insert: {
           actor_id: string
+          archived?: boolean | null
+          category?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
+          metadata?: Json | null
           post_id: string
+          priority?: string | null
           read?: boolean | null
           recipient_id: string
           type: string
         }
         Update: {
           actor_id?: string
+          archived?: boolean | null
+          category?: string | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
+          metadata?: Json | null
           post_id?: string
+          priority?: string | null
           read?: boolean | null
           recipient_id?: string
           type?: string

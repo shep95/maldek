@@ -1,14 +1,23 @@
 import { useState, useEffect } from "react";
 import { NotificationList } from "@/components/notifications/NotificationList";
+import { NotificationFilters } from "@/components/notifications/filters/NotificationFilters";
+import { NotificationPreferences } from "@/components/notifications/preferences/NotificationPreferences";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 const Notifications = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { notifications, isLoading } = useNotifications(currentUserId);
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("all");
+  const [filters, setFilters] = useState({
+    type: "all",
+    dateRange: { from: undefined, to: undefined },
+    search: "",
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -22,38 +31,61 @@ const Notifications = () => {
     fetchUser();
   }, []);
 
-  // Add effect to mark notifications as read when the component mounts
-  useEffect(() => {
-    const markNotificationsAsRead = async () => {
-      if (!currentUserId) return;
+  const handleBulkAction = async (action: 'read' | 'archive' | 'delete', ids: string[]) => {
+    if (!currentUserId || ids.length === 0) return;
 
-      try {
-        console.log('Marking notifications as read for user:', currentUserId);
-        
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('recipient_id', currentUserId)
-          .eq('read', false);
-
-        if (error) {
-          console.error('Error marking notifications as read:', error);
-        } else {
-          console.log('Successfully marked notifications as read');
-          // Invalidate the unread notifications count query to trigger a refetch
-          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
-        }
-      } catch (error) {
-        console.error('Error in markNotificationsAsRead:', error);
+    try {
+      let updateData = {};
+      switch (action) {
+        case 'read':
+          updateData = { read: true };
+          break;
+        case 'archive':
+          updateData = { archived: true };
+          break;
+        case 'delete':
+          updateData = { deleted_at: new Date().toISOString() };
+          break;
       }
-    };
 
-    markNotificationsAsRead();
-  }, [currentUserId, queryClient]);
+      const { error } = await supabase
+        .from('notifications')
+        .update(updateData)
+        .in('id', ids)
+        .eq('recipient_id', currentUserId);
 
-  const allNotifications = notifications || [];
-  const unreadNotifications = allNotifications.filter(n => !n.read);
-  const readNotifications = allNotifications.filter(n => n.read);
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+
+      toast.success(`Successfully ${action === 'read' ? 'marked as read' : action + 'd'} ${ids.length} notifications`);
+    } catch (error) {
+      console.error(`Error performing bulk action ${action}:`, error);
+      toast.error(`Failed to ${action} notifications`);
+    }
+  };
+
+  const filteredNotifications = notifications?.filter(notification => {
+    if (filters.type !== "all" && notification.type !== filters.type) return false;
+    
+    if (filters.dateRange.from || filters.dateRange.to) {
+      const notificationDate = new Date(notification.created_at);
+      if (filters.dateRange.from && notificationDate < filters.dateRange.from) return false;
+      if (filters.dateRange.to && notificationDate > filters.dateRange.to) return false;
+    }
+    
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      const actorName = notification.actor.username.toLowerCase();
+      return actorName.includes(searchLower);
+    }
+    
+    return true;
+  });
+
+  const unreadNotifications = filteredNotifications?.filter(n => !n.read) || [];
+  const archivedNotifications = filteredNotifications?.filter(n => n.archived) || [];
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8 animate-fade-in">
@@ -64,7 +96,9 @@ const Notifications = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
+      <NotificationFilters onFilterChange={setFilters} />
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start mb-6">
           <TabsTrigger value="all" className="flex-1">
             All
@@ -72,14 +106,40 @@ const Notifications = () => {
           <TabsTrigger value="unread" className="flex-1">
             Unread {unreadNotifications.length > 0 && `(${unreadNotifications.length})`}
           </TabsTrigger>
+          <TabsTrigger value="archived" className="flex-1">
+            Archived
+          </TabsTrigger>
+          <TabsTrigger value="preferences" className="flex-1">
+            Preferences
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="all">
-          <NotificationList notifications={allNotifications} isLoading={isLoading} />
+          <NotificationList
+            notifications={filteredNotifications || []}
+            isLoading={isLoading}
+            onBulkAction={handleBulkAction}
+          />
         </TabsContent>
         
         <TabsContent value="unread">
-          <NotificationList notifications={unreadNotifications} isLoading={isLoading} />
+          <NotificationList
+            notifications={unreadNotifications}
+            isLoading={isLoading}
+            onBulkAction={handleBulkAction}
+          />
+        </TabsContent>
+
+        <TabsContent value="archived">
+          <NotificationList
+            notifications={archivedNotifications}
+            isLoading={isLoading}
+            onBulkAction={handleBulkAction}
+          />
+        </TabsContent>
+
+        <TabsContent value="preferences">
+          <NotificationPreferences />
         </TabsContent>
       </Tabs>
     </div>

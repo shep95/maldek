@@ -14,7 +14,12 @@ export type Notification = {
   post_id: string;
   type: 'like' | 'comment' | 'share' | 'bookmark' | 'repost' | 'new_follow';
   read: boolean;
+  archived: boolean;
+  deleted_at: string | null;
   created_at: string;
+  priority: 'normal' | 'high' | 'low';
+  category: string;
+  metadata: Record<string, any>;
 };
 
 export const useNotifications = (userId: string | null) => {
@@ -35,6 +40,7 @@ export const useNotifications = (userId: string | null) => {
         )
       `)
       .eq('recipient_id', userId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
