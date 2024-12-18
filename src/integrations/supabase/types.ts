@@ -115,6 +115,44 @@ export type Database = {
           },
         ]
       }
+      analytics_insights: {
+        Row: {
+          created_at: string | null
+          id: string
+          insight_data: Json
+          insight_type: string
+          period_end: string
+          period_start: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insight_data: Json
+          insight_type: string
+          period_end: string
+          period_start: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insight_data?: Json
+          insight_type?: string
+          period_end?: string
+          period_start?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_insights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -319,10 +357,13 @@ export type Database = {
       post_analytics: {
         Row: {
           comment_count: number | null
+          content_type: string | null
           created_at: string | null
           date: string
+          engagement_rate: number | null
           id: string
           like_count: number | null
+          peak_hour: number | null
           post_id: string | null
           user_id: string | null
           view_count: number | null
@@ -330,10 +371,13 @@ export type Database = {
         }
         Insert: {
           comment_count?: number | null
+          content_type?: string | null
           created_at?: string | null
           date?: string
+          engagement_rate?: number | null
           id?: string
           like_count?: number | null
+          peak_hour?: number | null
           post_id?: string | null
           user_id?: string | null
           view_count?: number | null
@@ -341,10 +385,13 @@ export type Database = {
         }
         Update: {
           comment_count?: number | null
+          content_type?: string | null
           created_at?: string | null
           date?: string
+          engagement_rate?: number | null
           id?: string
           like_count?: number | null
+          peak_hour?: number | null
           post_id?: string | null
           user_id?: string | null
           view_count?: number | null
