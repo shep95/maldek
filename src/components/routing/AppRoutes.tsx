@@ -51,8 +51,7 @@ export const AppRoutes = () => {
   
   return (
     <Routes>
-      {/* Make Landing the index component */}
-      <Route index element={session ? <Navigate to="/dashboard" replace /> : <Landing />} />
+      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Landing />} />
       <Route path="/auth" element={<Auth />} />
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
