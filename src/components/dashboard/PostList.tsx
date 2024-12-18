@@ -14,8 +14,9 @@ export const PostList = () => {
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
+  // Enhanced real-time subscriptions with notifications
   useEffect(() => {
-    console.log('Setting up real-time subscriptions for posts');
+    console.log('Setting up real-time subscriptions for posts and interactions');
     
     const channel = supabase
       .channel('post-updates')
@@ -29,6 +30,22 @@ export const PostList = () => {
         (payload) => {
           console.log('Post update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['posts'] });
+          
+          // Show notifications for new posts from followed users
+          if (payload.eventType === 'INSERT' && payload.new.user_id !== session?.user?.id) {
+            // Check if the post is from a followed user
+            supabase
+              .from('followers')
+              .select('*')
+              .eq('follower_id', session?.user?.id)
+              .eq('following_id', payload.new.user_id)
+              .single()
+              .then(({ data }) => {
+                if (data) {
+                  toast.info('New post from someone you follow! Pull to refresh.');
+                }
+              });
+          }
         }
       )
       .on(
@@ -38,9 +55,18 @@ export const PostList = () => {
           schema: 'public',
           table: 'post_likes'
         },
-        () => {
-          console.log('Like update received');
+        (payload) => {
+          console.log('Like update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['posts'] });
+          
+          // Show notification for likes on user's posts
+          if (payload.eventType === 'INSERT' && posts?.some(post => 
+            post.id === payload.new.post_id && 
+            post.user_id === session?.user?.id &&
+            payload.new.user_id !== session?.user?.id
+          )) {
+            toast.success('Someone liked your post!');
+          }
         }
       )
       .on(
@@ -61,7 +87,7 @@ export const PostList = () => {
       console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(channel);
     };
-  }, [queryClient]);
+  }, [queryClient, session?.user?.id, posts]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {

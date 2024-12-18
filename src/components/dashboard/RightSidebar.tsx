@@ -11,7 +11,7 @@ import { TrendingUsers } from "./sidebar/TrendingUsers";
 export const RightSidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Search users and posts
+  // Enhanced search with more relevant fields and better ranking
   const { data: searchResults, isLoading: isLoadingSearch } = useQuery({
     queryKey: ['search', searchQuery],
     queryFn: async () => {
@@ -25,26 +25,46 @@ export const RightSidebar = () => {
         return { users: [], posts: [] };
       }
       
-      // Search users
+      // Enhanced user search with engagement metrics
       const usersResponse = await supabase
         .from('profiles')
-        .select('id, username, avatar_url')
-        .ilike('username', `%${searchQuery}%`)
+        .select(`
+          id, 
+          username, 
+          avatar_url, 
+          follower_count,
+          bio,
+          total_posts,
+          total_likes_received
+        `)
+        .or(`
+          username.ilike.%${searchQuery}%,
+          bio.ilike.%${searchQuery}%
+        `)
+        .order('follower_count', { ascending: false })
         .limit(5);
 
-      // Search posts
+      // Enhanced post search with engagement metrics and relevance
       const postsResponse = await supabase
         .from('posts')
         .select(`
           id,
           content,
           created_at,
+          likes,
+          view_count,
+          media_urls,
           profiles (
             username,
-            avatar_url
+            avatar_url,
+            follower_count
           )
         `)
-        .ilike('content', `%${searchQuery}%`)
+        .or(`
+          content.ilike.%${searchQuery}%,
+          profiles.username.ilike.%${searchQuery}%
+        `)
+        .order('created_at', { ascending: false })
         .limit(5);
 
       if (usersResponse.error) {
@@ -65,11 +85,11 @@ export const RightSidebar = () => {
     enabled: searchQuery.length > 0
   });
 
-  // Fetch trending users
+  // Enhanced trending users with activity metrics and engagement
   const { data: trendingUsers, isLoading: isLoadingTrending } = useQuery({
     queryKey: ['trending-users'],
     queryFn: async () => {
-      console.log("Fetching trending users...");
+      console.log("Fetching trending users with enhanced metrics...");
       
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
@@ -77,10 +97,22 @@ export const RightSidebar = () => {
         return [];
       }
 
+      // Get users who have been active recently and have good engagement
       const { data: users, error } = await supabase
         .from('profiles')
-        .select('id, username, follower_count, avatar_url')
-        .order('follower_count', { ascending: false })
+        .select(`
+          id, 
+          username, 
+          follower_count, 
+          avatar_url,
+          total_posts,
+          total_likes_received,
+          total_views,
+          last_active
+        `)
+        .gt('last_active', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Active in last 7 days
+        .gt('total_posts', 0) // Has made at least one post
+        .order('total_likes_received', { ascending: false })
         .limit(5);
 
       if (error) {
@@ -90,7 +122,7 @@ export const RightSidebar = () => {
 
       return users || [];
     },
-    refetchInterval: 60000
+    refetchInterval: 60000 // Refresh every minute
   });
 
   const handleSearch = debounce((value: string) => {
