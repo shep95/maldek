@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Messages from "@/pages/Messages";
@@ -46,11 +47,11 @@ const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const AppRoutes = () => {
-  console.log("AppRoutes rendered");
+  const session = useSession();
   
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Landing />} />
       <Route path="/auth" element={<Auth />} />
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -73,7 +74,7 @@ export const AppRoutes = () => {
         />
         <Route path="/subscription" element={<Subscription />} />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
