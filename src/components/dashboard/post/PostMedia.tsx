@@ -13,6 +13,33 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
 
   if (!mediaUrls || mediaUrls.length === 0) return null;
 
+  const handleImageError = (url: string, error: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error('Image loading error for URL:', url);
+    console.error('Error details:', {
+      target: error.currentTarget.src,
+      naturalWidth: error.currentTarget.naturalWidth,
+      naturalHeight: error.currentTarget.naturalHeight,
+      complete: error.currentTarget.complete,
+      currentSrc: error.currentTarget.currentSrc
+    });
+    
+    // Try to load the image directly to see if it's accessible
+    fetch(url)
+      .then(response => {
+        console.log('Image fetch response:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      })
+      .catch(fetchError => {
+        console.error('Image fetch error:', fetchError);
+      });
+
+    const img = error.currentTarget;
+    img.style.display = 'none';
+  };
+
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
       {mediaUrls.map((url, i) => {
@@ -35,19 +62,17 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
             ) : (
               <div 
                 onClick={() => onMediaClick(url)} 
-                className="cursor-pointer relative"
+                className="cursor-pointer relative bg-gray-100 rounded-lg"
               >
                 <AspectRatio ratio={16 / 9}>
                   <img
                     src={url}
                     alt={`Media content ${i + 1}`}
-                    className="w-full h-full object-cover rounded-lg hover:opacity-95 transition-opacity"
+                    className="w-full h-full object-contain rounded-lg hover:opacity-95 transition-opacity"
                     loading="lazy"
-                    onError={(e) => {
-                      console.error('Error loading image:', url);
-                      const img = e.target as HTMLImageElement;
-                      img.style.display = 'none';
-                    }}
+                    crossOrigin="anonymous"
+                    onError={(e) => handleImageError(url, e)}
+                    onLoad={() => console.log('Image loaded successfully:', url)}
                   />
                   <Button
                     variant="ghost"
