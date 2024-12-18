@@ -15,25 +15,41 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
 
   useEffect(() => {
     const signOutAllUsers = async () => {
-      try {
-        console.log("Signing out all users...");
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-          console.error("Error signing out:", error);
-          toast.error("Error signing out");
-          return;
+      // Only sign out if we're not already on the auth page
+      if (location.pathname !== '/auth') {
+        try {
+          console.log("Signing out all users...");
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            console.error("Error signing out:", error);
+            toast.error("Error signing out");
+            return;
+          }
+          console.log("Successfully signed out");
+          navigate('/auth');
+        } catch (error) {
+          console.error("Unexpected error during sign out:", error);
+          toast.error("An unexpected error occurred");
         }
-        console.log("Successfully signed out");
-        navigate('/auth');
-      } catch (error) {
-        console.error("Unexpected error during sign out:", error);
-        toast.error("An unexpected error occurred");
       }
     };
 
     // Sign out all users immediately
     signOutAllUsers();
-  }, []); // Empty dependency array to run only once
+  }, [navigate, location.pathname]); // Add location.pathname to dependencies
 
-  return children; // Return children instead of null to prevent black screen
+  // If we're on the auth page, render children immediately
+  if (location.pathname === '/auth') {
+    return children;
+  }
+
+  // For other pages, show a loading message while signing out
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <p className="text-muted-foreground">Signing out, please wait...</p>
+      </div>
+      {children}
+    </div>
+  );
 };
