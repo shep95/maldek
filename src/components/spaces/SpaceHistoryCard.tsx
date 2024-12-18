@@ -11,9 +11,16 @@ import { DownloadProgress } from "./recording/DownloadProgress";
 interface SpaceHistoryCardProps {
   space: any;
   onPurchaseComplete?: () => void;
+  onPurchaseRecording?: (spaceId: string) => Promise<void>;  // Added this prop
+  currentUserId?: string;  // Added this prop for consistency
 }
 
-export const SpaceHistoryCard = ({ space, onPurchaseComplete }: SpaceHistoryCardProps) => {
+export const SpaceHistoryCard = ({ 
+  space, 
+  onPurchaseComplete,
+  onPurchaseRecording,
+  currentUserId 
+}: SpaceHistoryCardProps) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
@@ -27,12 +34,16 @@ export const SpaceHistoryCard = ({ space, onPurchaseComplete }: SpaceHistoryCard
         .from('space_recording_purchases')
         .select('*')
         .eq('space_id', space.id)
-        .eq('user_id', space.user_id)
+        .eq('user_id', currentUserId)
         .eq('status', 'completed')
         .single();
 
       if (!purchases) {
-        setShowPurchaseDialog(true);
+        if (onPurchaseRecording) {
+          await onPurchaseRecording(space.id);
+        } else {
+          setShowPurchaseDialog(true);
+        }
         return;
       }
 
