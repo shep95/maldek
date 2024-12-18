@@ -100,11 +100,11 @@ export const RightSidebar = () => {
 
   return (
     <div className="hidden lg:block fixed right-0 h-screen p-4 w-80">
-      <Card className="h-[90vh] flex flex-col border-muted bg-[#0d0d0d] backdrop-blur-sm p-4">
+      <Card className="h-[90vh] flex flex-col border-muted bg-[#0d0d0d]/80 backdrop-blur-lg p-4 rounded-xl shadow-xl">
         <div className="relative mb-6">
           <Input 
             placeholder="Search @users or posts" 
-            className="pl-10 border-accent focus:ring-accent"
+            className="pl-10 border-accent/20 bg-background/50 focus:border-accent transition-colors rounded-lg"
             onChange={(e) => handleSearch(e.target.value)}
           />
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -112,7 +112,9 @@ export const RightSidebar = () => {
 
         {searchQuery && (
           <div className="mb-6 space-y-4">
-            <h3 className="font-semibold text-lg">Search Results</h3>
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              Search Results
+            </h3>
             <SearchResults 
               isLoading={isLoadingSearch} 
               results={searchResults}
@@ -121,7 +123,10 @@ export const RightSidebar = () => {
         )}
 
         <div className="flex flex-col gap-4">
-          <h3 className="font-semibold text-lg">Trending Users</h3>
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-accent" />
+            Trending Users
+          </h3>
           <TrendingUsers 
             isLoading={isLoadingTrending} 
             users={trendingUsers} 

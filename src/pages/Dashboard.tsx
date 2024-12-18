@@ -8,6 +8,7 @@ import { PostList } from "@/components/dashboard/PostList";
 import { Author } from "@/utils/postUtils";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
+import { Grid, TrendingUp } from "lucide-react";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
@@ -65,7 +66,7 @@ const Dashboard = () => {
     },
     retry: 3,
     retryDelay: 1000,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
   if (error) {
@@ -81,7 +82,7 @@ const Dashboard = () => {
     id: session?.user?.id || '',
     username: profile?.username || '',
     avatar_url: profile?.avatar_url || '',
-    name: profile?.username || '' // Using username as name since we don't have a separate name field
+    name: profile?.username || ''
   };
 
   const handlePostCreated = (newPost: any) => {
@@ -94,7 +95,16 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="flex justify-center">
         <main className="w-full max-w-3xl px-4 py-6 md:py-8 md:pl-24 animate-fade-in">
-          <h1 className="text-3xl font-bold mb-8 text-foreground">Home</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <Grid className="h-6 w-6 text-accent" />
+              <h1 className="text-3xl font-bold text-foreground">Home</h1>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="h-4 w-4" />
+              <span>Latest posts</span>
+            </div>
+          </div>
           <PostList />
         </main>
       </div>

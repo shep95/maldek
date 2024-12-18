@@ -85,7 +85,7 @@ export const PostList = () => {
     return (
       <div className="space-y-6">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
+          <div key={i} className="p-6 rounded-xl border border-muted/50 bg-card/50 backdrop-blur-sm space-y-4 animate-pulse">
             <div className="flex items-center space-x-4">
               <Skeleton className="h-12 w-12 rounded-full" />
               <div className="space-y-2">
@@ -136,7 +136,7 @@ export const PostList = () => {
             />
           ))
         ) : (
-          <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-lg border border-muted">
+          <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
             <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
             <p className="text-muted-foreground">
               Be the first to share something with your network!
