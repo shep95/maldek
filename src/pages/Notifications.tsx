@@ -4,6 +4,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
 
 const NotificationsSkeleton = () => (
   <div className="space-y-3">
@@ -25,6 +26,7 @@ const Notifications = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { notifications } = useNotifications(currentUserId);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -58,6 +60,8 @@ const Notifications = () => {
           console.error('Error marking notifications as read:', error);
         } else {
           console.log('Successfully marked notifications as read');
+          // Invalidate the unread notifications count query to trigger a refetch
+          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
         }
       } catch (error) {
         console.error('Error in markNotificationsAsRead:', error);
@@ -65,7 +69,7 @@ const Notifications = () => {
     };
 
     markNotificationsAsRead();
-  }, [currentUserId]);
+  }, [currentUserId, queryClient]);
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8 animate-fade-in">
