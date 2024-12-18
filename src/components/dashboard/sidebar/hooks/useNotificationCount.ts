@@ -10,10 +10,15 @@ export const useNotificationCount = (userId: string | null) => {
 
   // Fetch unread notifications count
   const { data: unreadCount } = useQuery({
-    queryKey: ['unread-notifications-count'],
+    queryKey: ['unread-notifications-count', userId],
     queryFn: async () => {
       try {
         if (!userId) return 0;
+
+        // If we're on the notifications route, return 0 immediately
+        if (isNotificationsRoute) {
+          return 0;
+        }
 
         const { count, error } = await supabase
           .from('notifications')
@@ -28,16 +33,16 @@ export const useNotificationCount = (userId: string | null) => {
         return 0;
       }
     },
-    refetchInterval: 30000 // Refetch every 30 seconds
+    enabled: !!userId
   });
 
   // Reset notification count when on notifications page
   useEffect(() => {
     if (isNotificationsRoute) {
-      // Invalidate the query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+      // Set the count to 0 in the cache immediately
+      queryClient.setQueryData(['unread-notifications-count', userId], 0);
     }
-  }, [isNotificationsRoute, queryClient]);
+  }, [isNotificationsRoute, queryClient, userId]);
 
   return unreadCount || 0;
 };
