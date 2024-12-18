@@ -39,21 +39,10 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
         .is('removed_by_recipient', false)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching messages:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       console.log('Fetched messages:', data);
-      
-      // Transform the data to match the Message type
-      const transformedMessages: Message[] = data.map(msg => ({
-        ...msg,
-        reactions: msg.reactions as { [key: string]: string[] },
-        translated_content: msg.translated_content as { [key: string]: string }
-      }));
-      
-      setMessages(transformedMessages);
+      setMessages(data as Message[]);
       
       // Mark messages as read
       if (data && data.length > 0) {
@@ -89,7 +78,7 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
           },
           (payload) => {
             console.log('Message update received:', payload);
-            fetchMessages(); // Refresh messages on any change
+            fetchMessages();
           }
         )
         .subscribe();
@@ -119,59 +108,99 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
         recipient_id: recipientId,
         content: content.trim(),
         status: 'sent',
-        reply_to_id: replyToId
+        reply_to_id: replyToId,
+        reactions: {}
       };
-
-      console.log('New message data:', newMessage);
 
       const { data, error } = await supabase
         .from('messages')
         .insert(newMessage)
-        .select(`
-          id,
-          content,
-          created_at,
-          sender_id,
-          recipient_id,
-          read_at,
-          status,
-          reply_to_id,
-          media_urls,
-          reactions,
-          translated_content,
-          is_edited,
-          sender:profiles!messages_sender_id_fkey (
-            id,
-            username,
-            avatar_url,
-            follower_count
-          )
-        `)
+        .select()
         .single();
 
-      if (error) {
-        console.error('Error sending message:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       console.log('Message sent successfully:', data);
       toast.success("Message sent");
       
-      // Transform the new message to match the Message type
-      const transformedMessage: Message = {
-        ...data,
-        reactions: data.reactions as { [key: string]: string[] },
-        translated_content: data.translated_content as { [key: string]: string }
-      };
-      
       // Update local messages state
-      setMessages(prev => [...prev, transformedMessage]);
+      setMessages(prev => [...prev, data as Message]);
     } catch (error) {
       console.error('Error in sendMessage:', error);
       toast.error("Failed to send message");
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const addReaction = async (messageId: string, emoji: string) => {
+    if (!currentUserId) return;
+
+    try {
+      const message = messages.find(m => m.id === messageId);
+      if (!message) return;
+
+      const reactions = { ...message.reactions };
+      if (!reactions[emoji]) reactions[emoji] = [];
+      
+      const userIndex = reactions[emoji].indexOf(currentUserId);
+      if (userIndex > -1) {
+        reactions[emoji].splice(userIndex, 1);
+        if (reactions[emoji].length === 0) delete reactions[emoji];
+      } else {
+        reactions[emoji].push(currentUserId);
+      }
+
+      const { error } = await supabase
+        .from('messages')
+        .update({ reactions })
+        .eq('id', messageId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      throw error;
+    }
+  };
+
+  const editMessage = async (messageId: string, content: string) => {
+    if (!currentUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ 
+          content,
+          is_edited: true,
+          edited_at: new Date().toISOString()
+        })
+        .eq('id', messageId)
+        .eq('sender_id', currentUserId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error editing message:', error);
+      throw error;
+    }
+  };
+
+  const deleteMessage = async (messageId: string) => {
+    if (!currentUserId) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ removed_by_recipient: true })
+        .eq('id', messageId)
+        .eq('sender_id', currentUserId);
+
+      if (error) throw error;
+      
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      throw error;
     }
   };
 
@@ -193,6 +222,9 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
     messages,
     isLoading,
     sendMessage,
-    updateMessageStatus
+    updateMessageStatus,
+    addReaction,
+    editMessage,
+    deleteMessage
   };
 };

@@ -3,53 +3,109 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { MessageMedia } from "./components/MessageMedia";
 import { MessageTimestamp } from "./components/MessageTimestamp";
+import { MessageReactions } from "./components/MessageReactions";
+import { MessageActions } from "./components/MessageActions";
+import { Button } from "@/components/ui/button";
+import { Check, CheckCheck } from "lucide-react";
 
 interface ChatMessageProps {
   message: Message;
   isCurrentUser: boolean;
   onReply: () => void;
-  onStatusUpdate: (messageId: string, status: string) => Promise<void>;
+  onReaction: (emoji: string) => Promise<void>;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-export const ChatMessage = ({ message, isCurrentUser, onReply, onStatusUpdate }: ChatMessageProps) => {
+export const ChatMessage = ({ 
+  message, 
+  isCurrentUser, 
+  onReply,
+  onReaction,
+  onEdit,
+  onDelete
+}: ChatMessageProps) => {
   const handleDownload = async (imageUrl: string) => {
     try {
       const link = document.createElement('a');
       link.href = imageUrl;
-      link.download = `generated-image-${Date.now()}.png`;
+      link.download = `image-${Date.now()}.png`;
       link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success("Image download started");
+      toast.success("Download started");
     } catch (error) {
       console.error('Error downloading image:', error);
-      toast.error("Failed to download image. Try right-clicking and 'Save Image As'");
+      toast.error("Failed to download image");
     }
   };
 
   return (
     <div
       className={cn(
-        "flex animate-fade-in",
+        "group flex animate-fade-in gap-2",
         isCurrentUser ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
-          "max-w-[85%] p-3 rounded-2xl text-sm sm:text-base",
-          isCurrentUser
-            ? "bg-accent text-accent-foreground rounded-tr-sm"
-            : "bg-muted text-foreground rounded-tl-sm"
+          "max-w-[85%] space-y-1",
+          isCurrentUser ? "items-end" : "items-start"
         )}
       >
-        <MessageMedia
-          imageUrl={message.media_urls?.[0]}
-          generatedImageUrl={message.media_urls?.[1]}
-          onDownload={handleDownload}
+        <div
+          className={cn(
+            "relative rounded-2xl px-3 py-2 text-sm",
+            isCurrentUser
+              ? "bg-accent text-accent-foreground"
+              : "bg-muted text-foreground",
+            message.reply_to_id && "mt-2"
+          )}
+        >
+          {message.reply_to_id && (
+            <div className="mb-2 -mt-4 -ml-2 text-xs text-muted-foreground">
+              Replying to message
+            </div>
+          )}
+          
+          <MessageMedia
+            imageUrl={message.media_urls?.[0]}
+            generatedImageUrl={message.media_urls?.[1]}
+            onDownload={handleDownload}
+          />
+          
+          <p className="whitespace-pre-wrap break-words">
+            {message.content}
+          </p>
+
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <MessageTimestamp timestamp={message.created_at} />
+            {isCurrentUser && (
+              <div className="flex items-center gap-1 text-xs opacity-60">
+                {message.read_at ? (
+                  <CheckCheck className="h-3 w-3" />
+                ) : (
+                  <Check className="h-3 w-3" />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <MessageReactions
+          reactions={message.reactions}
+          onReaction={onReaction}
+          isCurrentUser={isCurrentUser}
         />
-        <p className="whitespace-pre-wrap">{message.content}</p>
-        <MessageTimestamp timestamp={message.created_at} />
+
+        <MessageActions
+          message={message}
+          isCurrentUser={isCurrentUser}
+          onReply={onReply}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       </div>
     </div>
   );
