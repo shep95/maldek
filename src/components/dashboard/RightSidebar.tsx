@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
