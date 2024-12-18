@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -77,16 +78,22 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
 
         if (error) {
           console.error('Error marking notifications as read:', error);
+          toast.error('Failed to mark notifications as read');
         } else {
           console.log('Successfully marked notifications as read');
+          toast.success('Notifications marked as read');
         }
       } catch (error) {
         console.error('Error in markNotificationsAsRead:', error);
+        toast.error('An error occurred while updating notifications');
       }
     };
 
-    markNotificationsAsRead();
-  }, []);
+    // Only mark as read when viewing the notifications
+    if (notifications.length > 0) {
+      markNotificationsAsRead();
+    }
+  }, [notifications]);
 
   const handleSelectAll = () => {
     if (selectedIds.length === notifications.length) {
@@ -96,10 +103,50 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
     }
   };
 
-  const handleBulkAction = (action: 'read' | 'archive' | 'delete') => {
-    if (selectedIds.length === 0) return;
-    onBulkAction?.(action, selectedIds);
-    setSelectedIds([]);
+  const handleBulkAction = async (action: 'read' | 'archive' | 'delete') => {
+    if (selectedIds.length === 0) {
+      toast.error('Please select notifications first');
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      let updateData = {};
+      switch (action) {
+        case 'read':
+          updateData = { read: true };
+          break;
+        case 'archive':
+          updateData = { archived: true };
+          break;
+        case 'delete':
+          updateData = { deleted_at: new Date().toISOString() };
+          break;
+      }
+
+      const { error } = await supabase
+        .from('notifications')
+        .update(updateData)
+        .in('id', selectedIds)
+        .eq('recipient_id', user.id);
+
+      if (error) {
+        console.error(`Error performing bulk action ${action}:`, error);
+        toast.error(`Failed to ${action} notifications`);
+      } else {
+        toast.success(`Successfully ${action === 'read' ? 'marked as read' : action + 'd'} ${selectedIds.length} notifications`);
+        onBulkAction?.(action, selectedIds);
+        setSelectedIds([]); // Clear selection after successful action
+      }
+    } catch (error) {
+      console.error(`Error in handleBulkAction:`, error);
+      toast.error('An error occurred while updating notifications');
+    }
   };
 
   const sortedNotifications = [...notifications].sort((a, b) => {
