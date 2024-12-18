@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const useMessageOperations = (currentUserId: string | null) => {
+export const useMessageOperations = (currentUserId: string | null, recipientId: string) => {
   const sendMessage = async (content: string, replyToId?: string) => {
     if (!currentUserId) {
       toast.error("You must be logged in to send messages");
@@ -12,10 +12,12 @@ export const useMessageOperations = (currentUserId: string | null) => {
       console.log('Sending message');
       const newMessage = {
         sender_id: currentUserId,
+        recipient_id: recipientId, // Add recipient_id
         content: content.trim(),
         status: 'sent',
-        reply_to_id: replyToId,
-        reactions: {}
+        reply_to_id: replyToId || null,
+        reactions: {},
+        is_edited: false
       };
 
       const { error } = await supabase
@@ -59,7 +61,7 @@ export const useMessageOperations = (currentUserId: string | null) => {
 
       if (fetchError) throw fetchError;
 
-      const reactions = { ...message.reactions };
+      const reactions = message?.reactions as Record<string, string[]> || {};
       if (!reactions[emoji]) reactions[emoji] = [];
       
       const userIndex = reactions[emoji].indexOf(currentUserId);
