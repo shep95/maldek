@@ -9,6 +9,8 @@ import { useAgoraRTC } from "@/hooks/spaces/useAgoraRTC";
 import { SpaceManagementControls } from "./SpaceManagementControls";
 import { SpaceParticipantsList } from "./SpaceParticipantsList";
 import { SpaceSpeakerRequests } from "./SpaceSpeakerRequests";
+import { RecordingStatus } from "./recording/RecordingStatus";
+import { useState as useRecordingState } from "react";
 
 interface SpaceManagementDialogProps {
   isOpen: boolean;
@@ -30,6 +32,8 @@ export const SpaceManagementDialog = ({
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string>("listener");
+  const [recordingDuration, setRecordingDuration] = useRecordingState(0);
+  const [isRecording, setIsRecording] = useRecordingState(false);
   
   const {
     isConnected,
@@ -186,9 +190,26 @@ export const SpaceManagementDialog = ({
 
   const isSpeaker = userRole === 'speaker' || userRole === 'host' || userRole === 'co_host';
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
+        {isHost && (
+          <RecordingStatus
+            isRecording={isRecording}
+            duration={recordingDuration}
+          />
+        )}
+        
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="participants">

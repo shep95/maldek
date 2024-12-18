@@ -6,6 +6,9 @@ import { formatDistanceToNow } from "date-fns";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { RecordingPurchaseDialog } from "./recording/RecordingPurchaseDialog";
+import { DownloadProgress } from "./recording/DownloadProgress";
 
 interface SpaceHistoryCardProps {
   space: any;
@@ -15,16 +18,57 @@ interface SpaceHistoryCardProps {
 
 export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: SpaceHistoryCardProps) => {
   const session = useSession();
+  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const formatDate = (date: string) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true });
+  };
+
+  const downloadRecording = async (url: string) => {
+    try {
+      setIsDownloading(true);
+      const response = await fetch(url);
+      const reader = response.body?.getReader();
+      const contentLength = Number(response.headers.get('Content-Length'));
+      
+      let receivedLength = 0;
+      const chunks = [];
+
+      while(true && reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        chunks.push(value);
+        receivedLength += value.length;
+        setDownloadProgress((receivedLength / contentLength) * 100);
+      }
+
+      const blob = new Blob(chunks);
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${space.title}-recording.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+      
+      toast.success("Download completed!");
+    } catch (error) {
+      console.error('Error downloading recording:', error);
+      toast.error("Download failed. Please try again.");
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
+    }
   };
 
   const handleDownload = async () => {
     try {
       console.log('Initiating recording download process for space:', space.id);
       
-      // Check if user has already purchased
       const { data: purchases, error: purchaseError } = await supabase
         .from('space_recording_purchases')
         .select('*')
@@ -40,27 +84,24 @@ export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: 
 
       if (purchases) {
         console.log('Recording already purchased, initiating download');
-        // If purchased, download directly
         if (space.recording_url) {
-          const link = document.createElement('a');
-          link.href = space.recording_url;
-          link.download = `${space.title}-recording.mp3`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          toast.success("Download started!");
+          await downloadRecording(space.recording_url);
         } else {
           toast.error("Recording not available");
         }
       } else {
         console.log('Recording not purchased, initiating purchase flow');
-        // If not purchased, initiate purchase
-        onPurchaseRecording(space.id);
+        setIsPurchaseDialogOpen(true);
       }
     } catch (error) {
       console.error('Error handling recording:', error);
       toast.error("Failed to process recording. Please try again.");
     }
+  };
+
+  const handlePurchase = () => {
+    setIsPurchaseDialogOpen(false);
+    onPurchaseRecording(space.id);
   };
 
   return (
@@ -84,12 +125,15 @@ export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: 
               size="sm"
               onClick={handleDownload}
               className="gap-2"
+              disabled={isDownloading}
             >
               <Download className="h-4 w-4" />
-              Purchase Recording ($2.00)
+              Purchase Recording (${space.recording_price?.toFixed(2) || "2.00"})
             </Button>
           )}
         </div>
+
+        <DownloadProgress progress={downloadProgress} isDownloading={isDownloading} />
 
         <div className="flex items-center gap-2">
           <Avatar className="h-8 w-8">
@@ -133,6 +177,13 @@ export const SpaceHistoryCard = ({ space, onPurchaseRecording, currentUserId }: 
           <span>{space.participants?.length || 0} participants</span>
         </div>
       </div>
+
+      <RecordingPurchaseDialog
+        isOpen={isPurchaseDialogOpen}
+        onOpenChange={setIsPurchaseDialogOpen}
+        space={space}
+        onPurchase={handlePurchase}
+      />
     </div>
   );
 };
