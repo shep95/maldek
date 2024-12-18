@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Eye, ThumbsUp, MessageSquare, Clock } from "lucide-react";
 import { AnalyticsCard } from "@/components/profile/tabs/analytics/AnalyticsCard";
 import { AnalyticsChart } from "@/components/profile/tabs/analytics/AnalyticsChart";
 import { useAnalytics } from "@/components/profile/tabs/analytics/useAnalytics";
@@ -26,22 +25,26 @@ const Analytics = () => {
         <AnalyticsCard 
           title="Total Views" 
           value={analytics?.reduce((sum, day) => sum + day.views, 0) || 0}
-          trend={"+10%"}
+          trend="+10%"
+          icon={Eye}
         />
         <AnalyticsCard 
           title="Total Likes" 
           value={analytics?.reduce((sum, day) => sum + day.likes, 0) || 0}
-          trend={"+5%"}
+          trend="+5%"
+          icon={ThumbsUp}
         />
         <AnalyticsCard 
           title="Total Comments" 
           value={analytics?.reduce((sum, day) => sum + day.comments, 0) || 0}
-          trend={"+15%"}
+          trend="+15%"
+          icon={MessageSquare}
         />
         <AnalyticsCard 
           title="Watch Time (mins)" 
           value={analytics?.reduce((sum, day) => sum + day.watchTime, 0) || 0}
-          trend={"+20%"}
+          trend="+20%"
+          icon={Clock}
         />
       </div>
 
