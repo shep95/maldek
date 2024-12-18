@@ -12,6 +12,8 @@ import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 
 export const AppRoutes = () => {
+  console.log("AppRoutes rendered");
+  
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -28,6 +30,7 @@ export const AppRoutes = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
       </Route>
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };
