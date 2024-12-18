@@ -10,7 +10,6 @@ import { debounce } from "lodash";
 import { VideoDialog } from "@/components/videos/VideoDialog";
 import { VideoGrid } from "@/components/videos/VideoGrid";
 import { VideoControls } from "@/components/videos/controls/VideoControls";
-import { cn } from "@/lib/utils"; // Add this import
 
 const Videos = () => {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);

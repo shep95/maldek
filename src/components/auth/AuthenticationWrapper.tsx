@@ -1,7 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSession } from '@supabase/auth-helpers-react';
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface AuthenticationWrapperProps {
@@ -14,42 +13,31 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    const signOutAllUsers = async () => {
-      // Only sign out if we're not already on the auth page
-      if (location.pathname !== '/auth') {
-        try {
-          console.log("Signing out all users...");
-          const { error } = await supabase.auth.signOut();
-          if (error) {
-            console.error("Error signing out:", error);
-            toast.error("Error signing out");
-            return;
-          }
-          console.log("Successfully signed out");
-          navigate('/auth');
-        } catch (error) {
-          console.error("Unexpected error during sign out:", error);
-          toast.error("An unexpected error occurred");
-        }
-      }
-    };
+    console.log("AuthenticationWrapper: Session state changed", { 
+      hasSession: !!session,
+      currentPath: location.pathname 
+    });
 
-    // Sign out all users immediately
-    signOutAllUsers();
-  }, [navigate, location.pathname]); // Add location.pathname to dependencies
+    if (!session && location.pathname !== '/auth') {
+      console.log("No session found, redirecting to auth");
+      navigate('/auth');
+      return;
+    }
 
-  // If we're on the auth page, render children immediately
-  if (location.pathname === '/auth') {
+    if (session && location.pathname === '/auth') {
+      console.log("Session found on auth page, redirecting to dashboard");
+      navigate('/dashboard');
+      return;
+    }
+  }, [session, navigate, location.pathname]);
+
+  // If we're on the auth page and there's no session, or if we have a session and we're not on the auth page
+  if ((!session && location.pathname === '/auth') || (session && location.pathname !== '/auth')) {
+    console.log("Rendering children", { hasSession: !!session, path: location.pathname });
     return children;
   }
 
-  // For other pages, show a loading message while signing out
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <p className="text-muted-foreground">Signing out, please wait...</p>
-      </div>
-      {children}
-    </div>
-  );
+  // Return null while redirecting
+  console.log("Returning null while handling auth redirect");
+  return null;
 };
