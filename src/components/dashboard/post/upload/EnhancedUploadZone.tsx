@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Image, AlertCircle } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
+import { handlePasteEvent } from "@/utils/postUploadUtils";
 
 interface EnhancedUploadZoneProps {
   onFileSelect: (files: FileList) => void;
