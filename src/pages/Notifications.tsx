@@ -40,6 +40,33 @@ const Notifications = () => {
     fetchUser();
   }, []);
 
+  // Add effect to mark notifications as read when the component mounts
+  useEffect(() => {
+    const markNotificationsAsRead = async () => {
+      if (!currentUserId) return;
+
+      try {
+        console.log('Marking notifications as read for user:', currentUserId);
+        
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('recipient_id', currentUserId)
+          .eq('read', false);
+
+        if (error) {
+          console.error('Error marking notifications as read:', error);
+        } else {
+          console.log('Successfully marked notifications as read');
+        }
+      } catch (error) {
+        console.error('Error in markNotificationsAsRead:', error);
+      }
+    };
+
+    markNotificationsAsRead();
+  }, [currentUserId]);
+
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       <div className="mb-8">
