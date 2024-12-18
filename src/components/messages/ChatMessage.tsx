@@ -78,12 +78,15 @@ export const ChatMessage = ({
 
   const handleReaction = async (emoji: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { error } = await supabase
         .from('messages')
         .update({
           reactions: {
             ...message.reactions,
-            [emoji]: [...(message.reactions[emoji] || []), supabase.auth.user()?.id]
+            [emoji]: [...(message.reactions[emoji] || []), user.id]
           }
         })
         .eq('id', message.id);

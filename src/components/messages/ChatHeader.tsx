@@ -1,54 +1,45 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Info, MoreVertical } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { MoreVertical, Phone, Video } from "lucide-react";
 
-interface ChatHeaderProps {
+export interface ChatHeaderProps {
   recipientName: string;
-  recipientAvatar?: string | null;
   onViewProfile: () => void;
+  isOnline: boolean;  // Added this prop
 }
 
-export const ChatHeader = ({ recipientName, recipientAvatar, onViewProfile }: ChatHeaderProps) => {
+export const ChatHeader = ({ recipientName, onViewProfile, isOnline }: ChatHeaderProps) => {
   return (
-    <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center gap-2">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={recipientAvatar || ''} alt={recipientName} />
-          <AvatarFallback>{recipientName[0]?.toUpperCase()}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h2 className="font-semibold text-lg">{recipientName}</h2>
-          <p className="text-xs text-muted-foreground">Active now</p>
+    <div className="p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={`/avatars/${recipientName}.png`} alt={recipientName} />
+            <AvatarFallback>{recipientName[0]}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-semibold" onClick={onViewProfile}>
+              {recipientName}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {isOnline ? 'Online' : 'Offline'}
+            </p>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onViewProfile}
-          className="h-9 w-9"
-        >
-          <Info className="h-5 w-5" />
-          <span className="sr-only">View profile</span>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <MoreVertical className="h-5 w-5" />
-              <span className="sr-only">More options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>Clear chat</DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Block user</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon">
+            <Phone className="h-4 w-4" />
+            <span className="sr-only">Voice call</span>
+          </Button>
+          <Button variant="ghost" size="icon">
+            <Video className="h-4 w-4" />
+            <span className="sr-only">Video call</span>
+          </Button>
+          <Button variant="ghost" size="icon">
+            <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">More options</span>
+          </Button>
+        </div>
       </div>
     </div>
   );

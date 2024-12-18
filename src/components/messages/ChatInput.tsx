@@ -1,22 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ImagePlus, Send, Smile } from "lucide-react";
+import { ImagePlus, Send, Smile, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Message } from "@/types/messages";
 
-interface ChatInputProps {
-  onSendMessage: (content: string) => Promise<void>;
+export interface ChatInputProps {
+  onSendMessage: (content: string, replyToId?: string) => Promise<void>;
   isLoading: boolean;
+  replyingTo: Message | null;  // Added this prop
+  onCancelReply: () => void;   // Added this prop
 }
 
-export const ChatInput = ({ onSendMessage, isLoading }: ChatInputProps) => {
+export const ChatInput = ({ 
+  onSendMessage, 
+  isLoading, 
+  replyingTo, 
+  onCancelReply 
+}: ChatInputProps) => {
   const [message, setMessage] = useState("");
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
     
     try {
-      await onSendMessage(message);
+      await onSendMessage(message, replyingTo?.id);
       setMessage("");
     } catch (error) {
       console.error('Error sending message:', error);
@@ -26,6 +34,22 @@ export const ChatInput = ({ onSendMessage, isLoading }: ChatInputProps) => {
 
   return (
     <div className="p-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {replyingTo && (
+        <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+          <div className="text-sm">
+            <span className="text-muted-foreground">Replying to message: </span>
+            <span className="font-medium">{replyingTo.content}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onCancelReply}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
       <div className="flex gap-2">
         <div className="flex-1 flex gap-2">
           <Button variant="ghost" size="icon" className="shrink-0">

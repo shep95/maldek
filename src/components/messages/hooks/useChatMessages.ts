@@ -45,7 +45,15 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
       }
       
       console.log('Fetched messages:', data);
-      setMessages(data || []);
+      
+      // Transform the data to match the Message type
+      const transformedMessages: Message[] = data.map(msg => ({
+        ...msg,
+        reactions: msg.reactions as { [key: string]: string[] },
+        translated_content: msg.translated_content as { [key: string]: string }
+      }));
+      
+      setMessages(transformedMessages);
       
       // Mark messages as read
       if (data && data.length > 0) {
@@ -149,8 +157,15 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
       console.log('Message sent successfully:', data);
       toast.success("Message sent");
       
+      // Transform the new message to match the Message type
+      const transformedMessage: Message = {
+        ...data,
+        reactions: data.reactions as { [key: string]: string[] },
+        translated_content: data.translated_content as { [key: string]: string }
+      };
+      
       // Update local messages state
-      setMessages(prev => [...prev, data]);
+      setMessages(prev => [...prev, transformedMessage]);
     } catch (error) {
       console.error('Error in sendMessage:', error);
       toast.error("Failed to send message");
