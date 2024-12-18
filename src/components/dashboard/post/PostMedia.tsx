@@ -33,12 +33,16 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                 />
               </AspectRatio>
             ) : (
-              <div onClick={() => onMediaClick(url)}>
+              <div 
+                onClick={() => onMediaClick(url)} 
+                className="cursor-pointer relative"
+              >
                 <AspectRatio ratio={16 / 9}>
                   <img
                     src={url}
                     alt={`Media content ${i + 1}`}
-                    className="w-full h-full object-cover rounded-lg transition-opacity hover:opacity-90"
+                    className="w-full h-full object-cover rounded-lg hover:opacity-95 transition-opacity"
+                    loading="lazy"
                     onError={(e) => {
                       console.error('Error loading image:', url);
                       const img = e.target as HTMLImageElement;
