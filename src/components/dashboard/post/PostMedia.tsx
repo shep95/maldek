@@ -9,12 +9,15 @@ interface PostMediaProps {
 }
 
 export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
+  console.log('Rendering PostMedia with URLs:', mediaUrls);
+
   if (!mediaUrls || mediaUrls.length === 0) return null;
 
   return (
     <div className="mt-4 grid gap-2 grid-cols-1">
       {mediaUrls.map((url, i) => {
         const isVideo = isVideoFile(url);
+        console.log('Processing media URL:', url, 'Is video:', isVideo);
 
         return (
           <div key={url} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
@@ -34,8 +37,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                 <AspectRatio ratio={16 / 9}>
                   <img
                     src={url}
-                    alt={`Post media ${i + 1}`}
+                    alt={`Media content ${i + 1}`}
                     className="w-full h-full object-cover rounded-lg transition-opacity hover:opacity-90"
+                    onError={(e) => {
+                      console.error('Error loading image:', url);
+                      const img = e.target as HTMLImageElement;
+                      img.style.display = 'none';
+                    }}
                   />
                   <Button
                     variant="ghost"
