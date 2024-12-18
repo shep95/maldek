@@ -37,3 +37,45 @@ export const isVideoFile = (url: string): boolean => {
   console.log('Not a video URL');
   return false;
 };
+
+export const getMediaType = (url: string): 'image' | 'video' | 'unknown' => {
+  if (isVideoFile(url)) return 'video';
+  
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.avif'];
+  const lowercaseUrl = url.toLowerCase();
+  
+  if (imageExtensions.some(ext => lowercaseUrl.endsWith(ext))) return 'image';
+  if (url.startsWith('data:image/')) return 'image';
+  
+  return 'unknown';
+};
+
+export const validateMediaFile = (file: File): { isValid: boolean; error?: string } => {
+  const maxSize = 50 * 1024 * 1024; // 50MB
+  
+  if (file.size > maxSize) {
+    return {
+      isValid: false,
+      error: `File size must be less than 50MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
+    };
+  }
+  
+  const allowedTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'video/mp4',
+    'video/webm',
+    'video/ogg'
+  ];
+  
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      isValid: false,
+      error: `File type ${file.type} is not supported`
+    };
+  }
+  
+  return { isValid: true };
+};
