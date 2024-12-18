@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -77,27 +78,14 @@ export const NotificationList = ({ notifications }: NotificationListProps) => {
       }
     };
 
-    // Mark notifications as read when component mounts
     markNotificationsAsRead();
   }, []);
 
   const handleNotificationClick = (notification: Notification) => {
-    console.log('Notification clicked:', notification);
-
-    switch (notification.type) {
-      case 'like':
-      case 'comment':
-      case 'bookmark':
-      case 'repost':
-        // Navigate to the post
-        navigate(`/post/${notification.post_id}`);
-        break;
-      case 'new_follow':
-        // Navigate to the user's profile
-        navigate(`/@${notification.actor.username}`);
-        break;
-      default:
-        console.log('Unknown notification type:', notification.type);
+    // Only navigate if it's a comment notification
+    if (notification.type === 'comment') {
+      console.log('Comment notification clicked:', notification);
+      navigate(`/post/${notification.post_id}`);
     }
   };
 
@@ -119,9 +107,12 @@ export const NotificationList = ({ notifications }: NotificationListProps) => {
         {notifications.map((notification) => (
           <Card
             key={notification.id}
-            className={`p-4 transition-all duration-200 hover:bg-accent/5 cursor-pointer ${
-              notification.read ? 'bg-background' : 'bg-accent/5'
-            }`}
+            className={cn(
+              "p-4 transition-all duration-200 hover:bg-accent/5",
+              notification.type === 'comment' && "cursor-pointer",
+              !notification.read && "bg-accent/5",
+              notification.type !== 'comment' && "cursor-default"
+            )}
             onClick={() => handleNotificationClick(notification)}
           >
             <div className="flex items-start gap-4">
