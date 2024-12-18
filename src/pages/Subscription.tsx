@@ -3,7 +3,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Check, DollarSign, Sparkles, ExternalLink } from "lucide-react";
+import { Check, DollarSign, Sparkles, ExternalLink, Mic } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -173,6 +173,15 @@ const Subscription = () => {
               <li className="flex items-center">
                 <Check className="mr-2 h-5 w-5 text-green-500" />
                 Priority support
+              </li>
+              <li className="flex items-center">
+                <Mic className="mr-2 h-5 w-5 text-orange-500" />
+                <span className="flex items-center gap-2">
+                  Create Spaces
+                  <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 text-xs">
+                    HOT
+                  </Badge>
+                </span>
               </li>
               <li className="flex items-center">
                 <DollarSign className="mr-2 h-5 w-5 text-orange-500" />
