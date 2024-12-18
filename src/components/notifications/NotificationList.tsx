@@ -63,8 +63,8 @@ export const NotificationList = ({
     );
   };
 
-  const handleBulkActionClick = async (action: 'read' | 'archive' | 'delete') => {
-    await handleBulkAction(action, selectedIds, (action, ids) => {
+  const handleBulkActionClick = (action: 'read' | 'archive' | 'delete') => {
+    handleBulkAction(action, selectedIds, (action, ids) => {
       onBulkAction?.(action, ids);
       setSelectedIds([]);
     });
