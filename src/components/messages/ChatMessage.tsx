@@ -5,7 +5,6 @@ import { MessageMedia } from "./components/MessageMedia";
 import { MessageTimestamp } from "./components/MessageTimestamp";
 import { MessageReactions } from "./components/MessageReactions";
 import { MessageActions } from "./components/MessageActions";
-import { Button } from "@/components/ui/button";
 import { Check, CheckCheck } from "lucide-react";
 
 interface ChatMessageProps {
@@ -44,7 +43,7 @@ export const ChatMessage = ({
   return (
     <div
       className={cn(
-        "group flex animate-fade-in gap-2 py-1",
+        "group flex animate-fade-in gap-2 py-1.5",
         isCurrentUser ? "justify-end" : "justify-start"
       )}
     >
@@ -56,15 +55,15 @@ export const ChatMessage = ({
       >
         <div
           className={cn(
-            "relative rounded-2xl px-4 py-2.5 text-sm hover-message",
+            "relative rounded-2xl px-4 py-2.5 text-sm hover-message animate-scale-message",
             isCurrentUser
               ? "message-gradient text-accent-foreground"
-              : "bg-muted text-foreground",
+              : "bg-muted/80 text-foreground backdrop-blur-sm",
             message.reply_to_id && "mt-2"
           )}
         >
           {message.reply_to_id && (
-            <div className="mb-2 -mt-4 -ml-2 text-xs text-muted-foreground">
+            <div className="mb-2 -mt-4 -ml-2 text-xs text-muted-foreground/80 font-medium">
               Replying to message
             </div>
           )}
@@ -82,7 +81,7 @@ export const ChatMessage = ({
           <div className="mt-1.5 flex items-center justify-between gap-2">
             <MessageTimestamp timestamp={message.created_at} />
             {isCurrentUser && (
-              <div className="flex items-center gap-1 text-xs text-accent/60">
+              <div className="flex items-center gap-1 text-xs text-accent/70">
                 {message.read_at ? (
                   <CheckCheck className="h-3.5 w-3.5" />
                 ) : (

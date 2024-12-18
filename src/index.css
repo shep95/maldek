@@ -6,32 +6,23 @@
   :root {
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
-
     --card: 0 0% 3%;
     --card-foreground: 0 0% 98%;
-
     --popover: 0 0% 3%;
     --popover-foreground: 0 0% 98%;
-
     --primary: 0 0% 0%;
     --primary-foreground: 0 0% 98%;
-
     --secondary: 240 3.7% 5.1%;
     --secondary-foreground: 0 0% 98%;
-
     --muted: 0 0% 15%;
     --muted-foreground: 240 5% 64.9%;
-
     --accent: 24 95% 53%;
     --accent-foreground: 0 0% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 24 95% 53%;
-
     --radius: 0.75rem;
   }
 }
@@ -70,6 +61,16 @@
   50% { opacity: 1; }
 }
 
+@keyframes scaleMessage {
+  0% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+@keyframes messageHighlight {
+  0% { background-color: rgba(249, 115, 22, 0.2); }
+  100% { background-color: rgba(249, 115, 22, 0); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
@@ -82,8 +83,17 @@
   animation: pulseTyping 1s infinite;
 }
 
+.animate-scale-message {
+  animation: scaleMessage 0.2s ease-out forwards;
+}
+
+.animate-message-highlight {
+  animation: messageHighlight 1s ease-out forwards;
+}
+
 .message-gradient {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%);
+  backdrop-filter: blur(8px);
 }
 
 .hover-message {
@@ -92,11 +102,12 @@
 
 .hover-message:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .message-time {
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 .scrollbar-custom::-webkit-scrollbar {
@@ -114,4 +125,13 @@
 
 .scrollbar-custom::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
+}
+
+.chat-input-container {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
+  backdrop-filter: blur(12px);
+}
+
+.message-actions-gradient {
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.8) 15%, rgba(0, 0, 0, 0.8) 85%, transparent);
 }
