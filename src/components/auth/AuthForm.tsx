@@ -71,11 +71,31 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     console.log("Starting form submission with username:", username);
 
     try {
-      await onSubmit({
-        email,
-        password,
-        ...(isLogin ? {} : { username }),
-      });
+      if (!isLogin) {
+        // For signup, handle the auth directly here
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              username: username.toLowerCase()
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        // Wait a moment for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        toast.success("Account created successfully! You can now sign in.");
+      } else {
+        // For login, use the provided onSubmit
+        await onSubmit({
+          email,
+          password
+        });
+      }
     } catch (error: any) {
       console.error("Form submission error:", error);
       toast.error(error.message || "Authentication failed");
