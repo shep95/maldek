@@ -2,8 +2,6 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -11,86 +9,23 @@ interface PostMediaProps {
 }
 
 export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
-  useEffect(() => {
-    console.log('PostMedia mounted with URLs:', mediaUrls);
-    
-    // Validate each URL on mount
-    mediaUrls.forEach(async (url) => {
-      try {
-        const response = await fetch(url, { method: 'HEAD' });
-        console.log(`URL ${url} status:`, response.status);
-        if (!response.ok) {
-          console.error(`Media URL validation failed for ${url}:`, {
-            status: response.status,
-            statusText: response.statusText
-          });
-        }
-      } catch (error) {
-        console.error(`Failed to validate URL ${url}:`, error);
-      }
-    });
-  }, [mediaUrls]);
-
   if (!mediaUrls || mediaUrls.length === 0) {
     console.log('No media URLs provided');
     return null;
   }
 
-  const extractFilePathFromUrl = (url: string): string => {
-    try {
-      // Handle both full Supabase URLs and relative paths
-      const matches = url.match(/\/storage\/v\d\/object\/public\/posts\/(.+)/) || 
-                     url.match(/\/posts\/(.+)/);
-      if (matches && matches[1]) {
-        console.log('Extracted file path:', matches[1]);
-        return matches[1];
-      }
-      // Fallback to just the filename if no pattern matches
-      const fileName = url.split('/').pop();
-      console.log('Fallback file path:', fileName);
-      return fileName || '';
-    } catch (error) {
-      console.error('Error extracting file path:', error);
-      return '';
-    }
-  };
-
-  const handleImageError = async (url: string, error: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error('Image loading error for URL:', url);
-    console.error('Error details:', {
-      target: error.currentTarget.src,
-      naturalWidth: error.currentTarget.naturalWidth,
-      naturalHeight: error.currentTarget.naturalHeight,
-      complete: error.currentTarget.complete,
-      currentSrc: error.currentTarget.currentSrc
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error('Image loading error:', {
+      src: e.currentTarget.src,
+      naturalWidth: e.currentTarget.naturalWidth,
+      naturalHeight: e.currentTarget.naturalHeight,
+      complete: e.currentTarget.complete
     });
     
-    try {
-      const filePath = extractFilePathFromUrl(url);
-      console.log('Attempting to refresh URL for file:', filePath);
-
-      if (!filePath) {
-        throw new Error('Could not extract file path from URL');
-      }
-
-      const { data } = supabase.storage
-        .from('posts')
-        .getPublicUrl(filePath);
-      
-      if (data?.publicUrl) {
-        console.log('Generated fresh public URL:', data.publicUrl);
-        error.currentTarget.src = data.publicUrl;
-        return;
-      }
-    } catch (fetchError) {
-      console.error('Failed to refresh image URL:', fetchError);
-    }
-
-    // If refresh fails, show error state
-    const img = error.currentTarget;
+    // Hide the failed image and show error message
+    const img = e.currentTarget;
     img.style.display = 'none';
     
-    // Add error message element
     const errorDiv = document.createElement('div');
     errorDiv.className = 'text-red-500 text-sm mt-2';
     errorDiv.textContent = 'Failed to load image';
@@ -136,8 +71,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                     alt={`Media content ${i + 1}`}
                     className="w-full h-full object-contain rounded-lg hover:opacity-95 transition-opacity"
                     loading="lazy"
-                    onError={(e) => handleImageError(url, e)}
-                    onLoad={() => console.log('Image loaded successfully:', url)}
+                    onError={(e) => handleImageError(e)}
                   />
                   <Button
                     variant="ghost"
