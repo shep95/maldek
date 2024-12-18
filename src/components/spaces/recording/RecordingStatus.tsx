@@ -1,24 +1,37 @@
-import { Clock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Timer } from "lucide-react";
 
 interface RecordingStatusProps {
   isRecording: boolean;
-  duration: number;
+  startTime?: Date;
 }
 
-export const RecordingStatus = ({ isRecording, duration }: RecordingStatusProps) => {
+export const RecordingStatus = ({ isRecording, startTime }: RecordingStatusProps) => {
+  const [duration, setDuration] = useState("00:00");
+
+  useEffect(() => {
+    if (!isRecording || !startTime) return;
+
+    const updateDuration = () => {
+      const diff = new Date().getTime() - new Date(startTime).getTime();
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setDuration(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    const interval = setInterval(updateDuration, 1000);
+    updateDuration();
+
+    return () => clearInterval(interval);
+  }, [isRecording, startTime]);
+
   if (!isRecording) return null;
 
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
   return (
-    <div className="flex items-center gap-2 text-sm text-red-500 animate-pulse">
-      <div className="h-2 w-2 rounded-full bg-red-500" />
-      <Clock className="h-4 w-4" />
-      <span>{formatDuration(duration)}</span>
-    </div>
+    <Badge variant="secondary" className="bg-red-500/10 text-red-500 gap-1">
+      <Timer className="h-3 w-3" />
+      Recording {duration}
+    </Badge>
   );
 };
