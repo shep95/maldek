@@ -14,8 +14,8 @@ import Settings from "@/pages/Settings";
 import DaarpAI from "@/pages/DaarpAI";
 import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
-import { PremiumFeatureNotice } from "@/components/ai/components/PremiumFeatureNotice";
 import Analytics from "@/pages/Analytics";
+import Subscription from "@/pages/Subscription";
 
 const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -71,7 +71,7 @@ export const AppRoutes = () => {
             </ProtectedPremiumRoute>
           } 
         />
-        <Route path="/subscription" element={<Navigate to="/subscription" replace />} />
+        <Route path="/subscription" element={<Subscription />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
