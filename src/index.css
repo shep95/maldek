@@ -36,6 +36,7 @@
   }
 }
 
+/* Message Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -71,6 +72,7 @@
   100% { background-color: rgba(249, 115, 22, 0); }
 }
 
+/* Message Animations Classes */
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
@@ -91,6 +93,7 @@
   animation: messageHighlight 1s ease-out forwards;
 }
 
+/* Message Styling */
 .message-gradient {
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%);
   backdrop-filter: blur(8px);
@@ -110,6 +113,7 @@
   font-feature-settings: "tnum";
 }
 
+/* Custom Scrollbar */
 .scrollbar-custom::-webkit-scrollbar {
   width: 6px;
 }
@@ -127,6 +131,7 @@
   background: hsl(var(--muted-foreground));
 }
 
+/* Chat Input Styling */
 .chat-input-container {
   background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.85) 100%);
   backdrop-filter: blur(12px);
