@@ -1,5 +1,6 @@
 import { Message } from "@/types/messages";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { MessageMedia } from "./components/MessageMedia";
 import { MessageTimestamp } from "./components/MessageTimestamp";
 
@@ -43,12 +44,12 @@ export const ChatMessage = ({ message, isCurrentUser, onReply, onStatusUpdate }:
         )}
       >
         <MessageMedia
-          imageUrl={message.imageUrl}
-          generatedImageUrl={message.generatedImageUrl}
+          imageUrl={message.media_urls?.[0]}
+          generatedImageUrl={message.media_urls?.[1]}
           onDownload={handleDownload}
         />
         <p className="whitespace-pre-wrap">{message.content}</p>
-        <MessageTimestamp timestamp={message.timestamp} />
+        <MessageTimestamp timestamp={message.created_at} />
       </div>
     </div>
   );
