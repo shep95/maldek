@@ -3,16 +3,38 @@ import { Button } from "@/components/ui/button";
 import { Maximize } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 interface PostMediaProps {
   mediaUrls: string[];
-  onMediaClick: (url: string) => void;
+  onMediaClick?: (url: string) => void;
 }
 
 export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
-  console.log('Rendering PostMedia with URLs:', mediaUrls);
+  useEffect(() => {
+    console.log('PostMedia mounted with URLs:', mediaUrls);
+    
+    // Validate each URL on mount
+    mediaUrls.forEach(async (url) => {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        console.log(`URL ${url} status:`, response.status);
+        if (!response.ok) {
+          console.error(`Media URL validation failed for ${url}:`, {
+            status: response.status,
+            statusText: response.statusText
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to validate URL ${url}:`, error);
+      }
+    });
+  }, [mediaUrls]);
 
-  if (!mediaUrls || mediaUrls.length === 0) return null;
+  if (!mediaUrls || mediaUrls.length === 0) {
+    console.log('No media URLs provided');
+    return null;
+  }
 
   const handleImageError = async (url: string, error: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error('Image loading error for URL:', url);
@@ -25,26 +47,33 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     });
     
     try {
-      // Try to get a fresh URL from Supabase
-      const path = url.split('/').pop(); // Get the filename from the URL
-      if (path) {
-        const { data } = supabase.storage
-          .from('posts')
-          .getPublicUrl(path);
-        
-        if (data?.publicUrl) {
-          console.log('Generated fresh public URL:', data.publicUrl);
-          error.currentTarget.src = data.publicUrl;
-          return;
-        }
+      // Extract the file path from the URL
+      const urlParts = url.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      console.log('Attempting to refresh URL for file:', fileName);
+
+      const { data } = supabase.storage
+        .from('posts')
+        .getPublicUrl(fileName);
+      
+      if (data?.publicUrl) {
+        console.log('Generated fresh public URL:', data.publicUrl);
+        error.currentTarget.src = data.publicUrl;
+        return;
       }
     } catch (fetchError) {
       console.error('Failed to refresh image URL:', fetchError);
     }
 
-    // If refresh fails, hide the image
+    // If refresh fails, show error state
     const img = error.currentTarget;
     img.style.display = 'none';
+    
+    // Add error message element
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'text-red-500 text-sm mt-2';
+    errorDiv.textContent = 'Failed to load image';
+    img.parentElement?.appendChild(errorDiv);
   };
 
   return (
@@ -64,11 +93,20 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                   preload="metadata"
                   className="w-full h-full object-contain bg-black rounded-lg"
                   onClick={(e) => e.stopPropagation()}
+                  onError={(e) => {
+                    console.error('Video loading error:', e);
+                    const video = e.currentTarget;
+                    video.style.display = 'none';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'text-red-500 text-sm mt-2';
+                    errorDiv.textContent = 'Failed to load video';
+                    video.parentElement?.appendChild(errorDiv);
+                  }}
                 />
               </AspectRatio>
             ) : (
               <div 
-                onClick={() => onMediaClick(url)} 
+                onClick={() => onMediaClick?.(url)} 
                 className="cursor-pointer relative"
               >
                 <AspectRatio ratio={16 / 9}>
