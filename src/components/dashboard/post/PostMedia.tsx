@@ -62,13 +62,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
             ) : (
               <div 
                 onClick={() => onMediaClick(url)} 
-                className="cursor-pointer relative"
+                className="cursor-pointer relative bg-transparent"
               >
                 <AspectRatio ratio={16 / 9}>
                   <img
                     src={url}
                     alt={`Media content ${i + 1}`}
-                    className="w-full h-full object-cover rounded-lg hover:opacity-95 transition-opacity"
+                    className="w-full h-full object-contain rounded-lg hover:opacity-95 transition-opacity"
                     loading="lazy"
                     crossOrigin="anonymous"
                     onError={(e) => handleImageError(url, e)}
