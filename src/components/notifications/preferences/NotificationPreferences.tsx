@@ -12,6 +12,7 @@ interface NotificationPreference {
   enabled: boolean;
   email_enabled: boolean;
   push_enabled: boolean;
+  muted_until?: string | null;
 }
 
 export const NotificationPreferences = () => {
