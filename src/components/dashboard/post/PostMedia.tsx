@@ -2,6 +2,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -13,6 +14,16 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     console.log('No media URLs provided');
     return null;
   }
+
+  const getPublicUrl = (url: string) => {
+    if (url.startsWith('http')) {
+      return url;
+    }
+    const { data } = supabase.storage
+      .from('posts')
+      .getPublicUrl(url);
+    return data.publicUrl;
+  };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error('Image loading error:', {
@@ -36,14 +47,15 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     <div className="mt-4 grid gap-2 grid-cols-1">
       {mediaUrls.map((url, i) => {
         const isVideo = isVideoFile(url);
-        console.log('Processing media URL:', url, 'Is video:', isVideo);
+        const publicUrl = getPublicUrl(url);
+        console.log('Processing media URL:', url, 'Public URL:', publicUrl, 'Is video:', isVideo);
 
         return (
           <div key={url} className="relative rounded-lg overflow-hidden w-full max-w-3xl mx-auto">
             {isVideo ? (
               <AspectRatio ratio={16 / 9}>
                 <video
-                  src={url}
+                  src={publicUrl}
                   controls
                   playsInline
                   preload="metadata"
@@ -62,16 +74,16 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
               </AspectRatio>
             ) : (
               <div 
-                onClick={() => onMediaClick?.(url)} 
+                onClick={() => onMediaClick?.(publicUrl)} 
                 className="cursor-pointer relative"
               >
                 <AspectRatio ratio={16 / 9}>
                   <img
-                    src={url}
+                    src={publicUrl}
                     alt={`Media content ${i + 1}`}
                     className="w-full h-full object-contain rounded-lg hover:opacity-95 transition-opacity"
                     loading="lazy"
-                    onError={(e) => handleImageError(e)}
+                    onError={handleImageError}
                   />
                   <Button
                     variant="ghost"
