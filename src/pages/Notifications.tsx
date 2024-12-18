@@ -2,30 +2,12 @@ import { useState, useEffect } from "react";
 import { NotificationList } from "@/components/notifications/NotificationList";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
-
-const NotificationsSkeleton = () => (
-  <div className="space-y-3">
-    {[1, 2, 3].map((i) => (
-      <Card key={i} className="p-4">
-        <div className="flex items-start gap-4">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-3 w-1/4" />
-          </div>
-        </div>
-      </Card>
-    ))}
-  </div>
-);
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Notifications = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const { notifications } = useNotifications(currentUserId);
-  const [isLoading, setIsLoading] = useState(true);
+  const { notifications, isLoading } = useNotifications(currentUserId);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -35,8 +17,6 @@ const Notifications = () => {
         setCurrentUserId(user?.id || null);
       } catch (error) {
         console.error("Error fetching user:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
     fetchUser();
@@ -71,6 +51,10 @@ const Notifications = () => {
     markNotificationsAsRead();
   }, [currentUserId, queryClient]);
 
+  const allNotifications = notifications || [];
+  const unreadNotifications = allNotifications.filter(n => !n.read);
+  const readNotifications = allNotifications.filter(n => n.read);
+
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       <div className="mb-8">
@@ -80,11 +64,24 @@ const Notifications = () => {
         </p>
       </div>
 
-      {isLoading ? (
-        <NotificationsSkeleton />
-      ) : (
-        <NotificationList notifications={notifications} />
-      )}
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="w-full justify-start mb-6">
+          <TabsTrigger value="all" className="flex-1">
+            All
+          </TabsTrigger>
+          <TabsTrigger value="unread" className="flex-1">
+            Unread {unreadNotifications.length > 0 && `(${unreadNotifications.length})`}
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all">
+          <NotificationList notifications={allNotifications} isLoading={isLoading} />
+        </TabsContent>
+        
+        <TabsContent value="unread">
+          <NotificationList notifications={unreadNotifications} isLoading={isLoading} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

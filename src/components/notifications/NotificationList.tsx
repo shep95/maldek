@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -49,9 +50,10 @@ const getNotificationText = (type: Notification['type'], username: string) => {
 
 interface NotificationListProps {
   notifications: Notification[];
+  isLoading?: boolean;
 }
 
-export const NotificationList = ({ notifications }: NotificationListProps) => {
+export const NotificationList = ({ notifications, isLoading }: NotificationListProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,12 +84,30 @@ export const NotificationList = ({ notifications }: NotificationListProps) => {
   }, []);
 
   const handleNotificationClick = (notification: Notification) => {
-    // Only navigate if it's a comment notification
-    if (notification.type === 'comment') {
-      console.log('Comment notification clicked:', notification);
+    if (notification.type === 'new_follow') {
+      navigate(`/@${notification.actor.username}`);
+    } else {
       navigate(`/post/${notification.post_id}`);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="p-4 animate-pulse">
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/4" />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   if (notifications.length === 0) {
     return (
@@ -108,10 +128,8 @@ export const NotificationList = ({ notifications }: NotificationListProps) => {
           <Card
             key={notification.id}
             className={cn(
-              "p-4 transition-all duration-200 hover:bg-accent/5",
-              notification.type === 'comment' && "cursor-pointer",
-              !notification.read && "bg-accent/5",
-              notification.type !== 'comment' && "cursor-default"
+              "p-4 transition-all duration-200 hover:bg-accent/5 cursor-pointer",
+              !notification.read && "bg-accent/5"
             )}
             onClick={() => handleNotificationClick(notification)}
           >
@@ -133,6 +151,17 @@ export const NotificationList = ({ notifications }: NotificationListProps) => {
                   {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                 </p>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="opacity-0 group-hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNotificationClick(notification);
+                }}
+              >
+                <Bell className="h-4 w-4" />
+              </Button>
             </div>
           </Card>
         ))}

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -18,8 +18,12 @@ export type Notification = {
 };
 
 export const useNotifications = (userId: string | null) => {
+  const queryClient = useQueryClient();
+
   const fetchNotifications = async () => {
     if (!userId) return [];
+
+    console.log('Fetching notifications for user:', userId);
 
     const { data, error } = await supabase
       .from('notifications')
@@ -33,18 +37,26 @@ export const useNotifications = (userId: string | null) => {
       .eq('recipient_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      throw error;
+    }
+    
+    console.log('Fetched notifications:', data);
     return data as Notification[];
   };
 
-  const { data, refetch } = useQuery({
+  const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications', userId],
     queryFn: fetchNotifications,
     enabled: !!userId,
   });
 
+  // Subscribe to real-time notifications
   useEffect(() => {
     if (!userId) return;
+
+    console.log('Setting up real-time notifications for user:', userId);
 
     const channel = supabase
       .channel('notifications')
@@ -57,17 +69,28 @@ export const useNotifications = (userId: string | null) => {
           filter: `recipient_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('New notification:', payload);
-          toast.success("You have a new notification!");
-          refetch();
+          console.log('New notification received:', payload);
+          
+          // Show toast notification
+          toast.success("You have a new notification!", {
+            action: {
+              label: "View",
+              onClick: () => window.location.href = '/notifications'
+            },
+          });
+
+          // Invalidate notifications query to trigger refetch
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
         }
       )
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      console.log('Cleaning up notifications subscription');
+      supabase.removeChannel(channel);
     };
-  }, [userId, refetch]);
+  }, [userId, queryClient]);
 
-  return { notifications: data || [] };
+  return { notifications, isLoading, error };
 };
