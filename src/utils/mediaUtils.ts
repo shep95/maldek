@@ -50,6 +50,22 @@ export const getMediaType = (url: string): 'image' | 'video' | 'unknown' => {
   return 'unknown';
 };
 
+export const handlePasteEvent = (e: ClipboardEvent): File | null => {
+  const items = e.clipboardData?.items;
+  if (!items) return null;
+
+  for (const item of Array.from(items)) {
+    if (item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile();
+      if (file) {
+        console.log('File pasted:', file.name, file.type, file.size);
+        return file;
+      }
+    }
+  }
+  return null;
+};
+
 export const validateMediaFile = (file: File): { isValid: boolean; error?: string } => {
   const maxSize = 50 * 1024 * 1024; // 50MB
   
