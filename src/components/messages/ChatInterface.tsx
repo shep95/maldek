@@ -82,18 +82,21 @@ export const ChatInterface = ({
 
   return (
     <ReplyContext.Provider value={{ replyingTo, setReplyingTo }}>
-      <div className="flex flex-col h-[calc(100vh-16rem)]">
+      <div className="flex flex-col h-[calc(100vh-16rem)] bg-gradient-to-b from-background to-background/95">
         <ChatHeader
           recipientName={recipientName}
           onViewProfile={handleViewProfile}
           isOnline={true}
         />
-        <ScrollArea ref={scrollRef} className="flex-1">
-          <div className="space-y-4 p-4">
+        <ScrollArea 
+          ref={scrollRef} 
+          className="flex-1 px-4 scrollbar-custom"
+        >
+          <div className="space-y-6 py-4">
             {Object.entries(groupedMessages).map(([date, dateMessages]) => (
-              <div key={date}>
+              <div key={date} className="space-y-4">
                 <MessageDateSeparator date={date} />
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {dateMessages.map((message) => (
                     <ChatMessage
                       key={message.id}

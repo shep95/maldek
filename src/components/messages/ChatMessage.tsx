@@ -44,7 +44,7 @@ export const ChatMessage = ({
   return (
     <div
       className={cn(
-        "group flex animate-fade-in gap-2",
+        "group flex animate-fade-in gap-2 py-1",
         isCurrentUser ? "justify-end" : "justify-start"
       )}
     >
@@ -56,9 +56,9 @@ export const ChatMessage = ({
       >
         <div
           className={cn(
-            "relative rounded-2xl px-3 py-2 text-sm",
+            "relative rounded-2xl px-4 py-2.5 text-sm hover-message",
             isCurrentUser
-              ? "bg-accent text-accent-foreground"
+              ? "message-gradient text-accent-foreground"
               : "bg-muted text-foreground",
             message.reply_to_id && "mt-2"
           )}
@@ -75,18 +75,18 @@ export const ChatMessage = ({
             onDownload={handleDownload}
           />
           
-          <p className="whitespace-pre-wrap break-words">
+          <p className="whitespace-pre-wrap break-words leading-relaxed">
             {message.content}
           </p>
 
-          <div className="mt-1 flex items-center justify-between gap-2">
+          <div className="mt-1.5 flex items-center justify-between gap-2">
             <MessageTimestamp timestamp={message.created_at} />
             {isCurrentUser && (
-              <div className="flex items-center gap-1 text-xs opacity-60">
+              <div className="flex items-center gap-1 text-xs text-accent/60">
                 {message.read_at ? (
-                  <CheckCheck className="h-3 w-3" />
+                  <CheckCheck className="h-3.5 w-3.5" />
                 ) : (
-                  <Check className="h-3 w-3" />
+                  <Check className="h-3.5 w-3.5" />
                 )}
               </div>
             )}

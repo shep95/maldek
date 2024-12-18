@@ -65,10 +65,53 @@
   }
 }
 
+@keyframes pulseTyping {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
 .animate-slide-in {
   animation: slideIn 0.3s ease-out forwards;
+}
+
+.animate-typing {
+  animation: pulseTyping 1s infinite;
+}
+
+.message-gradient {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);
+}
+
+.hover-message {
+  transition: all 0.2s ease;
+}
+
+.hover-message:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.message-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }
