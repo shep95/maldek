@@ -1,5 +1,8 @@
-import { Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useSession } from '@supabase/auth-helpers-react';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Messages from "@/pages/Messages";
@@ -12,11 +15,9 @@ import DaarpAI from "@/pages/DaarpAI";
 import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import { PremiumFeatureNotice } from "@/components/ai/components/PremiumFeatureNotice";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@supabase/auth-helpers-react";
+import Analytics from "@/pages/Analytics";
 
-const ProtectedAnalytics = () => {
+const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
 
   const { data: subscription } = useQuery({
@@ -38,16 +39,10 @@ const ProtectedAnalytics = () => {
   });
 
   if (!subscription) {
-    return <PremiumFeatureNotice />;
+    return <Navigate to="/subscription" replace />;
   }
 
-  // Dynamically import Analytics to avoid circular dependencies
-  const Analytics = lazy(() => import('@/pages/Analytics'));
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <Analytics />
-    </Suspense>
-  );
+  return <>{children}</>;
 };
 
 export const AppRoutes = () => {
@@ -67,8 +62,16 @@ export const AppRoutes = () => {
         <Route path="/@:username" element={<Profiles />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/analytics" element={<ProtectedAnalytics />} />
-        <Route path="/daarp-ai" element={<DaarpAI />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route 
+          path="/daarp-ai" 
+          element={
+            <ProtectedPremiumRoute>
+              <DaarpAI />
+            </ProtectedPremiumRoute>
+          } 
+        />
+        <Route path="/subscription" element={<Navigate to="/subscription" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
