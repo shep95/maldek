@@ -1,16 +1,16 @@
-import { Message } from "../types/messageTypes";
+import { Message } from "@/types/messages";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
-import { toast } from "sonner";
 import { MessageMedia } from "./components/MessageMedia";
 import { MessageTimestamp } from "./components/MessageTimestamp";
 
 interface ChatMessageProps {
   message: Message;
+  isCurrentUser: boolean;
+  onReply: () => void;
+  onStatusUpdate: (messageId: string, status: string) => Promise<void>;
 }
 
-export const ChatMessage = ({ message }: ChatMessageProps) => {
+export const ChatMessage = ({ message, isCurrentUser, onReply, onStatusUpdate }: ChatMessageProps) => {
   const handleDownload = async (imageUrl: string) => {
     try {
       const link = document.createElement('a');
@@ -31,15 +31,15 @@ export const ChatMessage = ({ message }: ChatMessageProps) => {
     <div
       className={cn(
         "flex animate-fade-in",
-        message.role === "assistant" ? "justify-start" : "justify-end"
+        isCurrentUser ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
           "max-w-[85%] p-3 rounded-2xl text-sm sm:text-base",
-          message.role === "assistant"
-            ? "bg-muted text-foreground rounded-tl-sm"
-            : "bg-accent text-accent-foreground rounded-tr-sm"
+          isCurrentUser
+            ? "bg-accent text-accent-foreground rounded-tr-sm"
+            : "bg-muted text-foreground rounded-tl-sm"
         )}
       >
         <MessageMedia
