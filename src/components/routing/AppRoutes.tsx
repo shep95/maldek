@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Messages from "@/pages/Messages";
@@ -41,11 +42,11 @@ const ProtectedAnalytics = () => {
   }
 
   // Dynamically import Analytics to avoid circular dependencies
-  const Analytics = React.lazy(() => import('@/pages/Analytics'));
+  const Analytics = lazy(() => import('@/pages/Analytics'));
   return (
-    <React.Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>Loading...</div>}>
       <Analytics />
-    </React.Suspense>
+    </Suspense>
   );
 };
 
