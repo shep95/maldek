@@ -1,8 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Image, X, AlertCircle } from "lucide-react";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { MediaPreview } from "./upload/MediaPreview";
+import { MediaUploadZone } from "./upload/MediaUploadZone";
+import { validateMediaFile } from "@/utils/mediaUtils";
 
 interface MediaUploadProps {
   mediaFiles: File[];
@@ -18,15 +19,17 @@ export const MediaUpload = ({
   onRemoveMedia
 }: MediaUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
+  const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>(
+    mediaPreviewUrls.reduce((acc, url) => ({ ...acc, [url]: true }), {})
+  );
+  const [errorStates, setErrorStates] = useState<{ [key: string]: boolean }>(
+    mediaPreviewUrls.reduce((acc, url) => ({ ...acc, [url]: false }), {})
+  );
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -36,35 +39,36 @@ export const MediaUpload = ({
 
     const files = Array.from(e.dataTransfer.files);
     const validFiles = files.filter(file => {
-      const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
-      const isSizeValid = file.size <= 100 * 1024 * 1024; // 100MB limit
-      
-      if (!isValid) {
-        toast.error(`Invalid file type: ${file.name}`);
+      const validation = validateMediaFile(file);
+      if (!validation.isValid) {
+        toast.error(validation.error);
+        return false;
       }
-      if (!isSizeValid) {
-        toast.error(`File too large: ${file.name}`);
-      }
-      
-      return isValid && isSizeValid;
+      return true;
     });
 
     if (validFiles.length > 0) {
       const event = {
-        target: {
-          files: validFiles
-        }
+        target: { files: validFiles }
       } as unknown as React.ChangeEvent<HTMLInputElement>;
       onFileUpload(event);
     }
   };
 
+  const handleMediaLoad = (url: string) => {
+    console.log('Media loaded successfully:', url);
+    setLoadingStates(prev => ({ ...prev, [url]: false }));
+  };
+
+  const handleMediaError = (url: string) => {
+    console.error('Failed to load media:', url);
+    setLoadingStates(prev => ({ ...prev, [url]: false }));
+    setErrorStates(prev => ({ ...prev, [url]: true }));
+  };
+
   return (
     <div className="space-y-2">
       <div
-        className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
-          dragActive ? 'border-accent bg-accent/5' : 'border-muted'
-        }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -78,18 +82,11 @@ export const MediaUpload = ({
           className="hidden"
           id="media-upload"
         />
-        <Button
-          variant="outline"
-          onClick={() => document.getElementById("media-upload")?.click()}
-          className="gap-2 w-full justify-center"
-        >
-          <Image className="h-4 w-4" />
-          Drop media here or click to upload
-        </Button>
         
-        <div className="mt-2 text-sm text-muted-foreground text-center">
-          Supports images and videos up to 100MB
-        </div>
+        <MediaUploadZone
+          onFileSelect={() => document.getElementById("media-upload")?.click()}
+          dragActive={dragActive}
+        />
       </div>
 
       {mediaFiles.length > 0 && (
@@ -101,33 +98,16 @@ export const MediaUpload = ({
           
           <div className="grid grid-cols-2 gap-2">
             {mediaPreviewUrls.map((url, index) => (
-              <div key={url} className="relative group">
-                {mediaFiles[index]?.type.startsWith('video/') ? (
-                  <AspectRatio ratio={16 / 9}>
-                    <video 
-                      src={url} 
-                      className="w-full h-full object-cover rounded-md"
-                      controls
-                    />
-                  </AspectRatio>
-                ) : (
-                  <AspectRatio ratio={1}>
-                    <img 
-                      src={url} 
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-full object-cover rounded-md"
-                    />
-                  </AspectRatio>
-                )}
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => onRemoveMedia(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+              <MediaPreview
+                key={url}
+                url={url}
+                onRemove={() => onRemoveMedia(index)}
+                isLoading={loadingStates[url]}
+                hasError={errorStates[url]}
+                onMediaClick={() => {
+                  // Handle media preview click if needed
+                }}
+              />
             ))}
           </div>
         </div>
