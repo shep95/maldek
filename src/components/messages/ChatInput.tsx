@@ -1,24 +1,34 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ImagePlus, Send, Smile, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Message } from "@/types/messages";
 
 export interface ChatInputProps {
   onSendMessage: (content: string, replyToId?: string) => Promise<void>;
   isLoading: boolean;
-  replyingTo: Message | null;  // Added this prop
-  onCancelReply: () => void;   // Added this prop
+  replyingTo: Message | null;
+  onCancelReply: () => void;
+  editingMessage: Message | null;
+  onCancelEdit: () => void;
 }
 
 export const ChatInput = ({ 
   onSendMessage, 
   isLoading, 
   replyingTo, 
-  onCancelReply 
+  onCancelReply,
+  editingMessage,
+  onCancelEdit
 }: ChatInputProps) => {
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    if (editingMessage) {
+      setMessage(editingMessage.content);
+    }
+  }, [editingMessage]);
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -45,6 +55,21 @@ export const ChatInput = ({
             size="icon"
             className="h-6 w-6"
             onClick={onCancelReply}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      {editingMessage && (
+        <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+          <div className="text-sm">
+            <span className="text-muted-foreground">Editing message</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onCancelEdit}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -79,7 +104,7 @@ export const ChatInput = ({
           className="shrink-0"
         >
           <Send className="h-4 w-4 mr-2" />
-          Send
+          {editingMessage ? 'Update' : 'Send'}
         </Button>
       </div>
     </div>
