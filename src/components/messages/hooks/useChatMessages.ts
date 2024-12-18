@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-interface ChatMessage {
-  id: string;
-  content: string;
-  created_at: string;
-  sender_id: string;
-  sender: {
-    username: string;
-    avatar_url: string | null;
-  };
-}
+import { Message } from "@/types/messages";
 
 export const useChatMessages = (currentUserId: string | null, recipientId: string) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
@@ -30,9 +20,19 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
           content,
           created_at,
           sender_id,
+          recipient_id,
+          read_at,
+          status,
+          reply_to_id,
+          media_urls,
+          reactions,
+          translated_content,
+          is_edited,
           sender:profiles!messages_sender_id_fkey (
+            id,
             username,
-            avatar_url
+            avatar_url,
+            follower_count
           )
         `)
         .or(`and(sender_id.eq.${currentUserId},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${currentUserId})`)
@@ -74,14 +74,14 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
         .on(
           'postgres_changes',
           {
-            event: 'INSERT',
+            event: '*',
             schema: 'public',
             table: 'messages',
             filter: `or(and(sender_id.eq.${currentUserId},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${currentUserId}))`
           },
           (payload) => {
-            console.log('New message received:', payload);
-            setMessages(prev => [...prev, payload.new as ChatMessage]);
+            console.log('Message update received:', payload);
+            fetchMessages(); // Refresh messages on any change
           }
         )
         .subscribe();
@@ -96,7 +96,7 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
     }
   }, [currentUserId, recipientId, isSubscribed]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string, replyToId?: string) => {
     if (!currentUserId) {
       toast.error("You must be logged in to send messages");
       return;
@@ -110,7 +110,8 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
         sender_id: currentUserId,
         recipient_id: recipientId,
         content: content.trim(),
-        status: 'accepted'
+        status: 'sent',
+        reply_to_id: replyToId
       };
 
       console.log('New message data:', newMessage);
@@ -123,9 +124,19 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
           content,
           created_at,
           sender_id,
+          recipient_id,
+          read_at,
+          status,
+          reply_to_id,
+          media_urls,
+          reactions,
+          translated_content,
+          is_edited,
           sender:profiles!messages_sender_id_fkey (
+            id,
             username,
-            avatar_url
+            avatar_url,
+            follower_count
           )
         `)
         .single();
@@ -149,9 +160,24 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
     }
   };
 
+  const updateMessageStatus = async (messageId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ status })
+        .eq('id', messageId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating message status:', error);
+      toast.error("Failed to update message status");
+    }
+  };
+
   return {
     messages,
     isLoading,
-    sendMessage
+    sendMessage,
+    updateMessageStatus
   };
 };

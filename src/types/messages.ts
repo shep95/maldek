@@ -12,4 +12,11 @@ export interface Message {
   read_at: string | null;
   status: string;
   sender: Profile;
+  sender_id: string;
+  recipient_id: string;
+  reply_to_id?: string | null;
+  media_urls?: string[];
+  reactions: { [key: string]: string[] };
+  translated_content: { [key: string]: string };
+  is_edited: boolean;
 }

@@ -261,36 +261,125 @@ export type Database = {
           },
         ]
       }
+      message_group_members: {
+        Row: {
+          group_id: string
+          joined_at: string
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          joined_at?: string
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          joined_at?: string
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "message_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_group_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_groups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
           created_at: string
+          edited_at: string | null
           id: string
+          is_edited: boolean | null
+          media_urls: string[] | null
+          reactions: Json | null
           read_at: string | null
           recipient_id: string
           removed_by_recipient: boolean | null
+          reply_to_id: string | null
           sender_id: string
           status: string
+          translated_content: Json | null
         }
         Insert: {
           content: string
           created_at?: string
+          edited_at?: string | null
           id?: string
+          is_edited?: boolean | null
+          media_urls?: string[] | null
+          reactions?: Json | null
           read_at?: string | null
           recipient_id: string
           removed_by_recipient?: boolean | null
+          reply_to_id?: string | null
           sender_id: string
           status?: string
+          translated_content?: Json | null
         }
         Update: {
           content?: string
           created_at?: string
+          edited_at?: string | null
           id?: string
+          is_edited?: boolean | null
+          media_urls?: string[] | null
+          reactions?: Json | null
           read_at?: string | null
           recipient_id?: string
           removed_by_recipient?: boolean | null
+          reply_to_id?: string | null
           sender_id?: string
           status?: string
+          translated_content?: Json | null
         }
         Relationships: [
           {
@@ -298,6 +387,13 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {
