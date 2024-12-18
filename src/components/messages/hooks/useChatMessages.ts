@@ -12,7 +12,7 @@ export const useChatMessages = (currentUserId: string | null, recipientId: strin
 
   const { fetchMessages } = useMessageQueries(currentUserId, recipientId, setMessages);
   const { handleSubscription } = useMessageSubscription(fetchMessages);
-  const { sendMessage, updateMessageStatus, addReaction, editMessage, deleteMessage } = useMessageOperations(currentUserId);
+  const { sendMessage, updateMessageStatus, addReaction, editMessage, deleteMessage } = useMessageOperations(currentUserId, recipientId);
 
   useEffect(() => {
     fetchMessages();
