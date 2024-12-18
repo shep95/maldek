@@ -2,6 +2,7 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -13,7 +14,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
 
   if (!mediaUrls || mediaUrls.length === 0) return null;
 
-  const handleImageError = (url: string, error: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const handleImageError = async (url: string, error: React.SyntheticEvent<HTMLImageElement, Event>) => {
     console.error('Image loading error for URL:', url);
     console.error('Error details:', {
       target: error.currentTarget.src,
@@ -23,19 +24,25 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
       currentSrc: error.currentTarget.currentSrc
     });
     
-    // Try to load the image directly to see if it's accessible
-    fetch(url)
-      .then(response => {
-        console.log('Image fetch response:', {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries())
-        });
-      })
-      .catch(fetchError => {
-        console.error('Image fetch error:', fetchError);
-      });
+    try {
+      // Try to get a fresh URL from Supabase
+      const path = url.split('/').pop(); // Get the filename from the URL
+      if (path) {
+        const { data } = supabase.storage
+          .from('posts')
+          .getPublicUrl(path);
+        
+        if (data?.publicUrl) {
+          console.log('Generated fresh public URL:', data.publicUrl);
+          error.currentTarget.src = data.publicUrl;
+          return;
+        }
+      }
+    } catch (fetchError) {
+      console.error('Failed to refresh image URL:', fetchError);
+    }
 
+    // If refresh fails, hide the image
     const img = error.currentTarget;
     img.style.display = 'none';
   };
@@ -62,7 +69,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
             ) : (
               <div 
                 onClick={() => onMediaClick(url)} 
-                className="cursor-pointer relative bg-transparent"
+                className="cursor-pointer relative"
               >
                 <AspectRatio ratio={16 / 9}>
                   <img
@@ -70,7 +77,6 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                     alt={`Media content ${i + 1}`}
                     className="w-full h-full object-contain rounded-lg hover:opacity-95 transition-opacity"
                     loading="lazy"
-                    crossOrigin="anonymous"
                     onError={(e) => handleImageError(url, e)}
                     onLoad={() => console.log('Image loaded successfully:', url)}
                   />
