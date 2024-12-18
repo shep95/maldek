@@ -1,210 +1,54 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Message } from "../types/messageTypes";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, MoreVertical, Smile, Languages } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Message } from "@/types/messages";
-import { useState } from "react";
-import { EmojiPicker } from "./EmojiPicker";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { MessageMedia } from "./components/MessageMedia";
+import { MessageTimestamp } from "./components/MessageTimestamp";
 
 interface ChatMessageProps {
   message: Message;
-  isCurrentUser: boolean;
-  onReply: () => void;
-  onStatusUpdate: (messageId: string, status: string) => void;
 }
 
-export const ChatMessage = ({
-  message,
-  isCurrentUser,
-  onReply,
-  onStatusUpdate,
-}: ChatMessageProps) => {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
-
-  const handleTranslate = async () => {
+export const ChatMessage = ({ message }: ChatMessageProps) => {
+  const handleDownload = async (imageUrl: string) => {
     try {
-      setIsTranslating(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: settings } = await supabase
-        .from('user_settings')
-        .select('preferred_language')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!settings?.preferred_language) {
-        toast.error("Please set your preferred language in settings first");
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('translate-text', {
-        body: { text: message.content, targetLanguage: settings.preferred_language }
-      });
-
-      if (error) throw error;
-
-      // Update message with translation
-      const { error: updateError } = await supabase
-        .from('messages')
-        .update({
-          translated_content: {
-            ...message.translated_content,
-            [settings.preferred_language]: data.translatedText
-          }
-        })
-        .eq('id', message.id);
-
-      if (updateError) throw updateError;
-
-      toast.success("Message translated");
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `generated-image-${Date.now()}.png`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Image download started");
     } catch (error) {
-      console.error('Translation error:', error);
-      toast.error("Failed to translate message");
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
-  const handleReaction = async (emoji: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { error } = await supabase
-        .from('messages')
-        .update({
-          reactions: {
-            ...message.reactions,
-            [emoji]: [...(message.reactions[emoji] || []), user.id]
-          }
-        })
-        .eq('id', message.id);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-      toast.error("Failed to add reaction");
+      console.error('Error downloading image:', error);
+      toast.error("Failed to download image. Try right-clicking and 'Save Image As'");
     }
   };
 
   return (
     <div
       className={cn(
-        "flex gap-2",
-        isCurrentUser ? "justify-end" : "justify-start"
+        "flex animate-fade-in",
+        message.role === "assistant" ? "justify-start" : "justify-end"
       )}
     >
-      {!isCurrentUser && (
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={message.sender.avatar_url || ''} alt={message.sender.username} />
-          <AvatarFallback>{message.sender.username[0]}</AvatarFallback>
-        </Avatar>
-      )}
-      <div className="relative group">
-        <div
-          className={cn(
-            "max-w-[70%] rounded-lg p-3",
-            isCurrentUser
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted"
-          )}
-        >
-          {message.reply_to_id && (
-            <div className="text-xs opacity-70 mb-1">
-              Replying to a message...
-            </div>
-          )}
-          <p className="text-sm">{message.content}</p>
-          {message.media_urls && message.media_urls.length > 0 && (
-            <div className="mt-2 space-y-2">
-              {message.media_urls.map((url, index) => (
-                <img
-                  key={index}
-                  src={url}
-                  alt="Message attachment"
-                  className="max-w-full rounded"
-                />
-              ))}
-            </div>
-          )}
-          {Object.entries(message.reactions || {}).map(([emoji, users]) => (
-            <div key={emoji} className="inline-flex items-center text-xs bg-background/20 rounded px-1 mr-1 mt-1">
-              {emoji} {users.length}
-            </div>
-          ))}
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xs opacity-70">
-              {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-              {message.is_edited && " (edited)"}
-            </span>
-            {message.read_at && isCurrentUser && (
-              <span className="text-xs opacity-70">Read</span>
-            )}
-          </div>
-        </div>
-        <div className={cn(
-          "absolute top-0 opacity-0 group-hover:opacity-100 transition-opacity",
-          isCurrentUser ? "left-0 -translate-x-full" : "right-0 translate-x-full"
-        )}>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setShowEmojiPicker(true)}
-            >
-              <Smile className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={onReply}
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleTranslate}
-              disabled={isTranslating}
-            >
-              <Languages className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>Edit</DropdownMenuItem>
-                <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          {showEmojiPicker && (
-            <EmojiPicker
-              onSelect={(emoji) => {
-                handleReaction(emoji);
-                setShowEmojiPicker(false);
-              }}
-              onClose={() => setShowEmojiPicker(false)}
-            />
-          )}
-        </div>
+      <div
+        className={cn(
+          "max-w-[85%] p-3 rounded-2xl text-sm sm:text-base",
+          message.role === "assistant"
+            ? "bg-muted text-foreground rounded-tl-sm"
+            : "bg-accent text-accent-foreground rounded-tr-sm"
+        )}
+      >
+        <MessageMedia
+          imageUrl={message.imageUrl}
+          generatedImageUrl={message.generatedImageUrl}
+          onDownload={handleDownload}
+        />
+        <p className="whitespace-pre-wrap">{message.content}</p>
+        <MessageTimestamp timestamp={message.timestamp} />
       </div>
     </div>
   );
