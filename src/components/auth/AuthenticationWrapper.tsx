@@ -18,12 +18,14 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       currentPath: location.pathname 
     });
 
+    // Only redirect if we're not already on the auth page
     if (!session && location.pathname !== '/auth') {
       console.log("No session found, redirecting to auth");
       navigate('/auth');
       return;
     }
 
+    // Only redirect if we have a session and we're on the auth page
     if (session && location.pathname === '/auth') {
       console.log("Session found on auth page, redirecting to dashboard");
       navigate('/dashboard');
@@ -31,13 +33,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     }
   }, [session, navigate, location.pathname]);
 
-  // If we're on the auth page and there's no session, or if we have a session and we're not on the auth page
-  if ((!session && location.pathname === '/auth') || (session && location.pathname !== '/auth')) {
-    console.log("Rendering children", { hasSession: !!session, path: location.pathname });
-    return children;
-  }
-
-  // Return null while redirecting
-  console.log("Returning null while handling auth redirect");
-  return null;
+  // Always render children to avoid black screen
+  return children;
 };
