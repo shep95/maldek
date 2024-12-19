@@ -43,7 +43,10 @@ export const PostContent = ({
     }
   };
 
-  const handleUsernameClick = (username: string) => {
+  const handleUsernameClick = (e: React.MouseEvent, username: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Navigating to profile from mention:', username);
     navigate(`/@${username}`);
   };
 
@@ -60,10 +63,7 @@ export const PostContent = ({
             <Button
               variant="link"
               className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleUsernameClick(username);
-              }}
+              onClick={(e) => handleUsernameClick(e, username)}
             >
               {word}
             </Button>
