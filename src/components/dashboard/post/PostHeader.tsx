@@ -3,16 +3,14 @@ import { Author } from "@/utils/postUtils";
 import { Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface PostHeaderProps {
   author: Author;
   timestamp: Date;
+  onUsernameClick: (e: React.MouseEvent) => void;
 }
 
-export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
-  const navigate = useNavigate();
-  
+export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderProps) => {
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
@@ -65,18 +63,13 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
     return `${Math.floor(diffInDays / 365)}y`;
   };
 
-  const handleUsernameClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/@${author.username}`);
-  };
-
   const timeAgo = getTimeAgo(new Date(timestamp));
 
   return (
     <div className="flex items-start gap-3">
       <Avatar 
         className="h-10 w-10 cursor-pointer" 
-        onClick={handleUsernameClick}
+        onClick={onUsernameClick}
       >
         <AvatarImage src={author.avatar_url || ''} alt={author.name} />
         <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
@@ -85,7 +78,7 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
         <div className="flex items-baseline gap-2">
           <div className="flex items-center gap-1">
             <button
-              onClick={handleUsernameClick}
+              onClick={onUsernameClick}
               className="font-semibold hover:underline"
             >
               {author.name}
@@ -112,7 +105,7 @@ export const PostHeader = ({ author, timestamp }: PostHeaderProps) => {
             )}
           </div>
           <button
-            onClick={handleUsernameClick}
+            onClick={onUsernameClick}
             className="text-sm text-muted-foreground hover:underline"
           >
             @{author.username}
