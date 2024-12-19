@@ -13,11 +13,29 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    console.log("AuthenticationWrapper initialized", { 
-      hasSession: !!session,
-      currentPath: location.pathname,
-      sessionId: session?.access_token?.slice(-10)
-    });
+    // Initial session check
+    const checkSession = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log("Initial session check:", { 
+        hasSession: !!currentSession,
+        sessionId: currentSession?.access_token?.slice(-10),
+        currentPath: location.pathname
+      });
+
+      // If we have a session but we're on the auth page, redirect to dashboard
+      if (currentSession && location.pathname.startsWith('/auth')) {
+        navigate('/dashboard');
+        return;
+      }
+
+      // If we don't have a session and we're not on a public route, redirect to auth
+      if (!currentSession && !location.pathname.startsWith('/auth') && location.pathname !== '/') {
+        navigate('/auth');
+        return;
+      }
+    };
+
+    checkSession();
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
@@ -28,14 +46,12 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         currentPath: location.pathname
       });
 
-      // Only handle explicit sign-out
-      if (event === 'SIGNED_OUT' && !currentSession) {
+      if (event === 'SIGNED_OUT') {
         console.log("Explicit sign-out detected");
         navigate('/auth');
         return;
       }
 
-      // Handle successful sign-in
       if (event === 'SIGNED_IN' && currentSession) {
         console.log("Sign-in successful, redirecting to dashboard");
         navigate('/dashboard');
@@ -53,23 +69,11 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
-  // Only protect routes that require authentication
-  const isAuthPage = location.pathname.startsWith('/auth');
-  const isPublicRoute = isAuthPage || location.pathname === '/';
-
-  // Only redirect if on auth page with valid session
-  if (session && isAuthPage) {
-    console.log("Authenticated user on auth page, redirecting to dashboard");
-    navigate('/dashboard');
-    return null;
-  }
-
-  // Only redirect to auth if no session and accessing protected route
-  if (!session && !isPublicRoute) {
-    console.log("Unauthenticated user accessing protected route, redirecting to auth");
-    navigate('/auth');
+  // Don't render anything during the initial session check
+  if (typeof session === 'undefined') {
+    console.log("Session is undefined, waiting for initialization");
     return null;
   }
 
