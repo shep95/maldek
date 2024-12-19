@@ -105,7 +105,7 @@ export const CreatePostDialog = ({
         content: content.trim(),
         user_id: currentUser.id,
         media_urls: mediaUrls,
-        scheduled_for: scheduledDate,
+        scheduled_for: scheduledDate ? scheduledDate.toISOString() : null,
       };
 
       const { data: newPost, error: postError } = await supabase

@@ -1,6 +1,12 @@
 import { Database } from '../database';
 
-export interface Post extends Database['public']['Tables']['posts']['Row'] {
+type DbPost = Database['public']['Tables']['posts']['Row'];
+type DbPoll = Database['public']['Tables']['polls']['Row'];
+type DbPollVote = Database['public']['Tables']['poll_votes']['Row'];
+type DbHashtag = Database['public']['Tables']['hashtags']['Row'];
+type DbPostHashtag = Database['public']['Tables']['post_hashtags']['Row'];
+
+export interface Post extends Omit<DbPost, 'scheduled_for'> {
   profiles: {
     id: string;
     username: string;
@@ -13,14 +19,16 @@ export interface Post extends Database['public']['Tables']['posts']['Row'] {
   thread_parent?: Post | null;
   polls?: Poll[];
   hashtags?: Hashtag[];
+  scheduled_for?: Date | null;
 }
 
-export interface Poll extends Database['public']['Tables']['polls']['Row'] {
+export interface Poll extends Omit<DbPoll, 'ends_at'> {
   votes?: PollVote[];
+  ends_at: Date;
 }
 
-export interface PollVote extends Database['public']['Tables']['poll_votes']['Row'] {}
+export interface PollVote extends DbPollVote {}
 
-export interface Hashtag extends Database['public']['Tables']['hashtags']['Row'] {}
+export interface Hashtag extends DbHashtag {}
 
-export interface PostHashtag extends Database['public']['Tables']['post_hashtags']['Row'] {}
+export interface PostHashtag extends DbPostHashtag {}

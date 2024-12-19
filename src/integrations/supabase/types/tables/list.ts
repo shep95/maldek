@@ -1,6 +1,9 @@
 import { Database } from '../database';
 
-export interface List extends Database['public']['Tables']['lists']['Row'] {
+type DbList = Database['public']['Tables']['lists']['Row'];
+type DbListMember = Database['public']['Tables']['list_members']['Row'];
+
+export interface List extends DbList {
   members?: ListMember[];
   creator?: {
     username: string;
@@ -8,7 +11,7 @@ export interface List extends Database['public']['Tables']['lists']['Row'] {
   };
 }
 
-export interface ListMember extends Database['public']['Tables']['list_members']['Row'] {
+export interface ListMember extends DbListMember {
   profile?: {
     username: string;
     avatar_url: string | null;

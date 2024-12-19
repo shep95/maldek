@@ -1,16 +1,14 @@
-import { Post } from "@/integrations/supabase/types/tables";
-
-export interface PostAuthor {
+export interface Author {
   id: string;
   username: string;
   avatar_url: string | null;
   name: string;
 }
 
-export interface Post {
+export interface PostData {
   id: string;
   content: string;
-  author: PostAuthor;
+  author: Author;
   timestamp: Date;
   media_urls?: string[] | null;
   likes: number;
@@ -18,7 +16,7 @@ export interface Post {
   reposts: number;
   isLiked: boolean;
   isBookmarked: boolean;
-  quoted_post?: Post | null;
+  quoted_post?: PostData | null;
   thread_parent_id?: string | null;
   thread_position?: number;
   scheduled_for?: Date | null;
@@ -50,4 +48,8 @@ export const formatPostDate = (date: Date): string => {
   if (minutes < 60) return `${minutes} minutes ago`;
   if (hours < 24) return `${hours} hours ago`;
   return `${days} days ago`;
+};
+
+export const formatDateForSupabase = (date: Date): string => {
+  return date.toISOString();
 };
