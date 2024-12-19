@@ -642,7 +642,8 @@ export interface Database {
     }
     Functions: DbFunctions
     Enums: {
-      [_ in never]: never
+      space_role: "host" | "co_host" | "speaker" | "listener"
+      space_status: "scheduled" | "live" | "ended"
     }
     CompositeTypes: {
       [_ in never]: never

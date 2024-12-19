@@ -6,10 +6,6 @@ type DbListMember = Tables['list_members']['Row'];
 
 export interface List extends DbList {
   members?: ListMember[];
-  creator?: {
-    username: string;
-    avatar_url: string | null;
-  };
 }
 
 export interface ListMember extends DbListMember {

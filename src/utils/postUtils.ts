@@ -1,3 +1,5 @@
+import { DatabasePost } from '@/integrations/supabase/types/tables/post';
+
 export interface Author {
   id: string;
   username: string;
@@ -5,35 +7,14 @@ export interface Author {
   name: string;
 }
 
-export interface Post {
-  id: string;
-  content: string;
+export interface Post extends DatabasePost {
   author: Author;
   timestamp: Date;
-  media_urls?: string[] | null;
   likes: number;
   comments: number;
   reposts: number;
   isLiked: boolean;
   isBookmarked: boolean;
-  quoted_post?: Post | null;
-  thread_parent?: Post | null;
-  thread_position?: number;
-  scheduled_for?: Date | null;
-  polls?: {
-    id: string;
-    question: string;
-    options: string[];
-    ends_at: Date;
-    votes?: {
-      option_index: number;
-      user_id: string;
-    }[];
-  }[];
-  hashtags?: {
-    id: string;
-    name: string;
-  }[];
 }
 
 export const formatPostDate = (date: Date): string => {
