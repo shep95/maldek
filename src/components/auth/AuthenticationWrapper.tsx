@@ -13,16 +13,11 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    // Set up auth state change listener only for explicit sign-out/sign-in
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      console.log("Auth state changed:", { 
-        event, 
-        hasSession: !!currentSession,
-        sessionId: currentSession?.access_token?.slice(-10),
-        currentPath: location.pathname
-      });
+    // Only set up listener for explicit sign-out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      console.log("Auth state changed:", event);
 
-      // Only handle explicit sign-out
+      // Only redirect on explicit sign-out
       if (event === 'SIGNED_OUT') {
         console.log("User explicitly signed out, redirecting to auth");
         navigate('/auth');
@@ -37,7 +32,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
 
   // Only protect the auth page from authenticated users
   useEffect(() => {
-    const isAuthPage = location.pathname.startsWith('/auth');
+    const isAuthPage = location.pathname === '/auth';
     
     if (session && isAuthPage) {
       console.log("Authenticated user on auth page, redirecting to dashboard");
