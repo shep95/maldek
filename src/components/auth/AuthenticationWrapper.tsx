@@ -32,10 +32,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
 
         if (event === 'SIGNED_IN') {
           console.log("User signed in, redirecting to dashboard");
-          // Add a longer delay to ensure the session is properly initialized
-          setTimeout(() => {
-            navigate('/dashboard');
-          }, 1000); // Increased delay
+          navigate('/dashboard');
           return;
         }
 
@@ -46,7 +43,10 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         }
 
         // Only redirect to auth if there's no session and we're not already on the auth page
-        if (!currentSession && !location.pathname.startsWith('/auth')) {
+        // and we're not on the index page (which handles its own redirects)
+        if (!currentSession && 
+            !location.pathname.startsWith('/auth') && 
+            location.pathname !== '/') {
           console.log("No session found, redirecting to auth");
           navigate('/auth');
         }
@@ -63,57 +63,10 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     };
   }, [navigate, location.pathname]);
 
-  // Initial session check with retry mechanism
-  useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 5; // Increased max retries
-    let timeoutId: NodeJS.Timeout;
-
-    const checkSession = async () => {
-      try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) throw error;
-        
-        console.log("Initial session check:", { 
-          hasSession: !!currentSession,
-          attempt: retryCount + 1,
-          currentPath: location.pathname
-        });
-
-        if (!currentSession && !location.pathname.startsWith('/auth')) {
-          if (retryCount < maxRetries) {
-            retryCount++;
-            timeoutId = setTimeout(checkSession, 2000); // Increased delay between retries
-            return;
-          }
-          console.log("No session found after retries, redirecting to auth");
-          navigate('/auth');
-        }
-      } catch (error) {
-        console.error("Session check error:", error);
-        if (retryCount < maxRetries) {
-          retryCount++;
-          timeoutId = setTimeout(checkSession, 2000);
-        } else {
-          toast.error("Error checking session. Please try signing in again.");
-          navigate('/auth');
-        }
-      }
-    };
-
-    checkSession();
-
-    // Cleanup timeout on unmount
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [navigate, location.pathname]);
-
   // If we're on the auth page and there's no session, or if we have a session and we're not on the auth page
-  if ((!session && location.pathname.startsWith('/auth')) || (session && !location.pathname.startsWith('/auth'))) {
+  if ((!session && location.pathname.startsWith('/auth')) || 
+      (session && !location.pathname.startsWith('/auth')) ||
+      location.pathname === '/') {
     console.log("Rendering children", { hasSession: !!session, path: location.pathname });
     return children;
   }
