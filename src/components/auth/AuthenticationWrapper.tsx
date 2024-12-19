@@ -14,7 +14,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    console.log("AuthenticationWrapper: Initial mount", { 
+    console.log("AuthenticationWrapper: Session state changed", { 
       hasSession: !!session,
       currentPath: location.pathname 
     });
@@ -30,39 +30,12 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           return;
         }
 
-        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          console.log("User signed in or updated, checking profile");
-          
-          // Check if profile exists
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', currentSession?.user?.id)
-            .single();
-
-          if (profileError || !profile) {
-            console.log("No profile found, waiting for profile creation");
-            // Wait for profile to be created by the database trigger
-            setTimeout(async () => {
-              const { data: retryProfile } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('id', currentSession?.user?.id)
-                .single();
-
-              if (retryProfile) {
-                console.log("Profile created, redirecting to dashboard");
-                navigate('/dashboard');
-              } else {
-                console.error("Profile creation failed");
-                toast.error("Error setting up profile. Please try again.");
-                await supabase.auth.signOut();
-              }
-            }, 2000);
-          } else {
-            console.log("Profile exists, redirecting to dashboard");
+        if (event === 'SIGNED_IN') {
+          console.log("User signed in, redirecting to dashboard");
+          // Add a longer delay to ensure the session is properly initialized
+          setTimeout(() => {
             navigate('/dashboard');
-          }
+          }, 1000); // Increased delay
           return;
         }
 
@@ -87,6 +60,55 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     return () => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
+    };
+  }, [navigate, location.pathname]);
+
+  // Initial session check with retry mechanism
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 5; // Increased max retries
+    let timeoutId: NodeJS.Timeout;
+
+    const checkSession = async () => {
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        console.log("Initial session check:", { 
+          hasSession: !!currentSession,
+          attempt: retryCount + 1,
+          currentPath: location.pathname
+        });
+
+        if (!currentSession && !location.pathname.startsWith('/auth')) {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            timeoutId = setTimeout(checkSession, 2000); // Increased delay between retries
+            return;
+          }
+          console.log("No session found after retries, redirecting to auth");
+          navigate('/auth');
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          timeoutId = setTimeout(checkSession, 2000);
+        } else {
+          toast.error("Error checking session. Please try signing in again.");
+          navigate('/auth');
+        }
+      }
+    };
+
+    checkSession();
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [navigate, location.pathname]);
 
