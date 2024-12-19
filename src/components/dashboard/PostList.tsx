@@ -152,7 +152,6 @@ export const PostList = () => {
                   name: post.profiles.username
                 },
                 timestamp: new Date(post.created_at),
-                scheduled_for: post.scheduled_for ? new Date(post.scheduled_for) : null,
                 comments: post.comments?.length || 0,
                 isLiked: post.post_likes?.some(like => like.id) || false,
                 isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false
