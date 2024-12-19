@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus } from "lucide-react";
+import { Users, UserPlus, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -11,6 +11,10 @@ import { SpaceParticipantsList } from "./SpaceParticipantsList";
 import { SpaceSpeakerRequests } from "../SpaceSpeakerRequests";
 import { RecordingStatus } from "../recording/RecordingStatus";
 import { useState as useRecordingState } from "react";
+import { SpaceCategories, SpaceCategory } from "../features/SpaceCategories";
+import { SpaceChat } from "../features/SpaceChat";
+import { SpaceReactions } from "../features/SpaceReactions";
+import { SpaceAudioIndicator } from "../features/SpaceAudioIndicator";
 
 interface SpaceManagementDialogProps {
   isOpen: boolean;
@@ -278,11 +282,20 @@ export const SpaceManagementDialog = ({
           />
         )}
         
+        <SpaceAudioIndicator
+          isConnected={isConnected}
+          isSpeaking={isSpeaker && !isMuted}
+        />
+        
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="participants">
               <Users className="h-4 w-4 mr-2" />
               Participants
+            </TabsTrigger>
+            <TabsTrigger value="chat">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Chat
             </TabsTrigger>
             <TabsTrigger value="requests">
               <UserPlus className="h-4 w-4 mr-2" />
@@ -307,6 +320,14 @@ export const SpaceManagementDialog = ({
               canManageParticipants={isHost || userRole === 'co_host'}
               currentUserId={session?.user?.id}
               onParticipantUpdate={fetchData}
+            />
+            <SpaceReactions onReaction={handleRequestToSpeak} />
+          </TabsContent>
+
+          <TabsContent value="chat" className="mt-4">
+            <SpaceChat
+              messages={[]} // Placeholder for chat messages
+              onSendMessage={(content) => console.log(content)} // Placeholder for send message function
             />
           </TabsContent>
 
