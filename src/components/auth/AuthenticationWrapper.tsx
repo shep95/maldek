@@ -12,19 +12,20 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Only handle explicit sign-out events
+  // Only handle explicit sign-out events and session expiration
   useEffect(() => {
-    console.log("Setting up auth listener");
+    console.log("Setting up auth listener with current session:", !!session);
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", {
         event,
         currentPath: location.pathname,
-        hasSession: !!session
+        hasSession: !!currentSession,
+        sessionExpired: event === 'TOKEN_REFRESHED' && !currentSession
       });
 
-      // Only redirect on explicit sign-out button click
-      if (event === 'SIGNED_OUT') {
+      // Only redirect on explicit sign-out button click or if session is truly expired
+      if (event === 'SIGNED_OUT' && location.pathname !== '/auth') {
         console.log("User clicked sign out, redirecting to auth");
         navigate('/auth');
       }
@@ -34,7 +35,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log("Cleaning up auth listener");
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   // Only protect the auth page from authenticated users
   useEffect(() => {
