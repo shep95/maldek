@@ -7,7 +7,7 @@ export interface Author {
   name: string;
 }
 
-export interface Post extends DatabasePost {
+export interface Post extends Omit<DatabasePost, 'comments'> {
   author: Author;
   timestamp: Date;
   likes: number;
