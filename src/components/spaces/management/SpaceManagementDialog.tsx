@@ -6,11 +6,10 @@ import { toast } from "sonner";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAgoraRTC } from "@/hooks/spaces/useAgoraRTC";
-import { SpaceControls } from "./SpaceControls";
+import { SpaceManagementControls } from "./SpaceManagementControls";
 import { SpaceParticipantsList } from "./SpaceParticipantsList";
 import { SpaceSpeakerRequests } from "../SpaceSpeakerRequests";
 import { RecordingStatus } from "../recording/RecordingStatus";
-import { SpaceAudioIndicator } from "./SpaceAudioIndicator";
 import { useState as useRecordingState } from "react";
 
 interface SpaceManagementDialogProps {
@@ -35,8 +34,6 @@ export const SpaceManagementDialog = ({
   const [userRole, setUserRole] = useState<string>("listener");
   const [recordingDuration, setRecordingDuration] = useRecordingState(0);
   const [isRecording, setIsRecording] = useRecordingState(false);
-  const [hasRaisedHand, setHasRaisedHand] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
   
   const {
     isConnected,
@@ -50,47 +47,35 @@ export const SpaceManagementDialog = ({
   useEffect(() => {
     if (!isOpen || !spaceId || !session?.user?.id) return;
 
-    const fetchData = async () => {
-      try {
-        const [participantsData, requestsData, userRoleData] = await Promise.all([
-          supabase
-            .from('space_participants')
-            .select('*, profile:profiles(*)')
-            .eq('space_id', spaceId),
-          isHost ? supabase
-            .from('space_speaker_requests')
-            .select('*, profile:profiles(*)')
-            .eq('space_id', spaceId)
-            .eq('status', 'pending') : null,
-          supabase
-            .from('space_participants')
-            .select('role')
-            .eq('space_id', spaceId)
-            .eq('user_id', session?.user?.id)
-            .single()
-        ]);
-
-        if (participantsData.error) throw participantsData.error;
-        setParticipants(participantsData.data || []);
-        
-        if (requestsData && !requestsData.error) {
-          setSpeakerRequests(requestsData.data || []);
-        }
-
-        if (userRoleData.data) {
-          setUserRole(userRoleData.data.role);
-        }
-      } catch (error) {
-        console.error('Error fetching space data:', error);
-        toast.error("Failed to load space data");
-      }
-    };
-
-    fetchData();
+    // Join Agora channel
     joinChannel(session.user.id);
 
-    // Subscribe to real-time updates
-    const channel = supabase.channel('space-updates')
+    // Track user presence in the space
+    const presenceChannel = supabase.channel(`space:${spaceId}`)
+      .on('presence', { event: 'sync' }, () => {
+        console.log('Presence state synchronized:', presenceChannel.presenceState());
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('User joined:', newPresences);
+        fetchParticipants(); // Refresh participants list
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('User left:', leftPresences);
+        fetchParticipants(); // Refresh participants list
+      });
+
+    // Track user's state
+    presenceChannel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await presenceChannel.track({
+          user_id: session.user.id,
+          online_at: new Date().toISOString(),
+        });
+      }
+    });
+
+    // Subscribe to real-time updates for participants
+    const participantsChannel = supabase.channel('space-participants')
       .on(
         'postgres_changes',
         {
@@ -99,8 +84,15 @@ export const SpaceManagementDialog = ({
           table: 'space_participants',
           filter: `space_id=eq.${spaceId}`
         },
-        () => fetchData()
+        () => {
+          console.log('Participants changed, fetching updates');
+          fetchParticipants();
+        }
       )
+      .subscribe();
+
+    // Subscribe to real-time updates for speaker requests
+    const requestsChannel = supabase.channel('speaker-requests')
       .on(
         'postgres_changes',
         {
@@ -109,15 +101,86 @@ export const SpaceManagementDialog = ({
           table: 'space_speaker_requests',
           filter: `space_id=eq.${spaceId}`
         },
-        () => fetchData()
+        () => {
+          console.log('Speaker requests changed, fetching updates');
+          fetchSpeakerRequests();
+        }
       )
       .subscribe();
 
+    // Initial data fetch
+    fetchData();
+
     return () => {
-      supabase.removeChannel(channel);
+      console.log('Cleaning up space management subscriptions');
+      supabase.removeChannel(presenceChannel);
+      supabase.removeChannel(participantsChannel);
+      supabase.removeChannel(requestsChannel);
       leaveChannel();
     };
   }, [spaceId, isOpen, session?.user?.id]);
+
+  const fetchParticipants = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('space_participants')
+        .select('*, profile:profiles(*)')
+        .eq('space_id', spaceId);
+
+      if (error) throw error;
+      console.log('Updated participants:', data);
+      setParticipants(data || []);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+      toast.error("Failed to load participants");
+    }
+  };
+
+  const fetchSpeakerRequests = async () => {
+    if (!isHost) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('space_speaker_requests')
+        .select('*, profile:profiles(*)')
+        .eq('space_id', spaceId)
+        .eq('status', 'pending');
+
+      if (error) throw error;
+      console.log('Updated speaker requests:', data);
+      setSpeakerRequests(data || []);
+    } catch (error) {
+      console.error('Error fetching speaker requests:', error);
+      toast.error("Failed to load speaker requests");
+    }
+  };
+
+  const fetchData = async () => {
+    await Promise.all([
+      fetchParticipants(),
+      fetchSpeakerRequests(),
+      fetchUserRole()
+    ]);
+  };
+
+  const fetchUserRole = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('space_participants')
+        .select('role')
+        .eq('space_id', spaceId)
+        .eq('user_id', session?.user?.id)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        console.log('User role updated:', data.role);
+        setUserRole(data.role);
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+    }
+  };
 
   const handleRequestToSpeak = async () => {
     try {
@@ -193,16 +256,20 @@ export const SpaceManagementDialog = ({
   }
 
   const isSpeaker = userRole === 'speaker' || userRole === 'host' || userRole === 'co_host';
-  const canManageParticipants = ['host', 'co_host'].includes(userRole);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <SpaceAudioIndicator 
-          isConnected={isConnected}
-          audioLevel={audioLevel}
-        />
-        
         {isHost && (
           <RecordingStatus
             isRecording={isRecording}
@@ -223,11 +290,10 @@ export const SpaceManagementDialog = ({
           </TabsList>
 
           <TabsContent value="participants" className="mt-4">
-            <SpaceControls
+            <SpaceManagementControls
               isMuted={isMuted}
               isHost={isHost}
               isSpeaker={isSpeaker}
-              hasRaisedHand={hasRaisedHand}
               toggleMute={toggleMute}
               onRequestSpeak={handleRequestToSpeak}
               onLeave={onLeave}
@@ -236,26 +302,8 @@ export const SpaceManagementDialog = ({
             <SpaceParticipantsList 
               participants={participants}
               spaceId={spaceId}
-              canManageParticipants={canManageParticipants}
-              currentUserId={session?.user?.id}
-              onParticipantUpdate={() => {
-                // Refresh participants list
-                const fetchParticipants = async () => {
-                  const { data, error } = await supabase
-                    .from('space_participants')
-                    .select('*, profile:profiles(*)')
-                    .eq('space_id', spaceId);
-
-                  if (error) {
-                    console.error('Error fetching participants:', error);
-                    return;
-                  }
-
-                  setParticipants(data);
-                };
-
-                fetchParticipants();
-              }}
+              isHost={isHost}
+              onParticipantUpdate={fetchData}
             />
           </TabsContent>
 
