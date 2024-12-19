@@ -1,11 +1,4 @@
-import type { Database } from '../database';
-
-type Tables = Database['public']['Tables'];
-type DbPost = Tables['posts']['Row'];
-type DbPoll = Tables['polls']['Row'];
-type DbPollVote = Tables['poll_votes']['Row'];
-type DbHashtag = Tables['hashtags']['Row'];
-type DbPostHashtag = Tables['post_hashtags']['Row'];
+import { DbPost, DbPoll, DbPollVote, DbHashtag, DbPostHashtag } from './database-tables';
 
 export interface DatabasePost extends Omit<DbPost, 'scheduled_for'> {
   profiles: {
