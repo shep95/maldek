@@ -132,7 +132,7 @@ export const RightSidebar = () => {
 
   return (
     <div className="hidden lg:block fixed right-0 h-screen p-4 w-80">
-      <Card className="h-[90vh] flex flex-col border-muted bg-[#0d0d0d]/80 backdrop-blur-lg p-4 rounded-xl shadow-xl">
+      <Card className="h-[90vh] flex flex-col bg-black/20 border-border/50 backdrop-blur-md p-4 rounded-xl">
         <div className="relative mb-6">
           <Input 
             placeholder="Search @users or posts" 
