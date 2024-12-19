@@ -19,7 +19,10 @@ const queryClient = new QueryClient({
 
 const App = () => {
   return (
-    <SessionContextProvider supabaseClient={supabase} initialSession={null}>
+    <SessionContextProvider 
+      supabaseClient={supabase} 
+      initialSession={null}
+    >
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <TooltipProvider>

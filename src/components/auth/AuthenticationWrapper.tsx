@@ -14,34 +14,42 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    console.log("AuthenticationWrapper: Initial session check", { 
+    console.log("AuthenticationWrapper: Session state changed", { 
       hasSession: !!session,
       currentPath: location.pathname 
     });
 
-    // Check initial session
-    const checkInitialSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log("Initial session check:", !!currentSession);
-    };
-
-    checkInitialSession();
-
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", { event, hasSession: !!session });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      console.log("Auth state changed:", { event, hasSession: !!currentSession });
       
       try {
-        if (!session && location.pathname !== '/auth') {
+        if (event === 'SIGNED_OUT') {
+          console.log("User signed out, redirecting to auth");
+          navigate('/auth');
+          return;
+        }
+
+        if (event === 'SIGNED_IN') {
+          console.log("User signed in, redirecting to dashboard");
+          navigate('/dashboard');
+          return;
+        }
+
+        // Handle token refresh
+        if (event === 'TOKEN_REFRESHED') {
+          console.log("Token refreshed successfully");
+          return;
+        }
+
+        // Handle initial session check
+        if (!currentSession && location.pathname !== '/auth') {
           console.log("No session found, redirecting to auth");
           navigate('/auth');
-          toast.error("Session expired. Please sign in again.");
-        } else if (session && location.pathname === '/auth') {
-          console.log("Session found on auth page, redirecting to dashboard");
-          navigate('/dashboard');
         }
       } catch (error) {
         console.error("Error handling auth state change:", error);
+        toast.error("Session error. Please try signing in again.");
       }
     });
 
@@ -50,6 +58,21 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
+  }, [navigate, location.pathname]);
+
+  // Initial session check
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log("Initial session check:", { hasSession: !!currentSession });
+
+      if (!currentSession && location.pathname !== '/auth') {
+        console.log("No initial session found, redirecting to auth");
+        navigate('/auth');
+      }
+    };
+
+    checkSession();
   }, [navigate, location.pathname]);
 
   // If we're on the auth page and there's no session, or if we have a session and we're not on the auth page
