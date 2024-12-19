@@ -1,24 +1,24 @@
-import { MessageCircle } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Crown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const PremiumFeatureNotice = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex flex-col items-center justify-center h-[80vh] p-4">
-      <Card className="p-6 max-w-md w-full text-center space-y-4 bg-card/50 backdrop-blur-sm">
-        <MessageCircle className="w-12 h-12 mx-auto text-accent animate-pulse" />
-        <h2 className="text-xl font-semibold">Premium Feature</h2>
-        <p className="text-muted-foreground">
-          Upgrade to our premium plan to access Daarp AI and unlock powerful AI features.
-        </p>
-        <Button
-          variant="default"
-          className="w-full bg-accent hover:bg-accent/90"
-          onClick={() => window.location.href = '/subscription'}
-        >
-          Upgrade Now
-        </Button>
-      </Card>
-    </div>
+    <Card className="p-6 text-center space-y-4">
+      <Crown className="h-12 w-12 mx-auto text-accent" />
+      <h3 className="text-xl font-semibold">Premium Feature</h3>
+      <p className="text-muted-foreground">
+        This feature is available exclusively to our premium subscribers.
+      </p>
+      <Button 
+        onClick={() => navigate('/subscription')}
+        className="bg-accent hover:bg-accent/90"
+      >
+        Upgrade to Premium
+      </Button>
+    </Card>
   );
 };
