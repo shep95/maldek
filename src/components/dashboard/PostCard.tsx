@@ -95,7 +95,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
       <PostActions
         post={post}
         currentUserId={currentUserId}
-        onAction={(action) => {
+        onAction={(action: 'like' | 'bookmark' | 'delete' | 'repost') => {
           if (action === 'delete') {
             handleDelete();
           } else {
