@@ -2,7 +2,6 @@ import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface AuthenticationWrapperProps {
   children: ReactNode;
@@ -14,31 +13,50 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    console.log("AuthenticationWrapper mounted", { 
+    console.log("AuthenticationWrapper initialized", { 
       hasSession: !!session,
       currentPath: location.pathname 
     });
 
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      console.log("Auth state changed:", { event, hasSession: !!currentSession });
+      console.log("Auth state changed:", { 
+        event, 
+        hasSession: !!currentSession,
+        sessionId: currentSession?.access_token?.slice(-10)
+      });
 
-      // Only handle explicit sign-out events
+      // Only handle explicit sign-out
       if (event === 'SIGNED_OUT' && !currentSession) {
-        console.log("User explicitly signed out");
+        console.log("Explicit sign-out detected");
         navigate('/auth');
         return;
       }
 
       // Handle successful sign-in
       if (event === 'SIGNED_IN' && currentSession) {
-        console.log("User successfully signed in");
+        console.log("Sign-in successful, redirecting to dashboard");
         navigate('/dashboard');
         return;
       }
 
-      // For all other events (like token refresh), maintain the current session
-      console.log("Maintaining current session state for event:", event);
+      // For token refresh and other events, maintain the current session
+      if (event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed, maintaining session");
+        return;
+      }
     });
+
+    // Initial session check
+    const checkSession = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log("Initial session check:", { 
+        hasSession: !!currentSession,
+        sessionId: currentSession?.access_token?.slice(-10)
+      });
+    };
+
+    checkSession();
 
     return () => {
       console.log("Cleaning up auth subscription");
@@ -46,24 +64,23 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     };
   }, [navigate]);
 
-  // Handle initial route protection
+  // Handle route protection
   const isAuthPage = location.pathname.startsWith('/auth');
   const isProtectedRoute = !isAuthPage && location.pathname !== '/';
 
-  // If user has session but is on auth page, redirect to dashboard
+  // Only redirect if explicitly on auth page with session
   if (session && isAuthPage) {
-    console.log("Redirecting authenticated user from auth page to dashboard");
+    console.log("Authenticated user on auth page, redirecting to dashboard");
     navigate('/dashboard');
     return null;
   }
 
-  // If no session and trying to access protected route, redirect to auth
+  // Only redirect to auth if no session and trying to access protected route
   if (!session && isProtectedRoute) {
-    console.log("Redirecting unauthenticated user to auth page");
+    console.log("Unauthenticated user accessing protected route, redirecting to auth");
     navigate('/auth');
     return null;
   }
 
-  // Render children for all other cases
   return children;
 };
