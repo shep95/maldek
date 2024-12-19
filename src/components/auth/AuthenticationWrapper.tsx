@@ -32,7 +32,10 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
 
         if (event === 'SIGNED_IN') {
           console.log("User signed in, redirecting to dashboard");
-          navigate('/dashboard');
+          // Add a small delay to ensure the session is properly initialized
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 100);
           return;
         }
 
@@ -43,7 +46,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         }
 
         // Handle initial session check
-        if (!currentSession && location.pathname !== '/auth') {
+        if (!currentSession && !location.pathname.startsWith('/auth')) {
           console.log("No session found, redirecting to auth");
           navigate('/auth');
         }
@@ -60,15 +63,41 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     };
   }, [navigate, location.pathname]);
 
-  // Initial session check
+  // Initial session check with retry mechanism
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log("Initial session check:", { hasSession: !!currentSession });
+    let retryCount = 0;
+    const maxRetries = 3;
 
-      if (!currentSession && location.pathname !== '/auth') {
-        console.log("No initial session found, redirecting to auth");
-        navigate('/auth');
+    const checkSession = async () => {
+      try {
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        console.log("Initial session check:", { 
+          hasSession: !!currentSession,
+          attempt: retryCount + 1
+        });
+
+        if (!currentSession && !location.pathname.startsWith('/auth')) {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            // Retry after a short delay
+            setTimeout(checkSession, 1000);
+            return;
+          }
+          console.log("No session found after retries, redirecting to auth");
+          navigate('/auth');
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(checkSession, 1000);
+        } else {
+          toast.error("Error checking session. Please try signing in again.");
+          navigate('/auth');
+        }
       }
     };
 
@@ -76,7 +105,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   }, [navigate, location.pathname]);
 
   // If we're on the auth page and there's no session, or if we have a session and we're not on the auth page
-  if ((!session && location.pathname === '/auth') || (session && location.pathname !== '/auth')) {
+  if ((!session && location.pathname.startsWith('/auth')) || (session && !location.pathname.startsWith('/auth'))) {
     console.log("Rendering children", { hasSession: !!session, path: location.pathname });
     return children;
   }
