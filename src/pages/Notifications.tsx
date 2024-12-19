@@ -18,6 +18,7 @@ const Notifications = () => {
     dateRange: { from: undefined, to: undefined },
     search: "",
   });
+  const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -30,6 +31,38 @@ const Notifications = () => {
     };
     fetchUser();
   }, []);
+
+  // Only mark notifications as read once when the component mounts
+  useEffect(() => {
+    const markNotificationsAsRead = async () => {
+      if (!currentUserId || hasMarkedAsRead || isLoading) return;
+
+      try {
+        console.log('Marking notifications as read for user:', currentUserId);
+        
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('recipient_id', currentUserId)
+          .eq('read', false);
+
+        if (error) {
+          console.error('Error marking notifications as read:', error);
+          toast.error('Failed to mark notifications as read');
+        } else {
+          console.log('Successfully marked notifications as read');
+          setHasMarkedAsRead(true);
+          // Invalidate the notifications query to refresh the list
+          queryClient.invalidateQueries({ queryKey: ['notifications'] });
+          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+        }
+      } catch (error) {
+        console.error('Error in markNotificationsAsRead:', error);
+      }
+    };
+
+    markNotificationsAsRead();
+  }, [currentUserId, hasMarkedAsRead, isLoading, queryClient]);
 
   const handleBulkAction = async (action: 'read' | 'archive' | 'delete', ids: string[]) => {
     if (!currentUserId || ids.length === 0) return;
