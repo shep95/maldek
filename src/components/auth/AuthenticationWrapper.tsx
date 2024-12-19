@@ -45,7 +45,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           return;
         }
 
-        // Handle initial session check
+        // Only redirect to auth if there's no session and we're not already on the auth page
         if (!currentSession && !location.pathname.startsWith('/auth')) {
           console.log("No session found, redirecting to auth");
           navigate('/auth');
