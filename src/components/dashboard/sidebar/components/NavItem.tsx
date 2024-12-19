@@ -70,7 +70,7 @@ export const NavItem = ({
         )}
       </div>
       {premium && !subscription && (
-        <span className="ml-2 text-xs whitespace-nowrap shrink-0">From $8/mo</span>
+        <span className="ml-2 text-xs whitespace-nowrap shrink-0">From $17/mo</span>
       )}
       {badge && (
         <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[20px] h-5 rounded-full bg-accent text-white text-xs flex items-center justify-center px-1.5">

@@ -13,6 +13,7 @@ export const PremiumFeatureNotice = () => {
       <p className="text-muted-foreground">
         This feature is available exclusively to our premium subscribers.
       </p>
+      <p className="text-sm text-muted-foreground">Starting at $17/month</p>
       <Button 
         onClick={() => navigate('/subscription')}
         className="bg-accent hover:bg-accent/90"
