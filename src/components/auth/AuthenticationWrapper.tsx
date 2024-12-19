@@ -13,7 +13,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    // Set up auth state change listener
+    // Set up auth state change listener only for explicit sign-out/sign-in
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", { 
         event, 
@@ -22,17 +22,10 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         currentPath: location.pathname
       });
 
-      // Only redirect on explicit sign-out or sign-in
+      // Only handle explicit sign-out
       if (event === 'SIGNED_OUT') {
-        console.log("User signed out, redirecting to auth");
+        console.log("User explicitly signed out, redirecting to auth");
         navigate('/auth');
-        return;
-      }
-
-      if (event === 'SIGNED_IN') {
-        console.log("User signed in, redirecting to dashboard");
-        navigate('/dashboard');
-        return;
       }
     });
 
@@ -42,31 +35,15 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
     };
   }, [navigate]);
 
-  // Handle initial routing based on session state
+  // Only protect the auth page from authenticated users
   useEffect(() => {
-    const handleInitialRoute = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      
-      console.log("Checking route access:", {
-        hasSession: !!currentSession,
-        currentPath: location.pathname,
-        sessionId: currentSession?.access_token?.slice(-10)
-      });
-
-      const isAuthPage = location.pathname.startsWith('/auth');
-      const isPublicRoute = isAuthPage || location.pathname === '/';
-
-      if (currentSession && isAuthPage) {
-        console.log("Authenticated user on auth page, redirecting to dashboard");
-        navigate('/dashboard');
-      } else if (!currentSession && !isPublicRoute) {
-        console.log("Unauthenticated user on protected route, redirecting to auth");
-        navigate('/auth');
-      }
-    };
-
-    handleInitialRoute();
-  }, [location.pathname, navigate]);
+    const isAuthPage = location.pathname.startsWith('/auth');
+    
+    if (session && isAuthPage) {
+      console.log("Authenticated user on auth page, redirecting to dashboard");
+      navigate('/dashboard');
+    }
+  }, [session, location.pathname, navigate]);
 
   return children;
 };
