@@ -77,7 +77,6 @@ export const useNotifications = (userId: string | null) => {
         (payload) => {
           console.log('New notification received:', payload);
           
-          // Show toast notification
           toast.success("You have a new notification!", {
             action: {
               label: "View",
@@ -85,7 +84,7 @@ export const useNotifications = (userId: string | null) => {
             },
           });
 
-          // Invalidate notifications query to trigger refetch
+          // Invalidate queries to trigger refetch
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
           queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
         }

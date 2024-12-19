@@ -12,7 +12,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Set up auth listener only once on mount, not on every pathname change
   useEffect(() => {
     console.log("Setting up auth listener with current session:", !!session);
     
@@ -21,18 +20,11 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         event,
         currentPath: location.pathname,
         hasSession: !!currentSession,
-        sessionExpired: event === 'TOKEN_REFRESHED' && !currentSession
       });
 
-      // Handle only explicit sign-out events
+      // Only handle explicit sign-out events
       if (event === 'SIGNED_OUT') {
-        console.log("User signed out, redirecting to auth");
-        navigate('/auth');
-      }
-      
-      // Handle token refresh failures
-      if (event === 'TOKEN_REFRESHED' && !currentSession) {
-        console.log("Session expired, redirecting to auth");
+        console.log("User explicitly signed out, redirecting to auth");
         navigate('/auth');
       }
     });
@@ -41,7 +33,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log("Cleaning up auth listener");
       subscription.unsubscribe();
     };
-  }, [navigate]); // Remove location.pathname dependency
+  }, [navigate]); // Keep minimal dependencies
 
   // Only protect the auth page from authenticated users
   useEffect(() => {

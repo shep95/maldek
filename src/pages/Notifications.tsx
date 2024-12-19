@@ -18,13 +18,16 @@ const Notifications = () => {
     dateRange: { from: undefined, to: undefined },
     search: "",
   });
-  const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
 
+  // Fetch current user ID only once on mount
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        setCurrentUserId(user?.id || null);
+        if (user?.id) {
+          setCurrentUserId(user.id);
+          console.log("Current user ID set:", user.id);
+        }
       } catch (error) {
         console.error("Error fetching user:", error);
       }
@@ -32,10 +35,13 @@ const Notifications = () => {
     fetchUser();
   }, []);
 
-  // Only mark notifications as read once when the component mounts
+  // Mark notifications as read only once when notifications are loaded
   useEffect(() => {
     const markNotificationsAsRead = async () => {
-      if (!currentUserId || hasMarkedAsRead || isLoading) return;
+      if (!currentUserId || isLoading || !notifications?.length) return;
+
+      const unreadNotifications = notifications.filter(n => !n.read);
+      if (!unreadNotifications.length) return;
 
       try {
         console.log('Marking notifications as read for user:', currentUserId);
@@ -48,21 +54,20 @@ const Notifications = () => {
 
         if (error) {
           console.error('Error marking notifications as read:', error);
-          toast.error('Failed to mark notifications as read');
-        } else {
-          console.log('Successfully marked notifications as read');
-          setHasMarkedAsRead(true);
-          // Invalidate the notifications query to refresh the list
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+          return;
         }
+
+        // Only invalidate queries after successful update
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+        
       } catch (error) {
         console.error('Error in markNotificationsAsRead:', error);
       }
     };
 
     markNotificationsAsRead();
-  }, [currentUserId, hasMarkedAsRead, isLoading, queryClient]);
+  }, [currentUserId, notifications, isLoading, queryClient]);
 
   const handleBulkAction = async (action: 'read' | 'archive' | 'delete', ids: string[]) => {
     if (!currentUserId || ids.length === 0) return;
