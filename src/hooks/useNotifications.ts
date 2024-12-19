@@ -57,7 +57,7 @@ export const useNotifications = (userId: string | null) => {
     queryFn: fetchNotifications,
     enabled: !!userId,
     staleTime: 30000, // Consider data fresh for 30 seconds
-    cacheTime: 60000, // Keep data in cache for 1 minute
+    gcTime: 60000, // Keep data in cache for 1 minute (renamed from cacheTime)
   });
 
   // Subscribe to real-time notifications with debounced updates
