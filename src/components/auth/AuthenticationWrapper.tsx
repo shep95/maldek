@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AuthenticationWrapperProps {
   children: ReactNode;
@@ -13,26 +14,40 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    console.log("AuthenticationWrapper: Checking session", { 
+    console.log("AuthenticationWrapper: Initial session check", { 
       hasSession: !!session,
       currentPath: location.pathname 
     });
 
+    // Check initial session
+    const checkInitialSession = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log("Initial session check:", !!currentSession);
+    };
+
+    checkInitialSession();
+
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event, !!session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", { event, hasSession: !!session });
       
-      if (!session && location.pathname !== '/auth') {
-        console.log("No session found, redirecting to auth");
-        navigate('/auth');
-      } else if (session && location.pathname === '/auth') {
-        console.log("Session found on auth page, redirecting to dashboard");
-        navigate('/dashboard');
+      try {
+        if (!session && location.pathname !== '/auth') {
+          console.log("No session found, redirecting to auth");
+          navigate('/auth');
+          toast.error("Session expired. Please sign in again.");
+        } else if (session && location.pathname === '/auth') {
+          console.log("Session found on auth page, redirecting to dashboard");
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        console.error("Error handling auth state change:", error);
       }
     });
 
     // Cleanup subscription
     return () => {
+      console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname]);
