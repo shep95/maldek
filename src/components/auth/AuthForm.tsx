@@ -45,7 +45,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       }
 
       console.log("Username availability result:", { username, isAvailable: data });
-      setIsUsernameTaken(!data);
+      setIsUsernameTaken(!data); // data is true if username is available
     } catch (error) {
       console.error("Username check failed:", error);
       toast.error("Failed to check username availability");
@@ -85,37 +85,10 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
         if (error) throw error;
 
-        // Wait for profile creation with retries
-        let retries = 0;
-        const maxRetries = 5;
-        const checkProfile = async () => {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', data.user?.id)
-            .single();
+        // Wait a moment for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-          if (profileError || !profile) {
-            if (retries < maxRetries) {
-              retries++;
-              console.log(`Profile not found, retrying... (${retries}/${maxRetries})`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              return checkProfile();
-            }
-            throw new Error('Profile creation failed');
-          }
-          return profile;
-        };
-
-        await checkProfile();
-        console.log("Profile created successfully");
-        toast.success("Account created successfully! Signing you in...");
-        
-        // Now handle the login
-        await onSubmit({
-          email,
-          password
-        });
+        toast.success("Account created successfully! You can now sign in.");
       } else {
         // For login, use the provided onSubmit
         await onSubmit({

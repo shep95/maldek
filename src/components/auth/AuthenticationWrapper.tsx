@@ -33,33 +33,36 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
           console.log("User signed in or updated, checking profile");
           
-          let retryCount = 0;
-          const maxRetries = 3;
-          
-          const checkProfile = async () => {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('id')
-              .eq('id', currentSession?.user?.id)
-              .single();
+          // Check if profile exists
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', currentSession?.user?.id)
+            .single();
 
-            if (profileError || !profile) {
-              console.log(`No profile found, attempt ${retryCount + 1} of ${maxRetries}`);
-              if (retryCount < maxRetries) {
-                retryCount++;
-                setTimeout(checkProfile, 1000);
+          if (profileError || !profile) {
+            console.log("No profile found, waiting for profile creation");
+            // Wait for profile to be created by the database trigger
+            setTimeout(async () => {
+              const { data: retryProfile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', currentSession?.user?.id)
+                .single();
+
+              if (retryProfile) {
+                console.log("Profile created, redirecting to dashboard");
+                navigate('/dashboard');
               } else {
-                console.error("Profile creation failed after retries");
+                console.error("Profile creation failed");
                 toast.error("Error setting up profile. Please try again.");
                 await supabase.auth.signOut();
               }
-            } else {
-              console.log("Profile exists, redirecting to dashboard");
-              navigate('/dashboard');
-            }
-          };
-
-          await checkProfile();
+            }, 2000);
+          } else {
+            console.log("Profile exists, redirecting to dashboard");
+            navigate('/dashboard');
+          }
           return;
         }
 
@@ -80,52 +83,9 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       }
     });
 
-    // Initial session check with retry mechanism
-    let retryCount = 0;
-    const maxRetries = 5;
-    let timeoutId: NodeJS.Timeout;
-
-    const checkSession = async () => {
-      try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) throw error;
-        
-        console.log("Initial session check:", { 
-          hasSession: !!currentSession,
-          attempt: retryCount + 1,
-          currentPath: location.pathname
-        });
-
-        if (!currentSession && !location.pathname.startsWith('/auth')) {
-          if (retryCount < maxRetries) {
-            retryCount++;
-            timeoutId = setTimeout(checkSession, 1000);
-            return;
-          }
-          console.log("No session found after retries, redirecting to auth");
-          navigate('/auth');
-        }
-      } catch (error) {
-        console.error("Session check error:", error);
-        if (retryCount < maxRetries) {
-          retryCount++;
-          timeoutId = setTimeout(checkSession, 1000);
-        } else {
-          toast.error("Error checking session. Please try signing in again.");
-          navigate('/auth');
-        }
-      }
-    };
-
-    checkSession();
-
-    // Cleanup subscription and timeout
+    // Cleanup subscription
     return () => {
       console.log("Cleaning up auth subscription");
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname]);
