@@ -98,12 +98,20 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     navigate(`/post/${post.id}`);
   };
 
+  const handleUsernameClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent post click
+    console.log('Navigating to profile:', post.author.username);
+    navigate(`/@${post.author.username}`);
+  };
+
   return (
     <div 
       className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 cursor-pointer hover:bg-accent/5 transition-colors duration-200"
       onClick={handlePostClick}
     >
-      <PostHeader author={post.author} timestamp={post.timestamp} />
+      <div onClick={handleUsernameClick}>
+        <PostHeader author={post.author} timestamp={post.timestamp} />
+      </div>
       <PostContent 
         content={post.content} 
         userLanguage={userSettings?.preferred_language || 'en'}
