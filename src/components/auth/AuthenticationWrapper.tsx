@@ -15,7 +15,8 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   useEffect(() => {
     console.log("AuthenticationWrapper initialized", { 
       hasSession: !!session,
-      currentPath: location.pathname 
+      currentPath: location.pathname,
+      sessionId: session?.access_token?.slice(-10)
     });
 
     // Set up auth state change listener
@@ -23,7 +24,8 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log("Auth state changed:", { 
         event, 
         hasSession: !!currentSession,
-        sessionId: currentSession?.access_token?.slice(-10)
+        sessionId: currentSession?.access_token?.slice(-10),
+        currentPath: location.pathname
       });
 
       // Only handle explicit sign-out
@@ -47,36 +49,25 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       }
     });
 
-    // Initial session check
-    const checkSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log("Initial session check:", { 
-        hasSession: !!currentSession,
-        sessionId: currentSession?.access_token?.slice(-10)
-      });
-    };
-
-    checkSession();
-
     return () => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, [navigate]);
 
-  // Handle route protection
+  // Only protect routes that require authentication
   const isAuthPage = location.pathname.startsWith('/auth');
-  const isProtectedRoute = !isAuthPage && location.pathname !== '/';
+  const isPublicRoute = isAuthPage || location.pathname === '/';
 
-  // Only redirect if explicitly on auth page with session
+  // Only redirect if on auth page with valid session
   if (session && isAuthPage) {
     console.log("Authenticated user on auth page, redirecting to dashboard");
     navigate('/dashboard');
     return null;
   }
 
-  // Only redirect to auth if no session and trying to access protected route
-  if (!session && isProtectedRoute) {
+  // Only redirect to auth if no session and accessing protected route
+  if (!session && !isPublicRoute) {
     console.log("Unauthenticated user accessing protected route, redirecting to auth");
     navigate('/auth');
     return null;
