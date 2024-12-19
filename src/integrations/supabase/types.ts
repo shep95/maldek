@@ -261,6 +261,95 @@ export type Database = {
           },
         ]
       }
+      hashtags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          post_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          post_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          post_count?: number | null
+        }
+        Relationships: []
+      }
+      list_members: {
+        Row: {
+          added_at: string
+          list_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          list_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          list_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_members_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lists: {
+        Row: {
+          created_at: string
+          creator_id: string | null
+          description: string | null
+          id: string
+          is_private: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          is_private?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          is_private?: boolean | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lists_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_group_members: {
         Row: {
           group_id: string
@@ -509,6 +598,80 @@ export type Database = {
           },
         ]
       }
+      poll_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_index: number
+          poll_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_index: number
+          poll_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_index?: number
+          poll_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poll_votes_poll_id_fkey"
+            columns: ["poll_id"]
+            isOneToOne: false
+            referencedRelation: "polls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "poll_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          created_at: string
+          ends_at: string
+          id: string
+          options: Json
+          post_id: string | null
+          question: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          id?: string
+          options: Json
+          post_id?: string | null
+          question: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          id?: string
+          options?: Json
+          post_id?: string | null
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "polls_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_analytics: {
         Row: {
           comment_count: number | null
@@ -569,6 +732,39 @@ export type Database = {
           },
         ]
       }
+      post_hashtags: {
+        Row: {
+          created_at: string
+          hashtag_id: string
+          post_id: string
+        }
+        Insert: {
+          created_at?: string
+          hashtag_id: string
+          post_id: string
+        }
+        Update: {
+          created_at?: string
+          hashtag_id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_hashtags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_likes: {
         Row: {
           created_at: string
@@ -614,7 +810,11 @@ export type Database = {
           likes: number | null
           media_urls: string[] | null
           pinned_at: string | null
+          quoted_post_id: string | null
           reposts: number | null
+          scheduled_for: string | null
+          thread_parent_id: string | null
+          thread_position: number | null
           user_id: string
           view_count: number | null
         }
@@ -626,7 +826,11 @@ export type Database = {
           likes?: number | null
           media_urls?: string[] | null
           pinned_at?: string | null
+          quoted_post_id?: string | null
           reposts?: number | null
+          scheduled_for?: string | null
+          thread_parent_id?: string | null
+          thread_position?: number | null
           user_id: string
           view_count?: number | null
         }
@@ -638,11 +842,29 @@ export type Database = {
           likes?: number | null
           media_urls?: string[] | null
           pinned_at?: string | null
+          quoted_post_id?: string | null
           reposts?: number | null
+          scheduled_for?: string | null
+          thread_parent_id?: string | null
+          thread_position?: number | null
           user_id?: string
           view_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_quoted_post_id_fkey"
+            columns: ["quoted_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_thread_parent_id_fkey"
+            columns: ["thread_parent_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_user_id_fkey"
             columns: ["user_id"]
