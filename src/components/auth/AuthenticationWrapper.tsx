@@ -13,30 +13,6 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    // Initial session check
-    const checkSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log("Initial session check:", { 
-        hasSession: !!currentSession,
-        sessionId: currentSession?.access_token?.slice(-10),
-        currentPath: location.pathname
-      });
-
-      // If we have a session but we're on the auth page, redirect to dashboard
-      if (currentSession && location.pathname.startsWith('/auth')) {
-        navigate('/dashboard');
-        return;
-      }
-
-      // If we don't have a session and we're not on a public route, redirect to auth
-      if (!currentSession && !location.pathname.startsWith('/auth') && location.pathname !== '/') {
-        navigate('/auth');
-        return;
-      }
-    };
-
-    checkSession();
-
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", { 
@@ -46,21 +22,16 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         currentPath: location.pathname
       });
 
+      // Only redirect on explicit sign-out or sign-in
       if (event === 'SIGNED_OUT') {
-        console.log("Explicit sign-out detected");
+        console.log("User signed out, redirecting to auth");
         navigate('/auth');
         return;
       }
 
-      if (event === 'SIGNED_IN' && currentSession) {
-        console.log("Sign-in successful, redirecting to dashboard");
+      if (event === 'SIGNED_IN') {
+        console.log("User signed in, redirecting to dashboard");
         navigate('/dashboard');
-        return;
-      }
-
-      // For token refresh and other events, maintain the current session
-      if (event === 'TOKEN_REFRESHED') {
-        console.log("Token refreshed, maintaining session");
         return;
       }
     });
@@ -69,13 +40,33 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
-  // Don't render anything during the initial session check
-  if (typeof session === 'undefined') {
-    console.log("Session is undefined, waiting for initialization");
-    return null;
-  }
+  // Handle initial routing based on session state
+  useEffect(() => {
+    const handleInitialRoute = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      console.log("Checking route access:", {
+        hasSession: !!currentSession,
+        currentPath: location.pathname,
+        sessionId: currentSession?.access_token?.slice(-10)
+      });
+
+      const isAuthPage = location.pathname.startsWith('/auth');
+      const isPublicRoute = isAuthPage || location.pathname === '/';
+
+      if (currentSession && isAuthPage) {
+        console.log("Authenticated user on auth page, redirecting to dashboard");
+        navigate('/dashboard');
+      } else if (!currentSession && !isPublicRoute) {
+        console.log("Unauthenticated user on protected route, redirecting to auth");
+        navigate('/auth');
+      }
+    };
+
+    handleInitialRoute();
+  }, [location.pathname, navigate]);
 
   return children;
 };
