@@ -35,7 +35,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           // Add a longer delay to ensure the session is properly initialized
           setTimeout(() => {
             navigate('/dashboard');
-          }, 500);
+          }, 1000); // Increased delay
           return;
         }
 
@@ -66,7 +66,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   // Initial session check with retry mechanism
   useEffect(() => {
     let retryCount = 0;
-    const maxRetries = 3;
+    const maxRetries = 5; // Increased max retries
     let timeoutId: NodeJS.Timeout;
 
     const checkSession = async () => {
@@ -84,7 +84,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         if (!currentSession && !location.pathname.startsWith('/auth')) {
           if (retryCount < maxRetries) {
             retryCount++;
-            timeoutId = setTimeout(checkSession, 1500); // Increased delay between retries
+            timeoutId = setTimeout(checkSession, 2000); // Increased delay between retries
             return;
           }
           console.log("No session found after retries, redirecting to auth");
@@ -94,7 +94,7 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
         console.error("Session check error:", error);
         if (retryCount < maxRetries) {
           retryCount++;
-          timeoutId = setTimeout(checkSession, 1500);
+          timeoutId = setTimeout(checkSession, 2000);
         } else {
           toast.error("Error checking session. Please try signing in again.");
           navigate('/auth');
