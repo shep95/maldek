@@ -32,7 +32,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
         const publicUrl = getPublicUrl(url);
 
         return (
-          <div key={url} className="relative rounded-lg overflow-hidden group mb-2">
+          <div key={url} className="relative rounded-[33px] overflow-hidden group mb-2">
             {isVideo ? (
               <AspectRatio ratio={16 / 9}>
                 <video
@@ -40,7 +40,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                   controls
                   playsInline
                   preload="metadata"
-                  className="w-full h-full object-cover bg-muted rounded-lg"
+                  className="w-full h-full object-cover bg-muted rounded-[33px]"
                   onClick={(e) => e.stopPropagation()}
                 />
               </AspectRatio>
@@ -50,7 +50,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                   <img
                     src={publicUrl}
                     alt={`Media content ${i + 1}`}
-                    className="w-full h-full object-contain bg-muted/10 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                    className="w-full h-full object-contain bg-muted/10 rounded-[33px] cursor-pointer transition-all duration-200 hover:scale-[1.02]"
                     loading="lazy"
                   />
                   <Button
