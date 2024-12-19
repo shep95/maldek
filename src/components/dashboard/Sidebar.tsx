@@ -11,7 +11,7 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
   
   return (
     <div className="hidden md:block fixed left-0 h-screen w-64 p-4">
-      <Card className="h-full flex flex-col bg-transparent border-none backdrop-blur-sm">
+      <Card className="h-full flex flex-col bg-black/20 border-border/50 backdrop-blur-md">
         <SidebarHeader />
         <div className="flex-1 overflow-hidden">
           <SidebarNav setIsCreatingPost={setIsCreatingPost} />
