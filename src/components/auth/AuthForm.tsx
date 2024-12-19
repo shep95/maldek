@@ -35,7 +35,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       console.log("Checking username availability:", username);
       const { data, error } = await supabase.rpc(
         'check_username_availability',
-        { username_to_check: username }
+        { username_to_check: username.toLowerCase() }
       );
 
       if (error) {
