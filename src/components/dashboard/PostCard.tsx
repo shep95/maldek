@@ -5,6 +5,7 @@ import { PostHeader } from "./post/PostHeader";
 import { PostContent } from "./post/PostContent";
 import { PostActions } from "./post/PostActions";
 import { PostMedia } from "./post/PostMedia";
+import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
   post: Post;
@@ -14,6 +15,8 @@ interface PostCardProps {
 }
 
 export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: PostCardProps) => {
+  const navigate = useNavigate();
+  
   const { data: userSettings } = useQuery({
     queryKey: ['user-settings', currentUserId],
     queryFn: async () => {
@@ -81,8 +84,25 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     }
   };
 
+  const handlePostClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or links
+    if (
+      (e.target as HTMLElement).tagName === 'BUTTON' ||
+      (e.target as HTMLElement).tagName === 'A' ||
+      (e.target as HTMLElement).closest('button') ||
+      (e.target as HTMLElement).closest('a')
+    ) {
+      return;
+    }
+    console.log('Navigating to post:', post.id);
+    navigate(`/post/${post.id}`);
+  };
+
   return (
-    <div className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
+    <div 
+      className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 cursor-pointer hover:bg-accent/5 transition-colors duration-200"
+      onClick={handlePostClick}
+    >
       <PostHeader author={post.author} timestamp={post.timestamp} />
       <PostContent 
         content={post.content} 
