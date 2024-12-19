@@ -26,13 +26,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
   };
 
   return (
-    <div className="mt-4 grid gap-2 grid-cols-1 sm:grid-cols-2">
+    <div className="mt-4">
       {mediaUrls.map((url, i) => {
         const isVideo = isVideoFile(url);
         const publicUrl = getPublicUrl(url);
 
         return (
-          <div key={url} className="relative rounded-lg overflow-hidden group cursor-pointer">
+          <div key={url} className="relative rounded-lg overflow-hidden group mb-2">
             {isVideo ? (
               <AspectRatio ratio={16 / 9}>
                 <video
@@ -50,7 +50,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                   <img
                     src={publicUrl}
                     alt={`Media content ${i + 1}`}
-                    className="w-full h-full object-cover rounded-lg transition-opacity duration-200 hover:opacity-95"
+                    className="w-full h-full object-contain bg-muted/10 rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.02]"
                     loading="lazy"
                   />
                   <Button
