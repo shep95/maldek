@@ -32,6 +32,7 @@ export const SpaceManagementDialog = ({
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string>("listener");
+  const [hasRaisedHand, setHasRaisedHand] = useState(false);
   const [recordingDuration, setRecordingDuration] = useRecordingState(0);
   const [isRecording, setIsRecording] = useRecordingState(false);
   
@@ -294,6 +295,7 @@ export const SpaceManagementDialog = ({
               isMuted={isMuted}
               isHost={isHost}
               isSpeaker={isSpeaker}
+              hasRaisedHand={hasRaisedHand}
               toggleMute={toggleMute}
               onRequestSpeak={handleRequestToSpeak}
               onLeave={onLeave}
@@ -302,7 +304,8 @@ export const SpaceManagementDialog = ({
             <SpaceParticipantsList 
               participants={participants}
               spaceId={spaceId}
-              isHost={isHost}
+              canManageParticipants={isHost || userRole === 'co_host'}
+              currentUserId={session?.user?.id}
               onParticipantUpdate={fetchData}
             />
           </TabsContent>
