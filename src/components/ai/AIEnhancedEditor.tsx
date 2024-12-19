@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useSession } from "@supabase/auth-helpers-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   Wand2,
   Image,
@@ -10,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAIServices } from '@/hooks/useAIServices';
 import { toast } from 'sonner';
+import { PremiumFeatureNotice } from './components/PremiumFeatureNotice';
 
 interface AIEnhancedEditorProps {
   value: string;
@@ -24,6 +28,7 @@ export const AIEnhancedEditor = ({
   onImageGenerate,
   onAudioGenerate
 }: AIEnhancedEditorProps) => {
+  const session = useSession();
   const [targetLanguage, setTargetLanguage] = useState('es');
   const { 
     isLoading,
@@ -34,7 +39,34 @@ export const AIEnhancedEditor = ({
     synthesizeSpeech
   } = useAIServices();
 
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*, tier:subscription_tiers(*)')
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
+
   const handleEnhance = useCallback(async () => {
+    if (!subscription) {
+      toast.error("This feature is only available for premium users");
+      return;
+    }
+
     try {
       const { enhanced } = await enhanceText(value);
       onChange(enhanced);
@@ -42,9 +74,14 @@ export const AIEnhancedEditor = ({
     } catch (error) {
       console.error('Enhancement error:', error);
     }
-  }, [value, enhanceText, onChange]);
+  }, [value, enhanceText, onChange, subscription]);
 
   const handleGenerateImage = useCallback(async () => {
+    if (!subscription) {
+      toast.error("This feature is only available for premium users");
+      return;
+    }
+
     if (!onImageGenerate) return;
     
     try {
@@ -54,9 +91,14 @@ export const AIEnhancedEditor = ({
     } catch (error) {
       console.error('Image generation error:', error);
     }
-  }, [value, generateImage, onImageGenerate]);
+  }, [value, generateImage, onImageGenerate, subscription]);
 
   const handleTranslate = useCallback(async () => {
+    if (!subscription) {
+      toast.error("This feature is only available for premium users");
+      return;
+    }
+
     try {
       const { translated } = await translateContent(value, targetLanguage);
       onChange(translated);
@@ -64,9 +106,14 @@ export const AIEnhancedEditor = ({
     } catch (error) {
       console.error('Translation error:', error);
     }
-  }, [value, targetLanguage, translateContent, onChange]);
+  }, [value, targetLanguage, translateContent, onChange, subscription]);
 
   const handleModerate = useCallback(async () => {
+    if (!subscription) {
+      toast.error("This feature is only available for premium users");
+      return;
+    }
+
     try {
       const { flagged, categories } = await moderateContent(value);
       if (flagged) {
@@ -81,9 +128,14 @@ export const AIEnhancedEditor = ({
     } catch (error) {
       console.error('Moderation error:', error);
     }
-  }, [value, moderateContent]);
+  }, [value, moderateContent, subscription]);
 
   const handleSpeechSynthesis = useCallback(async () => {
+    if (!subscription) {
+      toast.error("This feature is only available for premium users");
+      return;
+    }
+
     if (!onAudioGenerate) return;
     
     try {
@@ -93,7 +145,11 @@ export const AIEnhancedEditor = ({
     } catch (error) {
       console.error('Speech synthesis error:', error);
     }
-  }, [value, synthesizeSpeech, onAudioGenerate]);
+  }, [value, synthesizeSpeech, onAudioGenerate, subscription]);
+
+  if (!subscription) {
+    return <PremiumFeatureNotice />;
+  }
 
   return (
     <div className="space-y-4">
