@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 // Price IDs for subscription tiers
-const CREATOR_PRICE_ID = 'price_1QVPOZApZ2oDcxDyNrRMc7rZ'  // $17/month tier
+const CREATOR_PRICE_ID = 'price_1QXZOIApZ2oDcxDyFw0DXoh0'  // $17/month tier
 const BUSINESS_PRICE_ID = 'price_1QVPPeApZ2oDcxDyezvlMWup' // $800/month tier
 
 serve(async (req) => {
