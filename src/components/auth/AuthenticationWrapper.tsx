@@ -14,45 +14,31 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    console.log("AuthenticationWrapper: Session state changed", { 
+    console.log("AuthenticationWrapper: Current session state", { 
       hasSession: !!session,
       currentPath: location.pathname 
     });
 
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", { event, hasSession: !!currentSession });
       
-      try {
-        if (event === 'SIGNED_OUT') {
-          console.log("User signed out, redirecting to auth");
-          navigate('/auth');
-          return;
-        }
+      if (event === 'SIGNED_OUT') {
+        console.log("User explicitly signed out, redirecting to auth");
+        navigate('/auth');
+        return;
+      }
 
-        if (event === 'SIGNED_IN') {
-          console.log("User signed in, redirecting to dashboard");
-          navigate('/dashboard');
-          return;
-        }
+      if (event === 'SIGNED_IN') {
+        console.log("User signed in, redirecting to dashboard");
+        navigate('/dashboard');
+        return;
+      }
 
-        // Handle token refresh
-        if (event === 'TOKEN_REFRESHED') {
-          console.log("Token refreshed successfully");
-          return;
-        }
-
-        // Only redirect to auth if there's no session and we're not already on the auth page
-        // and we're not on the index page (which handles its own redirects)
-        if (!currentSession && 
-            !location.pathname.startsWith('/auth') && 
-            location.pathname !== '/') {
-          console.log("No session found, redirecting to auth");
-          navigate('/auth');
-        }
-      } catch (error) {
-        console.error("Error handling auth state change:", error);
-        toast.error("Session error. Please try signing in again.");
+      // For token refresh, do nothing to prevent unintended redirects
+      if (event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed, maintaining current session");
+        return;
       }
     });
 
@@ -61,17 +47,24 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate]);
 
-  // If we're on the auth page and there's no session, or if we have a session and we're not on the auth page
-  if ((!session && location.pathname.startsWith('/auth')) || 
-      (session && !location.pathname.startsWith('/auth')) ||
-      location.pathname === '/') {
-    console.log("Rendering children", { hasSession: !!session, path: location.pathname });
-    return children;
+  // Only redirect if explicitly on auth page with session, or no session and trying to access protected route
+  const isAuthPage = location.pathname.startsWith('/auth');
+  const isProtectedRoute = !location.pathname.startsWith('/auth') && location.pathname !== '/';
+  
+  if (session && isAuthPage) {
+    console.log("User has session but on auth page, redirecting to dashboard");
+    navigate('/dashboard');
+    return null;
   }
 
-  // Return null while redirecting
-  console.log("Returning null while handling auth redirect");
-  return null;
+  if (!session && isProtectedRoute) {
+    console.log("No session and accessing protected route, redirecting to auth");
+    navigate('/auth');
+    return null;
+  }
+
+  console.log("Rendering children", { hasSession: !!session, path: location.pathname });
+  return children;
 };
