@@ -1,7 +1,8 @@
-import { Database } from '../database';
+import type { Database } from '../database';
 
-type DbList = Database['public']['Tables']['lists']['Row'];
-type DbListMember = Database['public']['Tables']['list_members']['Row'];
+type Tables = Database['public']['Tables'];
+type DbList = Tables['lists']['Row'];
+type DbListMember = Tables['list_members']['Row'];
 
 export interface List extends DbList {
   members?: ListMember[];
