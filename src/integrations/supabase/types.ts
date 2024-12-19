@@ -715,6 +715,51 @@ export type Database = {
         }
         Relationships: []
       }
+      space_chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          space_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          space_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          space_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_chat_messages_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_participants: {
         Row: {
           joined_at: string | null
@@ -744,6 +789,45 @@ export type Database = {
           },
           {
             foreignKeyName: "space_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_reactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          reaction_type: string
+          space_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reaction_type: string
+          space_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reaction_type?: string
+          space_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_reactions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_reactions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -850,13 +934,17 @@ export type Database = {
       }
       spaces: {
         Row: {
+          category: string | null
+          chat_enabled: boolean | null
           created_at: string | null
           description: string | null
           ended_at: string | null
+          features: Json | null
           host_id: string
           id: string
           max_speakers: number | null
           participants_count: number | null
+          reactions_enabled: boolean | null
           recording_price: number | null
           recording_url: string | null
           scheduled_start: string | null
@@ -866,13 +954,17 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          category?: string | null
+          chat_enabled?: boolean | null
           created_at?: string | null
           description?: string | null
           ended_at?: string | null
+          features?: Json | null
           host_id: string
           id?: string
           max_speakers?: number | null
           participants_count?: number | null
+          reactions_enabled?: boolean | null
           recording_price?: number | null
           recording_url?: string | null
           scheduled_start?: string | null
@@ -882,13 +974,17 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          category?: string | null
+          chat_enabled?: boolean | null
           created_at?: string | null
           description?: string | null
           ended_at?: string | null
+          features?: Json | null
           host_id?: string
           id?: string
           max_speakers?: number | null
           participants_count?: number | null
+          reactions_enabled?: boolean | null
           recording_price?: number | null
           recording_url?: string | null
           scheduled_start?: string | null
