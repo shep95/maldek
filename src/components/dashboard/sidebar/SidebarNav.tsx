@@ -50,27 +50,20 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
     try {
       console.log("Starting logout process...");
       
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.auth.')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
-      navigate("/auth");
-      
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.log("Logout error:", error);
-        toast.success("Logged out successfully");
+        console.error("Logout error:", error);
+        toast.error("Error during logout");
         return;
       }
       
       console.log("Logout successful");
       toast.success("Logged out successfully");
+      navigate("/auth");
     } catch (error) {
       console.error("Logout error:", error);
-      toast.success("Logged out successfully");
+      toast.error("Error during logout");
     }
   };
 
