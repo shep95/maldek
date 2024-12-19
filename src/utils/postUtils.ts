@@ -5,7 +5,7 @@ export interface Author {
   name: string;
 }
 
-export interface PostData {
+export interface Post {
   id: string;
   content: string;
   author: Author;
@@ -16,8 +16,8 @@ export interface PostData {
   reposts: number;
   isLiked: boolean;
   isBookmarked: boolean;
-  quoted_post?: PostData | null;
-  thread_parent_id?: string | null;
+  quoted_post?: Post | null;
+  thread_parent?: Post | null;
   thread_position?: number;
   scheduled_for?: Date | null;
   polls?: {
@@ -44,10 +44,11 @@ export const formatPostDate = (date: Date): string => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (seconds < 60) return `${seconds} seconds ago`;
-  if (minutes < 60) return `${minutes} minutes ago`;
-  if (hours < 24) return `${hours} hours ago`;
-  return `${days} days ago`;
+  if (seconds < 60) return `${seconds}s`;
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 7) return `${days}d`;
+  return date.toLocaleDateString();
 };
 
 export const formatDateForSupabase = (date: Date): string => {

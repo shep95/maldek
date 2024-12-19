@@ -6,7 +6,7 @@ type DbPollVote = Database['public']['Tables']['poll_votes']['Row'];
 type DbHashtag = Database['public']['Tables']['hashtags']['Row'];
 type DbPostHashtag = Database['public']['Tables']['post_hashtags']['Row'];
 
-export interface Post extends Omit<DbPost, 'scheduled_for'> {
+export interface DatabasePost extends Omit<DbPost, 'scheduled_for'> {
   profiles: {
     id: string;
     username: string;
@@ -15,20 +15,20 @@ export interface Post extends Omit<DbPost, 'scheduled_for'> {
   post_likes?: { id: string }[];
   bookmarks?: { id: string }[];
   comments?: { id: string }[];
-  quoted_post?: Post | null;
-  thread_parent?: Post | null;
-  polls?: Poll[];
-  hashtags?: Hashtag[];
+  quoted_post?: DatabasePost | null;
+  thread_parent?: DatabasePost | null;
+  polls?: DatabasePoll[];
+  hashtags?: DatabaseHashtag[];
   scheduled_for?: Date | null;
 }
 
-export interface Poll extends Omit<DbPoll, 'ends_at'> {
-  votes?: PollVote[];
+export interface DatabasePoll extends Omit<DbPoll, 'ends_at'> {
+  votes?: DatabasePollVote[];
   ends_at: Date;
 }
 
-export interface PollVote extends DbPollVote {}
+export interface DatabasePollVote extends DbPollVote {}
 
-export interface Hashtag extends DbHashtag {}
+export interface DatabaseHashtag extends DbHashtag {}
 
-export interface PostHashtag extends DbPostHashtag {}
+export interface DatabasePostHashtag extends DbPostHashtag {}

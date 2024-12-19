@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { LikeAction } from "./actions/LikeAction";
 import { CommentAction } from "./actions/CommentAction";
 import { RepostAction } from "./actions/RepostAction";
@@ -11,11 +12,7 @@ interface PostActionsProps {
   onAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => void;
 }
 
-export const PostActions = ({
-  post,
-  currentUserId,
-  onAction,
-}: PostActionsProps) => {
+export const PostActions = ({ post, currentUserId, onAction }: PostActionsProps) => {
   return (
     <div className="mt-4 flex items-center justify-between">
       <div className="flex gap-4">
