@@ -26,17 +26,16 @@ export const PostDetailContent = ({
 
   return (
     <Card className="mb-6 p-6">
-      <div onClick={handleUsernameClick}>
-        <PostHeader 
-          author={{
-            id: post.author.id,
-            username: post.author.username,
-            avatar_url: post.author.avatar_url,
-            name: post.author.username
-          }} 
-          timestamp={post.timestamp} 
-        />
-      </div>
+      <PostHeader 
+        author={{
+          id: post.author.id,
+          username: post.author.username,
+          avatar_url: post.author.avatar_url,
+          name: post.author.username
+        }} 
+        timestamp={post.timestamp}
+        onUsernameClick={handleUsernameClick}
+      />
       <p className="mt-4 text-foreground whitespace-pre-wrap">{post.content}</p>
       {post.media_urls && post.media_urls.length > 0 && (
         <PostMedia mediaUrls={post.media_urls} onMediaClick={() => {}} />
