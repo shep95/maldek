@@ -14,57 +14,56 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const location = useLocation();
 
   useEffect(() => {
-    console.log("AuthenticationWrapper: Current session state", { 
+    console.log("AuthenticationWrapper mounted", { 
       hasSession: !!session,
       currentPath: location.pathname 
     });
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", { event, hasSession: !!currentSession });
-      
-      if (event === 'SIGNED_OUT') {
-        console.log("User explicitly signed out, redirecting to auth");
+
+      // Only handle explicit sign-out events
+      if (event === 'SIGNED_OUT' && !currentSession) {
+        console.log("User explicitly signed out");
         navigate('/auth');
         return;
       }
 
-      if (event === 'SIGNED_IN') {
-        console.log("User signed in, redirecting to dashboard");
+      // Handle successful sign-in
+      if (event === 'SIGNED_IN' && currentSession) {
+        console.log("User successfully signed in");
         navigate('/dashboard');
         return;
       }
 
-      // For token refresh, do nothing to prevent unintended redirects
-      if (event === 'TOKEN_REFRESHED') {
-        console.log("Token refreshed, maintaining current session");
-        return;
-      }
+      // For all other events (like token refresh), maintain the current session
+      console.log("Maintaining current session state for event:", event);
     });
 
-    // Cleanup subscription
     return () => {
       console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, [navigate]);
 
-  // Only redirect if explicitly on auth page with session, or no session and trying to access protected route
+  // Handle initial route protection
   const isAuthPage = location.pathname.startsWith('/auth');
-  const isProtectedRoute = !location.pathname.startsWith('/auth') && location.pathname !== '/';
-  
+  const isProtectedRoute = !isAuthPage && location.pathname !== '/';
+
+  // If user has session but is on auth page, redirect to dashboard
   if (session && isAuthPage) {
-    console.log("User has session but on auth page, redirecting to dashboard");
+    console.log("Redirecting authenticated user from auth page to dashboard");
     navigate('/dashboard');
     return null;
   }
 
+  // If no session and trying to access protected route, redirect to auth
   if (!session && isProtectedRoute) {
-    console.log("No session and accessing protected route, redirecting to auth");
+    console.log("Redirecting unauthenticated user to auth page");
     navigate('/auth');
     return null;
   }
 
-  console.log("Rendering children", { hasSession: !!session, path: location.pathname });
+  // Render children for all other cases
   return children;
 };
