@@ -2,9 +2,8 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { supabase } from "@/integrations/supabase/client";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -26,11 +25,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
 
   const getPublicUrl = (url: string) => {
     if (url.startsWith('http')) {
+      console.log('URL is already public:', url);
       return url;
     }
     const { data } = supabase.storage
       .from('posts')
       .getPublicUrl(url);
+    console.log('Generated public URL:', data.publicUrl);
     return data.publicUrl;
   };
 
@@ -52,17 +53,8 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
     setErrorStates(prev => ({ ...prev, [url]: true }));
   };
 
-  const getGridColumns = (count: number) => {
-    switch (count) {
-      case 1: return 'grid-cols-1';
-      case 2: return 'grid-cols-2';
-      case 3: return 'grid-cols-2 md:grid-cols-3';
-      default: return 'grid-cols-2';
-    }
-  };
-
   return (
-    <div className={`mt-4 grid gap-2 ${getGridColumns(mediaUrls.length)}`}>
+    <div className="mt-4 grid gap-2 grid-cols-1 sm:grid-cols-2">
       {mediaUrls.map((url, i) => {
         const isVideo = isVideoFile(url);
         const publicUrl = getPublicUrl(url);
@@ -71,7 +63,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
         return (
           <div key={url} className="relative rounded-lg overflow-hidden group">
             {loadingStates[url] && (
-              <Skeleton className="w-full h-48 rounded-lg" />
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
+              </div>
             )}
 
             {isVideo ? (
@@ -121,6 +115,10 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                       variant="ghost"
                       size="icon"
                       className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onMediaClick?.(publicUrl);
+                      }}
                     >
                       <Maximize className="h-4 w-4 text-white" />
                     </Button>

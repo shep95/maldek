@@ -60,6 +60,27 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
+  const handleDelete = async () => {
+    try {
+      console.log('Attempting to delete post:', post.id);
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', post.id)
+        .eq('user_id', currentUserId);
+
+      if (error) {
+        console.error('Error deleting post:', error);
+        throw error;
+      }
+
+      console.log('Post deleted successfully');
+      onPostAction(post.id, 'delete');
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  };
+
   return (
     <div className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4">
       <PostHeader author={post.author} timestamp={post.timestamp} />
@@ -74,7 +95,13 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
       <PostActions
         post={post}
         currentUserId={currentUserId}
-        onAction={onPostAction}
+        onAction={(action) => {
+          if (action === 'delete') {
+            handleDelete();
+          } else {
+            onPostAction(post.id, action);
+          }
+        }}
       />
     </div>
   );
