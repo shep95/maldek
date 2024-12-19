@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NotificationList } from "@/components/notifications/NotificationList";
 import { NotificationFilters } from "@/components/notifications/filters/NotificationFilters";
 import { NotificationPreferences } from "@/components/notifications/preferences/NotificationPreferences";
@@ -21,53 +21,66 @@ const Notifications = () => {
 
   // Fetch current user ID only once on mount
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) {
-          setCurrentUserId(user.id);
+        if (user?.id && isMounted) {
           console.log("Current user ID set:", user.id);
+          setCurrentUserId(user.id);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
       }
     };
+
     fetchUser();
+    return () => { isMounted = false; };
   }, []);
 
-  // Mark notifications as read only once when notifications are loaded
-  useEffect(() => {
-    const markNotificationsAsRead = async () => {
-      if (!currentUserId || isLoading || !notifications?.length) return;
+  // Debounced function to mark notifications as read
+  const markNotificationsAsRead = useCallback(async () => {
+    if (!currentUserId || isLoading || !notifications?.length) return;
 
-      const unreadNotifications = notifications.filter(n => !n.read);
-      if (!unreadNotifications.length) return;
+    const unreadNotifications = notifications.filter(n => !n.read);
+    if (!unreadNotifications.length) return;
 
-      try {
-        console.log('Marking notifications as read for user:', currentUserId);
-        
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('recipient_id', currentUserId)
-          .eq('read', false);
+    try {
+      console.log('Marking notifications as read for user:', currentUserId);
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('recipient_id', currentUserId)
+        .eq('read', false);
 
-        if (error) {
-          console.error('Error marking notifications as read:', error);
-          return;
-        }
-
-        // Only invalidate queries after successful update
-        queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
-        
-      } catch (error) {
-        console.error('Error in markNotificationsAsRead:', error);
+      if (error) {
+        console.error('Error marking notifications as read:', error);
+        return;
       }
-    };
 
-    markNotificationsAsRead();
+      // Only invalidate queries after successful update
+      queryClient.invalidateQueries({ 
+        queryKey: ['notifications'],
+        exact: true 
+      });
+      
+      queryClient.invalidateQueries({ 
+        queryKey: ['unread-notifications-count'],
+        exact: true
+      });
+      
+    } catch (error) {
+      console.error('Error in markNotificationsAsRead:', error);
+    }
   }, [currentUserId, notifications, isLoading, queryClient]);
+
+  // Mark notifications as read with a delay after component mounts
+  useEffect(() => {
+    const timeoutId = setTimeout(markNotificationsAsRead, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [markNotificationsAsRead]);
 
   const handleBulkAction = async (action: 'read' | 'archive' | 'delete', ids: string[]) => {
     if (!currentUserId || ids.length === 0) return;
@@ -138,18 +151,12 @@ const Notifications = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start mb-6">
-          <TabsTrigger value="all" className="flex-1">
-            All
-          </TabsTrigger>
+          <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
           <TabsTrigger value="unread" className="flex-1">
             Unread {unreadNotifications.length > 0 && `(${unreadNotifications.length})`}
           </TabsTrigger>
-          <TabsTrigger value="archived" className="flex-1">
-            Archived
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex-1">
-            Preferences
-          </TabsTrigger>
+          <TabsTrigger value="archived" className="flex-1">Archived</TabsTrigger>
+          <TabsTrigger value="preferences" className="flex-1">Preferences</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all">

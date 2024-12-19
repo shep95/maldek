@@ -56,12 +56,15 @@ export const useNotifications = (userId: string | null) => {
     queryKey: ['notifications', userId],
     queryFn: fetchNotifications,
     enabled: !!userId,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    cacheTime: 60000, // Keep data in cache for 1 minute
   });
 
-  // Subscribe to real-time notifications
+  // Subscribe to real-time notifications with debounced updates
   useEffect(() => {
     if (!userId) return;
 
+    let timeoutId: NodeJS.Timeout;
     console.log('Setting up real-time notifications for user:', userId);
 
     const channel = supabase
@@ -77,22 +80,26 @@ export const useNotifications = (userId: string | null) => {
         (payload) => {
           console.log('New notification received:', payload);
           
-          toast.success("You have a new notification!", {
-            action: {
-              label: "View",
-              onClick: () => window.location.href = '/notifications'
-            },
-          });
-
-          // Invalidate queries to trigger refetch
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+          // Debounce the query invalidation
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+            
+            toast.success("You have a new notification!", {
+              action: {
+                label: "View",
+                onClick: () => window.location.href = '/notifications'
+              },
+            });
+          }, 1000);
         }
       )
       .subscribe();
 
     return () => {
       console.log('Cleaning up notifications subscription');
+      clearTimeout(timeoutId);
       supabase.removeChannel(channel);
     };
   }, [userId, queryClient]);
