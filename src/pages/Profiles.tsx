@@ -6,21 +6,33 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfilePosts } from "@/components/profile/ProfilePosts";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 const Profiles = () => {
   const session = useSession();
   const { username } = useParams();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
-  console.log('Profile page loaded. Username param:', username);
+  console.log('=== Profile Page Debug Logs ===');
+  console.log('Current pathname:', location.pathname);
+  console.log('Username param:', username);
+  console.log('Session user:', session?.user?.id);
+
+  useEffect(() => {
+    console.log('Profile component mounted/updated');
+    console.log('Current URL:', window.location.href);
+    return () => {
+      console.log('Profile component unmounting');
+    };
+  }, [username]);
 
   // Fetch profile by username if provided, otherwise fetch current user's profile
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['profile', username || session?.user?.id],
     queryFn: async () => {
-      console.log('Fetching profile...', { username, userId: session?.user?.id });
+      console.log('Starting profile fetch...');
       
       let query = supabase
         .from('profiles')
@@ -30,10 +42,10 @@ const Profiles = () => {
       if (username) {
         // Remove @ from username if present
         const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
-        console.log('Fetching by username:', cleanUsername);
+        console.log('Fetching profile by username:', cleanUsername);
         query = query.eq('username', cleanUsername);
       } else if (session?.user?.id) {
-        console.log('Fetching by user ID:', session.user.id);
+        console.log('Fetching profile by user ID:', session.user.id);
         query = query.eq('id', session.user.id);
       } else {
         console.error('No username or user ID available');
@@ -53,7 +65,7 @@ const Profiles = () => {
         throw new Error('Profile not found');
       }
 
-      console.log('Profile fetched:', data);
+      console.log('Profile fetched successfully:', data);
       return data;
     },
     retry: 3,

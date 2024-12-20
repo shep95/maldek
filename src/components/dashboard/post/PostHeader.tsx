@@ -51,9 +51,13 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
   });
 
   const handleProfileClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    console.log('Navigating to profile:', author.username);
+    console.log('Profile click detected for username:', author.username);
+    console.log('Current location before navigation:', window.location.pathname);
+    console.log('Attempting to navigate to:', `/@${author.username}`);
     navigate(`/@${author.username}`);
+    console.log('Navigation completed');
   };
 
   const getTimeAgo = (date: Date) => {
