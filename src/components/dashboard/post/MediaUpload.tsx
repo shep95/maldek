@@ -32,20 +32,22 @@ export const MediaUpload = ({
     setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const validFiles = files.filter(file => {
-      const validation = validateMediaFile(file);
+    const validFiles = [];
+
+    for (const file of files) {
+      const validation = await validateMediaFile(file);
       if (!validation.isValid) {
         toast.error(validation.error);
-        return false;
+      } else {
+        validFiles.push(file);
       }
-      return true;
-    });
+    }
 
     if (validFiles.length > 0) {
       const event = {
