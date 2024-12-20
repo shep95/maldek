@@ -1,8 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
+import { EditProfileDialog } from "./EditProfileDialog";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -13,6 +14,8 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   const [followerCount, setFollowerCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [totalLikes, setTotalLikes] = useState(0);
+  const session = useSession();
+  const isOwnProfile = session?.user?.id === profile?.id;
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -125,9 +128,15 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
                   Joined {profile?.created_at && formatDistanceToNow(new Date(profile.created_at), { addSuffix: true })}
                 </p>
               </div>
-              <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-white">
-                Edit Profile
-              </Button>
+              {isOwnProfile && (
+                <EditProfileDialog 
+                  profile={profile} 
+                  onProfileUpdate={() => {
+                    // Trigger a refresh of the profile data
+                    window.location.reload();
+                  }} 
+                />
+              )}
             </div>
 
             <p className="text-lg">{profile?.bio || 'No bio yet'}</p>
