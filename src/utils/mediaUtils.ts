@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+
 export const createPersistentMediaUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     console.log('Creating persistent URL for file:', file.name, 'Type:', file.type);
