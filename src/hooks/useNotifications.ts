@@ -58,13 +58,16 @@ export const useNotifications = (userId: string | null) => {
     enabled: !!userId,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 60000, // Keep data in cache for 1 minute
-    refetchOnWindowFocus: true, // Enable refetching on window focus to keep data fresh
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    retry: false // Don't retry on failure to prevent excessive requests
   });
 
-  // Subscribe to real-time notifications
+  // Subscribe to real-time notifications with debounced updates
   useEffect(() => {
     if (!userId) return;
 
+    let timeoutId: NodeJS.Timeout;
+    let mounted = true;
     console.log('Setting up real-time notifications for user:', userId);
 
     const channel = supabase
@@ -79,23 +82,33 @@ export const useNotifications = (userId: string | null) => {
         },
         (payload) => {
           console.log('New notification received:', payload);
-          queryClient.invalidateQueries({ 
-            queryKey: ['notifications'],
-            exact: true
-          });
           
-          toast.success("You have a new notification!", {
-            action: {
-              label: "View",
-              onClick: () => window.location.href = '/notifications'
-            },
-          });
+          // Debounce the query invalidation and only update if component is mounted
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            if (mounted) {
+              // Only invalidate the notifications query, not the count
+              queryClient.invalidateQueries({ 
+                queryKey: ['notifications'],
+                exact: true
+              });
+              
+              toast.success("You have a new notification!", {
+                action: {
+                  label: "View",
+                  onClick: () => window.location.href = '/notifications'
+                },
+              });
+            }
+          }, 1000);
         }
       )
       .subscribe();
 
     return () => {
       console.log('Cleaning up notifications subscription');
+      mounted = false;
+      clearTimeout(timeoutId);
       supabase.removeChannel(channel);
     };
   }, [userId, queryClient]);

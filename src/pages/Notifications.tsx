@@ -36,38 +36,27 @@ const Notifications = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // Filter notifications based on current filters and tab
+  // Filter notifications based on current filters
   const filteredNotifications = notifications?.filter(notification => {
-    // Base filtering logic
-    let passes = true;
-    
-    if (filters.type !== "all" && notification.type !== filters.type) {
-      passes = false;
-    }
+    if (filters.type !== "all" && notification.type !== filters.type) return false;
     
     if (filters.dateRange.from || filters.dateRange.to) {
       const notificationDate = new Date(notification.created_at);
-      if (filters.dateRange.from && notificationDate < filters.dateRange.from) passes = false;
-      if (filters.dateRange.to && notificationDate > filters.dateRange.to) passes = false;
+      if (filters.dateRange.from && notificationDate < filters.dateRange.from) return false;
+      if (filters.dateRange.to && notificationDate > filters.dateRange.to) return false;
     }
     
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       const actorName = notification.actor.username.toLowerCase();
-      if (!actorName.includes(searchLower)) passes = false;
-    }
-
-    // Additional filtering based on active tab
-    if (activeTab === "unread" && notification.read) {
-      passes = false;
-    } else if (activeTab === "archived" && !notification.archived) {
-      passes = false;
+      return actorName.includes(searchLower);
     }
     
-    return passes;
-  }) || [];
+    return true;
+  });
 
-  console.log("Current tab:", activeTab, "Filtered notifications count:", filteredNotifications.length);
+  const unreadNotifications = filteredNotifications?.filter(n => !n.read) || [];
+  const archivedNotifications = filteredNotifications?.filter(n => n.archived) || [];
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8 animate-fade-in">
@@ -84,8 +73,7 @@ const Notifications = () => {
         <TabsList className="w-full justify-start mb-6">
           <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
           <TabsTrigger value="unread" className="flex-1">
-            Unread {filteredNotifications.filter(n => !n.read).length > 0 && 
-              `(${filteredNotifications.filter(n => !n.read).length})`}
+            Unread {unreadNotifications.length > 0 && `(${unreadNotifications.length})`}
           </TabsTrigger>
           <TabsTrigger value="archived" className="flex-1">Archived</TabsTrigger>
           <TabsTrigger value="preferences" className="flex-1">Preferences</TabsTrigger>
@@ -93,21 +81,21 @@ const Notifications = () => {
         
         <TabsContent value="all">
           <NotificationList
-            notifications={filteredNotifications}
+            notifications={filteredNotifications || []}
             isLoading={isLoading}
           />
         </TabsContent>
         
         <TabsContent value="unread">
           <NotificationList
-            notifications={filteredNotifications}
+            notifications={unreadNotifications}
             isLoading={isLoading}
           />
         </TabsContent>
 
         <TabsContent value="archived">
           <NotificationList
-            notifications={filteredNotifications}
+            notifications={archivedNotifications}
             isLoading={isLoading}
           />
         </TabsContent>
