@@ -4,6 +4,7 @@ import { Users, MessageSquare, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { useSpaceAudioConnection } from "@/hooks/spaces/useSpaceAudioConnection";
 import { SpaceChatPanel } from "../chat/SpaceChatPanel";
 import { SpeakerRequestsPanel } from "./SpeakerRequestsPanel";
@@ -28,6 +29,8 @@ export const SpaceManagementDialog = ({
   const session = useSession();
   const [activeTab, setActiveTab] = useState("participants");
   const [userRole, setUserRole] = useState<string>("listener");
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   const {
     isConnected,
@@ -99,6 +102,8 @@ export const SpaceManagementDialog = ({
       <DialogContent className="sm:max-w-md">
         <SpaceHeader
           isHost={isHost}
+          isRecording={isRecording}
+          recordingDuration={recordingDuration}
           isConnected={isConnected}
           isSpeaking={userRole !== 'listener' && !isMuted}
         />

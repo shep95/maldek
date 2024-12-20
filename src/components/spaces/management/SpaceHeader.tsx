@@ -1,7 +1,7 @@
 import { SpaceAudioIndicator } from "../features/SpaceAudioIndicator";
 import { RecordingStatus } from "../recording/RecordingStatus";
 
-interface SpaceHeaderProps {
+export interface SpaceHeaderProps {
   isHost: boolean;
   isRecording: boolean;
   recordingDuration: number;

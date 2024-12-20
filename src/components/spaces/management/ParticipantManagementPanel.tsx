@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Crown, Mic, MicOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SpaceRole, SpaceParticipant } from "@/types/spaces";
 
 interface ParticipantManagementPanelProps {
   spaceId: string;
@@ -17,7 +18,7 @@ export const ParticipantManagementPanel = ({
   currentUserId,
   isHost
 }: ParticipantManagementPanelProps) => {
-  const [participants, setParticipants] = useState<any[]>([]);
+  const [participants, setParticipants] = useState<SpaceParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchParticipants = async () => {
@@ -64,7 +65,7 @@ export const ParticipantManagementPanel = ({
     };
   }, [spaceId]);
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: SpaceRole) => {
     setIsLoading(true);
     try {
       const { error } = await supabase
