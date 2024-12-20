@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { NotificationList } from "@/components/notifications/NotificationList";
 import { NotificationFilters } from "@/components/notifications/filters/NotificationFilters";
 import { NotificationPreferences } from "@/components/notifications/preferences/NotificationPreferences";
 import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Notifications = () => {
@@ -16,7 +15,6 @@ const Notifications = () => {
     dateRange: { from: undefined, to: undefined },
     search: "",
   });
-  const queryClient = useQueryClient();
 
   // Fetch current user ID only once on mount
   useEffect(() => {
