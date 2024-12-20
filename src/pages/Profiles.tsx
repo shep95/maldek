@@ -14,6 +14,8 @@ const Profiles = () => {
   const { username } = useParams();
   const queryClient = useQueryClient();
 
+  console.log('Profile page loaded. Username param:', username);
+
   // Fetch profile by username if provided, otherwise fetch current user's profile
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['profile', username || session?.user?.id],
@@ -26,8 +28,12 @@ const Profiles = () => {
 
       // If username is provided, fetch by username, otherwise fetch by user ID
       if (username) {
-        query = query.eq('username', username);
+        // Remove @ from username if present
+        const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
+        console.log('Fetching by username:', cleanUsername);
+        query = query.eq('username', cleanUsername);
       } else if (session?.user?.id) {
+        console.log('Fetching by user ID:', session.user.id);
         query = query.eq('id', session.user.id);
       } else {
         console.error('No username or user ID available');
