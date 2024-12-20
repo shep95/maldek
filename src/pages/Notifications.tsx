@@ -6,19 +6,17 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
 
 const Notifications = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { notifications, isLoading } = useNotifications(currentUserId);
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("all");
   const [filters, setFilters] = useState({
     type: "all",
     dateRange: { from: undefined, to: undefined },
     search: "",
   });
-  const [isMarkingRead, setIsMarkingRead] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch current user ID only once on mount
   useEffect(() => {
@@ -40,96 +38,7 @@ const Notifications = () => {
     return () => { isMounted = false; };
   }, []);
 
-  // Debounced function to mark notifications as read
-  const markNotificationsAsRead = useCallback(async () => {
-    if (!currentUserId || isLoading || !notifications?.length || isMarkingRead) return;
-
-    const unreadNotifications = notifications.filter(n => !n.read);
-    if (!unreadNotifications.length) return;
-
-    setIsMarkingRead(true);
-
-    try {
-      console.log('Marking notifications as read for user:', currentUserId);
-      
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('recipient_id', currentUserId)
-        .eq('read', false);
-
-      if (error) {
-        console.error('Error marking notifications as read:', error);
-        return;
-      }
-
-      // Only invalidate queries after successful update
-      queryClient.invalidateQueries({ 
-        queryKey: ['notifications'],
-        exact: true 
-      });
-      
-      queryClient.invalidateQueries({ 
-        queryKey: ['unread-notifications-count'],
-        exact: true
-      });
-      
-    } catch (error) {
-      console.error('Error in markNotificationsAsRead:', error);
-    } finally {
-      setIsMarkingRead(false);
-    }
-  }, [currentUserId, notifications, isLoading, queryClient]);
-
-  // Mark notifications as read with a delay after component mounts
-  useEffect(() => {
-    const timeoutId = setTimeout(markNotificationsAsRead, 2000);
-    return () => clearTimeout(timeoutId);
-  }, [markNotificationsAsRead]);
-
-  const handleBulkAction = async (action: 'read' | 'archive' | 'delete', ids: string[]) => {
-    if (!currentUserId || ids.length === 0) return;
-
-    try {
-      let updateData = {};
-      switch (action) {
-        case 'read':
-          updateData = { read: true };
-          break;
-        case 'archive':
-          updateData = { archived: true };
-          break;
-        case 'delete':
-          updateData = { deleted_at: new Date().toISOString() };
-          break;
-      }
-
-      const { error } = await supabase
-        .from('notifications')
-        .update(updateData)
-        .in('id', ids)
-        .eq('recipient_id', currentUserId);
-
-      if (error) throw error;
-
-      // Invalidate queries to refresh the data
-      await queryClient.invalidateQueries({ 
-        queryKey: ['notifications'],
-        exact: true 
-      });
-      
-      await queryClient.invalidateQueries({ 
-        queryKey: ['unread-notifications-count'],
-        exact: true 
-      });
-
-      toast.success(`Successfully ${action === 'read' ? 'marked as read' : action + 'd'} ${ids.length} notifications`);
-    } catch (error) {
-      console.error(`Error performing bulk action ${action}:`, error);
-      toast.error(`Failed to ${action} notifications`);
-    }
-  };
-
+  // Filter notifications based on current filters
   const filteredNotifications = notifications?.filter(notification => {
     if (filters.type !== "all" && notification.type !== filters.type) return false;
     
@@ -176,7 +85,6 @@ const Notifications = () => {
           <NotificationList
             notifications={filteredNotifications || []}
             isLoading={isLoading}
-            onBulkAction={handleBulkAction}
           />
         </TabsContent>
         
@@ -184,7 +92,6 @@ const Notifications = () => {
           <NotificationList
             notifications={unreadNotifications}
             isLoading={isLoading}
-            onBulkAction={handleBulkAction}
           />
         </TabsContent>
 
@@ -192,7 +99,6 @@ const Notifications = () => {
           <NotificationList
             notifications={archivedNotifications}
             isLoading={isLoading}
-            onBulkAction={handleBulkAction}
           />
         </TabsContent>
 
