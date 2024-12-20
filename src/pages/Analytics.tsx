@@ -5,9 +5,36 @@ import { AnalyticsCard } from "@/components/profile/tabs/analytics/AnalyticsCard
 import { AnalyticsChart } from "@/components/profile/tabs/analytics/AnalyticsChart";
 import { useAnalytics } from "@/components/profile/tabs/analytics/useAnalytics";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { PremiumFeatureNotice } from "@/components/ai/components/PremiumFeatureNotice";
 
 const Analytics = () => {
   const session = useSession();
+
+  // Check if user has an active subscription
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*, tier:subscription_tiers(*)')
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
+
   const { data: analytics, isLoading } = useAnalytics(session?.user?.id || '');
 
   if (!session?.user?.id) {
@@ -16,6 +43,11 @@ const Analytics = () => {
         <p className="text-lg text-gray-400">Please log in to view analytics.</p>
       </div>
     );
+  }
+
+  // Show premium notice if user doesn't have an active subscription
+  if (!subscription) {
+    return <PremiumFeatureNotice />;
   }
 
   if (isLoading) {

@@ -175,6 +175,15 @@ const Subscription = () => {
                 Priority support
               </li>
               <li className="flex items-center">
+                <Check className="mr-2 h-5 w-5 text-green-500" />
+                <span className="flex items-center gap-2">
+                  Advanced Analytics Dashboard
+                  <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 text-xs">
+                    PRO
+                  </Badge>
+                </span>
+              </li>
+              <li className="flex items-center">
                 <Mic className="mr-2 h-5 w-5 text-orange-500" />
                 <span className="flex items-center gap-2">
                   Create Spaces
