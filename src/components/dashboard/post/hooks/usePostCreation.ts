@@ -2,17 +2,9 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
-import { processImageFile } from "@/utils/postUploadUtils";
+import { processImageFile, saveDraft } from "@/utils/postUploadUtils";
 import type { Author } from "@/utils/postUtils";
 import type { PostData } from "../types/postTypes";
-
-const DRAFT_KEY = 'post_draft';
-
-interface Draft {
-  content: string;
-  scheduledFor?: string;
-  savedAt: string;
-}
 
 export const usePostCreation = (
   currentUser: Author,
@@ -24,10 +16,6 @@ export const usePostCreation = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
-  const [hasDraft, setHasDraft] = useState(() => {
-    const draft = localStorage.getItem(DRAFT_KEY);
-    return !!draft;
-  });
 
   const handleFileSelect = useCallback(async (files: FileList) => {
     console.log('Files selected:', Array.from(files).map(f => ({ name: f.name, type: f.type, size: f.size })));
@@ -51,32 +39,12 @@ export const usePostCreation = (
   }, []);
 
   const saveToDrafts = useCallback(() => {
-    const draft: Draft = {
+    saveDraft({
       content,
-      scheduledFor: scheduledDate?.toISOString(),
-      savedAt: new Date().toISOString()
-    };
-    
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    setHasDraft(true);
-  }, [content, scheduledDate]);
-
-  const loadDraft = useCallback(() => {
-    const draftStr = localStorage.getItem(DRAFT_KEY);
-    if (!draftStr) return;
-
-    try {
-      const draft: Draft = JSON.parse(draftStr);
-      setContent(draft.content);
-      if (draft.scheduledFor) {
-        setScheduledDate(new Date(draft.scheduledFor));
-      }
-      toast.success("Draft loaded successfully");
-    } catch (error) {
-      console.error('Error loading draft:', error);
-      toast.error("Failed to load draft");
-    }
-  }, []);
+      mediaFiles,
+      scheduledFor: scheduledDate
+    });
+  }, [content, mediaFiles, scheduledDate]);
 
   const createPost = async () => {
     if (!currentUser?.id) {
@@ -123,6 +91,7 @@ export const usePostCreation = (
         media_urls: mediaUrls,
       };
 
+      // Convert Date to ISO string if scheduledDate exists
       if (scheduledDate) {
         postData.scheduled_for = scheduledDate.toISOString();
       }
@@ -139,10 +108,6 @@ export const usePostCreation = (
       }
 
       console.log('Post created successfully:', newPost);
-      
-      // Clear draft after successful post
-      localStorage.removeItem(DRAFT_KEY);
-      setHasDraft(false);
       
       resetFormState();
       onPostCreated(newPost);
@@ -177,8 +142,6 @@ export const usePostCreation = (
     handlePaste,
     saveToDrafts,
     createPost,
-    resetFormState,
-    loadDraft,
-    hasDraft
+    resetFormState
   };
 };

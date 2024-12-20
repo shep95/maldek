@@ -2,13 +2,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Send, X, CalendarIcon, Save } from "lucide-react";
+import { Send, X, CalendarIcon } from "lucide-react";
 import { EnhancedUploadZone } from "./post/upload/EnhancedUploadZone";
 import { RichTextEditor } from "./post/editor/RichTextEditor";
 import { format } from "date-fns";
 import { usePostCreation } from "./post/hooks/usePostCreation";
 import type { CreatePostDialogProps } from "./post/types/postTypes";
-import { toast } from "sonner";
 
 export const CreatePostDialog = ({
   isOpen,
@@ -27,9 +26,7 @@ export const CreatePostDialog = ({
     handlePaste,
     saveToDrafts,
     createPost,
-    resetFormState,
-    loadDraft,
-    hasDraft
+    resetFormState
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
 
   const handleCancel = (e: React.MouseEvent) => {
@@ -38,7 +35,6 @@ export const CreatePostDialog = ({
     
     if (content.trim()) {
       saveToDrafts();
-      toast.success("Post saved to drafts");
     }
     
     console.log('Cancelling post creation');
@@ -70,42 +66,28 @@ export const CreatePostDialog = ({
             uploadProgress={uploadProgress}
           />
 
-          <div className="flex gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "flex-1 justify-start text-left font-normal",
-                    !scheduledDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={scheduledDate}
-                  onSelect={setScheduledDate}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-
-            {hasDraft && (
+          <Popover>
+            <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                onClick={loadDraft}
-                className="flex-1 gap-2"
+                className={`w-full justify-start text-left font-normal ${
+                  !scheduledDate && "text-muted-foreground"
+                }`}
               >
-                <Save className="h-4 w-4" />
-                Load Draft
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
               </Button>
-            )}
-          </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={scheduledDate}
+                onSelect={setScheduledDate}
+                disabled={(date) => date < new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
           
           <div className="flex gap-2">
             <Button 
