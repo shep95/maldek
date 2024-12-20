@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -60,48 +61,9 @@ interface NotificationListProps {
 export const NotificationList = ({ notifications, isLoading, onBulkAction }: NotificationListProps) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const markNotificationsAsRead = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        console.log('Marking notifications as read for user:', user.id);
-        
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read: true })
-          .eq('recipient_id', user.id)
-          .eq('read', false);
-
-        if (error) {
-          console.error('Error marking notifications as read:', error);
-          toast.error('Failed to mark notifications as read');
-        } else {
-          console.log('Successfully marked notifications as read');
-          toast.success('Notifications marked as read');
-        }
-      } catch (error) {
-        console.error('Error in markNotificationsAsRead:', error);
-        toast.error('An error occurred while updating notifications');
-      }
-    };
-
-    // Only mark as read when viewing the notifications
-    if (notifications.length > 0) {
-      markNotificationsAsRead();
-    }
-  }, [notifications]);
-
-  const handleSelectAll = () => {
-    if (selectedIds.length === notifications.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(notifications.map(n => n.id));
-    }
-  };
+  const queryClient = useQueryClient();
 
   const handleBulkAction = async (action: 'read' | 'archive' | 'delete') => {
     if (selectedIds.length === 0) {
@@ -109,6 +71,7 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
       return;
     }
 
+    setIsProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -129,6 +92,8 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
           break;
       }
 
+      console.log(`Performing bulk ${action} action on notifications:`, selectedIds);
+
       const { error } = await supabase
         .from('notifications')
         .update(updateData)
@@ -138,14 +103,36 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
       if (error) {
         console.error(`Error performing bulk action ${action}:`, error);
         toast.error(`Failed to ${action} notifications`);
-      } else {
-        toast.success(`Successfully ${action === 'read' ? 'marked as read' : action + 'd'} ${selectedIds.length} notifications`);
-        onBulkAction?.(action, selectedIds);
-        setSelectedIds([]); // Clear selection after successful action
+        return;
       }
+
+      // Invalidate queries to refresh the data
+      await queryClient.invalidateQueries({ 
+        queryKey: ['notifications'],
+        exact: true 
+      });
+      
+      await queryClient.invalidateQueries({ 
+        queryKey: ['unread-notifications-count'],
+        exact: true 
+      });
+
+      toast.success(`Successfully ${action === 'read' ? 'marked as read' : action + 'd'} ${selectedIds.length} notifications`);
+      setSelectedIds([]); // Clear selection after successful action
+      
     } catch (error) {
       console.error(`Error in handleBulkAction:`, error);
       toast.error('An error occurred while updating notifications');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === notifications.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(notifications.map(n => n.id));
     }
   };
 
@@ -202,7 +189,7 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
             variant="outline"
             size="sm"
             onClick={() => handleBulkAction('read')}
-            disabled={selectedIds.length === 0}
+            disabled={selectedIds.length === 0 || isProcessing}
           >
             Mark as Read
           </Button>
@@ -210,7 +197,7 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
             variant="outline"
             size="sm"
             onClick={() => handleBulkAction('archive')}
-            disabled={selectedIds.length === 0}
+            disabled={selectedIds.length === 0 || isProcessing}
           >
             Archive
           </Button>
@@ -218,7 +205,7 @@ export const NotificationList = ({ notifications, isLoading, onBulkAction }: Not
             variant="outline"
             size="sm"
             onClick={() => handleBulkAction('delete')}
-            disabled={selectedIds.length === 0}
+            disabled={selectedIds.length === 0 || isProcessing}
           >
             Delete
           </Button>

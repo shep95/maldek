@@ -112,8 +112,16 @@ const Notifications = () => {
 
       if (error) throw error;
 
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+      // Invalidate queries to refresh the data
+      await queryClient.invalidateQueries({ 
+        queryKey: ['notifications'],
+        exact: true 
+      });
+      
+      await queryClient.invalidateQueries({ 
+        queryKey: ['unread-notifications-count'],
+        exact: true 
+      });
 
       toast.success(`Successfully ${action === 'read' ? 'marked as read' : action + 'd'} ${ids.length} notifications`);
     } catch (error) {
