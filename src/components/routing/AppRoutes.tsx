@@ -59,9 +59,11 @@ export const AppRoutes = () => {
   
   return (
     <Routes>
+      {/* Base routes */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
       
+      {/* Dashboard layout wrapper */}
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/messages" element={<Messages />} />
@@ -69,7 +71,7 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
-        {/* Update the profile route to handle usernames */}
+        {/* Profile route - IMPORTANT: This must come after other routes */}
         <Route path="/@:username" element={<Profiles />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
