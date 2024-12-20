@@ -31,28 +31,32 @@ export const NotificationActions = ({
           size="sm"
           onClick={onMarkRead}
           disabled={selectedCount === 0 || isProcessing}
+          className="hover:bg-accent/10"
         >
-          Mark as Read
+          {isProcessing ? "Processing..." : "Mark as Read"}
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={onArchive}
           disabled={selectedCount === 0 || isProcessing}
+          className="hover:bg-accent/10"
         >
-          Archive
+          {isProcessing ? "Processing..." : "Archive"}
         </Button>
         <Button
           variant="outline"
           size="sm"
           onClick={onDelete}
           disabled={selectedCount === 0 || isProcessing}
+          className="hover:bg-accent/10"
         >
-          Delete
+          {isProcessing ? "Processing..." : "Delete"}
         </Button>
         <Select
           value={sortOrder}
           onValueChange={(value: 'asc' | 'desc') => onSortChange(value)}
+          disabled={isProcessing}
         >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort order" />
