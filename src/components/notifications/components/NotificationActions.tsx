@@ -31,7 +31,7 @@ export const NotificationActions = ({
           size="sm"
           onClick={onMarkRead}
           disabled={selectedCount === 0 || isProcessing}
-          className="hover:bg-accent/10 min-w-[100px]"
+          className="hover:bg-accent/10 min-w-[100px] cursor-pointer active:scale-95 transition-transform"
         >
           {isProcessing ? "Processing..." : "Mark as Read"}
         </Button>
@@ -40,7 +40,7 @@ export const NotificationActions = ({
           size="sm"
           onClick={onArchive}
           disabled={selectedCount === 0 || isProcessing}
-          className="hover:bg-accent/10 min-w-[80px]"
+          className="hover:bg-accent/10 min-w-[80px] cursor-pointer active:scale-95 transition-transform"
         >
           {isProcessing ? "Processing..." : "Archive"}
         </Button>
@@ -49,7 +49,7 @@ export const NotificationActions = ({
           size="sm"
           onClick={onDelete}
           disabled={selectedCount === 0 || isProcessing}
-          className="hover:bg-accent/10 min-w-[80px]"
+          className="hover:bg-accent/10 min-w-[80px] cursor-pointer active:scale-95 transition-transform"
         >
           {isProcessing ? "Processing..." : "Delete"}
         </Button>
