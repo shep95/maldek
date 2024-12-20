@@ -57,7 +57,7 @@ export const useNotifications = (userId: string | null) => {
     queryFn: fetchNotifications,
     enabled: !!userId,
     staleTime: 30000, // Consider data fresh for 30 seconds
-    gcTime: 60000, // Keep data in cache for 1 minute (renamed from cacheTime)
+    gcTime: 60000, // Keep data in cache for 1 minute
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
     retry: false // Don't retry on failure to prevent excessive requests
   });
@@ -87,6 +87,7 @@ export const useNotifications = (userId: string | null) => {
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => {
             if (mounted) {
+              // Only invalidate the notifications query, not the count
               queryClient.invalidateQueries({ 
                 queryKey: ['notifications'],
                 exact: true
