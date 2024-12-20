@@ -2,6 +2,7 @@ import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, D
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface NavItemsProps {
   subscription: any;
@@ -22,6 +23,21 @@ export const NavItems = ({
 }: NavItemsProps) => {
   const location = useLocation();
   const unreadCount = useNotificationCount(userId);
+  const isMobile = useIsMobile();
+
+  const handleNavigation = (path?: string) => {
+    if (isMobile) {
+      // Close the mobile sheet by setting isOpen to false
+      const mobileSheet = document.querySelector('[data-mobile="true"]');
+      if (mobileSheet) {
+        const closeButton = mobileSheet.querySelector('button[aria-label="Close"]');
+        if (closeButton) {
+          closeButton.click();
+        }
+      }
+    }
+    onNavigate(path);
+  };
 
   const navItems = [
     { 
@@ -113,7 +129,7 @@ export const NavItems = ({
           key={item.label}
           {...item}
           subscription={subscription}
-          onNavigate={onNavigate}
+          onNavigate={handleNavigation}
         />
       ))}
     </nav>
