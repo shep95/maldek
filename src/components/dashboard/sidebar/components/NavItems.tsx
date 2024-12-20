@@ -30,7 +30,7 @@ export const NavItems = ({
       // Close the mobile sheet by setting isOpen to false
       const mobileSheet = document.querySelector('[data-mobile="true"]');
       if (mobileSheet) {
-        const closeButton = mobileSheet.querySelector('button[aria-label="Close"]');
+        const closeButton = mobileSheet.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
         if (closeButton) {
           closeButton.click();
         }
