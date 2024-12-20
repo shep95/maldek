@@ -805,8 +805,10 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          engagement_score: number | null
           id: string
           is_pinned: boolean | null
+          last_score_update: string | null
           likes: number | null
           media_urls: string[] | null
           pinned_at: string | null
@@ -815,14 +817,17 @@ export type Database = {
           scheduled_for: string | null
           thread_parent_id: string | null
           thread_position: number | null
+          trending_score: number | null
           user_id: string
           view_count: number | null
         }
         Insert: {
           content: string
           created_at?: string
+          engagement_score?: number | null
           id?: string
           is_pinned?: boolean | null
+          last_score_update?: string | null
           likes?: number | null
           media_urls?: string[] | null
           pinned_at?: string | null
@@ -831,14 +836,17 @@ export type Database = {
           scheduled_for?: string | null
           thread_parent_id?: string | null
           thread_position?: number | null
+          trending_score?: number | null
           user_id: string
           view_count?: number | null
         }
         Update: {
           content?: string
           created_at?: string
+          engagement_score?: number | null
           id?: string
           is_pinned?: boolean | null
+          last_score_update?: string | null
           likes?: number | null
           media_urls?: string[] | null
           pinned_at?: string | null
@@ -847,6 +855,7 @@ export type Database = {
           scheduled_for?: string | null
           thread_parent_id?: string | null
           thread_position?: number | null
+          trending_score?: number | null
           user_id?: string
           view_count?: number | null
         }
@@ -1343,9 +1352,12 @@ export type Database = {
           created_at: string
           description: string
           duration: number
+          engagement_score: number | null
           id: string
+          last_score_update: string | null
           thumbnail_url: string
           title: string
+          trending_score: number | null
           user_id: string
           video_url: string
         }
@@ -1353,9 +1365,12 @@ export type Database = {
           created_at?: string
           description: string
           duration: number
+          engagement_score?: number | null
           id?: string
+          last_score_update?: string | null
           thumbnail_url: string
           title: string
+          trending_score?: number | null
           user_id: string
           video_url: string
         }
@@ -1363,9 +1378,12 @@ export type Database = {
           created_at?: string
           description?: string
           duration?: number
+          engagement_score?: number | null
           id?: string
+          last_score_update?: string | null
           thumbnail_url?: string
           title?: string
+          trending_score?: number | null
           user_id?: string
           video_url?: string
         }
@@ -1384,6 +1402,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_post_engagement_score: {
+        Args: {
+          views: number
+          likes: number
+          comments: number
+          reposts: number
+          age_hours: number
+        }
+        Returns: number
+      }
+      calculate_video_engagement_score: {
+        Args: {
+          views: number
+          watch_time_seconds: number
+          age_hours: number
+        }
+        Returns: number
+      }
       check_username_availability: {
         Args: {
           username_to_check: string
@@ -1436,6 +1472,10 @@ export type Database = {
           post_id: string
           watch_seconds: number
         }
+        Returns: undefined
+      }
+      update_trending_scores: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }
