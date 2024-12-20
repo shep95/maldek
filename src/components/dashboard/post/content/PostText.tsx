@@ -1,6 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface PostTextProps {
   content: string;
@@ -17,81 +20,99 @@ export const PostText = ({ content, translatedContent, onShowOriginal }: PostTex
     const mentionPattern = /@(\w+)/g;
     const codeBlockPattern = /```([\s\S]*?)```/g;
 
-    return text.split(' ').map((word, index) => {
+    // Split content by code blocks first
+    const parts = text.split(/(```[\s\S]*?```)/g);
+
+    return parts.map((part, index) => {
       // Handle code blocks
-      if (word.match(codeBlockPattern)) {
+      if (part.startsWith('```') && part.endsWith('```')) {
+        const code = part.slice(3, -3).trim();
         return (
-          <pre key={index} className="bg-muted p-2 rounded-lg my-2 overflow-x-auto">
-            <code>{word.replace(/```/g, '')}</code>
-          </pre>
+          <div key={index} className="my-4">
+            <SyntaxHighlighter
+              language="typescript"
+              style={oneDark}
+              className="rounded-lg text-sm"
+            >
+              {code}
+            </SyntaxHighlighter>
+          </div>
         );
       }
 
-      // Handle mentions
-      if (word.startsWith('@')) {
-        const username = word.slice(1);
-        return (
-          <span key={index} className="inline-block">
-            <Button
-              variant="link"
-              className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/@${username}`);
-              }}
-            >
-              {word}
-            </Button>
-            {' '}
-          </span>
-        );
-      }
-      
-      // Handle hashtags
-      if (word.match(hashtagPattern)) {
-        return (
-          <span key={index}>
-            <Button
-              variant="link"
-              className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/hashtag/${word.slice(1)}`);
-              }}
-            >
-              {word}
-            </Button>
-            {' '}
-          </span>
-        );
-      }
-      
-      // Handle URLs
-      if (urlPattern.test(word)) {
-        return (
-          <span key={index}>
-            <a
-              href={word}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-orange-500 hover:text-orange-600 hover:underline inline-flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {word}
-              <LinkIcon className="h-3 w-3" />
-            </a>
-            {' '}
-          </span>
-        );
-      }
-      
-      return word + ' ';
+      // Process regular text
+      return part.split(' ').map((word, wordIndex) => {
+        // Handle mentions
+        if (word.startsWith('@')) {
+          const username = word.slice(1);
+          return (
+            <span key={`${index}-${wordIndex}`} className="inline-block">
+              <Button
+                variant="link"
+                className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/@${username}`);
+                }}
+              >
+                {word}
+              </Button>
+              {' '}
+            </span>
+          );
+        }
+        
+        // Handle hashtags
+        if (word.match(hashtagPattern)) {
+          return (
+            <span key={`${index}-${wordIndex}`}>
+              <Button
+                variant="link"
+                className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/hashtag/${word.slice(1)}`);
+                }}
+              >
+                {word}
+              </Button>
+              {' '}
+            </span>
+          );
+        }
+        
+        // Handle URLs
+        if (urlPattern.test(word)) {
+          return (
+            <span key={`${index}-${wordIndex}`}>
+              <a
+                href={word}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-500 hover:text-orange-600 hover:underline inline-flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {word}
+                <LinkIcon className="h-3 w-3" />
+              </a>
+              {' '}
+            </span>
+          );
+        }
+        
+        return word + ' ';
+      });
     });
   };
 
   return (
     <div>
-      <p className="text-foreground whitespace-pre-wrap">
+      <p className={cn(
+        "text-foreground whitespace-pre-wrap",
+        "prose prose-orange max-w-none",
+        "prose-a:text-orange-500 prose-a:no-underline hover:prose-a:underline",
+        "prose-code:bg-muted prose-code:rounded prose-code:px-1"
+      )}>
         {renderContent(translatedContent || content)}
       </p>
       {translatedContent && (

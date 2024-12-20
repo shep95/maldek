@@ -1,8 +1,9 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Bold, Italic, Link, Hash, AtSign, Image, Smile } from "lucide-react";
+import { Bold, Italic, Link, Hash, AtSign, Image, Smile, Code } from "lucide-react";
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { EmojiPicker } from "@/components/messages/EmojiPicker";
 
 interface RichTextEditorProps {
   value: string;
@@ -22,6 +23,7 @@ export const RichTextEditor = ({
   placeholder = "What's happening?"
 }: RichTextEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -51,7 +53,7 @@ export const RichTextEditor = ({
     }, 0);
   };
 
-  const handleFormat = (format: 'bold' | 'italic' | 'link') => {
+  const handleFormat = (format: 'bold' | 'italic' | 'link' | 'code') => {
     switch (format) {
       case 'bold':
         insertAtCursor('**bold text**');
@@ -62,11 +64,19 @@ export const RichTextEditor = ({
       case 'link':
         insertAtCursor('[link text](url)');
         break;
+      case 'code':
+        insertAtCursor('\n```\ncode block\n```\n');
+        break;
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    insertAtCursor(emoji);
+    setShowEmojiPicker(false);
+  };
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 relative">
       <div className={cn(
         "flex gap-2 p-2 rounded-t-lg border border-b-0 border-input bg-background",
         isFocused && "border-primary"
@@ -97,6 +107,15 @@ export const RichTextEditor = ({
           className="h-8 w-8 p-0"
         >
           <Link className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormat('code')}
+          type="button"
+          className="h-8 w-8 p-0"
+        >
+          <Code className="h-4 w-4" />
         </Button>
         <div className="h-8 w-[1px] bg-border mx-1" />
         <Button
@@ -129,13 +148,22 @@ export const RichTextEditor = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => insertAtCursor(':)')}
+          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           type="button"
           className="h-8 w-8 p-0"
         >
           <Smile className="h-4 w-4" />
         </Button>
       </div>
+
+      {showEmojiPicker && (
+        <div className="absolute right-0 z-50">
+          <EmojiPicker
+            onSelect={handleEmojiSelect}
+            onClose={() => setShowEmojiPicker(false)}
+          />
+        </div>
+      )}
 
       <Textarea
         ref={textareaRef}
