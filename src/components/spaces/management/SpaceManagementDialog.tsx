@@ -1,19 +1,14 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, MessageSquare } from "lucide-react";
+import { Users, MessageSquare, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
-import { SpaceManagementControls } from "./SpaceManagementControls";
-import { SpaceParticipantsList } from "./SpaceParticipantsList";
-import { SpaceSpeakerRequests } from "../SpaceSpeakerRequests";
-import { SpaceChat } from "../features/SpaceChat";
-import { SpaceReactions } from "../features/SpaceReactions";
-import { SpaceHeader } from "./SpaceHeader";
-import { useSpaceParticipants } from "./hooks/useSpaceParticipants";
-import { useSpaceAudio } from "./hooks/useSpaceAudio";
-import { useState as useRecordingState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSpaceAudioConnection } from "@/hooks/spaces/useSpaceAudioConnection";
+import { SpaceChatPanel } from "../chat/SpaceChatPanel";
+import { SpeakerRequestsPanel } from "./SpeakerRequestsPanel";
+import { ParticipantManagementPanel } from "./ParticipantManagementPanel";
+import { SpaceHeader } from "./SpaceHeader";
 
 interface SpaceManagementDialogProps {
   isOpen: boolean;
@@ -33,16 +28,6 @@ export const SpaceManagementDialog = ({
   const session = useSession();
   const [activeTab, setActiveTab] = useState("participants");
   const [userRole, setUserRole] = useState<string>("listener");
-  const [hasRaisedHand, setHasRaisedHand] = useState(false);
-  const [recordingDuration, setRecordingDuration] = useRecordingState(0);
-  const [isRecording, setIsRecording] = useRecordingState(false);
-
-  const {
-    participants,
-    speakerRequests,
-    refetchParticipants,
-    refetchRequests
-  } = useSpaceParticipants(spaceId);
 
   const {
     isConnected,
@@ -52,7 +37,7 @@ export const SpaceManagementDialog = ({
     handleMuteToggle,
     joinChannel,
     leaveChannel
-  } = useSpaceAudio(spaceId, session?.user?.id || '');
+  } = useSpaceAudioConnection(spaceId, session?.user?.id || '');
 
   useEffect(() => {
     if (!isOpen || !spaceId || !session?.user?.id) return;
@@ -73,6 +58,7 @@ export const SpaceManagementDialog = ({
         }
       } catch (error) {
         console.error('Error fetching user role:', error);
+        toast.error('Failed to fetch user role');
       }
     };
 
@@ -83,55 +69,6 @@ export const SpaceManagementDialog = ({
       leaveChannel();
     };
   }, [spaceId, isOpen, session?.user?.id]);
-
-  const handleRequestToSpeak = async () => {
-    try {
-      const { error } = await supabase
-        .from('space_speaker_requests')
-        .insert({
-          space_id: spaceId,
-          user_id: session?.user?.id,
-          status: 'pending'
-        });
-
-      if (error) throw error;
-      setHasRaisedHand(true);
-      toast.success("Request to speak sent!");
-    } catch (error) {
-      console.error('Error requesting to speak:', error);
-      toast.error("Failed to send request");
-    }
-  };
-
-  const handleSpeakerRequest = async (requestId: string, userId: string, accept: boolean) => {
-    try {
-      if (accept) {
-        const { error: updateError } = await supabase
-          .from('space_participants')
-          .update({ role: 'speaker' })
-          .eq('space_id', spaceId)
-          .eq('user_id', userId);
-
-        if (updateError) throw updateError;
-      }
-
-      const { error } = await supabase
-        .from('space_speaker_requests')
-        .update({
-          status: accept ? 'accepted' : 'rejected',
-          resolved_at: new Date().toISOString(),
-          resolved_by: session?.user?.id
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
-      toast.success(accept ? "Speaker request accepted" : "Speaker request rejected");
-      refetchRequests();
-    } catch (error) {
-      console.error('Error handling speaker request:', error);
-      toast.error("Failed to handle request");
-    }
-  };
 
   const handleEndSpace = async () => {
     try {
@@ -153,18 +90,6 @@ export const SpaceManagementDialog = ({
     }
   };
 
-  const isSpeaker = userRole === 'speaker' || userRole === 'host' || userRole === 'co_host';
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isRecording]);
-
   if (audioError && !isReconnecting) {
     toast.error(`Audio error: ${audioError}`);
   }
@@ -174,10 +99,8 @@ export const SpaceManagementDialog = ({
       <DialogContent className="sm:max-w-md">
         <SpaceHeader
           isHost={isHost}
-          isRecording={isRecording}
-          recordingDuration={recordingDuration}
           isConnected={isConnected}
-          isSpeaking={isSpeaker && !isMuted}
+          isSpeaking={userRole !== 'listener' && !isMuted}
         />
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
@@ -196,39 +119,28 @@ export const SpaceManagementDialog = ({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="participants" className="mt-4">
-            <SpaceManagementControls
-              isMuted={isMuted}
-              isHost={isHost}
-              isSpeaker={isSpeaker}
-              hasRaisedHand={hasRaisedHand}
-              toggleMute={handleMuteToggle}
-              onRequestSpeak={handleRequestToSpeak}
-              onLeave={onLeave}
-              onEndSpace={handleEndSpace}
-            />
-            <SpaceParticipantsList 
-              participants={participants}
+          <TabsContent value="participants">
+            <ParticipantManagementPanel
               spaceId={spaceId}
-              canManageParticipants={isHost || userRole === 'co_host'}
               currentUserId={session?.user?.id}
-              onParticipantUpdate={refetchParticipants}
-            />
-            <SpaceReactions onReaction={handleRequestToSpeak} />
-          </TabsContent>
-
-          <TabsContent value="chat" className="mt-4">
-            <SpaceChat
-              messages={[]}
-              onSendMessage={(content) => console.log(content)}
-            />
-          </TabsContent>
-
-          <TabsContent value="requests" className="mt-4">
-            <SpaceSpeakerRequests
               isHost={isHost}
-              speakerRequests={speakerRequests}
-              onHandleRequest={handleSpeakerRequest}
+            />
+          </TabsContent>
+
+          <TabsContent value="chat">
+            <SpaceChatPanel
+              spaceId={spaceId}
+              userId={session?.user?.id || ''}
+            />
+          </TabsContent>
+
+          <TabsContent value="requests">
+            <SpeakerRequestsPanel
+              spaceId={spaceId}
+              isHost={isHost}
+              onRequestHandled={() => {
+                toast.success('Speaker request handled');
+              }}
             />
           </TabsContent>
         </Tabs>
