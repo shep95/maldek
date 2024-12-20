@@ -18,6 +18,7 @@ const Notifications = () => {
     dateRange: { from: undefined, to: undefined },
     search: "",
   });
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
 
   // Fetch current user ID only once on mount
   useEffect(() => {
@@ -41,10 +42,12 @@ const Notifications = () => {
 
   // Debounced function to mark notifications as read
   const markNotificationsAsRead = useCallback(async () => {
-    if (!currentUserId || isLoading || !notifications?.length) return;
+    if (!currentUserId || isLoading || !notifications?.length || isMarkingRead) return;
 
     const unreadNotifications = notifications.filter(n => !n.read);
     if (!unreadNotifications.length) return;
+
+    setIsMarkingRead(true);
 
     try {
       console.log('Marking notifications as read for user:', currentUserId);
@@ -73,6 +76,8 @@ const Notifications = () => {
       
     } catch (error) {
       console.error('Error in markNotificationsAsRead:', error);
+    } finally {
+      setIsMarkingRead(false);
     }
   }, [currentUserId, notifications, isLoading, queryClient]);
 

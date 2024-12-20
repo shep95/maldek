@@ -58,6 +58,8 @@ export const useNotifications = (userId: string | null) => {
     enabled: !!userId,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 60000, // Keep data in cache for 1 minute (renamed from cacheTime)
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    retry: false // Don't retry on failure to prevent excessive requests
   });
 
   // Subscribe to real-time notifications with debounced updates
@@ -65,6 +67,7 @@ export const useNotifications = (userId: string | null) => {
     if (!userId) return;
 
     let timeoutId: NodeJS.Timeout;
+    let mounted = true;
     console.log('Setting up real-time notifications for user:', userId);
 
     const channel = supabase
@@ -80,18 +83,22 @@ export const useNotifications = (userId: string | null) => {
         (payload) => {
           console.log('New notification received:', payload);
           
-          // Debounce the query invalidation
+          // Debounce the query invalidation and only update if component is mounted
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
-            
-            toast.success("You have a new notification!", {
-              action: {
-                label: "View",
-                onClick: () => window.location.href = '/notifications'
-              },
-            });
+            if (mounted) {
+              queryClient.invalidateQueries({ 
+                queryKey: ['notifications'],
+                exact: true
+              });
+              
+              toast.success("You have a new notification!", {
+                action: {
+                  label: "View",
+                  onClick: () => window.location.href = '/notifications'
+                },
+              });
+            }
           }, 1000);
         }
       )
@@ -99,6 +106,7 @@ export const useNotifications = (userId: string | null) => {
 
     return () => {
       console.log('Cleaning up notifications subscription');
+      mounted = false;
       clearTimeout(timeoutId);
       supabase.removeChannel(channel);
     };
