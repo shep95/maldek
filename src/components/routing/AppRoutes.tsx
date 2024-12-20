@@ -65,14 +65,15 @@ export const AppRoutes = () => {
       
       {/* Dashboard layout wrapper */}
       <Route element={<DashboardLayout />}>
+        {/* Profile route MUST come before other routes to take precedence */}
+        <Route path="/@:username" element={<Profiles />} />
+        
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
-        {/* Profile route - IMPORTANT: This must come after other routes */}
-        <Route path="/@:username" element={<Profiles />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
