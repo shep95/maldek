@@ -8,6 +8,7 @@ import type { Notification } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -57,19 +58,34 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const handleNotificationClick = async () => {
-    console.log('Notification clicked:', notification.id);
+  const handleNotificationClick = async (e: React.MouseEvent) => {
+    // Prevent click event if checkbox is clicked
+    if ((e.target as HTMLElement).closest('.checkbox-container')) {
+      return;
+    }
+
+    console.log('Notification clicked:', {
+      id: notification.id,
+      type: notification.type,
+      currentReadStatus: notification.read
+    });
 
     try {
       // Only mark as read if it's not already read
       if (!notification.read) {
-        console.log('Marking notification as read:', notification.id);
+        console.log('Attempting to mark notification as read:', notification.id);
         const { error } = await supabase
           .from('notifications')
           .update({ read: true })
           .eq('id', notification.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating notification:', error);
+          toast.error('Failed to mark notification as read');
+          throw error;
+        }
+
+        console.log('Successfully marked notification as read');
 
         // Invalidate queries to update the UI
         await Promise.all([
@@ -82,16 +98,21 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
             exact: true 
           })
         ]);
+
+        console.log('Queries invalidated successfully');
       }
 
       // Navigate based on notification type
-      if (notification.type === 'new_follow') {
-        navigate(`/profiles/${notification.actor_id}`);
-      } else {
-        navigate(`/post/${notification.post_id}`);
-      }
+      const navigatePath = notification.type === 'new_follow' 
+        ? `/profiles/${notification.actor_id}`
+        : `/post/${notification.post_id}`;
+      
+      console.log('Navigating to:', navigatePath);
+      navigate(navigatePath);
+      
     } catch (error) {
       console.error('Error handling notification click:', error);
+      toast.error('Failed to process notification');
     }
   };
 
@@ -105,11 +126,13 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
       onClick={handleNotificationClick}
     >
       <div className="flex items-start gap-4">
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onSelect}
-          onClick={(e) => e.stopPropagation()}
-        />
+        <div className="checkbox-container">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onSelect}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
         <Avatar className="h-10 w-10 border-2 border-background">
           <AvatarImage src={notification.actor.avatar_url || undefined} />
           <AvatarFallback className="bg-accent text-accent-foreground">
