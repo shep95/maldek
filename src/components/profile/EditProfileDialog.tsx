@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
+import { Pencil } from "lucide-react";
 
 interface EditProfileDialogProps {
   profile: any;
@@ -16,6 +19,25 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
   const [username, setUsername] = useState(profile?.username || "");
   const [bio, setBio] = useState(profile?.bio || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      console.log('Starting avatar upload for user:', profile.id);
+      const imageUrl = await handleImageUpload(file, profile.id);
+      
+      if (imageUrl) {
+        setAvatarUrl(imageUrl);
+        toast.success("Profile picture uploaded successfully");
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error("Failed to upload profile picture");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +48,8 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
         .from('profiles')
         .update({
           username: username.toLowerCase(),
-          bio
+          bio,
+          avatar_url: avatarUrl
         })
         .eq('id', profile.id);
 
@@ -55,6 +78,27 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={avatarUrl} />
+                <AvatarFallback>{profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <label 
+                htmlFor="avatar-upload" 
+                className="absolute bottom-0 right-0 p-1 bg-accent text-white rounded-full cursor-pointer hover:bg-accent/90"
+              >
+                <Pencil className="h-4 w-4" />
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+            </div>
+          </div>
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium">
               Username
