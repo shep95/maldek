@@ -61,6 +61,7 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
   const handleNotificationClick = async (e: React.MouseEvent) => {
     // Prevent click event if checkbox is clicked
     if ((e.target as HTMLElement).closest('.checkbox-container')) {
+      console.log('Checkbox clicked, preventing notification click');
       return;
     }
 
@@ -77,7 +78,8 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
         const { error } = await supabase
           .from('notifications')
           .update({ read: true })
-          .eq('id', notification.id);
+          .eq('id', notification.id)
+          .select();
 
         if (error) {
           console.error('Error updating notification:', error);
@@ -87,7 +89,7 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
 
         console.log('Successfully marked notification as read');
 
-        // Invalidate queries to update the UI
+        // Invalidate both queries to update the UI
         await Promise.all([
           queryClient.invalidateQueries({ 
             queryKey: ['notifications'],
@@ -104,7 +106,7 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
 
       // Navigate based on notification type
       const navigatePath = notification.type === 'new_follow' 
-        ? `/profiles/${notification.actor_id}`
+        ? `/@${notification.actor.username}`
         : `/post/${notification.post_id}`;
       
       console.log('Navigating to:', navigatePath);
