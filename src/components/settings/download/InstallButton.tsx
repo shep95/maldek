@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface InstallButtonProps {
   deferredPrompt: any;
@@ -8,6 +8,8 @@ interface InstallButtonProps {
 }
 
 export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButtonProps) => {
+  const { toast } = useToast();
+
   const handleInstall = async () => {
     console.log("🔄 Install button clicked");
     console.log("Current deferredPrompt state:", deferredPrompt ? "Available" : "Not available");
@@ -16,23 +18,25 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
       console.log("❌ No installation prompt available");
       
       const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-      console.log("Browser check - Chrome:", isChrome);
-      
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
       const isHttps = window.location.protocol === 'https:';
-      console.log("Protocol check - HTTPS:", isHttps);
       
-      let errorMessage = "Installation is not available. ";
-      if (!isChrome) {
-        errorMessage += "Please use Chrome browser. ";
-      }
-      if (!isHttps) {
+      console.log("Browser check - Chrome:", isChrome, "Safari:", isSafari, "HTTPS:", isHttps);
+      
+      let errorMessage = "To install Bosley: ";
+      
+      if (isSafari && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        errorMessage += "Tap the share button and select 'Add to Home Screen'";
+      } else if (!isChrome && !isSafari) {
+        errorMessage += "Please use Chrome or Safari. ";
+      } else if (!isHttps) {
         errorMessage += "HTTPS is required. ";
+      } else {
+        errorMessage += "Use your browser's menu to install the app";
       }
       
       toast({
-        title: "Installation Not Available",
         description: errorMessage,
-        variant: "destructive"
       });
       return;
     }
@@ -46,12 +50,10 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
       
       if (choiceResult.outcome === 'accepted') {
         toast({
-          title: "Installing Bosley",
-          description: "The app is being installed on your device.",
+          description: "Installing Bosley on your device...",
         });
       } else {
         toast({
-          title: "Installation Cancelled",
           description: "You can install Bosley anytime by clicking the install button again.",
         });
       }
@@ -60,7 +62,6 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
     } catch (error) {
       console.error('❌ Error installing app:', error);
       toast({
-        title: "Installation Failed",
         description: "There was an error installing Bosley. Please try again.",
         variant: "destructive"
       });

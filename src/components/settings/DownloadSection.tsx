@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppWindow } from "lucide-react";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { InstallationStatus } from "./download/InstallationStatus";
 import { PlatformCards } from "./download/PlatformCards";
 import { InstallButton } from "./download/InstallButton";
@@ -21,14 +21,16 @@ declare global {
 export const DownloadSection = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     console.log("Initializing installation checks...");
     
     const checkInstallation = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      console.log("Standalone mode check:", isStandalone);
-      setIsInstalled(isStandalone);
+      const isPWA = window.navigator.standalone || document.referrer.includes('android-app://');
+      console.log("Installation check - Standalone:", isStandalone, "PWA:", isPWA);
+      setIsInstalled(isStandalone || isPWA);
     };
 
     checkInstallation();
@@ -65,7 +67,6 @@ export const DownloadSection = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
       toast({
-        title: "Installation Successful",
         description: "Bosley has been installed on your device!",
       });
     });
@@ -74,7 +75,7 @@ export const DownloadSection = () => {
       mediaQuery.removeListener(checkInstallation);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [toast]);
 
   return (
     <Card>
