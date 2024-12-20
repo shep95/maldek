@@ -48,10 +48,20 @@ const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
 export const AppRoutes = () => {
   const session = useSession();
   
+  if (!session) {
+    return (
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
+  }
+  
   return (
     <Routes>
-      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <Navigate to="/auth" replace />} />
-      <Route path="/auth" element={<Auth />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
+      
       <Route element={<DashboardLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/messages" element={<Messages />} />
@@ -59,6 +69,7 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
+        {/* Update the profile route to handle usernames */}
         <Route path="/@:username" element={<Profiles />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
@@ -73,7 +84,9 @@ export const AppRoutes = () => {
         />
         <Route path="/subscription" element={<Subscription />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };

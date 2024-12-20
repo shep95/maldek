@@ -3,6 +3,7 @@ import { Author } from "@/utils/postUtils";
 import { Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface PostHeaderProps {
   author: Author;
@@ -11,6 +12,8 @@ interface PostHeaderProps {
 }
 
 export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderProps) => {
+  const navigate = useNavigate();
+  
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
@@ -47,6 +50,12 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Navigating to profile:', author.username);
+    navigate(`/@${author.username}`);
+  };
+
   const getTimeAgo = (date: Date) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
@@ -69,7 +78,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     <div className="flex items-start gap-3">
       <Avatar 
         className="h-10 w-10 cursor-pointer" 
-        onClick={onUsernameClick}
+        onClick={handleProfileClick}
       >
         <AvatarImage src={author.avatar_url || ''} alt={author.name} />
         <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
@@ -78,7 +87,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         <div className="flex items-baseline gap-2">
           <div className="flex items-center gap-1">
             <button
-              onClick={onUsernameClick}
+              onClick={handleProfileClick}
               className="font-semibold hover:underline"
             >
               {author.name}
@@ -105,7 +114,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
             )}
           </div>
           <button
-            onClick={onUsernameClick}
+            onClick={handleProfileClick}
             className="text-sm text-muted-foreground hover:underline"
           >
             @{author.username}
