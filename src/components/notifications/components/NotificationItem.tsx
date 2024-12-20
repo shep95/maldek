@@ -5,6 +5,9 @@ import { formatDistanceToNow } from "date-fns";
 import { Bell, Heart, MessageCircle, Share2, Bookmark, Repeat, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Notification } from "@/hooks/useNotifications";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -51,6 +54,47 @@ interface NotificationItemProps {
 }
 
 export const NotificationItem = ({ notification, isSelected, onSelect }: NotificationItemProps) => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const handleNotificationClick = async () => {
+    console.log('Notification clicked:', notification.id);
+
+    try {
+      // Only mark as read if it's not already read
+      if (!notification.read) {
+        console.log('Marking notification as read:', notification.id);
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('id', notification.id);
+
+        if (error) throw error;
+
+        // Invalidate queries to update the UI
+        await Promise.all([
+          queryClient.invalidateQueries({ 
+            queryKey: ['notifications'],
+            exact: true 
+          }),
+          queryClient.invalidateQueries({ 
+            queryKey: ['unread-notifications-count'],
+            exact: true 
+          })
+        ]);
+      }
+
+      // Navigate based on notification type
+      if (notification.type === 'new_follow') {
+        navigate(`/profiles/${notification.actor_id}`);
+      } else {
+        navigate(`/post/${notification.post_id}`);
+      }
+    } catch (error) {
+      console.error('Error handling notification click:', error);
+    }
+  };
+
   return (
     <Card
       className={cn(
@@ -58,6 +102,7 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
         !notification.read && "bg-accent/5",
         isSelected && "border-accent"
       )}
+      onClick={handleNotificationClick}
     >
       <div className="flex items-start gap-4">
         <Checkbox
