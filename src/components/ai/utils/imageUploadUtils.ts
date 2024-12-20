@@ -1,8 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { handleOfflineUpload } from "@/utils/offlineUploadUtils";
-
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+import { validateMediaFile } from "@/utils/mediaUtils";
 
 export const handleImageUpload = async (file: File, userId: string) => {
   try {
@@ -14,11 +13,11 @@ export const handleImageUpload = async (file: File, userId: string) => {
       lastModified: new Date(file.lastModified).toISOString()
     });
 
-    // Verify file size
-    const maxSize = 50 * 1024 * 1024; // 50MB
-    if (file.size > maxSize) {
-      console.error('File too large:', `${(file.size / (1024 * 1024)).toFixed(2)}MB`);
-      toast.error(`File size must be less than 50MB. Please try a smaller file.`);
+    // Verify file size and content
+    const validation = await validateMediaFile(file);
+    if (!validation.isValid) {
+      console.error('File validation failed:', validation.error);
+      toast.error(validation.error);
       return null;
     }
 
@@ -40,7 +39,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     console.log('Starting upload to path:', filePath);
     toast.info('Uploading file...');
 
-    // Upload file directly without chunking
+    // Upload file
     const { error: uploadError } = await supabase.storage
       .from('posts')
       .upload(filePath, file, {

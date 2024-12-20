@@ -66,7 +66,35 @@ export const handlePasteEvent = (e: ClipboardEvent): File | null => {
   return null;
 };
 
-export const validateMediaFile = (file: File): { isValid: boolean; error?: string } => {
+export const moderateContent = async (file: File): Promise<{ isValid: boolean; error?: string }> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const { data, error } = await supabase.functions.invoke('moderate-content', {
+      body: formData,
+    });
+
+    if (error || data.error) {
+      console.error('Content moderation failed:', error || data.error);
+      const categories = data.categories ? ` (${data.categories.join(', ')})` : '';
+      return {
+        isValid: false,
+        error: `Content violates community guidelines${categories}`
+      };
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    console.error('Content moderation error:', error);
+    return {
+      isValid: false,
+      error: 'Failed to verify content safety'
+    };
+  }
+};
+
+export const validateMediaFile = async (file: File): Promise<{ isValid: boolean; error?: string }> => {
   const maxSize = 50 * 1024 * 1024; // 50MB
   
   if (file.size > maxSize) {
@@ -91,6 +119,12 @@ export const validateMediaFile = (file: File): { isValid: boolean; error?: strin
       isValid: false,
       error: `File type ${file.type} is not supported`
     };
+  }
+
+  // Add content moderation check
+  const moderationResult = await moderateContent(file);
+  if (!moderationResult.isValid) {
+    return moderationResult;
   }
   
   return { isValid: true };
