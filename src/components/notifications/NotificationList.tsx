@@ -29,6 +29,8 @@ export const NotificationList = ({ notifications, isLoading }: NotificationListP
   };
 
   const handleBulkAction = async (action: 'read' | 'archive' | 'delete') => {
+    console.log(`Starting bulk ${action} action for notifications:`, selectedIds);
+    
     if (selectedIds.length === 0) {
       toast.error('Please select notifications first');
       return;
@@ -55,7 +57,7 @@ export const NotificationList = ({ notifications, isLoading }: NotificationListP
           break;
       }
 
-      console.log(`Performing bulk ${action} action on notifications:`, selectedIds);
+      console.log(`Performing bulk ${action} action with data:`, updateData);
 
       const { error } = await supabase
         .from('notifications')
@@ -69,7 +71,7 @@ export const NotificationList = ({ notifications, isLoading }: NotificationListP
         return;
       }
 
-      // Only invalidate the queries after successful update
+      // Invalidate both queries after successful update
       await Promise.all([
         queryClient.invalidateQueries({ 
           queryKey: ['notifications'],
