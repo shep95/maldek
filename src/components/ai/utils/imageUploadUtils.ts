@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { handleOfflineUpload } from "@/utils/offlineUploadUtils";
-import { validateMediaFile } from "@/utils/mediaUtils";
+import { validateMediaFile, isVideoFile } from "@/utils/mediaUtils";
 
 export const handleImageUpload = async (file: File, userId: string) => {
   try {
@@ -36,12 +36,14 @@ export const handleImageUpload = async (file: File, userId: string) => {
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
-    console.log('Starting upload to path:', filePath);
+    // Determine the appropriate bucket based on file type
+    const bucket = isVideoFile(file) ? 'videos' : 'posts';
+    console.log(`Uploading ${file.type} to ${bucket} bucket at path:`, filePath);
     toast.info('Uploading file...');
 
     // Upload file
     const { error: uploadError } = await supabase.storage
-      .from('posts')
+      .from(bucket)
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true
@@ -54,7 +56,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
 
     // Get public URL
     const { data } = supabase.storage
-      .from('posts')
+      .from(bucket)
       .getPublicUrl(filePath);
 
     console.log('Generated public URL:', data.publicUrl);
