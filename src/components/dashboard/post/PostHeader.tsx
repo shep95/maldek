@@ -53,19 +53,11 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const profilePath = `/@${author.username}`;
-    console.log('=== Profile Navigation Debug ===');
-    console.log('1. Click event detected');
-    console.log('2. Username:', author.username);
-    console.log('3. Current path:', window.location.pathname);
-    console.log('4. Target path:', profilePath);
-    
-    // Use setTimeout to ensure we can see the navigation result
-    setTimeout(() => {
-      console.log('5. Path after navigation:', window.location.pathname);
-    }, 100);
-
-    navigate(profilePath, { replace: false });
+    console.log('Profile click detected for username:', author.username);
+    console.log('Current location before navigation:', window.location.pathname);
+    console.log('Attempting to navigate to:', `/@${author.username}`);
+    navigate(`/@${author.username}`);
+    console.log('Navigation completed');
   };
 
   const getTimeAgo = (date: Date) => {
