@@ -3,34 +3,33 @@ import { supabase } from "@/integrations/supabase/client";
 export const createPersistentMediaUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     console.log('Creating persistent URL for file:', file.name, 'Type:', file.type);
-    
     const url = URL.createObjectURL(file);
     console.log('Created URL:', url);
     resolve(url);
   });
 };
 
-export const isVideoFile = (url: string): boolean => {
+export const isVideoFile = (url: string | File): boolean => {
+  if (url instanceof File) {
+    return url.type.startsWith('video/');
+  }
+  
   console.log('Checking if URL is video:', url);
   
-  // Check if it's a blob URL for video
   if (url.startsWith('blob:')) {
     console.log('Blob URL detected');
     return true;
   }
   
-  // Check common video file extensions
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '.avi', '.wmv', '.flv', '.mkv'];
   const lowercaseUrl = url.toLowerCase();
   
-  // Check file extensions
   const hasVideoExtension = videoExtensions.some(ext => lowercaseUrl.endsWith(ext));
   if (hasVideoExtension) {
     console.log('Video extension detected:', lowercaseUrl);
     return true;
   }
   
-  // Check if URL contains video-specific paths or identifiers
   if (lowercaseUrl.includes('/videos/') || lowercaseUrl.includes('video')) {
     console.log('Video path detected');
     return true;
@@ -103,27 +102,6 @@ export const validateMediaFile = async (file: File): Promise<{ isValid: boolean;
     return {
       isValid: false,
       error: `File size must be less than 100MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
-    };
-  }
-  
-  // Accept any video/* MIME type
-  if (file.type.startsWith('video/')) {
-    console.log('Valid video file detected:', file.type);
-    return { isValid: true };
-  }
-  
-  // For images, keep the existing allowed types
-  const allowedImageTypes = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp'
-  ];
-  
-  if (!file.type.startsWith('video/') && !allowedImageTypes.includes(file.type)) {
-    return {
-      isValid: false,
-      error: `File type ${file.type} is not supported`
     };
   }
 

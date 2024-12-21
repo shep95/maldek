@@ -3,7 +3,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { MediaPreview } from "./upload/MediaPreview";
 import { MediaUploadZone } from "./upload/MediaUploadZone";
-import { validateMediaFile } from "@/utils/mediaUtils";
+import { compressVideo } from "@/utils/videoCompression";
+import { isVideoFile } from "@/utils/mediaUtils";
 
 interface MediaUploadProps {
   mediaFiles: File[];
@@ -25,6 +26,38 @@ export const MediaUpload = ({
   const [errorStates, setErrorStates] = useState<{ [key: string]: boolean }>(
     mediaPreviewUrls.reduce((acc, url) => ({ ...acc, [url]: false }), {})
   );
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleFiles = async (files: File[]) => {
+    setIsProcessing(true);
+    const processedFiles = [];
+
+    try {
+      for (const file of files) {
+        if (isVideoFile(file)) {
+          console.log('Processing video file:', file.name);
+          const compressedVideo = await compressVideo(file);
+          processedFiles.push(compressedVideo);
+        } else {
+          processedFiles.push(file);
+        }
+      }
+
+      // Create a synthetic event
+      const event = {
+        target: {
+          files: processedFiles
+        }
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+      onFileUpload(event);
+    } catch (error) {
+      console.error('Error processing files:', error);
+      toast.error("Failed to process media. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -38,22 +71,13 @@ export const MediaUpload = ({
     setDragActive(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const validFiles = [];
+    await handleFiles(files);
+  };
 
-    for (const file of files) {
-      const validation = await validateMediaFile(file);
-      if (!validation.isValid) {
-        toast.error(validation.error);
-      } else {
-        validFiles.push(file);
-      }
-    }
-
-    if (validFiles.length > 0) {
-      const event = {
-        target: { files: validFiles }
-      } as unknown as React.ChangeEvent<HTMLInputElement>;
-      onFileUpload(event);
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      await handleFiles(files);
     }
   };
 
@@ -80,14 +104,16 @@ export const MediaUpload = ({
           type="file"
           accept="image/*,video/*"
           multiple
-          onChange={onFileUpload}
+          onChange={handleInputChange}
           className="hidden"
           id="media-upload"
+          disabled={isProcessing}
         />
         
         <MediaUploadZone
           onFileSelect={() => document.getElementById("media-upload")?.click()}
           dragActive={dragActive}
+          isProcessing={isProcessing}
         />
       </div>
 
@@ -106,9 +132,8 @@ export const MediaUpload = ({
                 onRemove={() => onRemoveMedia(index)}
                 isLoading={loadingStates[url]}
                 hasError={errorStates[url]}
-                onMediaClick={() => {
-                  // Handle media preview click if needed
-                }}
+                onLoad={() => handleMediaLoad(url)}
+                onError={() => handleMediaError(url)}
               />
             ))}
           </div>
