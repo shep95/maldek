@@ -40,15 +40,35 @@ export const VideoPlayer = ({
     const getPublicUrl = async () => {
       try {
         if (videoUrl.startsWith('http')) {
+          console.log('Using direct URL:', videoUrl);
           setPublicUrl(videoUrl);
         } else {
-          // Remove any leading slashes
-          const cleanPath = videoUrl.replace(/^\/+/, '');
-          const { data } = supabase.storage
+          // Clean the path and ensure it's properly formatted
+          const cleanPath = videoUrl.replace(/^\/+/, '').trim();
+          console.log('Cleaned video path:', cleanPath);
+          
+          const { data, error: urlError } = supabase.storage
             .from('videos')
             .getPublicUrl(cleanPath);
+
+          if (urlError) {
+            console.error('Error generating public URL:', urlError);
+            setError('Failed to generate video URL');
+            setIsLoading(false);
+            return;
+          }
+
           console.log('Generated public URL:', data.publicUrl);
           setPublicUrl(data.publicUrl);
+
+          // Verify the URL is accessible
+          const response = await fetch(data.publicUrl, { method: 'HEAD' });
+          if (!response.ok) {
+            console.error('Video URL not accessible:', response.status);
+            setError('Video file not accessible');
+            setIsLoading(false);
+            return;
+          }
         }
       } catch (err) {
         console.error('Error getting public URL:', err);
@@ -159,6 +179,7 @@ export const VideoPlayer = ({
           onLoadedData={handleVideoLoaded}
           playsInline
           preload="metadata"
+          crossOrigin="anonymous"
         />
       )}
 
