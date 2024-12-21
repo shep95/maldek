@@ -92,7 +92,8 @@ export const VideoGrid = ({
           id: video.id,
           video_url: video.video_url,
           thumbnail_url: thumbnailUrl,
-          original_thumbnail: video.thumbnail_url
+          original_thumbnail: video.thumbnail_url,
+          storage_path: !video.video_url.startsWith('http') ? video.video_url : 'direct_url'
         });
 
         return (
