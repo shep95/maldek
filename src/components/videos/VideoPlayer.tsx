@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { fetchRelevantAd, handleAdClick } from "@/utils/adUtils";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -20,6 +21,7 @@ export const VideoPlayer = ({
   const [isAdPlaying, setIsAdPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -33,6 +35,27 @@ export const VideoPlayer = ({
       setIsLoading(false);
       return;
     }
+
+    // Handle Supabase storage URLs
+    const getPublicUrl = async () => {
+      try {
+        if (videoUrl.startsWith('http')) {
+          setPublicUrl(videoUrl);
+        } else {
+          const { data } = supabase.storage
+            .from('videos')
+            .getPublicUrl(videoUrl);
+          console.log('Generated public URL:', data.publicUrl);
+          setPublicUrl(data.publicUrl);
+        }
+      } catch (err) {
+        console.error('Error getting public URL:', err);
+        setError('Failed to load video URL');
+        setIsLoading(false);
+      }
+    };
+
+    getPublicUrl();
 
     const loadAd = async () => {
       try {
@@ -59,7 +82,8 @@ export const VideoPlayer = ({
       errorCode: videoElement.error?.code,
       networkState: videoElement.networkState,
       readyState: videoElement.readyState,
-      videoUrl
+      videoUrl,
+      publicUrl
     });
     
     setError('Failed to load video. Please try again.');
@@ -69,6 +93,7 @@ export const VideoPlayer = ({
   const handleVideoLoaded = () => {
     console.log('VideoPlayer - Video loaded successfully:', {
       url: videoUrl,
+      publicUrl,
       duration: videoRef.current?.duration,
       readyState: videoRef.current?.readyState,
       networkState: videoRef.current?.networkState
@@ -87,6 +112,14 @@ export const VideoPlayer = ({
       });
     }
   };
+
+  if (!publicUrl) {
+    return (
+      <div className="flex items-center justify-center bg-black/10 w-full h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
@@ -116,7 +149,7 @@ export const VideoPlayer = ({
       ) : (
         <video
           ref={videoRef}
-          src={videoUrl}
+          src={publicUrl}
           className={className}
           controls={controls}
           autoPlay={autoPlay}
