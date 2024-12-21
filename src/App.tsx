@@ -7,6 +7,7 @@ import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
 import { AuthenticationWrapper } from "@/components/auth/AuthenticationWrapper";
 import { AppRoutes } from "@/components/routing/AppRoutes";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +19,12 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  useEffect(() => {
+    // Initialize theme from localStorage or default to dark
+    const theme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.classList.add(theme);
+  }, []);
+
   return (
     <SessionContextProvider 
       supabaseClient={supabase} 
