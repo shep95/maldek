@@ -62,12 +62,6 @@ export const VideoPlayer = ({
       currentSrc: videoElement.currentSrc,
       originalUrl: videoUrl,
       publicUrl,
-      videoElement: {
-        paused: videoElement.paused,
-        seeking: videoElement.seeking,
-        duration: videoElement.duration,
-        currentTime: videoElement.currentTime,
-      }
     });
     
     let errorMessage = 'Failed to load video. ';
@@ -90,7 +84,6 @@ export const VideoPlayer = ({
       duration: videoRef.current?.duration,
       readyState: videoRef.current?.readyState,
       networkState: videoRef.current?.networkState,
-      videoElement: videoRef.current
     });
     setIsLoading(false);
     setError(null);
@@ -98,7 +91,7 @@ export const VideoPlayer = ({
 
   if (isUrlLoading) {
     return (
-      <div className="flex items-center justify-center bg-black/10 w-full h-full">
+      <div className="flex items-center justify-center bg-black/10 w-full h-full min-h-[200px]">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
       </div>
     );
@@ -107,19 +100,19 @@ export const VideoPlayer = ({
   if (urlError || !publicUrl) {
     console.error('URL generation error:', { urlError, originalUrl: videoUrl });
     return (
-      <div className="flex items-center justify-center bg-black/80 text-white text-center p-4">
+      <div className="flex items-center justify-center bg-black/80 text-white text-center p-4 min-h-[200px]">
         <p>{urlError || 'Failed to load video URL'}</p>
       </div>
     );
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full bg-black rounded-lg overflow-hidden">
       <AspectRatio ratio={16 / 9}>
         <video
           ref={videoRef}
           src={publicUrl}
-          className={className}
+          className={`w-full h-full object-contain ${className}`}
           controls={controls}
           autoPlay={autoPlay}
           onError={handleVideoError}
