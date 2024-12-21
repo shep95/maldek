@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { useSession } from '@supabase/auth-helpers-react';
-import { toast } from "sonner";
 import { Play } from "lucide-react";
+import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
 import { VideoPlayer } from "./VideoPlayer";
 import { VideoMetadata } from "./VideoMetadata";
 import { cn } from "@/lib/utils";
@@ -23,22 +22,42 @@ export const VideoGrid = ({
   const session = useSession();
 
   const handleVideoClick = async (video: any) => {
+    console.log('Video clicked:', {
+      id: video.id,
+      title: video.title,
+      video_url: video.video_url,
+      storage_path: !video.video_url.startsWith('http') ? video.video_url : 'direct_url'
+    });
+    
     if (!video.video_url) {
+      console.error('No video URL found:', video);
       toast.error("Video URL not found");
       return;
     }
 
-    // Always generate a fresh public URL
+    // Get public URL if it's a storage path
     let publicUrl = video.video_url;
     if (!video.video_url.startsWith('http')) {
       const { data } = supabase.storage
         .from('videos')
         .getPublicUrl(video.video_url);
       publicUrl = data.publicUrl;
+      console.log('Generated public URL:', {
+        original: video.video_url,
+        public: publicUrl
+      });
     }
 
     onVideoSelect(publicUrl);
   };
+
+  // Log all videos on render for debugging
+  console.log('All videos:', videos.map(v => ({
+    id: v.id,
+    title: v.title,
+    video_url: v.video_url,
+    storage_path: !v.video_url.startsWith('http') ? v.video_url : 'direct_url'
+  })));
 
   return (
     <div className={cn(
@@ -48,7 +67,7 @@ export const VideoGrid = ({
         : "grid-cols-1"
     )}>
       {videos.map((video: any) => {
-        // Always generate fresh public URLs for thumbnails
+        // Get public URL for thumbnail
         let thumbnailUrl = video.thumbnail_url;
         if (!video.thumbnail_url.startsWith('http')) {
           const { data } = supabase.storage
@@ -66,12 +85,16 @@ export const VideoGrid = ({
             )}
             onClick={() => handleVideoClick(video)}
           >
-            <div className="relative cursor-pointer aspect-video">
+            <div className={cn(
+              "relative cursor-pointer",
+              viewMode === 'grid' ? "aspect-video" : "w-64 aspect-video"
+            )}>
               <img
                 src={thumbnailUrl}
                 alt={video.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
+                  console.error('Error loading thumbnail:', video.thumbnail_url);
                   e.currentTarget.src = '/placeholder.svg';
                 }}
               />
