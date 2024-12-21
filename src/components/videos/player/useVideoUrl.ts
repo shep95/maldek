@@ -10,6 +10,8 @@ export const useVideoUrl = (videoUrl: string) => {
     const getPublicUrl = async () => {
       try {
         console.log('Processing video URL:', videoUrl);
+        console.log('URL type:', typeof videoUrl);
+        console.log('URL length:', videoUrl?.length);
         
         if (!videoUrl) {
           console.error('Invalid video URL:', videoUrl);
@@ -27,17 +29,35 @@ export const useVideoUrl = (videoUrl: string) => {
           }
           setPublicUrl(videoUrl);
         } else {
-          // If it's a storage path, get the public URL
-          console.log('Getting public URL for storage path:', videoUrl);
-          const { data } = supabase.storage
+          // Clean the storage path by removing any leading slashes or spaces
+          const cleanPath = videoUrl.replace(/^\/+/, '').trim();
+          console.log('Original storage path:', videoUrl);
+          console.log('Cleaned storage path:', cleanPath);
+          
+          // Get the public URL from the posts bucket
+          const { data, error: storageError } = supabase.storage
             .from('posts')
-            .getPublicUrl(videoUrl);
+            .getPublicUrl(cleanPath);
+
+          if (storageError) {
+            console.error('Storage error:', storageError);
+            throw storageError;
+          }
 
           if (!data?.publicUrl) {
+            console.error('No public URL generated for path:', cleanPath);
             throw new Error('Failed to generate public URL');
           }
 
           console.log('Generated public URL:', data.publicUrl);
+          
+          // Verify the URL is accessible
+          const response = await fetch(data.publicUrl, { method: 'HEAD' });
+          if (!response.ok) {
+            console.error('URL not accessible:', response.status, response.statusText);
+            throw new Error(`URL not accessible: ${response.status}`);
+          }
+
           setPublicUrl(data.publicUrl);
         }
       } catch (err) {
