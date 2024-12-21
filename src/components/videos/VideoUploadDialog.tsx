@@ -8,8 +8,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "@supabase/auth-helpers-react";
-import { FileInputSection } from "./FileInputSection";
+import { FileInputSection } from "./upload/FileInputSection";
 import { UploadProgress } from "./UploadProgress";
+import { uploadVideoToSupabase } from "@/utils/videoUploadUtils";
 
 interface VideoUploadDialogProps {
   isOpen: boolean;
@@ -62,7 +63,6 @@ export const VideoUploadDialog = ({
 
   const handleUpload = async () => {
     if (!session?.user?.id) {
-      console.error('No user session found');
       toast.error("Please sign in to upload videos");
       return;
     }
@@ -77,65 +77,15 @@ export const VideoUploadDialog = ({
     console.log('Starting video upload process...');
 
     try {
-      // Upload video with progress tracking
-      const videoPath = `${session.user.id}/${Date.now()}_${videoFile.name}`;
-      console.log('Uploading video to path:', videoPath);
+      // Upload files to Supabase Storage
+      const { videoUrl, thumbnailUrl } = await uploadVideoToSupabase(
+        videoFile,
+        thumbnailFile,
+        session.user.id
+      );
 
-      const videoChunkSize = 1024 * 1024; // 1MB chunks
-      const totalChunks = Math.ceil(videoFile.size / videoChunkSize);
-      let uploadedChunks = 0;
-
-      for (let start = 0; start < videoFile.size; start += videoChunkSize) {
-        const chunk = videoFile.slice(start, start + videoChunkSize);
-        const chunkPath = `${videoPath}_chunk_${uploadedChunks}`;
-
-        const { error: chunkError } = await supabase.storage
-          .from('videos')
-          .upload(chunkPath, chunk, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (chunkError) {
-          throw new Error(`Failed to upload video chunk: ${chunkError.message}`);
-        }
-
-        uploadedChunks++;
-        const progress = (uploadedChunks / totalChunks) * 100;
-        setUploadProgress(progress);
-      }
-
-      // Upload thumbnail
-      const thumbnailPath = `${session.user.id}/thumbnails/${Date.now()}_${thumbnailFile.name}`;
-      console.log('Uploading thumbnail to path:', thumbnailPath);
-      
-      const { error: thumbnailError } = await supabase.storage
-        .from('videos')
-        .upload(thumbnailPath, thumbnailFile, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (thumbnailError) {
-        console.error('Thumbnail upload error:', thumbnailError);
-        throw new Error(`Failed to upload thumbnail: ${thumbnailError.message}`);
-      }
-
-      console.log('Thumbnail uploaded successfully');
-
-      // Get public URLs
-      const { data: { publicUrl: videoUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(videoPath);
-
-      const { data: { publicUrl: thumbnailUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(thumbnailPath);
-
-      console.log('Generated public URLs:', { videoUrl, thumbnailUrl });
-
-      // Create video record
-      const { data: newVideo, error: dbError } = await supabase
+      // Create video record in database
+      const { error: dbError } = await supabase
         .from('videos')
         .insert({
           user_id: session.user.id,
@@ -153,37 +103,24 @@ export const VideoUploadDialog = ({
         throw dbError;
       }
 
-      console.log('Video record created successfully:', newVideo);
-
-      // Create a notification for followers
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          recipient_id: session.user.id,
-          actor_id: session.user.id,
-          type: 'new_video',
-          post_id: newVideo.id // Using the video ID directly
-        });
-
-      if (notificationError) {
-        console.error('Error creating notification:', notificationError);
-        // Don't throw here, as the video upload was successful
-      }
-
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       toast.success("Video uploaded successfully!");
       onOpenChange(false);
-      setTitle("");
-      setDescription("");
-      setVideoFile(null);
-      setThumbnailFile(null);
-      setUploadProgress(0);
+      resetForm();
     } catch (error) {
-      console.error('Detailed upload error:', error);
+      console.error('Upload error:', error);
       toast.error(error.message || "Failed to upload video");
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setVideoFile(null);
+    setThumbnailFile(null);
+    setUploadProgress(0);
   };
 
   return (
@@ -240,7 +177,6 @@ export const VideoUploadDialog = ({
             {isUploading ? "Uploading..." : "Upload Video"}
           </Button>
         </div>
-        {/* Hidden video element for duration check */}
         <video ref={videoRef} className="hidden" />
       </DialogContent>
     </Dialog>
