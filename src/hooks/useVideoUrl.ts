@@ -29,12 +29,21 @@ export const useVideoUrl = (videoUrl: string | null) => {
         const cleanPath = videoUrl.replace(/^\/+/, '').trim();
         console.log('useVideoUrl: Getting public URL for path:', cleanPath);
 
-        const { data } = supabase.storage
+        // Get the public URL from Supabase storage
+        const { data, error: storageError } = supabase.storage
           .from('videos')
           .getPublicUrl(cleanPath);
 
-        if (!data?.publicUrl) {
+        if (storageError || !data?.publicUrl) {
+          console.error('useVideoUrl: Storage error:', storageError);
           throw new Error('Failed to generate video URL');
+        }
+
+        // Verify the URL is accessible
+        const response = await fetch(data.publicUrl, { method: 'HEAD' });
+        if (!response.ok) {
+          console.error('useVideoUrl: URL verification failed:', response.status);
+          throw new Error(`URL verification failed: ${response.status}`);
         }
 
         console.log('useVideoUrl: Generated public URL:', data.publicUrl);
