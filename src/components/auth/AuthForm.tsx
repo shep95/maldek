@@ -4,8 +4,13 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslatedText } from "@/hooks/useTranslatedText";
 
-export const AuthForm = () => {
-  const [view, setView] = useState<"sign_in" | "sign_up">("sign_in");
+interface AuthFormProps {
+  isLogin: boolean;
+  onSubmit: (formData: { email: string; password: string; username?: string }) => Promise<void>;
+}
+
+export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
+  const [view, setView] = useState<"sign_in" | "sign_up">(isLogin ? "sign_in" : "sign_up");
   const signInText = useTranslatedText("Sign in");
   const signUpText = useTranslatedText("Sign up");
   const welcomeText = useTranslatedText("Welcome back");
