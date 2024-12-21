@@ -21,6 +21,8 @@ export const VideoPlayer = ({
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   
+  console.log('VideoPlayer: Initial videoUrl:', videoUrl);
+  
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
   const handleDownload = async () => {
@@ -58,21 +60,37 @@ export const VideoPlayer = ({
       networkState: videoElement.networkState,
       readyState: videoElement.readyState,
       currentSrc: videoElement.currentSrc,
-      videoUrl,
-      publicUrl
+      originalUrl: videoUrl,
+      publicUrl,
+      videoElement: {
+        paused: videoElement.paused,
+        seeking: videoElement.seeking,
+        duration: videoElement.duration,
+        currentTime: videoElement.currentTime,
+      }
     });
     
-    setError('Failed to load video. Please try again.');
+    let errorMessage = 'Failed to load video. ';
+    if (videoElement.error?.code === 4) {
+      errorMessage += 'Format not supported.';
+    } else if (videoElement.networkState === 3) {
+      errorMessage += 'Network error.';
+    } else {
+      errorMessage += 'Please try again.';
+    }
+    
+    setError(errorMessage);
     setIsLoading(false);
   };
 
   const handleVideoLoaded = () => {
     console.log('Video loaded successfully:', {
-      url: videoUrl,
+      originalUrl: videoUrl,
       publicUrl,
       duration: videoRef.current?.duration,
       readyState: videoRef.current?.readyState,
-      networkState: videoRef.current?.networkState
+      networkState: videoRef.current?.networkState,
+      videoElement: videoRef.current
     });
     setIsLoading(false);
     setError(null);
@@ -87,6 +105,7 @@ export const VideoPlayer = ({
   }
 
   if (urlError || !publicUrl) {
+    console.error('URL generation error:', { urlError, originalUrl: videoUrl });
     return (
       <div className="flex items-center justify-center bg-black/80 text-white text-center p-4">
         <p>{urlError || 'Failed to load video URL'}</p>

@@ -16,16 +16,18 @@ export const useVideoUrl = (videoUrl: string | null) => {
           throw new Error('Invalid video URL');
         }
 
+        console.log('useVideoUrl: Processing URL:', videoUrl);
+
         // If it's already a public URL, use it directly
         if (videoUrl.startsWith('http')) {
-          console.log('Using direct URL:', videoUrl);
+          console.log('useVideoUrl: Using direct URL:', videoUrl);
           setPublicUrl(videoUrl);
           return;
         }
 
         // Clean the path and ensure it's properly formatted
         const cleanPath = videoUrl.replace(/^\/+/, '').trim();
-        console.log('Getting public URL for path:', cleanPath);
+        console.log('useVideoUrl: Getting public URL for path:', cleanPath);
 
         const { data } = supabase.storage
           .from('videos')
@@ -35,10 +37,14 @@ export const useVideoUrl = (videoUrl: string | null) => {
           throw new Error('Failed to generate video URL');
         }
 
-        console.log('Generated public URL:', data.publicUrl);
+        console.log('useVideoUrl: Generated public URL:', data.publicUrl);
         setPublicUrl(data.publicUrl);
       } catch (err) {
-        console.error('Error getting video URL:', err);
+        console.error('useVideoUrl: Error getting video URL:', {
+          error: err,
+          originalUrl: videoUrl,
+          message: err instanceof Error ? err.message : 'Failed to load video URL'
+        });
         setError(err instanceof Error ? err.message : 'Failed to load video URL');
       } finally {
         setIsLoading(false);
