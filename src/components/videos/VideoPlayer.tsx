@@ -25,7 +25,7 @@ export const VideoPlayer = ({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    console.log('VideoPlayer - Loading video:', videoUrl);
+    console.log('VideoPlayer - Initial videoUrl:', videoUrl);
     setIsLoading(true);
     setError(null);
 
@@ -61,20 +61,14 @@ export const VideoPlayer = ({
           console.log('Generated public URL:', data.publicUrl);
           setPublicUrl(data.publicUrl);
 
-          // Verify the URL is accessible
-          try {
-            const response = await fetch(data.publicUrl, { method: 'HEAD' });
-            if (!response.ok) {
-              console.error('Video URL not accessible:', response.status);
-              setError('Video file not accessible');
-              setIsLoading(false);
-              return;
-            }
-          } catch (fetchError) {
-            console.error('Error checking video accessibility:', fetchError);
-            setError('Video file not accessible');
-            setIsLoading(false);
-            return;
+          // Log the actual video element state
+          if (videoRef.current) {
+            console.log('Video element state:', {
+              readyState: videoRef.current.readyState,
+              networkState: videoRef.current.networkState,
+              error: videoRef.current.error,
+              src: videoRef.current.src
+            });
           }
         }
       } catch (err) {
@@ -111,6 +105,7 @@ export const VideoPlayer = ({
       errorCode: videoElement.error?.code,
       networkState: videoElement.networkState,
       readyState: videoElement.readyState,
+      currentSrc: videoElement.currentSrc,
       videoUrl,
       publicUrl
     });
@@ -162,7 +157,7 @@ export const VideoPlayer = ({
             onError={handleVideoError}
             onLoadedData={handleVideoLoaded}
             playsInline
-            preload="metadata"
+            preload="auto"
           />
           <Button
             className="absolute bottom-4 right-4 gap-2 bg-accent hover:bg-accent/90"
@@ -185,7 +180,7 @@ export const VideoPlayer = ({
           onError={handleVideoError}
           onLoadedData={handleVideoLoaded}
           playsInline
-          preload="metadata"
+          preload="auto"
           crossOrigin="anonymous"
         />
       )}
