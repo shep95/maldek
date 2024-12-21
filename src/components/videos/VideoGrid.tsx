@@ -22,7 +22,12 @@ export const VideoGrid = ({
   const session = useSession();
 
   const handleVideoClick = async (video: any) => {
-    console.log('Video clicked:', video);
+    console.log('Video clicked:', {
+      id: video.id,
+      title: video.title,
+      video_url: video.video_url,
+      storage_path: !video.video_url.startsWith('http') ? video.video_url : 'direct_url'
+    });
     
     if (!video.video_url) {
       console.error('No video URL found:', video);
@@ -37,10 +42,22 @@ export const VideoGrid = ({
         .from('videos')
         .getPublicUrl(video.video_url);
       publicUrl = data.publicUrl;
+      console.log('Generated public URL:', {
+        original: video.video_url,
+        public: publicUrl
+      });
     }
 
     onVideoSelect(publicUrl);
   };
+
+  // Log all videos on render for debugging
+  console.log('All videos:', videos.map(v => ({
+    id: v.id,
+    title: v.title,
+    video_url: v.video_url,
+    storage_path: !v.video_url.startsWith('http') ? v.video_url : 'direct_url'
+  })));
 
   return (
     <div className={cn(
