@@ -23,8 +23,9 @@ export const useVideoUrl = (videoUrl: string) => {
           const cleanPath = videoUrl.replace(/^\/+/, '').trim();
           console.log('Cleaned video path:', cleanPath);
           
+          // Use 'posts' bucket instead of 'videos'
           const { data } = supabase.storage
-            .from('videos')
+            .from('posts')
             .getPublicUrl(cleanPath);
 
           if (!data?.publicUrl) {
