@@ -24,12 +24,24 @@ export const VideoPlayer = ({
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
+  // Log URL generation process
+  console.log('Video URL Processing:', {
+    originalUrl: videoUrl,
+    publicUrl,
+    urlError,
+    isUrlLoading
+  });
+
   const handleDownload = async () => {
     if (!publicUrl) return;
     
     try {
       const response = await fetch(publicUrl);
       const blob = await response.blob();
+      console.log('Download blob:', {
+        type: blob.type,
+        size: blob.size
+      });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -61,6 +73,12 @@ export const VideoPlayer = ({
       currentSrc: videoElement.currentSrc,
       originalUrl: videoUrl,
       publicUrl,
+      videoType: videoElement.canPlayType('video/mp4'),
+      supportedTypes: {
+        mp4: videoElement.canPlayType('video/mp4'),
+        webm: videoElement.canPlayType('video/webm'),
+        ogg: videoElement.canPlayType('video/ogg')
+      }
     });
     
     let errorMessage = 'Failed to load video. ';
@@ -74,6 +92,22 @@ export const VideoPlayer = ({
     
     setError(errorMessage);
     setIsLoading(false);
+  };
+
+  const handleVideoLoaded = () => {
+    const video = videoRef.current;
+    console.log('Video loaded successfully:', {
+      originalUrl: videoUrl,
+      publicUrl,
+      duration: video?.duration,
+      readyState: video?.readyState,
+      networkState: video?.networkState,
+      videoWidth: video?.videoWidth,
+      videoHeight: video?.videoHeight,
+      currentSrc: video?.currentSrc
+    });
+    setIsLoading(false);
+    setError(null);
   };
 
   if (isUrlLoading) {
@@ -95,7 +129,7 @@ export const VideoPlayer = ({
 
   return (
     <div className="relative w-full bg-black rounded-lg overflow-hidden">
-      {/* Video Controls - Moved to top */}
+      {/* Video Controls - Top left */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <Button
           variant="ghost"
@@ -124,7 +158,7 @@ export const VideoPlayer = ({
           className={`w-full h-full object-contain ${className}`}
           controls={controls}
           onError={handleVideoError}
-          onLoadedData={() => setIsLoading(false)}
+          onLoadedData={handleVideoLoaded}
           playsInline
           preload="auto"
           crossOrigin="anonymous"
