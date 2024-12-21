@@ -2,7 +2,8 @@ import { useState, useRef } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Download, ExternalLink } from "lucide-react";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -20,8 +21,6 @@ export const VideoPlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
-  console.log('VideoPlayer: Initial videoUrl:', videoUrl);
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
@@ -41,7 +40,7 @@ export const VideoPlayer = ({
       document.body.removeChild(a);
     } catch (err) {
       console.error('Download error:', err);
-      toast.error('Failed to download video');
+      setError('Failed to download video');
     }
   };
 
@@ -108,6 +107,28 @@ export const VideoPlayer = ({
 
   return (
     <div className="relative w-full bg-black rounded-lg overflow-hidden">
+      {/* Video Controls - Moved to top */}
+      <div className="absolute top-4 left-4 z-10 flex gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="bg-black/50 hover:bg-black/70 text-white"
+          onClick={handleDownload}
+          title="Download video"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="bg-black/50 hover:bg-black/70 text-white"
+          onClick={handleOpenOriginal}
+          title="Open in new tab"
+        >
+          <ExternalLink className="h-4 w-4" />
+        </Button>
+      </div>
+
       <AspectRatio ratio={16 / 9}>
         <video
           ref={videoRef}
@@ -122,12 +143,6 @@ export const VideoPlayer = ({
           crossOrigin="anonymous"
         />
       </AspectRatio>
-
-      <VideoControls
-        onDownload={handleDownload}
-        onOpenOriginal={handleOpenOriginal}
-        onClose={() => {}}
-      />
 
       {isLoading && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/10">
