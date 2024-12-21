@@ -1,0 +1,78 @@
+/* Mobile-First Dialog */
+@layer components {
+  .mobile-dialog {
+    @apply fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4;
+  }
+  
+  .mobile-dialog-content {
+    @apply w-full sm:max-w-lg rounded-t-lg sm:rounded-lg bg-card p-6 shadow-lg;
+  }
+  
+  .mobile-menu {
+    @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 sm:relative sm:border-none sm:p-0;
+  }
+}
+
+/* Touch-Friendly Controls */
+@layer components {
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+  
+  .touch-list {
+    @apply space-y-2;
+  }
+  
+  .touch-list > * {
+    @apply min-h-[44px] flex items-center;
+  }
+}
+
+/* Responsive Images */
+.responsive-image {
+  @apply w-full h-auto object-cover;
+  aspect-ratio: 16/9;
+}
+
+/* Responsive Tables */
+.responsive-table-container {
+  @apply w-full overflow-x-auto -mx-4 sm:mx-0;
+}
+
+.responsive-table {
+  @apply min-w-full divide-y divide-border;
+}
+
+/* Responsive Forms */
+.responsive-form {
+  @apply space-y-4 sm:space-y-6;
+}
+
+.responsive-form-group {
+  @apply flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4;
+}
+
+.responsive-form-input {
+  @apply w-full sm:w-auto flex-grow;
+}
+
+/* Mobile Navigation */
+.mobile-nav {
+  @apply fixed bottom-0 left-0 right-0 bg-card border-t border-border md:hidden;
+}
+
+.mobile-nav-content {
+  @apply flex justify-around items-center p-4;
+}
+
+/* Hide scrollbar for mobile */
+@media (max-width: 640px) {
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
