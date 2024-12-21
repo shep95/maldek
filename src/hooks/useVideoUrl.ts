@@ -30,23 +30,27 @@ export const useVideoUrl = (videoUrl: string | null) => {
         console.log('useVideoUrl: Getting public URL for path:', cleanPath);
 
         // Get the public URL from Supabase storage
-        const { data, error: storageError } = supabase.storage
+        const { data } = supabase.storage
           .from('videos')
           .getPublicUrl(cleanPath);
 
-        if (storageError || !data?.publicUrl) {
-          console.error('useVideoUrl: Storage error:', storageError);
+        if (!data?.publicUrl) {
+          console.error('useVideoUrl: Failed to generate URL');
           throw new Error('Failed to generate video URL');
         }
 
-        // Verify the URL is accessible
+        // Log the MIME type and format information
+        console.log('useVideoUrl: Generated public URL:', data.publicUrl);
+        
+        // Try to fetch video metadata
         const response = await fetch(data.publicUrl, { method: 'HEAD' });
-        if (!response.ok) {
-          console.error('useVideoUrl: URL verification failed:', response.status);
-          throw new Error(`URL verification failed: ${response.status}`);
+        const contentType = response.headers.get('content-type');
+        console.log('useVideoUrl: Content-Type:', contentType);
+
+        if (!contentType?.startsWith('video/')) {
+          throw new Error('Invalid video format. Please convert to MP4.');
         }
 
-        console.log('useVideoUrl: Generated public URL:', data.publicUrl);
         setPublicUrl(data.publicUrl);
       } catch (err) {
         console.error('useVideoUrl: Error getting video URL:', {
