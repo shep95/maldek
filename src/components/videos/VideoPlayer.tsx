@@ -65,7 +65,7 @@ export const VideoPlayer = ({
     
     let errorMessage = 'Failed to load video. ';
     if (videoElement.error?.code === 4) {
-      errorMessage += 'Format not supported.';
+      errorMessage += 'Format not supported. Please try converting the video to MP4.';
     } else if (videoElement.networkState === 3) {
       errorMessage += 'Network error.';
     } else {
@@ -74,18 +74,6 @@ export const VideoPlayer = ({
     
     setError(errorMessage);
     setIsLoading(false);
-  };
-
-  const handleVideoLoaded = () => {
-    console.log('Video loaded successfully:', {
-      originalUrl: videoUrl,
-      publicUrl,
-      duration: videoRef.current?.duration,
-      readyState: videoRef.current?.readyState,
-      networkState: videoRef.current?.networkState,
-    });
-    setIsLoading(false);
-    setError(null);
   };
 
   if (isUrlLoading) {
@@ -135,12 +123,12 @@ export const VideoPlayer = ({
           src={publicUrl}
           className={`w-full h-full object-contain ${className}`}
           controls={controls}
-          autoPlay={autoPlay}
           onError={handleVideoError}
-          onLoadedData={handleVideoLoaded}
+          onLoadedData={() => setIsLoading(false)}
           playsInline
           preload="auto"
           crossOrigin="anonymous"
+          autoPlay={autoPlay}
         />
       </AspectRatio>
 
