@@ -24,14 +24,6 @@ export const VideoPlayer = ({
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
-  // Log URL generation process
-  console.log('Video URL Processing:', {
-    originalUrl: videoUrl,
-    publicUrl,
-    urlError,
-    isUrlLoading
-  });
-
   const handleDownload = async () => {
     if (!publicUrl) return;
     
@@ -129,7 +121,6 @@ export const VideoPlayer = ({
 
   return (
     <div className="relative w-full bg-black rounded-lg overflow-hidden">
-      {/* Video Controls - Top left */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <Button
           variant="ghost"

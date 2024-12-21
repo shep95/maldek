@@ -18,9 +18,18 @@ export const useVideoUrl = (videoUrl: string | null) => {
 
         console.log('useVideoUrl: Processing URL:', videoUrl);
 
-        // If it's already a public URL, use it directly
+        // If it's already a public URL, verify it's accessible and is MP4
         if (videoUrl.startsWith('http')) {
-          console.log('useVideoUrl: Using direct URL:', videoUrl);
+          console.log('useVideoUrl: Verifying direct URL:', videoUrl);
+          const response = await fetch(videoUrl, { method: 'HEAD' });
+          const contentType = response.headers.get('content-type');
+          
+          console.log('useVideoUrl: Content-Type:', contentType);
+          
+          if (!contentType?.includes('mp4')) {
+            throw new Error('Invalid video format. Please convert to MP4.');
+          }
+          
           setPublicUrl(videoUrl);
           return;
         }
@@ -39,18 +48,17 @@ export const useVideoUrl = (videoUrl: string | null) => {
           throw new Error('Failed to generate video URL');
         }
 
-        // Log the MIME type and format information
-        console.log('useVideoUrl: Generated public URL:', data.publicUrl);
-        
-        // Try to fetch video metadata
+        // Verify the URL is accessible and is MP4
         const response = await fetch(data.publicUrl, { method: 'HEAD' });
         const contentType = response.headers.get('content-type');
-        console.log('useVideoUrl: Content-Type:', contentType);
-
-        if (!contentType?.startsWith('video/')) {
+        
+        console.log('useVideoUrl: Generated URL Content-Type:', contentType);
+        
+        if (!contentType?.includes('mp4')) {
           throw new Error('Invalid video format. Please convert to MP4.');
         }
 
+        console.log('useVideoUrl: Generated public URL:', data.publicUrl);
         setPublicUrl(data.publicUrl);
       } catch (err) {
         console.error('useVideoUrl: Error getting video URL:', {

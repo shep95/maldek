@@ -45,7 +45,7 @@ export const compressVideo = async (file: File): Promise<File> => {
     console.log('Writing file to FFmpeg filesystem...');
     await ffmpeg.writeFile(inputFileName, await fetchFile(file));
 
-    // Convert to MP4 with H.264 codec
+    // Convert to MP4 with H.264 codec and AAC audio
     await ffmpeg.exec([
       '-i', inputFileName,
       '-c:v', 'libx264',
@@ -53,6 +53,7 @@ export const compressVideo = async (file: File): Promise<File> => {
       '-crf', '23',
       '-c:a', 'aac',
       '-movflags', '+faststart',
+      '-f', 'mp4',
       '-y', outputFileName
     ]);
 
