@@ -23,52 +23,22 @@ export const VideoGrid = ({
   const session = useSession();
 
   const handleVideoClick = async (video: any) => {
-    console.log('Video clicked:', {
-      id: video.id,
-      title: video.title,
-      video_url: video.video_url,
-      storage_path: !video.video_url.startsWith('http') ? video.video_url : 'direct_url',
-      full_details: video
-    });
-    
     if (!video.video_url) {
-      console.error('No video URL found:', video);
       toast.error("Video URL not found");
       return;
     }
 
-    // Get public URL if it's a storage path
+    // Always generate a fresh public URL
     let publicUrl = video.video_url;
     if (!video.video_url.startsWith('http')) {
       const { data } = supabase.storage
         .from('videos')
         .getPublicUrl(video.video_url);
       publicUrl = data.publicUrl;
-      console.log('Generated public URL:', {
-        original: video.video_url,
-        public: publicUrl,
-        bucket: 'videos',
-        isStoragePath: true
-      });
-    } else {
-      console.log('Using direct URL:', {
-        url: publicUrl,
-        isStoragePath: false
-      });
     }
 
     onVideoSelect(publicUrl);
   };
-
-  // Log all videos on render for debugging
-  console.log('All videos:', videos.map(v => ({
-    id: v.id,
-    title: v.title,
-    video_url: v.video_url,
-    storage_path: !v.video_url.startsWith('http') ? v.video_url : 'direct_url',
-    created_at: v.created_at,
-    user_id: v.user_id
-  })));
 
   return (
     <div className={cn(
@@ -78,7 +48,7 @@ export const VideoGrid = ({
         : "grid-cols-1"
     )}>
       {videos.map((video: any) => {
-        // Get public URL for thumbnail
+        // Always generate fresh public URLs for thumbnails
         let thumbnailUrl = video.thumbnail_url;
         if (!video.thumbnail_url.startsWith('http')) {
           const { data } = supabase.storage
@@ -86,15 +56,6 @@ export const VideoGrid = ({
             .getPublicUrl(video.thumbnail_url);
           thumbnailUrl = data.publicUrl;
         }
-
-        // Log individual video details
-        console.log(`Processing video "${video.title}":`, {
-          id: video.id,
-          video_url: video.video_url,
-          thumbnail_url: thumbnailUrl,
-          original_thumbnail: video.thumbnail_url,
-          storage_path: !video.video_url.startsWith('http') ? video.video_url : 'direct_url'
-        });
 
         return (
           <div
@@ -111,7 +72,6 @@ export const VideoGrid = ({
                 alt={video.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  console.error('Error loading thumbnail:', video.thumbnail_url);
                   e.currentTarget.src = '/placeholder.svg';
                 }}
               />
