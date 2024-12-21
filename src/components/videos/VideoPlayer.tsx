@@ -47,12 +47,12 @@ export const VideoPlayer = ({
           const cleanPath = videoUrl.replace(/^\/+/, '').trim();
           console.log('Cleaned video path:', cleanPath);
           
-          const { data, error: urlError } = supabase.storage
+          const { data } = supabase.storage
             .from('videos')
             .getPublicUrl(cleanPath);
 
-          if (urlError) {
-            console.error('Error generating public URL:', urlError);
+          if (!data?.publicUrl) {
+            console.error('Failed to generate public URL');
             setError('Failed to generate video URL');
             setIsLoading(false);
             return;
@@ -62,9 +62,16 @@ export const VideoPlayer = ({
           setPublicUrl(data.publicUrl);
 
           // Verify the URL is accessible
-          const response = await fetch(data.publicUrl, { method: 'HEAD' });
-          if (!response.ok) {
-            console.error('Video URL not accessible:', response.status);
+          try {
+            const response = await fetch(data.publicUrl, { method: 'HEAD' });
+            if (!response.ok) {
+              console.error('Video URL not accessible:', response.status);
+              setError('Video file not accessible');
+              setIsLoading(false);
+              return;
+            }
+          } catch (fetchError) {
+            console.error('Error checking video accessibility:', fetchError);
             setError('Video file not accessible');
             setIsLoading(false);
             return;
