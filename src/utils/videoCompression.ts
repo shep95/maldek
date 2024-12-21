@@ -45,17 +45,23 @@ export const compressVideo = async (file: File): Promise<File> => {
     console.log('Writing file to FFmpeg filesystem...');
     await ffmpeg.writeFile(inputFileName, await fetchFile(file));
 
-    // Convert to MP4 with H.264 codec and AAC audio
-    await ffmpeg.exec([
+    // Enhanced MP4 conversion with better compatibility
+    const ffmpegArgs = [
       '-i', inputFileName,
-      '-c:v', 'libx264',
-      '-preset', 'fast',
-      '-crf', '23',
-      '-c:a', 'aac',
-      '-movflags', '+faststart',
-      '-f', 'mp4',
-      '-y', outputFileName
-    ]);
+      '-c:v', 'libx264',     // Video codec: H.264
+      '-preset', 'fast',     // Encoding speed preset
+      '-crf', '23',         // Constant Rate Factor (quality)
+      '-c:a', 'aac',        // Audio codec: AAC
+      '-b:a', '128k',       // Audio bitrate
+      '-movflags', '+faststart',  // Enable fast start for web playback
+      '-pix_fmt', 'yuv420p',     // Pixel format for better compatibility
+      '-f', 'mp4',          // Force MP4 format
+      '-y',                 // Overwrite output file
+      outputFileName
+    ];
+
+    console.log('Running FFmpeg with args:', ffmpegArgs.join(' '));
+    await ffmpeg.exec(ffmpegArgs);
 
     console.log('Reading compressed file...');
     const data = await ffmpeg.readFile(outputFileName);
@@ -67,7 +73,8 @@ export const compressVideo = async (file: File): Promise<File> => {
     console.log('Video conversion complete:', {
       originalSize: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
       compressedSize: `${(compressedFile.size / (1024 * 1024)).toFixed(2)}MB`,
-      outputFormat: 'MP4'
+      outputFormat: 'MP4',
+      mimeType: compressedFile.type
     });
 
     toast.success('Video converted to MP4 format!');
