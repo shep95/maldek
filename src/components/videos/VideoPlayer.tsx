@@ -42,9 +42,11 @@ export const VideoPlayer = ({
         if (videoUrl.startsWith('http')) {
           setPublicUrl(videoUrl);
         } else {
+          // Remove any leading slashes
+          const cleanPath = videoUrl.replace(/^\/+/, '');
           const { data } = supabase.storage
             .from('videos')
-            .getPublicUrl(videoUrl);
+            .getPublicUrl(cleanPath);
           console.log('Generated public URL:', data.publicUrl);
           setPublicUrl(data.publicUrl);
         }
