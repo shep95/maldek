@@ -97,26 +97,30 @@ export const moderateContent = async (file: File): Promise<{ isValid: boolean; e
 };
 
 export const validateMediaFile = async (file: File): Promise<{ isValid: boolean; error?: string }> => {
-  const maxSize = 50 * 1024 * 1024; // 50MB
+  const maxSize = 100 * 1024 * 1024; // 100MB
   
   if (file.size > maxSize) {
     return {
       isValid: false,
-      error: `File size must be less than 50MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
+      error: `File size must be less than 100MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
     };
   }
   
-  const allowedTypes = [
+  // Accept any video/* MIME type
+  if (file.type.startsWith('video/')) {
+    console.log('Valid video file detected:', file.type);
+    return { isValid: true };
+  }
+  
+  // For images, keep the existing allowed types
+  const allowedImageTypes = [
     'image/jpeg',
     'image/png',
     'image/gif',
-    'image/webp',
-    'video/mp4',
-    'video/webm',
-    'video/ogg'
+    'image/webp'
   ];
   
-  if (!allowedTypes.includes(file.type)) {
+  if (!file.type.startsWith('video/') && !allowedImageTypes.includes(file.type)) {
     return {
       isValid: false,
       error: `File type ${file.type} is not supported`

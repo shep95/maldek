@@ -36,7 +36,7 @@ export const compressVideo = async (file: File): Promise<File> => {
 
   try {
     console.log('Initializing compression...');
-    toast.info('Converting video to MP4 format...');
+    toast.info('Converting video format...');
     
     const ffmpeg = await loadFFmpeg();
     const inputFileName = 'input' + file.name.substring(file.name.lastIndexOf('.'));
@@ -49,14 +49,14 @@ export const compressVideo = async (file: File): Promise<File> => {
     const ffmpegArgs = [
       '-i', inputFileName,
       '-c:v', 'libx264',     // Video codec: H.264
-      '-preset', 'fast',     // Encoding speed preset
-      '-crf', '23',         // Constant Rate Factor (quality)
-      '-c:a', 'aac',        // Audio codec: AAC
-      '-b:a', '128k',       // Audio bitrate
+      '-preset', 'ultrafast', // Fastest encoding preset
+      '-crf', '28',          // Slightly lower quality for faster encoding
+      '-c:a', 'aac',         // Audio codec: AAC
+      '-b:a', '128k',        // Audio bitrate
       '-movflags', '+faststart',  // Enable fast start for web playback
-      '-pix_fmt', 'yuv420p',     // Pixel format for better compatibility
-      '-f', 'mp4',          // Force MP4 format
-      '-y',                 // Overwrite output file
+      '-pix_fmt', 'yuv420p', // Pixel format for better compatibility
+      '-f', 'mp4',           // Force MP4 format
+      '-y',                  // Overwrite output file
       outputFileName
     ];
 
@@ -77,11 +77,11 @@ export const compressVideo = async (file: File): Promise<File> => {
       mimeType: compressedFile.type
     });
 
-    toast.success('Video converted to MP4 format!');
+    toast.success('Video converted successfully!');
     return compressedFile;
   } catch (error) {
     console.error('Video compression error:', error);
-    toast.error('Failed to convert video. Please try uploading an MP4 file.');
+    toast.error('Failed to convert video. Please try again.');
     throw error;
   }
 };
