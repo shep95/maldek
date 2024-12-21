@@ -6,7 +6,9 @@ import { processImageFile, saveDraft } from "@/utils/postUploadUtils";
 import { compressVideo } from "@/utils/videoCompression";
 import { isVideoFile } from "@/utils/mediaUtils";
 import type { Author } from "@/utils/postUtils";
-import type { PostData } from "../types/postTypes";
+import type { Database } from "@/integrations/supabase/types";
+
+type PostData = Database['public']['Tables']['posts']['Insert'];
 
 export const usePostCreation = (
   currentUser: Author,
