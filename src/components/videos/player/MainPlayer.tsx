@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 interface MainPlayerProps {
   videoUrl: string;
@@ -19,7 +19,29 @@ export const MainPlayer = ({
 }: MainPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  console.log('MainPlayer - Rendering with URL:', videoUrl);
+  useEffect(() => {
+    console.log('MainPlayer - Rendering with URL:', videoUrl);
+    
+    // Log video element state changes
+    const video = videoRef.current;
+    if (video) {
+      video.addEventListener('loadstart', () => console.log('Video loadstart'));
+      video.addEventListener('loadedmetadata', () => console.log('Video loadedmetadata'));
+      video.addEventListener('canplay', () => console.log('Video canplay'));
+      video.addEventListener('playing', () => console.log('Video playing'));
+      video.addEventListener('error', (e) => console.error('Video error:', e));
+    }
+
+    return () => {
+      if (video) {
+        video.removeEventListener('loadstart', () => {});
+        video.removeEventListener('loadedmetadata', () => {});
+        video.removeEventListener('canplay', () => {});
+        video.removeEventListener('playing', () => {});
+        video.removeEventListener('error', () => {});
+      }
+    };
+  }, [videoUrl]);
 
   return (
     <video

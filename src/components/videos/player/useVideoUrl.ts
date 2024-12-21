@@ -9,6 +9,8 @@ export const useVideoUrl = (videoUrl: string) => {
   useEffect(() => {
     const getPublicUrl = async () => {
       try {
+        console.log('Processing video URL:', videoUrl);
+        
         if (!videoUrl) {
           console.error('Invalid video URL:', videoUrl);
           setError('Invalid video URL');
@@ -16,40 +18,30 @@ export const useVideoUrl = (videoUrl: string) => {
           return;
         }
 
+        // If it's already a public URL, use it directly
         if (videoUrl.startsWith('http')) {
           console.log('Using direct URL:', videoUrl);
+          const response = await fetch(videoUrl, { method: 'HEAD' });
+          if (!response.ok) {
+            throw new Error(`URL not accessible: ${response.status}`);
+          }
           setPublicUrl(videoUrl);
         } else {
-          const cleanPath = videoUrl.replace(/^\/+/, '').trim();
-          console.log('Cleaned video path:', cleanPath);
-          
-          // Use 'posts' bucket instead of 'videos'
+          // If it's a storage path, get the public URL
+          console.log('Getting public URL for storage path:', videoUrl);
           const { data } = supabase.storage
             .from('posts')
-            .getPublicUrl(cleanPath);
+            .getPublicUrl(videoUrl);
 
           if (!data?.publicUrl) {
-            console.error('Failed to generate public URL');
-            setError('Failed to generate video URL');
-            setIsLoading(false);
-            return;
+            throw new Error('Failed to generate public URL');
           }
 
-          // Verify URL accessibility
-          try {
-            const response = await fetch(data.publicUrl, { method: 'HEAD' });
-            if (!response.ok) {
-              throw new Error(`URL not accessible: ${response.status}`);
-            }
-            console.log('Video URL is accessible:', data.publicUrl);
-            setPublicUrl(data.publicUrl);
-          } catch (err) {
-            console.error('Error verifying video URL:', err);
-            setError('Video file not accessible');
-          }
+          console.log('Generated public URL:', data.publicUrl);
+          setPublicUrl(data.publicUrl);
         }
       } catch (err) {
-        console.error('Error getting public URL:', err);
+        console.error('Error getting video URL:', err);
         setError('Failed to load video URL');
       } finally {
         setIsLoading(false);
