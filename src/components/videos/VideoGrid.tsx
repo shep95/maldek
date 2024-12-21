@@ -1,5 +1,5 @@
-import { Play } from "lucide-react";
-import { useSession } from "@supabase/auth-helpers-react";
+import { useState } from "react";
+import { useSession } from '@supabase/auth-helpers-react';
 import { toast } from "sonner";
 import { VideoPlayer } from "./VideoPlayer";
 import { VideoMetadata } from "./VideoMetadata";
@@ -26,7 +26,8 @@ export const VideoGrid = ({
       id: video.id,
       title: video.title,
       video_url: video.video_url,
-      storage_path: !video.video_url.startsWith('http') ? video.video_url : 'direct_url'
+      storage_path: !video.video_url.startsWith('http') ? video.video_url : 'direct_url',
+      full_details: video
     });
     
     if (!video.video_url) {
@@ -44,7 +45,14 @@ export const VideoGrid = ({
       publicUrl = data.publicUrl;
       console.log('Generated public URL:', {
         original: video.video_url,
-        public: publicUrl
+        public: publicUrl,
+        bucket: 'videos',
+        isStoragePath: true
+      });
+    } else {
+      console.log('Using direct URL:', {
+        url: publicUrl,
+        isStoragePath: false
       });
     }
 
@@ -56,7 +64,9 @@ export const VideoGrid = ({
     id: v.id,
     title: v.title,
     video_url: v.video_url,
-    storage_path: !v.video_url.startsWith('http') ? v.video_url : 'direct_url'
+    storage_path: !v.video_url.startsWith('http') ? v.video_url : 'direct_url',
+    created_at: v.created_at,
+    user_id: v.user_id
   })));
 
   return (
@@ -76,6 +86,14 @@ export const VideoGrid = ({
           thumbnailUrl = data.publicUrl;
         }
 
+        // Log individual video details
+        console.log(`Processing video "${video.title}":`, {
+          id: video.id,
+          video_url: video.video_url,
+          thumbnail_url: thumbnailUrl,
+          original_thumbnail: video.thumbnail_url
+        });
+
         return (
           <div
             key={video.id}
@@ -85,10 +103,7 @@ export const VideoGrid = ({
             )}
             onClick={() => handleVideoClick(video)}
           >
-            <div className={cn(
-              "relative cursor-pointer",
-              viewMode === 'grid' ? "aspect-video" : "w-64 aspect-video"
-            )}>
+            <div className="relative cursor-pointer aspect-video">
               <img
                 src={thumbnailUrl}
                 alt={video.title}
