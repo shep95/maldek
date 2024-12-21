@@ -35,14 +35,9 @@ export const useVideoUrl = (videoUrl: string) => {
           console.log('Cleaned storage path:', cleanPath);
           
           // Get the public URL from the posts bucket
-          const { data, error: storageError } = supabase.storage
+          const { data } = supabase.storage
             .from('posts')
             .getPublicUrl(cleanPath);
-
-          if (storageError) {
-            console.error('Storage error:', storageError);
-            throw storageError;
-          }
 
           if (!data?.publicUrl) {
             console.error('No public URL generated for path:', cleanPath);
