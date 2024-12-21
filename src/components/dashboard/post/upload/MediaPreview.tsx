@@ -10,11 +10,19 @@ interface MediaPreviewProps {
   onMediaClick?: (url: string) => void;
   isLoading: boolean;
   hasError: boolean;
+  onLoad?: () => void;
+  onError?: () => void;
 }
 
-export const MediaPreview = ({ url, onRemove, onMediaClick, isLoading, hasError }: MediaPreviewProps) => {
-  const isVideo = isVideoFile(url);
-
+export const MediaPreview = ({ 
+  url, 
+  onRemove, 
+  onMediaClick, 
+  isLoading, 
+  hasError,
+  onLoad,
+  onError 
+}: MediaPreviewProps) => {
   if (hasError) {
     return (
       <div className="relative group">
@@ -36,13 +44,15 @@ export const MediaPreview = ({ url, onRemove, onMediaClick, isLoading, hasError 
         <Skeleton className="w-full h-full absolute inset-0 rounded-lg" />
       )}
       
-      {isVideo ? (
+      {isVideoFile(url) ? (
         <AspectRatio ratio={16 / 9}>
           <video
             src={url}
             controls
             className="w-full h-full object-cover rounded-lg"
             onLoadStart={() => console.log('Video loading started:', url)}
+            onLoadedData={onLoad}
+            onError={onError}
           />
         </AspectRatio>
       ) : (
@@ -53,6 +63,8 @@ export const MediaPreview = ({ url, onRemove, onMediaClick, isLoading, hasError 
             className="w-full h-full object-cover rounded-lg transition-opacity duration-200"
             loading="lazy"
             style={{ display: isLoading ? 'none' : 'block' }}
+            onLoad={onLoad}
+            onError={onError}
           />
           {!isLoading && (
             <>

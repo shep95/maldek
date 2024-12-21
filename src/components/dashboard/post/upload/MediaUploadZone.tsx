@@ -4,9 +4,10 @@ import { Image } from "lucide-react";
 interface MediaUploadZoneProps {
   onFileSelect: () => void;
   dragActive: boolean;
+  isProcessing?: boolean;
 }
 
-export const MediaUploadZone = ({ onFileSelect, dragActive }: MediaUploadZoneProps) => {
+export const MediaUploadZone = ({ onFileSelect, dragActive, isProcessing }: MediaUploadZoneProps) => {
   return (
     <div
       className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
@@ -17,9 +18,10 @@ export const MediaUploadZone = ({ onFileSelect, dragActive }: MediaUploadZonePro
         variant="outline"
         onClick={onFileSelect}
         className="gap-2 w-full justify-center"
+        disabled={isProcessing}
       >
         <Image className="h-4 w-4" />
-        Drop media here or click to upload
+        {isProcessing ? 'Processing media...' : 'Drop media here or click to upload'}
       </Button>
       
       <div className="mt-2 text-sm text-muted-foreground text-center">
