@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { toast } from "sonner";
+import { Play } from "lucide-react";
 import { VideoPlayer } from "./VideoPlayer";
 import { VideoMetadata } from "./VideoMetadata";
 import { cn } from "@/lib/utils";
