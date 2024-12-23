@@ -131,7 +131,7 @@ export const RightSidebar = () => {
   }, 300);
 
   return (
-    <div className="hidden lg:block fixed right-0 h-screen p-4 w-80">
+    <div className="h-full w-full lg:fixed lg:right-0 lg:h-screen lg:p-4 lg:w-80">
       <Card className="h-[90vh] flex flex-col bg-black/20 border-border/50 backdrop-blur-md p-4 rounded-xl">
         <div className="relative mb-6">
           <Input 
