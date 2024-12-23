@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { handleOfflineUpload } from "@/utils/offlineUploadUtils";
 import { validateMediaFile, isVideoFile } from "@/utils/mediaUtils";
 
-export const handleImageUpload = async (file: File, userId: string) => {
+export const handleImageUpload = async (file: File, userId: string, onProgress?: (progress: number) => void) => {
   try {
     console.log('Starting media upload for user:', userId);
     console.log('File details:', { 
@@ -36,10 +36,10 @@ export const handleImageUpload = async (file: File, userId: string) => {
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
-    // All media now goes to posts bucket
-    const bucket = 'posts';
+    // Determine bucket based on file type
+    const bucket = isVideoFile(file) ? 'videos' : 'posts';
     console.log(`Uploading ${file.type} to ${bucket} bucket at path:`, filePath);
-    toast.info('Uploading file...');
+    toast.info(`Uploading ${isVideoFile(file) ? 'video' : 'media'}...`);
 
     // Upload file with progress tracking
     const { error: uploadError } = await supabase.storage
@@ -47,7 +47,13 @@ export const handleImageUpload = async (file: File, userId: string) => {
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
-        contentType: file.type
+        contentType: file.type,
+        duplex: 'half',
+        onUploadProgress: (progress) => {
+          const percentage = (progress.loaded / progress.total) * 100;
+          console.log(`Upload progress: ${percentage.toFixed(2)}%`);
+          onProgress?.(percentage);
+        }
       });
 
     if (uploadError) {
@@ -61,7 +67,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
       .getPublicUrl(filePath);
 
     console.log('Generated public URL:', data.publicUrl);
-    toast.success('Media uploaded successfully!');
+    toast.success(`${isVideoFile(file) ? 'Video' : 'Media'} uploaded successfully!`);
     return data.publicUrl;
 
   } catch (error: any) {

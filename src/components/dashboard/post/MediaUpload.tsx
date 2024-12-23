@@ -27,6 +27,7 @@ export const MediaUpload = ({
     mediaPreviewUrls.reduce((acc, url) => ({ ...acc, [url]: false }), {})
   );
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
 
   const handleFiles = async (files: File[]) => {
     setIsProcessing(true);
@@ -34,6 +35,12 @@ export const MediaUpload = ({
 
     try {
       for (const file of files) {
+        console.log('Processing file:', {
+          name: file.name,
+          type: file.type,
+          size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
+        });
+
         if (isVideoFile(file)) {
           console.log('Processing video file:', file.name);
           const compressedVideo = await compressVideo(file);
@@ -92,6 +99,10 @@ export const MediaUpload = ({
     setErrorStates(prev => ({ ...prev, [url]: true }));
   };
 
+  const updateProgress = (url: string, progress: number) => {
+    setUploadProgress(prev => ({ ...prev, [url]: progress }));
+  };
+
   return (
     <div className="space-y-2">
       <div
@@ -134,6 +145,7 @@ export const MediaUpload = ({
                 hasError={errorStates[url]}
                 onLoad={() => handleMediaLoad(url)}
                 onError={() => handleMediaError(url)}
+                progress={uploadProgress[url]}
               />
             ))}
           </div>
