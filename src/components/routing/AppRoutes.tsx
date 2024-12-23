@@ -46,6 +46,34 @@ const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const ProtectedEmperorRoute = ({ children }: { children: React.ReactNode }) => {
+  const session = useSession();
+
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*, tier:subscription_tiers(*)')
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
+
+  if (!subscription || subscription.tier.name !== 'True Emperor') {
+    return <Navigate to="/subscription" replace />;
+  }
+
+  return <>{children}</>;
+};
+
 export const AppRoutes = () => {
   const session = useSession();
   
@@ -60,15 +88,11 @@ export const AppRoutes = () => {
   
   return (
     <Routes>
-      {/* Base routes */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
       
-      {/* Dashboard layout wrapper */}
       <Route element={<DashboardLayout />}>
-        {/* Profile route MUST come before other routes to take precedence */}
         <Route path="/@:username" element={<Profiles />} />
-        
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
@@ -89,15 +113,14 @@ export const AppRoutes = () => {
         <Route 
           path="/emperor-chat" 
           element={
-            <ProtectedPremiumRoute>
+            <ProtectedEmperorRoute>
               <EmperorChatPage />
-            </ProtectedPremiumRoute>
+            </ProtectedEmperorRoute>
           } 
         />
         <Route path="/subscription" element={<Subscription />} />
       </Route>
       
-      {/* Catch all route */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );

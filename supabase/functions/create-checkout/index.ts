@@ -10,9 +10,9 @@ const corsHeaders = {
 // Price IDs for subscription tiers
 const CREATOR_PRICE_ID = 'price_1QXZOIApZ2oDcxDyFw0DXoh0'  // $17/month tier
 const BUSINESS_PRICE_ID = 'price_1QVPPeApZ2oDcxDyezvlMWup' // $800/month tier
+const EMPEROR_PRICE_ID = 'price_1QZ1VtApZ2oDcxDyuXGZXj95' // $50,000/month tier
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -26,13 +26,11 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get user's email
     const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
 
     if (userError || !user?.email) {
@@ -41,14 +39,28 @@ serve(async (req) => {
     }
 
     // Determine the price ID based on the tier
-    const priceId = tier === 'creator' ? CREATOR_PRICE_ID : BUSINESS_PRICE_ID
+    let priceId;
+    switch(tier.toLowerCase()) {
+      case 'creator':
+        priceId = CREATOR_PRICE_ID;
+        break;
+      case 'business':
+        priceId = BUSINESS_PRICE_ID;
+        break;
+      case 'emperor':
+        priceId = EMPEROR_PRICE_ID;
+        break;
+      default:
+        throw new Error('Invalid subscription tier');
+    }
+    
     console.log('Using price ID:', priceId, 'for tier:', tier)
 
     // Get the tier ID from the subscription_tiers table
     const { data: tierData, error: tierError } = await supabaseClient
       .from('subscription_tiers')
       .select('id')
-      .eq('name', tier === 'creator' ? 'Creator' : 'Business')
+      .eq('name', tier === 'emperor' ? 'True Emperor' : tier === 'creator' ? 'Creator' : 'Business')
       .single()
 
     if (tierError || !tierData) {
@@ -56,7 +68,6 @@ serve(async (req) => {
       throw new Error('Subscription tier not found')
     }
 
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
       line_items: [

@@ -12,9 +12,10 @@ interface SubscriptionTierProps {
 
 export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: SubscriptionTierProps) => {
   const isEmperor = tier.name === 'True Emperor';
-  const uploadLimit = tier.max_upload_size_mb >= 1024 
-    ? `${(tier.max_upload_size_mb / 1024).toFixed(0)}GB`
-    : `${tier.max_upload_size_mb}MB`;
+  const uploadLimit = isEmperor ? '10TB' : 
+    tier.max_upload_size_mb >= 1024 
+      ? `${(tier.max_upload_size_mb / 1024).toFixed(0)}GB`
+      : `${tier.max_upload_size_mb}MB`;
 
   return (
     <Card className={cn(
@@ -36,7 +37,9 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           {isEmperor ? 'EXCLUSIVE' : 'Beta'}
         </Badge>
       </div>
-      <p className="text-4xl font-bold mb-6">${tier.price}<span className="text-sm">/month</span></p>
+      <p className="text-4xl font-bold mb-6">
+        ${isEmperor ? '50,000' : tier.price}<span className="text-sm">/month</span>
+      </p>
       <ul className="space-y-3 mb-8">
         <li className="flex items-center">
           <Check className="mr-2 h-5 w-5 text-green-500" />
@@ -44,7 +47,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
         </li>
         <li className="flex items-center">
           <Check className="mr-2 h-5 w-5 text-green-500" />
-          Upload files up to {isEmperor ? '10TB' : uploadLimit}
+          Upload files up to {uploadLimit}
         </li>
         <li className="flex items-center">
           <Check className="mr-2 h-5 w-5 text-green-500" />
