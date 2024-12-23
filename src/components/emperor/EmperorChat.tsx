@@ -44,7 +44,7 @@ export const EmperorChat = () => {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'emperor_chat_messages'
         },
@@ -92,14 +92,35 @@ export const EmperorChat = () => {
     setIsLoading(true);
     try {
       console.log('Sending message:', newMessage);
-      const { error } = await supabase
+      // First get the current user's profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', session?.user?.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Send the message
+      const { data: newMsg, error } = await supabase
         .from('emperor_chat_messages')
         .insert({
           content: newMessage.trim(),
           user_id: session?.user?.id
-        });
+        })
+        .select(`
+          *,
+          profile:profiles(username, avatar_url)
+        `)
+        .single();
 
       if (error) throw error;
+
+      // Immediately add the new message to the state
+      if (newMsg) {
+        setMessages(prev => [...prev, newMsg]);
+      }
+      
       setNewMessage('');
       console.log('Message sent successfully');
     } catch (error) {
