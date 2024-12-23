@@ -22,7 +22,6 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         console.log('=== Subscription Query Debug ===');
         console.log('Author ID:', author.id);
         
-        // Check for any active subscription with valid end date
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -31,8 +30,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           `)
           .eq('user_id', author.id)
           .eq('status', 'active')
-          .gt('ends_at', new Date().toISOString())
-          .maybeSingle();
+          .single();
 
         if (subscriptionError) {
           console.error('Subscription Query Error:', subscriptionError);
