@@ -19,7 +19,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
       try {
-        console.log('Fetching subscription for user:', author.id);
+        console.log('Fetching subscription for author:', author.id);
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -35,7 +35,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           return null;
         }
 
-        console.log('Subscription data:', subscriptionData);
+        console.log('Subscription data for author:', subscriptionData);
         return subscriptionData;
       } catch (error) {
         console.error('Error in subscription query:', error);
