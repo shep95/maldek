@@ -35,11 +35,6 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           return null;
         }
 
-        if (!subscriptionData) {
-          console.log('No active subscription found for user');
-          return null;
-        }
-
         console.log('Subscription data:', subscriptionData);
         return subscriptionData;
       } catch (error) {
@@ -65,10 +60,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     
     console.log('4. Target path:', profilePath);
     
-    navigate(profilePath, { 
-      replace: false,
-      state: { timestamp: new Date().getTime() }
-    });
+    navigate(profilePath);
     
     setTimeout(() => {
       console.log('5. Path after navigation:', window.location.pathname);
