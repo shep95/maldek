@@ -32,6 +32,7 @@ export const EmperorChat = () => {
         return;
       }
 
+      console.log('Fetched messages:', data);
       setMessages(data || []);
     };
 
@@ -43,18 +44,37 @@ export const EmperorChat = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'emperor_chat_messages'
         },
-        (payload) => {
-          console.log('New message received:', payload);
-          setMessages(prev => [...prev, payload.new]);
+        async (payload) => {
+          console.log('Real-time update received:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            // Fetch the complete message with profile information
+            const { data: newMessage, error } = await supabase
+              .from('emperor_chat_messages')
+              .select(`
+                *,
+                profile:profiles(username, avatar_url)
+              `)
+              .eq('id', payload.new.id)
+              .single();
+
+            if (!error && newMessage) {
+              console.log('New message with profile:', newMessage);
+              setMessages(prev => [...prev, newMessage]);
+            }
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up subscription');
       supabase.removeChannel(channel);
     };
   }, []);
@@ -71,6 +91,7 @@ export const EmperorChat = () => {
 
     setIsLoading(true);
     try {
+      console.log('Sending message:', newMessage);
       const { error } = await supabase
         .from('emperor_chat_messages')
         .insert({
@@ -80,6 +101,7 @@ export const EmperorChat = () => {
 
       if (error) throw error;
       setNewMessage('');
+      console.log('Message sent successfully');
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
