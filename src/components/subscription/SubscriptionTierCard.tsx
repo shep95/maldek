@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Crown, DollarSign, Mic, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SubscriptionTierProps {
   tier: any;
