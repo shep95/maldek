@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CurrentSubscription } from "@/components/subscription/CurrentSubscription";
 import { SubscriptionTierCard } from "@/components/subscription/SubscriptionTierCard";
+import { cn } from "@/lib/utils";
 
 const Subscription = () => {
   const session = useSession();
@@ -135,7 +136,7 @@ const Subscription = () => {
       />
 
       <h1 className="text-3xl font-bold mb-8">Premium Subscriptions</h1>
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {tiers?.map((tier) => (
           <SubscriptionTierCard
             key={tier.id}

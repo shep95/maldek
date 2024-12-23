@@ -296,6 +296,41 @@ export type Database = {
           },
         ]
       }
+      emperor_chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emperor_chat_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       followers: {
         Row: {
           created_at: string
@@ -1345,28 +1380,37 @@ export type Database = {
           checkmark_color: string
           created_at: string
           id: string
+          max_pinned_posts: number | null
           max_upload_size_mb: number
           monthly_mentions: number
           name: string
+          post_character_limit: number | null
           price: number
+          schedule_days_limit: number | null
         }
         Insert: {
           checkmark_color: string
           created_at?: string
           id?: string
+          max_pinned_posts?: number | null
           max_upload_size_mb?: number
           monthly_mentions: number
           name: string
+          post_character_limit?: number | null
           price: number
+          schedule_days_limit?: number | null
         }
         Update: {
           checkmark_color?: string
           created_at?: string
           id?: string
+          max_pinned_posts?: number | null
           max_upload_size_mb?: number
           monthly_mentions?: number
           name?: string
+          post_character_limit?: number | null
           price?: number
+          schedule_days_limit?: number | null
         }
         Relationships: []
       }
