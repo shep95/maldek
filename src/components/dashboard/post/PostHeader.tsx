@@ -42,7 +42,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         return null;
       }
     },
-    retry: false,
+    retry: 1,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
