@@ -22,7 +22,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         console.log('=== Subscription Query Debug ===');
         console.log('Author ID:', author.id);
         
-        // Check for any active subscription
+        // Check for any active subscription with valid end date
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -47,6 +47,13 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
 
         console.log('Subscription Data:', subscriptionData);
         console.log('Tier Info:', subscriptionData?.tier);
+        
+        // Validate subscription data
+        if (!subscriptionData.tier || !subscriptionData.tier.name) {
+          console.log('Invalid subscription data structure');
+          return null;
+        }
+
         return subscriptionData;
       } catch (error) {
         console.error('Error in subscription query:', error);
