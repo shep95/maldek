@@ -19,18 +19,38 @@ export const usePostCreation = (
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
 
   const handleFileSelect = useCallback(async (files: FileList) => {
-    console.log('Files selected:', Array.from(files).map(f => ({ name: f.name, type: f.type, size: f.size })));
-    
-    const processedFiles = await Promise.all(
-      Array.from(files).map(async file => {
-        if (file.type.startsWith('image/')) {
-          return await processImageFile(file);
-        }
-        return file;
-      })
-    );
+    try {
+      console.log('Files selected:', Array.from(files).map(f => ({ 
+        name: f.name, 
+        type: f.type, 
+        size: `${(f.size / (1024 * 1024)).toFixed(2)}MB` 
+      })));
+      
+      const processedFiles = await Promise.all(
+        Array.from(files).map(async file => {
+          console.log('Processing file:', {
+            name: file.name,
+            type: file.type,
+            size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+            isVideo: isVideoFile(file)
+          });
 
-    setMediaFiles(prev => [...prev, ...processedFiles]);
+          if (file.type.startsWith('image/')) {
+            return await processImageFile(file);
+          }
+          return file;
+        })
+      );
+
+      setMediaFiles(prev => [...prev, ...processedFiles]);
+    } catch (error) {
+      console.error('Error processing files:', {
+        error,
+        message: error.message,
+        stack: error.stack
+      });
+      toast.error(`Failed to process file: ${error.message}`);
+    }
   }, []);
 
   const handlePaste = useCallback(async (file: File) => {
@@ -55,7 +75,12 @@ export const usePostCreation = (
   }, [content, mediaFiles, scheduledDate]);
 
   const uploadMedia = async (file: File): Promise<string> => {
-    console.log('Starting upload for file:', { name: file.name, type: file.type, size: file.size });
+    console.log('Starting upload for file:', { 
+      name: file.name, 
+      type: file.type, 
+      size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+      isVideo: isVideoFile(file)
+    });
     
     try {
       const fileExt = file.name.split('.').pop();
@@ -63,7 +88,11 @@ export const usePostCreation = (
       const filePath = `${currentUser.id}/${fileName}`;
       const bucket = isVideoFile(file) ? 'videos' : 'posts';
 
-      console.log(`Uploading to ${bucket} bucket:`, filePath);
+      console.log(`Uploading to ${bucket} bucket:`, {
+        path: filePath,
+        contentType: file.type,
+        size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
+      });
 
       const { error: uploadError, data } = await supabase.storage
         .from(bucket)
@@ -74,7 +103,12 @@ export const usePostCreation = (
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        console.error('Upload error:', {
+          error: uploadError,
+          message: uploadError.message,
+          details: uploadError.details,
+          hint: uploadError.hint
+        });
         throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
       }
 
@@ -82,10 +116,25 @@ export const usePostCreation = (
         .from(bucket)
         .getPublicUrl(filePath);
 
-      console.log('Upload successful. Public URL:', publicUrl);
+      console.log('Upload successful:', {
+        file: file.name,
+        publicUrl,
+        bucket,
+        path: filePath
+      });
+      
       return publicUrl;
     } catch (error) {
-      console.error('Detailed upload error:', error);
+      console.error('Detailed upload error:', {
+        error,
+        message: error.message,
+        stack: error.stack,
+        file: {
+          name: file.name,
+          type: file.type,
+          size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
+        }
+      });
       throw error;
     }
   };
