@@ -3,12 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
 import { processImageFile, saveDraft } from "@/utils/postUploadUtils";
-import { compressVideo } from "@/utils/videoCompression";
 import { isVideoFile } from "@/utils/mediaUtils";
 import type { Author } from "@/utils/postUtils";
-import type { Database } from "@/integrations/supabase/types";
-
-type PostData = Database['public']['Tables']['posts']['Insert'];
+import type { PostData } from "../components/dashboard/post/types/postTypes";
 
 export const usePostCreation = (
   currentUser: Author,
@@ -24,24 +21,16 @@ export const usePostCreation = (
   const handleFileSelect = useCallback(async (files: FileList) => {
     console.log('Files selected:', Array.from(files).map(f => ({ name: f.name, type: f.type, size: f.size })));
     
-    try {
-      const processedFiles = await Promise.all(
-        Array.from(files).map(async file => {
-          if (file.type.startsWith('video/')) {
-            console.log('Processing video file:', file.name);
-            return await compressVideo(file);
-          } else if (file.type.startsWith('image/')) {
-            return await processImageFile(file);
-          }
-          return file;
-        })
-      );
+    const processedFiles = await Promise.all(
+      Array.from(files).map(async file => {
+        if (file.type.startsWith('image/')) {
+          return await processImageFile(file);
+        }
+        return file;
+      })
+    );
 
-      setMediaFiles(prev => [...prev, ...processedFiles]);
-    } catch (error) {
-      console.error('Error processing files:', error);
-      toast.error(`Failed to process file: ${error.message}`);
-    }
+    setMediaFiles(prev => [...prev, ...processedFiles]);
   }, []);
 
   const handlePaste = useCallback(async (file: File) => {
@@ -66,7 +55,7 @@ export const usePostCreation = (
   }, [content, mediaFiles, scheduledDate]);
 
   const uploadMedia = async (file: File): Promise<string> => {
-    console.log('Uploading media file:', file.name, 'Type:', file.type);
+    console.log('Starting upload for file:', { name: file.name, type: file.type, size: file.size });
     
     try {
       const fileExt = file.name.split('.').pop();
@@ -80,7 +69,8 @@ export const usePostCreation = (
         .from(bucket)
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type
         });
 
       if (uploadError) {
@@ -95,7 +85,7 @@ export const usePostCreation = (
       console.log('Upload successful. Public URL:', publicUrl);
       return publicUrl;
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Detailed upload error:', error);
       throw error;
     }
   };
