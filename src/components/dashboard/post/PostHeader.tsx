@@ -28,7 +28,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           `)
           .eq('user_id', author.id)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
 
         if (subscriptionError) {
           console.error('Error fetching subscription:', subscriptionError);
@@ -42,7 +42,6 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         return null;
       }
     },
-    retry: 1,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
