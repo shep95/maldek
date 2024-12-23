@@ -19,9 +19,6 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
       try {
-        console.log('=== Subscription Query Debug ===');
-        console.log('Author ID:', author.id);
-        
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -37,24 +34,9 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           return null;
         }
 
-        console.log('Raw subscription data:', subscriptionData);
-
         if (!subscriptionData) {
-          console.log('No active subscription found for user');
           return null;
         }
-
-        // Validate subscription data
-        if (!subscriptionData.tier || !subscriptionData.tier.name) {
-          console.log('Invalid subscription data structure');
-          return null;
-        }
-
-        console.log('Valid subscription found:', {
-          tier: subscriptionData.tier.name,
-          status: subscriptionData.status,
-          endsAt: subscriptionData.ends_at
-        });
 
         return subscriptionData;
       } catch (error) {
@@ -69,21 +51,10 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('=== Profile Navigation Debug ===');
-    console.log('1. Click event detected');
-    console.log('2. Username:', author.username);
-    console.log('3. Current path:', window.location.pathname);
-    
     const username = author.username.startsWith('@') ? author.username.slice(1) : author.username;
     const profilePath = `/@${username}`;
     
-    console.log('4. Target path:', profilePath);
-    
     navigate(profilePath);
-    
-    setTimeout(() => {
-      console.log('5. Path after navigation:', window.location.pathname);
-    }, 100);
   };
 
   const getTimeAgo = (date: Date) => {
