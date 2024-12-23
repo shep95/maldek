@@ -16,6 +16,7 @@ import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import Subscription from "@/pages/Subscription";
+import EmperorChatPage from "@/pages/EmperorChat";
 
 const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -82,6 +83,14 @@ export const AppRoutes = () => {
           element={
             <ProtectedPremiumRoute>
               <DaarpAI />
+            </ProtectedPremiumRoute>
+          } 
+        />
+        <Route 
+          path="/emperor-chat" 
+          element={
+            <ProtectedPremiumRoute>
+              <EmperorChatPage />
             </ProtectedPremiumRoute>
           } 
         />

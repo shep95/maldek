@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -119,6 +119,15 @@ export const NavItems = ({
       icon: LogOut, 
       label: "Logout", 
       onClick: handleLogout
+    },
+    {
+      icon: Crown,
+      label: "Emperor Chat",
+      path: "/emperor-chat",
+      active: location.pathname === "/emperor-chat",
+      premium: true,
+      description: subscription?.tier?.name === "True Emperor" ? "Exclusive Emperor Chatroom" : "Unlock Emperor features",
+      className: subscription?.tier?.name === "True Emperor" ? "text-yellow-500" : "text-accent"
     },
   ];
 
