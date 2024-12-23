@@ -22,7 +22,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         console.log('=== Subscription Query Debug ===');
         console.log('Author ID:', author.id);
         
-        // Query for active subscription with most recent start date
+        // First check if user has any active subscription
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -31,13 +31,18 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           `)
           .eq('user_id', author.id)
           .eq('status', 'active')
+          .gt('ends_at', new Date().toISOString())
           .order('starts_at', { ascending: false })
           .limit(1)
           .single();
 
         if (subscriptionError) {
           console.error('Subscription Query Error:', subscriptionError);
-          return null;
+          if (subscriptionError.code === 'PGRST116') {
+            console.log('No active subscription found for user');
+            return null;
+          }
+          throw subscriptionError;
         }
 
         console.log('Subscription Data:', subscriptionData);
@@ -88,8 +93,6 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     return `${Math.floor(diffInDays / 365)}y`;
   };
 
-  const timeAgo = getTimeAgo(new Date(timestamp));
-
   const getCrownColor = () => {
     if (!subscription?.tier?.name) return "";
     switch (subscription.tier.name) {
@@ -103,6 +106,8 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         return "";
     }
   };
+
+  const timeAgo = getTimeAgo(new Date(timestamp));
 
   return (
     <div className="flex items-start gap-3">
