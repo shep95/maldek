@@ -19,7 +19,9 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
       try {
-        console.log('Fetching subscription for author:', author.id);
+        console.log('=== Subscription Query Debug ===');
+        console.log('Author ID:', author.id);
+        
         // Query for active subscription with most recent start date
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
@@ -34,11 +36,12 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           .single();
 
         if (subscriptionError) {
-          console.error('Error fetching subscription:', subscriptionError);
+          console.error('Subscription Query Error:', subscriptionError);
           return null;
         }
 
-        console.log('Subscription data for author:', subscriptionData);
+        console.log('Subscription Data:', subscriptionData);
+        console.log('Tier Info:', subscriptionData?.tier);
         return subscriptionData;
       } catch (error) {
         console.error('Error in subscription query:', error);
