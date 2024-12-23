@@ -41,20 +41,32 @@ export const handleImageUpload = async (file: File, userId: string, onProgress?:
     console.log(`Uploading ${file.type} to ${bucket} bucket at path:`, filePath);
     toast.info(`Uploading ${isVideoFile(file) ? 'video' : 'media'}...`);
 
-    // Upload file with progress tracking
+    // Track upload progress
+    let lastProgress = 0;
+    const options = {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+      duplex: 'half'
+    };
+
+    // Create XMLHttpRequest to track progress
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const progress = (event.loaded / event.total) * 100;
+        if (progress !== lastProgress) {
+          console.log(`Upload progress: ${progress.toFixed(2)}%`);
+          onProgress?.(progress);
+          lastProgress = progress;
+        }
+      }
+    });
+
+    // Upload file
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-        duplex: 'half',
-        onUploadProgress: (progress) => {
-          const percentage = (progress.loaded / progress.total) * 100;
-          console.log(`Upload progress: ${percentage.toFixed(2)}%`);
-          onProgress?.(percentage);
-        }
-      });
+      .upload(filePath, file, options);
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
