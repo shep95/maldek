@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Crown } from "lucide-react";
 
 interface NavItemProps {
   icon: any;
@@ -56,10 +56,10 @@ export const NavItem = ({
         <span className="flex items-center gap-2 truncate w-full">
           {label}
           {premium && subscription?.tier && (
-            <Check className={cn(
+            <Crown className={cn(
               "h-4 w-4",
               subscription.tier.name === "Creator" && "text-orange-500",
-              subscription.tier.name === "Business" && "text-yellow-500"
+              subscription.tier.name === "Business" && "text-purple-500"
             )} />
           )}
         </span>
