@@ -32,7 +32,6 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           .eq('user_id', author.id)
           .eq('status', 'active')
           .gt('ends_at', new Date().toISOString())
-          .order('starts_at', { ascending: false })
           .maybeSingle();
 
         if (subscriptionError) {
@@ -40,19 +39,24 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           return null;
         }
 
+        console.log('Raw subscription data:', subscriptionData);
+
         if (!subscriptionData) {
           console.log('No active subscription found for user');
           return null;
         }
 
-        console.log('Subscription Data:', subscriptionData);
-        console.log('Tier Info:', subscriptionData?.tier);
-        
         // Validate subscription data
         if (!subscriptionData.tier || !subscriptionData.tier.name) {
           console.log('Invalid subscription data structure');
           return null;
         }
+
+        console.log('Valid subscription found:', {
+          tier: subscriptionData.tier.name,
+          status: subscriptionData.status,
+          endsAt: subscriptionData.ends_at
+        });
 
         return subscriptionData;
       } catch (error) {
