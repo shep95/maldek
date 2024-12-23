@@ -14,7 +14,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
     });
 
     // Verify file size and content
-    const validation = await validateMediaFile(file);
+    const validation = await validateMediaFile(file, userId);
     if (!validation.isValid) {
       console.error('File validation failed:', validation.error);
       toast.error(validation.error);

@@ -1345,6 +1345,7 @@ export type Database = {
           checkmark_color: string
           created_at: string
           id: string
+          max_upload_size_mb: number
           monthly_mentions: number
           name: string
           price: number
@@ -1353,6 +1354,7 @@ export type Database = {
           checkmark_color: string
           created_at?: string
           id?: string
+          max_upload_size_mb?: number
           monthly_mentions: number
           name: string
           price: number
@@ -1361,6 +1363,7 @@ export type Database = {
           checkmark_color?: string
           created_at?: string
           id?: string
+          max_upload_size_mb?: number
           monthly_mentions?: number
           name?: string
           price?: number
