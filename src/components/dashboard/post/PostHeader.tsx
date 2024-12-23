@@ -22,7 +22,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         console.log('=== Subscription Query Debug ===');
         console.log('Author ID:', author.id);
         
-        // First check if user has any active subscription
+        // Check for any active subscription
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -33,16 +33,16 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           .eq('status', 'active')
           .gt('ends_at', new Date().toISOString())
           .order('starts_at', { ascending: false })
-          .limit(1)
-          .single();
+          .maybeSingle();
 
         if (subscriptionError) {
           console.error('Subscription Query Error:', subscriptionError);
-          if (subscriptionError.code === 'PGRST116') {
-            console.log('No active subscription found for user');
-            return null;
-          }
-          throw subscriptionError;
+          return null;
+        }
+
+        if (!subscriptionData) {
+          console.log('No active subscription found for user');
+          return null;
         }
 
         console.log('Subscription Data:', subscriptionData);
