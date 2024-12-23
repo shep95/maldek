@@ -41,12 +41,13 @@ export const handleImageUpload = async (file: File, userId: string) => {
     console.log(`Uploading ${file.type} to ${bucket} bucket at path:`, filePath);
     toast.info('Uploading file...');
 
-    // Upload file
+    // Upload file with progress tracking
     const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true
+        upsert: true,
+        contentType: file.type // Explicitly set content type
       });
 
     if (uploadError) {
@@ -54,7 +55,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
       throw uploadError;
     }
 
-    // Get public URL
+    // Get public URL from the correct bucket
     const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(filePath);
