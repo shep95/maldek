@@ -36,8 +36,8 @@ export const handleImageUpload = async (file: File, userId: string) => {
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
 
-    // Determine the appropriate bucket based on file type
-    const bucket = isVideoFile(file) ? 'videos' : 'posts';
+    // All media now goes to posts bucket
+    const bucket = 'posts';
     console.log(`Uploading ${file.type} to ${bucket} bucket at path:`, filePath);
     toast.info('Uploading file...');
 
@@ -46,8 +46,8 @@ export const handleImageUpload = async (file: File, userId: string) => {
       .from(bucket)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false, // Changed to false to prevent overwriting
-        contentType: file.type // Explicitly set content type
+        upsert: false,
+        contentType: file.type
       });
 
     if (uploadError) {
@@ -55,7 +55,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
       throw uploadError;
     }
 
-    // Get public URL from the correct bucket
+    // Get public URL
     const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(filePath);
