@@ -8,7 +8,7 @@ export const isVideoFile = (file: File | string): boolean => {
 export const validateMediaFile = async (file: File) => {
   // Maximum file sizes (in bytes)
   const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-  const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB - Increased from 100MB
+  const MAX_VIDEO_SIZE = 3 * 1024 * 1024 * 1024; // 3GB
 
   const isVideo = isVideoFile(file);
   const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
