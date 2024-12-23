@@ -46,7 +46,7 @@ export const handleImageUpload = async (file: File, userId: string) => {
       .from(bucket)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: true,
+        upsert: false, // Changed to false to prevent overwriting
         contentType: file.type // Explicitly set content type
       });
 
