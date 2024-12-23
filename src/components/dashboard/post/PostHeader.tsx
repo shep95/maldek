@@ -19,6 +19,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
       try {
+        console.log('Fetching subscription for user:', author.id);
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -27,23 +28,26 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           `)
           .eq('user_id', author.id)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
 
         if (subscriptionError) {
-          console.error('Subscription Query Error:', subscriptionError);
+          console.error('Error fetching subscription:', subscriptionError);
           return null;
         }
 
         if (!subscriptionData) {
+          console.log('No active subscription found for user');
           return null;
         }
 
+        console.log('Subscription data:', subscriptionData);
         return subscriptionData;
       } catch (error) {
         console.error('Error in subscription query:', error);
         return null;
       }
     },
+    retry: false,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
@@ -51,10 +55,24 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     e.preventDefault();
     e.stopPropagation();
     
+    console.log('=== Profile Navigation Debug ===');
+    console.log('1. Click event detected');
+    console.log('2. Username:', author.username);
+    console.log('3. Current path:', window.location.pathname);
+    
     const username = author.username.startsWith('@') ? author.username.slice(1) : author.username;
     const profilePath = `/@${username}`;
     
-    navigate(profilePath);
+    console.log('4. Target path:', profilePath);
+    
+    navigate(profilePath, { 
+      replace: false,
+      state: { timestamp: new Date().getTime() }
+    });
+    
+    setTimeout(() => {
+      console.log('5. Path after navigation:', window.location.pathname);
+    }, 100);
   };
 
   const getTimeAgo = (date: Date) => {
@@ -73,6 +91,8 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     return `${Math.floor(diffInDays / 365)}y`;
   };
 
+  const timeAgo = getTimeAgo(new Date(timestamp));
+
   const getCrownColor = () => {
     if (!subscription?.tier?.name) return "";
     switch (subscription.tier.name) {
@@ -86,8 +106,6 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
         return "";
     }
   };
-
-  const timeAgo = getTimeAgo(new Date(timestamp));
 
   return (
     <div className="flex items-start gap-3">

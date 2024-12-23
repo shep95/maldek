@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Home, MessageCircle, Bell, Video, Menu, Search } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, Menu } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
 import { SidebarNav } from "./sidebar/SidebarNav";
-import { RightSidebar } from "./RightSidebar";
 import { toast } from "sonner";
 
 interface NavItem {
@@ -18,7 +17,6 @@ export const MobileNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const SWIPE_THRESHOLD = 50;
 
@@ -34,8 +32,6 @@ export const MobileNav = () => {
 
     if (swipeDistance > SWIPE_THRESHOLD) {
       setIsOpen(true);
-    } else if (swipeDistance < -SWIPE_THRESHOLD) {
-      setIsRightSidebarOpen(true);
     }
 
     touchStartX.current = null;
@@ -51,7 +47,6 @@ export const MobileNav = () => {
       console.log('Mobile navigation: Navigating to', path);
       
       setIsOpen(false);
-      setIsRightSidebarOpen(false);
       navigate(path);
       window.scrollTo(0, 0);
       
@@ -81,14 +76,6 @@ export const MobileNav = () => {
               }
             }} 
           />
-        </SheetContent>
-      </Sheet>
-
-      <Sheet open={isRightSidebarOpen} onOpenChange={setIsRightSidebarOpen}>
-        <SheetContent side="right" className="w-72 p-0 bg-[#0d0d0d]">
-          <div className="h-full overflow-auto">
-            <RightSidebar />
-          </div>
         </SheetContent>
       </Sheet>
 
@@ -126,17 +113,6 @@ export const MobileNav = () => {
               <item.icon className="h-5 w-5" />
             </Button>
           ))}
-
-          {location.pathname === '/dashboard' && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsRightSidebarOpen(true)}
-              className="text-muted-foreground active:scale-95 transition-transform"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-          )}
         </div>
       </nav>
     </>
