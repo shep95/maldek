@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Author } from "@/utils/postUtils";
-import { Check } from "lucide-react";
+import { Crown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -59,19 +59,16 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     console.log('2. Username:', author.username);
     console.log('3. Current path:', window.location.pathname);
     
-    // Ensure username is properly formatted
     const username = author.username.startsWith('@') ? author.username.slice(1) : author.username;
     const profilePath = `/@${username}`;
     
     console.log('4. Target path:', profilePath);
     
-    // Use navigate with state to force a re-render
     navigate(profilePath, { 
       replace: false,
       state: { timestamp: new Date().getTime() }
     });
     
-    // Log the final path after a short delay
     setTimeout(() => {
       console.log('5. Path after navigation:', window.location.pathname);
     }, 100);
@@ -95,6 +92,20 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
 
   const timeAgo = getTimeAgo(new Date(timestamp));
 
+  const getCrownColor = () => {
+    if (!subscription?.tier?.name) return "";
+    switch (subscription.tier.name) {
+      case 'True Emperor':
+        return "text-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.6)]";
+      case 'Creator':
+        return "text-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.6)]";
+      case 'Business':
+        return "text-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.6)]";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="flex items-start gap-3">
       <Avatar 
@@ -113,23 +124,19 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
             >
               {author.name}
             </button>
-            {subscription?.tier?.name === 'Creator' && (
+            {subscription?.tier?.name && (
               <div className="group relative">
-                <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.6)] border-2 border-orange-500 bg-black/50 backdrop-blur-sm">
-                  <Check className="h-4 w-4 text-orange-500 stroke-[3]" />
+                <div className={cn(
+                  "h-6 w-6 rounded-full flex items-center justify-center",
+                  "border-2 bg-black/50 backdrop-blur-sm",
+                  subscription.tier.name === 'True Emperor' && "border-yellow-500",
+                  subscription.tier.name === 'Creator' && "border-orange-500",
+                  subscription.tier.name === 'Business' && "border-purple-500"
+                )}>
+                  <Crown className={cn("h-4 w-4", getCrownColor())} />
                 </div>
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-                  Creator
-                </div>
-              </div>
-            )}
-            {subscription?.tier?.name === 'Business' && (
-              <div className="group relative">
-                <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(234,179,8,0.6)] border-2 border-yellow-500 bg-black/50 backdrop-blur-sm">
-                  <Check className="h-4 w-4 text-yellow-500 stroke-[3]" />
-                </div>
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-                  Business
+                  {subscription.tier.name}
                 </div>
               </div>
             )}
