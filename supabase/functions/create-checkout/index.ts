@@ -47,7 +47,7 @@ serve(async (req) => {
       case 'business':
         priceId = BUSINESS_PRICE_ID;
         break;
-      case 'emperor':
+      case 'true emperor':
         priceId = EMPEROR_PRICE_ID;
         break;
       default:
@@ -60,7 +60,7 @@ serve(async (req) => {
     const { data: tierData, error: tierError } = await supabaseClient
       .from('subscription_tiers')
       .select('id')
-      .eq('name', tier === 'emperor' ? 'True Emperor' : tier === 'creator' ? 'Creator' : 'Business')
+      .eq('name', tier === 'true emperor' ? 'True Emperor' : tier === 'creator' ? 'Creator' : 'Business')
       .single()
 
     if (tierError || !tierData) {

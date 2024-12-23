@@ -71,6 +71,15 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
               <Check className="mr-2 h-5 w-5 text-green-500" />
               Schedule posts up to {tier.schedule_days_limit} days ahead
             </li>
+            <li className="flex items-center">
+              <Mic className="mr-2 h-5 w-5 text-yellow-500" />
+              <span className="flex items-center gap-2">
+                Exclusive Emperor Chatroom
+                <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-xs">
+                  EXCLUSIVE
+                </Badge>
+              </span>
+            </li>
           </>
         )}
         <li className="flex items-center">
@@ -89,17 +98,6 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
             </Badge>
           </span>
         </li>
-        {isEmperor && (
-          <li className="flex items-center">
-            <Mic className="mr-2 h-5 w-5 text-yellow-500" />
-            <span className="flex items-center gap-2">
-              Exclusive Emperor Chatroom
-              <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-xs">
-                EXCLUSIVE
-              </Badge>
-            </span>
-          </li>
-        )}
         <li className="flex items-center">
           <DollarSign className="mr-2 h-5 w-5 text-orange-500" />
           <span>
