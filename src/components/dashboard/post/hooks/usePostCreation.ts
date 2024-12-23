@@ -91,7 +91,6 @@ export const usePostCreation = (
         media_urls: mediaUrls,
       };
 
-      // Convert Date to ISO string if scheduledDate exists
       if (scheduledDate) {
         postData.scheduled_for = scheduledDate.toISOString();
       }
@@ -108,6 +107,58 @@ export const usePostCreation = (
       }
 
       console.log('Post created successfully:', newPost);
+
+      // Handle mentions
+      const mentionRegex = /@(\w+)/g;
+      const mentions = content.match(mentionRegex);
+
+      if (mentions) {
+        console.log('Processing mentions:', mentions);
+        
+        for (const mention of mentions) {
+          const username = mention.slice(1); // Remove @ symbol
+          
+          // Get the mentioned user's ID
+          const { data: mentionedUser, error: userError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .single();
+
+          if (userError || !mentionedUser) {
+            console.error('Error finding mentioned user:', userError);
+            continue;
+          }
+
+          // Create mention record
+          const { error: mentionError } = await supabase
+            .from('mentions')
+            .insert({
+              user_id: currentUser.id,
+              mentioned_user_id: mentionedUser.id,
+              post_id: newPost.id
+            });
+
+          if (mentionError) {
+            console.error('Error creating mention:', mentionError);
+            continue;
+          }
+
+          // Create notification for mentioned user
+          const { error: notificationError } = await supabase
+            .from('notifications')
+            .insert({
+              recipient_id: mentionedUser.id,
+              actor_id: currentUser.id,
+              post_id: newPost.id,
+              type: 'mention'
+            });
+
+          if (notificationError) {
+            console.error('Error creating notification:', notificationError);
+          }
+        }
+      }
       
       resetFormState();
       onPostCreated(newPost);

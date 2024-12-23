@@ -1,9 +1,12 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Bold, Italic, Link, Hash, AtSign, Image, Smile, Code } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { EmojiPicker } from "@/components/messages/EmojiPicker";
+import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface RichTextEditorProps {
   value: string;
@@ -24,16 +27,70 @@ export const RichTextEditor = ({
 }: RichTextEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionSearch, setMentionSearch] = useState("");
+  const [userSuggestions, setUserSuggestions] = useState<Array<{
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  }>>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastAtSymbolIndex = useRef<number>(-1);
+
+  const fetchUserSuggestions = useCallback(async (searchTerm: string) => {
+    console.log('Fetching user suggestions for:', searchTerm);
+    try {
+      const { data: users, error } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .ilike('username', `%${searchTerm}%`)
+        .limit(5);
+
+      if (error) throw error;
+      console.log('Found users:', users);
+      setUserSuggestions(users || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === '@') {
-      console.log('Mention triggered');
-      onMention?.('');
-    } else if (e.key === '#') {
-      console.log('Hashtag triggered');
-      onHashtag?.('');
+      console.log('@ symbol detected');
+      lastAtSymbolIndex.current = e.currentTarget.selectionStart;
+      setShowMentionSuggestions(true);
+      setMentionSearch("");
     }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    onChange(newValue);
+
+    if (lastAtSymbolIndex.current !== -1) {
+      const currentPosition = e.target.selectionStart;
+      const textAfterAt = newValue.slice(lastAtSymbolIndex.current + 1, currentPosition);
+      
+      if (textAfterAt.includes(' ') || currentPosition <= lastAtSymbolIndex.current) {
+        setShowMentionSuggestions(false);
+        lastAtSymbolIndex.current = -1;
+      } else {
+        setMentionSearch(textAfterAt);
+        fetchUserSuggestions(textAfterAt);
+      }
+    }
+  };
+
+  const handleSelectUser = (username: string) => {
+    if (textareaRef.current && lastAtSymbolIndex.current !== -1) {
+      const beforeMention = value.slice(0, lastAtSymbolIndex.current);
+      const afterMention = value.slice(textareaRef.current.selectionStart);
+      const newValue = `${beforeMention}@${username} ${afterMention}`;
+      onChange(newValue);
+      onMention?.(username);
+    }
+    setShowMentionSuggestions(false);
+    lastAtSymbolIndex.current = -1;
   };
 
   const insertAtCursor = (textToInsert: string) => {
@@ -165,20 +222,42 @@ export const RichTextEditor = ({
         </div>
       )}
 
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder={placeholder}
-        className={cn(
-          "min-h-[120px] rounded-t-none resize-none transition-all duration-200",
-          "focus:ring-1 focus:ring-primary",
-          className
+      <div className="relative">
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder={placeholder}
+          className={cn(
+            "min-h-[120px] rounded-t-none resize-none transition-all duration-200",
+            "focus:ring-1 focus:ring-primary",
+            className
+          )}
+        />
+
+        {showMentionSuggestions && userSuggestions.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
+            <ScrollArea className="max-h-48">
+              {userSuggestions.map((user) => (
+                <button
+                  key={user.id}
+                  className="w-full px-4 py-2 text-left hover:bg-accent/50 flex items-center gap-2"
+                  onClick={() => handleSelectUser(user.username)}
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user.avatar_url || undefined} />
+                    <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span>@{user.username}</span>
+                </button>
+              ))}
+            </ScrollArea>
+          </div>
         )}
-      />
+      </div>
 
       <div className="text-xs text-muted-foreground">
         {value.length > 0 && (

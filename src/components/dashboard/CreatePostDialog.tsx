@@ -8,6 +8,8 @@ import { RichTextEditor } from "./post/editor/RichTextEditor";
 import { format } from "date-fns";
 import { usePostCreation } from "./post/hooks/usePostCreation";
 import type { CreatePostDialogProps } from "./post/types/postTypes";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const CreatePostDialog = ({
   isOpen,
@@ -42,6 +44,31 @@ export const CreatePostDialog = ({
     onOpenChange(false);
   };
 
+  const handleMention = async (username: string) => {
+    try {
+      // Get the mentioned user's ID
+      const { data: mentionedUser, error: userError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .single();
+
+      if (userError || !mentionedUser) {
+        console.error('Error finding mentioned user:', userError);
+        return;
+      }
+
+      console.log('Mentioned user found:', mentionedUser);
+      
+      // The actual mention will be created after the post is created
+      // This is handled in the usePostCreation hook
+      setContent(prev => `${prev}@${username} `);
+    } catch (error) {
+      console.error('Error handling mention:', error);
+      toast.error("Failed to process mention");
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px] bg-card">
@@ -55,7 +82,7 @@ export const CreatePostDialog = ({
           <RichTextEditor
             value={content}
             onChange={setContent}
-            onMention={(username) => setContent(prev => `${prev}@${username} `)}
+            onMention={handleMention}
             onHashtag={(tag) => setContent(prev => `${prev}#${tag} `)}
           />
           
