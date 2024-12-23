@@ -86,16 +86,15 @@ export const usePostCreation = (
       const fileExt = file.name.split('.').pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${currentUser.id}/${fileName}`;
-      const bucket = isVideoFile(file) ? 'videos' : 'posts';
 
-      console.log(`Uploading to ${bucket} bucket:`, {
+      console.log('Uploading to posts bucket:', {
         path: filePath,
         contentType: file.type,
         size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
       });
 
       const { error: uploadError, data } = await supabase.storage
-        .from(bucket)
+        .from('posts')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false,
@@ -105,21 +104,18 @@ export const usePostCreation = (
       if (uploadError) {
         console.error('Upload error:', {
           error: uploadError,
-          message: uploadError.message,
-          details: uploadError.details,
-          hint: uploadError.hint
+          message: uploadError.message
         });
         throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
+        .from('posts')
         .getPublicUrl(filePath);
 
       console.log('Upload successful:', {
         file: file.name,
         publicUrl,
-        bucket,
         path: filePath
       });
       
