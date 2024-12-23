@@ -20,6 +20,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     queryFn: async () => {
       try {
         console.log('Fetching subscription for author:', author.id);
+        // Query for active subscription with most recent start date
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -28,7 +29,9 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           `)
           .eq('user_id', author.id)
           .eq('status', 'active')
-          .maybeSingle();
+          .order('starts_at', { ascending: false })
+          .limit(1)
+          .single();
 
         if (subscriptionError) {
           console.error('Error fetching subscription:', subscriptionError);
