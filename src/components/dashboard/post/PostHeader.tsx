@@ -29,7 +29,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           `)
           .eq('user_id', author.id)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
 
         if (subscriptionError) {
           console.error('Subscription Query Error:', subscriptionError);
@@ -44,6 +44,8 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
       }
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: false, // Don't retry on failure
+    refetchOnWindowFocus: false, // Don't refetch when window gains focus
   });
 
   const handleProfileClick = (e: React.MouseEvent) => {
