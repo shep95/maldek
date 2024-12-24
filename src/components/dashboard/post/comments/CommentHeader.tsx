@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Crown } from "lucide-react";
@@ -11,11 +10,10 @@ interface CommentHeaderProps {
     avatar_url: string | null;
   };
   timestamp: string;
+  onProfileClick: (e: React.MouseEvent) => void;
 }
 
-export const CommentHeader = ({ user, timestamp }: CommentHeaderProps) => {
-  const navigate = useNavigate();
-
+export const CommentHeader = ({ user, timestamp, onProfileClick }: CommentHeaderProps) => {
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', user.username],
     queryFn: async () => {
@@ -34,18 +32,11 @@ export const CommentHeader = ({ user, timestamp }: CommentHeaderProps) => {
     }
   });
 
-  const handleProfileClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Navigating to profile:', user.username);
-    navigate(`/@${user.username}`);
-  };
-
   return (
     <div className="flex items-center gap-3">
       <Avatar 
         className="h-8 w-8 cursor-pointer" 
-        onClick={handleProfileClick}
+        onClick={onProfileClick}
       >
         <AvatarImage src={user.avatar_url || undefined} />
         <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
@@ -54,7 +45,7 @@ export const CommentHeader = ({ user, timestamp }: CommentHeaderProps) => {
         <div className="flex items-baseline gap-2">
           <div className="flex items-center gap-1">
             <button
-              onClick={handleProfileClick}
+              onClick={onProfileClick}
               className="font-semibold cursor-pointer hover:underline"
             >
               @{user.username}

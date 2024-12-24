@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentHeader } from "./CommentHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface CommentCardProps {
   comment: {
@@ -36,6 +37,7 @@ export const CommentCard = ({
   const [translatedContent, setTranslatedContent] = useState<string | null>(null);
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
+  const navigate = useNavigate();
 
   const handleTranslate = async () => {
     if (isTranslating || !userLanguage) return;
@@ -70,13 +72,24 @@ export const CommentCard = ({
     }
   };
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Navigating to profile:', comment.user.username);
+    navigate(`/@${comment.user.username}`);
+  };
+
   // Only allow nesting up to 3 levels deep
   const canReply = level < 3;
 
   return (
     <div className="space-y-3">
       <Card className={`p-4 transition-all duration-200 hover:bg-accent/5 ${level > 0 ? 'ml-6' : ''}`}>
-        <CommentHeader user={comment.user} timestamp={comment.created_at} />
+        <CommentHeader 
+          user={comment.user} 
+          timestamp={comment.created_at}
+          onProfileClick={handleProfileClick}
+        />
         
         <p className="mt-1 text-foreground">{translatedContent || comment.content}</p>
         
