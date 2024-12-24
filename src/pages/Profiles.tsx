@@ -20,28 +20,31 @@ const Profiles = () => {
   console.log('Username param:', username);
   console.log('Session user:', session?.user?.id);
 
-  useEffect(() => {
-    console.log('Profile component mounted/updated');
-    console.log('Current URL:', window.location.href);
-    return () => {
-      console.log('Profile component unmounting');
-    };
-  }, [username]);
+  // Clean username (remove @ if present)
+  const cleanUsername = username?.startsWith('@') ? username.slice(1) : username;
 
   // Fetch profile by username if provided, otherwise fetch current user's profile
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
-    queryKey: ['profile', username || session?.user?.id],
+    queryKey: ['profile', cleanUsername || session?.user?.id],
     queryFn: async () => {
       console.log('Starting profile fetch...');
+      console.log('Clean username:', cleanUsername);
       
       let query = supabase
         .from('profiles')
-        .select();
+        .select(`
+          *,
+          total_posts,
+          follower_count,
+          total_likes_received,
+          total_views,
+          user_subscriptions (
+            tier:subscription_tiers (*)
+          )
+        `);
 
       // If username is provided, fetch by username, otherwise fetch by user ID
-      if (username) {
-        // Remove @ from username if present
-        const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
+      if (cleanUsername) {
         console.log('Fetching profile by username:', cleanUsername);
         query = query.eq('username', cleanUsername);
       } else if (session?.user?.id) {
@@ -68,7 +71,7 @@ const Profiles = () => {
       console.log('Profile fetched successfully:', data);
       return data;
     },
-    retry: 3,
+    retry: 1, // Only retry once to avoid too many retries on 404s
     retryDelay: 1000,
   });
 
@@ -127,8 +130,7 @@ const Profiles = () => {
         },
         (payload) => {
           console.log('Profile updated:', payload);
-          // Invalidate the profile query to trigger a refresh
-          queryClient.invalidateQueries({ queryKey: ['profile', username || session?.user?.id] });
+          queryClient.invalidateQueries({ queryKey: ['profile', cleanUsername || session?.user?.id] });
         }
       )
       .subscribe();
@@ -136,7 +138,7 @@ const Profiles = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, username, session?.user?.id, queryClient]);
+  }, [profile?.id, cleanUsername, session?.user?.id, queryClient]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {
@@ -148,6 +150,9 @@ const Profiles = () => {
 
         if (error) throw error;
         toast.success('Post deleted successfully');
+        
+        // Refresh posts after deletion
+        queryClient.invalidateQueries({ queryKey: ['user-posts', profile?.id] });
       }
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
@@ -156,11 +161,23 @@ const Profiles = () => {
   };
 
   if (profileError) {
+    console.error('Profile Error:', profileError);
     return <DashboardError />;
   }
 
   if (profileLoading) {
     return <DashboardLoading />;
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Profile not found</h2>
+          <p className="text-muted-foreground">The profile you're looking for doesn't exist.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
