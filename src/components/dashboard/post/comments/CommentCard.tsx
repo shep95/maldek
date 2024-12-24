@@ -75,9 +75,12 @@ export const CommentCard = ({
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Clean the username (remove @ if present)
     const username = comment.user.username.startsWith('@') 
       ? comment.user.username.slice(1) 
       : comment.user.username;
+    
     console.log('CommentCard - Navigating to profile:', username);
     navigate(`/@${username}`);
   };

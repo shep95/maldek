@@ -17,23 +17,52 @@ export const CommentHeader = ({ user, timestamp, onProfileClick }: CommentHeader
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', user.username],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Fetching subscription data for:', user.username);
+      
+      // First get the user's profile ID
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', user.username)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return null;
+      }
+
+      if (!profile) {
+        console.log('No profile found for username:', user.username);
+        return null;
+      }
+
+      console.log('Found profile:', profile);
+
+      // Then get their subscription data
+      const { data: subscriptionData, error: subscriptionError } = await supabase
         .from('user_subscriptions')
         .select(`
           *,
           tier:subscription_tiers(*)
         `)
-        .eq('user_id', user.username)
+        .eq('user_id', profile.id)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
-      if (error) return null;
-      return data;
-    }
+      if (subscriptionError) {
+        console.error('Subscription Query Error:', subscriptionError);
+        return null;
+      }
+
+      console.log('Subscription data:', subscriptionData);
+      return subscriptionData;
+    },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const handleClick = (e: React.MouseEvent) => {
     console.log('CommentHeader - Profile click handler called');
+    e.preventDefault();
     e.stopPropagation();
     onProfileClick(e);
   };
