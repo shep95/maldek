@@ -95,6 +95,13 @@ export const CommentCard = ({
     }
   };
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Navigating to profile:', comment.user.username);
+    navigate(`/@${comment.user.username}`);
+  };
+
   // Only allow nesting up to 3 levels deep
   const canReply = level < 3;
 
@@ -104,7 +111,7 @@ export const CommentCard = ({
         <div className="flex items-start gap-3">
           <Avatar 
             className="h-8 w-8 cursor-pointer" 
-            onClick={() => navigate(`/@${comment.user.username}`)}
+            onClick={handleProfileClick}
           >
             <AvatarImage src={comment.user.avatar_url || undefined} />
             <AvatarFallback>{comment.user.username[0].toUpperCase()}</AvatarFallback>
@@ -112,12 +119,12 @@ export const CommentCard = ({
           <div className="flex-1">
             <div className="flex items-baseline gap-2">
               <div className="flex items-center gap-1">
-                <h4 
+                <button 
                   className="font-semibold cursor-pointer hover:underline" 
-                  onClick={() => navigate(`/@${comment.user.username}`)}
+                  onClick={handleProfileClick}
                 >
                   @{comment.user.username}
-                </h4>
+                </button>
                 {subscription?.tier?.name === 'Creator' && (
                   <div className="group relative">
                     <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.6)] border-2 border-orange-500 bg-black/50 backdrop-blur-sm">
@@ -125,16 +132,6 @@ export const CommentCard = ({
                     </div>
                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
                       Creator
-                    </div>
-                  </div>
-                )}
-                {subscription?.tier?.name === 'Business' && (
-                  <div className="group relative">
-                    <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(234,179,8,0.6)] border-2 border-yellow-500 bg-black/50 backdrop-blur-sm">
-                      <Check className="h-4 w-4 text-yellow-500 stroke-[3]" />
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-                      Business
                     </div>
                   </div>
                 )}
@@ -208,7 +205,6 @@ export const CommentCard = ({
         </div>
       </Card>
 
-      {/* Render nested replies */}
       {replies.length > 0 && (
         <div className="space-y-3">
           {replies.map((reply) => (

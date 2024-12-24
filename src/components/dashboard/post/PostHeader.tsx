@@ -52,9 +52,8 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     e.stopPropagation();
     
     const username = author.username.startsWith('@') ? author.username.slice(1) : author.username;
-    const profilePath = `/@${username}`;
-    
-    navigate(profilePath);
+    console.log('Navigating to profile:', username);
+    navigate(`/@${username}`);
   };
 
   const getTimeAgo = (date: Date) => {
