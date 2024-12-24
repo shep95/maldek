@@ -5,6 +5,7 @@ import { Languages, Reply, X } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentHeader } from "./CommentHeader";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CommentCardProps {
   comment: {
