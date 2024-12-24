@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface PostHeaderProps {
   author: Author;
@@ -19,6 +20,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
       try {
+        console.log('Fetching subscription data for user:', author.id);
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select(`
@@ -34,10 +36,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           return null;
         }
 
-        if (!subscriptionData) {
-          return null;
-        }
-
+        console.log('Subscription data fetched:', subscriptionData);
         return subscriptionData;
       } catch (error) {
         console.error('Error in subscription query:', error);
@@ -51,9 +50,24 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     e.preventDefault();
     e.stopPropagation();
     
-    const username = author.username.startsWith('@') ? author.username.slice(1) : author.username;
-    console.log('Navigating to profile:', username);
-    navigate(`/@${username}`);
+    try {
+      const username = author.username.startsWith('@') ? author.username.slice(1) : author.username;
+      console.log('Profile click - Username:', username);
+      console.log('Current author data:', author);
+      
+      if (!username) {
+        console.error('No username available for navigation');
+        toast.error('Unable to navigate to profile: Username not found');
+        return;
+      }
+
+      const profilePath = `/@${username}`;
+      console.log('Navigating to profile path:', profilePath);
+      navigate(profilePath);
+    } catch (error) {
+      console.error('Error during profile navigation:', error);
+      toast.error('Failed to navigate to profile');
+    }
   };
 
   const getTimeAgo = (date: Date) => {

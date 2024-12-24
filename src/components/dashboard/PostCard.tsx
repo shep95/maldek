@@ -5,6 +5,7 @@ import { PostActions } from "./post/PostActions";
 import { PostMedia } from "./post/PostMedia";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { Post } from "@/utils/postUtils";
+import { toast } from "sonner";
 
 interface PostCardProps {
   post: Post;
@@ -18,14 +19,30 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const { data: userSettings } = useUserSettings();
 
   const handlePostClick = () => {
-    console.log('Navigating to post:', post.id);
+    console.log('PostCard - Clicking post:', post.id);
     navigate(`/post/${post.id}`);
   };
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent post click
-    console.log('Navigating to profile:', post.author.username);
-    navigate(`/@${post.author.username}`);
+    try {
+      const username = post.author.username;
+      console.log('PostCard - Username click:', username);
+      console.log('PostCard - Author data:', post.author);
+      
+      if (!username) {
+        console.error('PostCard - No username available for navigation');
+        toast.error('Unable to navigate to profile: Username not found');
+        return;
+      }
+
+      const profilePath = `/@${username}`;
+      console.log('PostCard - Navigating to profile path:', profilePath);
+      navigate(profilePath);
+    } catch (error) {
+      console.error('PostCard - Error during profile navigation:', error);
+      toast.error('Failed to navigate to profile');
+    }
   };
 
   return (
