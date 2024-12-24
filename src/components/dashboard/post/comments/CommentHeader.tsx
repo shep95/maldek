@@ -32,10 +32,16 @@ export const CommentHeader = ({ user, timestamp, onProfileClick }: CommentHeader
     }
   });
 
+  const handleClick = (e: React.MouseEvent) => {
+    console.log('CommentHeader - Profile click handler called');
+    e.stopPropagation();
+    onProfileClick(e);
+  };
+
   return (
     <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
       <button
-        onClick={onProfileClick}
+        onClick={handleClick}
         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       >
         <Avatar className="h-8 w-8">
@@ -48,7 +54,7 @@ export const CommentHeader = ({ user, timestamp, onProfileClick }: CommentHeader
         <div className="flex items-baseline gap-2">
           <div className="flex items-center gap-1">
             <button
-              onClick={onProfileClick}
+              onClick={handleClick}
               className="font-semibold cursor-pointer hover:underline"
             >
               @{user.username}

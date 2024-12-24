@@ -78,7 +78,7 @@ export const CommentCard = ({
     const username = comment.user.username.startsWith('@') 
       ? comment.user.username.slice(1) 
       : comment.user.username;
-    console.log('Navigating to profile:', username);
+    console.log('CommentCard - Navigating to profile:', username);
     navigate(`/@${username}`);
   };
 
@@ -87,7 +87,10 @@ export const CommentCard = ({
 
   return (
     <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
-      <Card className={`p-4 transition-all duration-200 hover:bg-accent/5 ${level > 0 ? 'ml-6' : ''}`}>
+      <Card 
+        className={`p-4 transition-all duration-200 hover:bg-accent/5 ${level > 0 ? 'ml-6' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <CommentHeader 
           user={comment.user} 
           timestamp={comment.created_at}
@@ -101,7 +104,10 @@ export const CommentCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleTranslate}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleTranslate();
+              }}
               disabled={isTranslating}
             >
               <Languages className="h-4 w-4 mr-2" />
@@ -112,7 +118,10 @@ export const CommentCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setTranslatedContent(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTranslatedContent(null);
+              }}
             >
               Show original
             </Button>
@@ -121,7 +130,10 @@ export const CommentCard = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsReplying(!isReplying)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsReplying(!isReplying);
+              }}
             >
               <Reply className="h-4 w-4 mr-2" />
               {isReplying ? "Cancel Reply" : "Reply"}
@@ -136,19 +148,26 @@ export const CommentCard = ({
               onChange={(e) => setReplyContent(e.target.value)}
               placeholder="Write your reply..."
               className="min-h-[100px]"
+              onClick={(e) => e.stopPropagation()}
             />
             <div className="flex justify-end gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsReplying(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsReplying(false);
+                }}
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancel
               </Button>
               <Button
                 size="sm"
-                onClick={handleReplySubmit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReplySubmit();
+                }}
                 disabled={!replyContent.trim()}
               >
                 <Reply className="h-4 w-4 mr-2" />
