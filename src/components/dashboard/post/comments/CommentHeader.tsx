@@ -33,14 +33,17 @@ export const CommentHeader = ({ user, timestamp, onProfileClick }: CommentHeader
   });
 
   return (
-    <div className="flex items-center gap-3">
-      <Avatar 
-        className="h-8 w-8 cursor-pointer" 
+    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+      <button
         onClick={onProfileClick}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       >
-        <AvatarImage src={user.avatar_url || undefined} />
-        <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-      </Avatar>
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={user.avatar_url || undefined} />
+          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+        </Avatar>
+      </button>
+      
       <div className="flex-1">
         <div className="flex items-baseline gap-2">
           <div className="flex items-center gap-1">
@@ -55,9 +58,9 @@ export const CommentHeader = ({ user, timestamp, onProfileClick }: CommentHeader
                 <div className={cn(
                   "h-6 w-6 rounded-full flex items-center justify-center",
                   "border-2 bg-black/50 backdrop-blur-sm",
-                  subscription.tier.name === 'True Emperor' && "border-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.6)]",
-                  subscription.tier.name === 'Creator' && "border-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.6)]",
-                  subscription.tier.name === 'Business' && "border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.6)]"
+                  subscription.tier.name === 'True Emperor' && "border-yellow-500",
+                  subscription.tier.name === 'Creator' && "border-orange-500",
+                  subscription.tier.name === 'Business' && "border-purple-500"
                 )}>
                   <Crown className={cn(
                     "h-4 w-4",

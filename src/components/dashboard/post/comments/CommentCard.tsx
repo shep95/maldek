@@ -75,15 +75,18 @@ export const CommentCard = ({
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Navigating to profile:', comment.user.username);
-    navigate(`/@${comment.user.username}`);
+    const username = comment.user.username.startsWith('@') 
+      ? comment.user.username.slice(1) 
+      : comment.user.username;
+    console.log('Navigating to profile:', username);
+    navigate(`/@${username}`);
   };
 
   // Only allow nesting up to 3 levels deep
   const canReply = level < 3;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
       <Card className={`p-4 transition-all duration-200 hover:bg-accent/5 ${level > 0 ? 'ml-6' : ''}`}>
         <CommentHeader 
           user={comment.user} 
