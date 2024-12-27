@@ -2,13 +2,21 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import type { Connect } from 'vite';
+import type { Connect, ServerOptions } from 'vite';
 import fs from 'fs';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Base configuration
-  const config = {
+  const config: {
+    server: ServerOptions;
+    plugins: any[];
+    resolve: {
+      alias: {
+        [key: string]: string;
+      };
+    };
+  } = {
     server: {
       host: "::",
       port: 8080,
