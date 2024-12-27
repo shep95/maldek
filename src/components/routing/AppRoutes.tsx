@@ -94,7 +94,7 @@ export const AppRoutes = () => {
       <Route element={<DashboardLayout />}>
         {/* Profile routes - order matters! */}
         <Route path="/@:username" element={<Profiles />} />
-        <Route path="/profile" element={<Profiles />} />
+        <Route path="/profile" element={<Navigate to={`/@${session.user.email?.split('@')[0]}`} replace />} />
         
         {/* Other routes */}
         <Route path="/dashboard" element={<Dashboard />} />

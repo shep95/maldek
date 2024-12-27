@@ -31,20 +31,15 @@ export const NavItems = ({
 
   const handleNavigation = (path?: string) => {
     try {
-      console.log('NavItems - Navigating to:', path);
+      console.log('NavItems - Navigation attempt:', path);
       
       if (!path) {
-        console.log('No path provided for navigation');
+        console.error('No path provided for navigation');
         return;
       }
 
-      if (location.pathname === path) {
-        console.log('Already on path:', path);
-        return;
-      }
-
+      // Close mobile sheet if on mobile
       if (isMobile) {
-        // Close the mobile sheet by setting isOpen to false
         const mobileSheet = document.querySelector('[data-mobile="true"]');
         if (mobileSheet) {
           const closeButton = mobileSheet.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
@@ -54,9 +49,12 @@ export const NavItems = ({
         }
       }
 
-      // Use navigate directly instead of onNavigate
-      console.log('Navigating to path:', path);
-      navigate(path);
+      // Get username for profile navigation
+      const username = session?.user?.email?.split('@')[0];
+      const finalPath = path === '/profile' && username ? `/@${username}` : path;
+      
+      console.log('Final navigation path:', finalPath);
+      navigate(finalPath);
       window.scrollTo(0, 0);
       
     } catch (error) {
@@ -75,7 +73,7 @@ export const NavItems = ({
     { 
       icon: User,
       label: "Profile",
-      path: session?.user?.id ? `/@${session.user.email?.split('@')[0]}` : '/profile',
+      path: "/profile",
       active: location.pathname.startsWith('/@') || location.pathname === '/profile'
     },
     { 
