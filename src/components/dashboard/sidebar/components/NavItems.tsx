@@ -1,9 +1,10 @@
 import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
 
 interface NavItemsProps {
   subscription: any;
@@ -23,24 +24,45 @@ export const NavItems = ({
   onNavigate
 }: NavItemsProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const unreadCount = useNotificationCount(userId);
   const isMobile = useIsMobile();
   const session = useSession();
 
   const handleNavigation = (path?: string) => {
-    console.log('NavItems - Navigating to:', path);
-    
-    if (isMobile) {
-      // Close the mobile sheet by setting isOpen to false
-      const mobileSheet = document.querySelector('[data-mobile="true"]');
-      if (mobileSheet) {
-        const closeButton = mobileSheet.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
-        if (closeButton) {
-          closeButton.click();
+    try {
+      console.log('NavItems - Navigating to:', path);
+      
+      if (!path) {
+        console.log('No path provided for navigation');
+        return;
+      }
+
+      if (location.pathname === path) {
+        console.log('Already on path:', path);
+        return;
+      }
+
+      if (isMobile) {
+        // Close the mobile sheet by setting isOpen to false
+        const mobileSheet = document.querySelector('[data-mobile="true"]');
+        if (mobileSheet) {
+          const closeButton = mobileSheet.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
+          if (closeButton) {
+            closeButton.click();
+          }
         }
       }
+
+      // Use navigate directly instead of onNavigate
+      console.log('Navigating to path:', path);
+      navigate(path);
+      window.scrollTo(0, 0);
+      
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Navigation failed. Please try again.');
     }
-    onNavigate(path);
   };
 
   const navItems = [

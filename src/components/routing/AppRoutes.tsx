@@ -92,9 +92,9 @@ export const AppRoutes = () => {
       <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
       
       <Route element={<DashboardLayout />}>
-        {/* Profile route with both formats */}
-        <Route path="/profile" element={<Profiles />} />
+        {/* Profile routes - order matters! */}
         <Route path="/@:username" element={<Profiles />} />
+        <Route path="/profile" element={<Profiles />} />
         
         {/* Other routes */}
         <Route path="/dashboard" element={<Dashboard />} />
