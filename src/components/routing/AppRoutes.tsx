@@ -92,8 +92,11 @@ export const AppRoutes = () => {
       <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
       
       <Route element={<DashboardLayout />}>
-        {/* Profile route should come before other routes to ensure proper matching */}
+        {/* Profile route with both formats */}
+        <Route path="/profile" element={<Profiles />} />
         <Route path="/@:username" element={<Profiles />} />
+        
+        {/* Other routes */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notifications />} />
