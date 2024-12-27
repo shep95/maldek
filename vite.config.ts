@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       host: "::",
       port: 8080,
       // Add middleware to handle SPA routing
-      middlewares: [
+      middleware: [
         ((req: Connect.IncomingMessage, res: any, next: Connect.NextFunction) => {
           // Check if the request is for a static file
           if (!req.url?.includes('.') && !req.url?.startsWith('/api')) {
