@@ -6,33 +6,46 @@ import type { Connect } from 'vite';
 import fs from 'fs';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    https: {
-      key: fs.readFileSync('./.certificates/key.pem'),
-      cert: fs.readFileSync('./.certificates/cert.pem'),
+export default defineConfig(({ mode }) => {
+  // Base configuration
+  const config = {
+    server: {
+      host: "::",
+      port: 8080,
+      // Add middleware to handle SPA routing
+      middlewares: [
+        ((req: Connect.IncomingMessage, res: any, next: Connect.NextFunction) => {
+          // Check if the request is for a static file
+          if (!req.url?.includes('.') && !req.url?.startsWith('/api')) {
+            req.url = '/';
+          }
+          next();
+        }) as Connect.NextHandleFunction,
+      ],
     },
-    // Add middleware to handle SPA routing
-    middlewares: [
-      ((req: Connect.IncomingMessage, res: any, next: Connect.NextFunction) => {
-        // Check if the request is for a static file
-        if (!req.url?.includes('.') && !req.url?.startsWith('/api')) {
-          req.url = '/';
-        }
-        next();
-      }) as Connect.NextHandleFunction,
-    ],
-  },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    plugins: [
+      react(),
+      mode === 'development' &&
+      componentTagger(),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-}));
+  };
+
+  // Add HTTPS configuration only in development mode
+  if (mode === 'development') {
+    try {
+      config.server.https = {
+        key: fs.readFileSync('./.certificates/key.pem'),
+        cert: fs.readFileSync('./.certificates/cert.pem'),
+      };
+    } catch (error) {
+      console.warn('SSL certificates not found, running without HTTPS');
+    }
+  }
+
+  return config;
+});
