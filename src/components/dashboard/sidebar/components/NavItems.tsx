@@ -1,8 +1,9 @@
-import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown } from "lucide-react";
+import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface NavItemsProps {
   subscription: any;
@@ -24,8 +25,11 @@ export const NavItems = ({
   const location = useLocation();
   const unreadCount = useNotificationCount(userId);
   const isMobile = useIsMobile();
+  const session = useSession();
 
   const handleNavigation = (path?: string) => {
+    console.log('NavItems - Navigating to:', path);
+    
     if (isMobile) {
       // Close the mobile sheet by setting isOpen to false
       const mobileSheet = document.querySelector('[data-mobile="true"]');
@@ -45,6 +49,12 @@ export const NavItems = ({
       label: "Home", 
       path: "/dashboard", 
       active: location.pathname === "/dashboard" 
+    },
+    { 
+      icon: User,
+      label: "Profile",
+      path: session?.user?.id ? `/@${session.user.email?.split('@')[0]}` : '/profile',
+      active: location.pathname.startsWith('/@') || location.pathname === '/profile'
     },
     { 
       icon: MessageCircle, 
