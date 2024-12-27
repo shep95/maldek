@@ -1,10 +1,8 @@
-import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useSession } from "@supabase/auth-helpers-react";
-import { toast } from "sonner";
 
 interface NavItemsProps {
   subscription: any;
@@ -24,43 +22,21 @@ export const NavItems = ({
   onNavigate
 }: NavItemsProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const unreadCount = useNotificationCount(userId);
   const isMobile = useIsMobile();
-  const session = useSession();
 
   const handleNavigation = (path?: string) => {
-    try {
-      console.log('NavItems - Navigation attempt:', path);
-      
-      if (!path) {
-        console.error('No path provided for navigation');
-        return;
-      }
-
-      // Close mobile sheet if on mobile
-      if (isMobile) {
-        const mobileSheet = document.querySelector('[data-mobile="true"]');
-        if (mobileSheet) {
-          const closeButton = mobileSheet.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
-          if (closeButton) {
-            closeButton.click();
-          }
+    if (isMobile) {
+      // Close the mobile sheet by setting isOpen to false
+      const mobileSheet = document.querySelector('[data-mobile="true"]');
+      if (mobileSheet) {
+        const closeButton = mobileSheet.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
+        if (closeButton) {
+          closeButton.click();
         }
       }
-
-      // Get username for profile navigation
-      const username = session?.user?.email?.split('@')[0];
-      const finalPath = path === '/profile' && username ? `/@${username}` : path;
-      
-      console.log('Final navigation path:', finalPath);
-      navigate(finalPath);
-      window.scrollTo(0, 0);
-      
-    } catch (error) {
-      console.error('Navigation error:', error);
-      toast.error('Navigation failed. Please try again.');
     }
+    onNavigate(path);
   };
 
   const navItems = [
@@ -69,12 +45,6 @@ export const NavItems = ({
       label: "Home", 
       path: "/dashboard", 
       active: location.pathname === "/dashboard" 
-    },
-    { 
-      icon: User,
-      label: "Profile",
-      path: "/profile",
-      active: location.pathname.startsWith('/@') || location.pathname === '/profile'
     },
     { 
       icon: MessageCircle, 
