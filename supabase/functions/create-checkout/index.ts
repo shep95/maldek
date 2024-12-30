@@ -67,32 +67,42 @@ serve(async (req) => {
       throw new Error('Subscription tier not found')
     }
 
-    const session = await stripe.checkout.sessions.create({
-      customer_email: user.email,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
+    try {
+      const session = await stripe.checkout.sessions.create({
+        customer_email: user.email,
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get('origin')}/subscription`,
+        metadata: {
+          userId: userId,
+          tierId: tierData.id,
+          tier: tier,
         },
-      ],
-      mode: 'subscription',
-      success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get('origin')}/subscription`,
-      metadata: {
-        userId: userId,
-        tierId: tierData.id,
-        tier: tier,
-      },
-    })
+      })
 
-    console.log('Checkout session created:', session.id)
+      console.log('Checkout session created:', session.id)
 
-    return new Response(
-      JSON.stringify({ url: session.url }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+      return new Response(
+        JSON.stringify({ url: session.url }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      )
+    } catch (stripeError) {
+      console.error('Stripe error:', {
+        error: stripeError,
+        message: stripeError.message,
+        type: stripeError.type,
+        code: stripeError.code
+      });
+      throw stripeError;
+    }
   } catch (error) {
     console.error('Error creating checkout session:', error)
     return new Response(
