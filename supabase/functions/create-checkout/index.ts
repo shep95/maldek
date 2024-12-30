@@ -2,15 +2,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@13.6.0'
 
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+  apiVersion: '2023-10-16',
+  httpClient: Stripe.createFetchHttpClient(),
+})
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-// Price IDs for subscription tiers
-const CREATOR_PRICE_ID = 'price_1QXZOIApZ2oDcxDyFw0DXoh0'  // $17/month tier
-const BUSINESS_PRICE_ID = 'price_1QVPPeApZ2oDcxDyezvlMWup' // $800/month tier
-const EMPEROR_PRICE_ID = 'price_1QZ1VtApZ2oDcxDyuXGZXj95' // $50,000/month tier
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,11 +20,6 @@ serve(async (req) => {
   try {
     const { tier, userId } = await req.json()
     console.log('Creating checkout session for:', { tier, userId })
-
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    })
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -42,13 +37,13 @@ serve(async (req) => {
     let priceId;
     switch(tier.toLowerCase()) {
       case 'creator':
-        priceId = CREATOR_PRICE_ID;
+        priceId = 'price_1QXZOIApZ2oDcxDyFw0DXoh0';  // $17/month tier
         break;
       case 'business':
-        priceId = BUSINESS_PRICE_ID;
+        priceId = 'price_1QVPPeApZ2oDcxDyezvlMWup'; // $800/month tier
         break;
       case 'true emperor':
-        priceId = EMPEROR_PRICE_ID;
+        priceId = 'price_1QZ1VtApZ2oDcxDyuXGZXj95'; // $50,000/month tier
         break;
       default:
         throw new Error('Invalid subscription tier');
