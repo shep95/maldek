@@ -19,9 +19,13 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
   const navigate = useNavigate();
   const session = useSession();
 
-  const handleUserClick = (username: string) => {
-    console.log("Navigating to user profile:", username);
-    navigate(`/@${username}`);
+  const handleUserClick = (e: React.MouseEvent, username: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Navigating to profile:', username);
+    const cleanUsername = username.startsWith('@') ? username : `@${username}`;
+    navigate(cleanUsername);
   };
 
   const handleFollowUser = async (e: React.MouseEvent, userId: string) => {
@@ -77,16 +81,18 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
       {users.map((user) => (
         <div 
           key={user.id} 
-          className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors cursor-pointer"
-          onClick={() => handleUserClick(user.username)}
+          className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors"
         >
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={(e) => handleUserClick(e, user.username)}
+          >
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.avatar_url || ''} />
               <AvatarFallback>{user.username[0]}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
-              <span className="font-medium">@{user.username}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-medium truncate">@{user.username}</span>
               <span className="text-sm text-muted-foreground">{user.follower_count} followers</span>
             </div>
           </div>
@@ -94,7 +100,7 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              className="ml-2 hover:bg-accent hover:text-white"
+              className="ml-2 hover:bg-accent hover:text-accent-foreground"
               onClick={(e) => handleFollowUser(e, user.id)}
             >
               Follow

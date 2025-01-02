@@ -60,15 +60,10 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     console.log('2. Username:', author.username);
     console.log('3. Current path:', window.location.pathname);
     
-    const username = author.username.startsWith('@') ? author.username.slice(1) : author.username;
-    const profilePath = `/@${username}`;
+    const username = author.username.startsWith('@') ? author.username : `@${author.username}`;
+    console.log('4. Target path:', username);
     
-    console.log('4. Target path:', profilePath);
-    
-    navigate(profilePath, { 
-      replace: false,
-      state: { timestamp: new Date().getTime() }
-    });
+    navigate(username);
     
     setTimeout(() => {
       console.log('5. Path after navigation:', window.location.pathname);
@@ -81,7 +76,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     
     if (diffInSeconds < 60) return `${diffInSeconds}s`;
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${diffInMinutes}M`;
+    if (diffInMinutes < 60) return `${diffInMinutes}m`;
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h`;
     const diffInDays = Math.floor(diffInHours / 24);
