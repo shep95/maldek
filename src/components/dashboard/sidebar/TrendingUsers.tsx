@@ -81,26 +81,26 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
       {users.map((user) => (
         <div 
           key={user.id} 
-          className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors"
+          className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors relative"
         >
           <div 
-            className="flex items-center gap-3 cursor-pointer"
+            className="flex items-center gap-3 cursor-pointer flex-grow min-w-0"
             onClick={(e) => handleUserClick(e, user.username)}
           >
-            <Avatar className="h-8 w-8">
+            <Avatar className="h-8 w-8 flex-shrink-0">
               <AvatarImage src={user.avatar_url || ''} />
               <AvatarFallback>{user.username[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col min-w-0">
               <span className="font-medium truncate">@{user.username}</span>
-              <span className="text-sm text-muted-foreground">{user.follower_count} followers</span>
+              <span className="text-sm text-muted-foreground truncate">{user.follower_count} followers</span>
             </div>
           </div>
           {session?.user?.id !== user.id && (
             <Button 
               variant="outline" 
               size="sm"
-              className="ml-2 hover:bg-accent hover:text-accent-foreground"
+              className="ml-2 hover:bg-accent hover:text-accent-foreground flex-shrink-0"
               onClick={(e) => handleFollowUser(e, user.id)}
             >
               Follow

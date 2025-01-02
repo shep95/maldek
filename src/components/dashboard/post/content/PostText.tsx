@@ -14,6 +14,19 @@ interface PostTextProps {
 export const PostText = ({ content, translatedContent, onShowOriginal }: PostTextProps) => {
   const navigate = useNavigate();
 
+  const truncateUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname;
+      const path = urlObj.pathname;
+      const truncatedPath = path.length > 15 ? path.substring(0, 15) + '...' : path;
+      return `${domain}${truncatedPath}`;
+    } catch (e) {
+      // If URL parsing fails, truncate the original string
+      return url.length > 30 ? url.substring(0, 30) + '...' : url;
+    }
+  };
+
   const renderContent = (text: string) => {
     const urlPattern = /(https?:\/\/[^\s]+)/g;
     const hashtagPattern = /#(\w+)/g;
@@ -84,16 +97,17 @@ export const PostText = ({ content, translatedContent, onShowOriginal }: PostTex
         // Handle URLs
         if (urlPattern.test(word)) {
           return (
-            <span key={`${index}-${wordIndex}`}>
+            <span key={`${index}-${wordIndex}`} className="inline-flex items-center gap-1 max-w-full">
               <a
                 href={word}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-orange-500 hover:text-orange-600 hover:underline inline-flex items-center gap-1"
+                className="text-orange-500 hover:text-orange-600 hover:underline truncate"
                 onClick={(e) => e.stopPropagation()}
+                title={word} // Show full URL on hover
               >
-                {word}
-                <LinkIcon className="h-3 w-3" />
+                {truncateUrl(word)}
+                <LinkIcon className="h-3 w-3 inline-block ml-1 flex-shrink-0" />
               </a>
               {' '}
             </span>
@@ -108,7 +122,7 @@ export const PostText = ({ content, translatedContent, onShowOriginal }: PostTex
   return (
     <div>
       <p className={cn(
-        "text-foreground whitespace-pre-wrap",
+        "text-foreground whitespace-pre-wrap break-words",
         "prose prose-orange max-w-none",
         "prose-a:text-orange-500 prose-a:no-underline hover:prose-a:underline",
         "prose-code:bg-muted prose-code:rounded prose-code:px-1"
