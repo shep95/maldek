@@ -13,7 +13,7 @@ export const SidebarHeader = () => {
           />
         </svg>
       </div>
-      <span className="text-2xl font-bold">Maldek</span>
+      <span className="text-2xl font-bold">Bosley</span>
     </div>
   );
 };
