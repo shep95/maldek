@@ -129,22 +129,68 @@ const Subscription = () => {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <CurrentSubscription 
-        subscription={subscription}
-        onManageSubscription={handleManageSubscription}
-      />
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-foreground mb-4">Premium Subscriptions</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Unlock premium features and enhance your experience with our subscription tiers
+          </p>
+        </div>
 
-      <h1 className="text-3xl font-bold mb-8">Premium Subscriptions</h1>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {tiers?.map((tier) => (
-          <SubscriptionTierCard
-            key={tier.id}
-            tier={tier}
-            currentTierId={subscription?.tier_id}
-            onSubscribe={handleSubscribe}
-          />
-        ))}
+        {/* Current Subscription Section */}
+        {subscription && (
+          <div className="mb-16">
+            <CurrentSubscription 
+              subscription={subscription}
+              onManageSubscription={handleManageSubscription}
+            />
+          </div>
+        )}
+
+        {/* Subscription Tiers Grid */}
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:gap-10">
+          {tiers?.map((tier) => (
+            <SubscriptionTierCard
+              key={tier.id}
+              tier={tier}
+              currentTierId={subscription?.tier_id}
+              onSubscribe={handleSubscribe}
+            />
+          ))}
+        </div>
+
+        {/* Features Comparison Section */}
+        <div className="mt-20 text-center">
+          <h2 className="text-2xl font-bold mb-4">All Premium Features</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <div className="bg-card p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold mb-3">Content Creation</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>Extended character limits</li>
+                <li>Schedule posts ahead</li>
+                <li>Premium media uploads</li>
+              </ul>
+            </div>
+            <div className="bg-card p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold mb-3">Analytics</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>Advanced metrics</li>
+                <li>Engagement insights</li>
+                <li>Performance tracking</li>
+              </ul>
+            </div>
+            <div className="bg-card p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold mb-3">Premium Access</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>Emperor Chatroom</li>
+                <li>Priority support</li>
+                <li>Exclusive badges</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
