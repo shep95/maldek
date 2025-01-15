@@ -149,8 +149,8 @@ const Subscription = () => {
           </div>
         )}
 
-        {/* Subscription Tiers Grid */}
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:gap-10">
+        {/* Subscription Tiers Stack - Changed from grid to flex column */}
+        <div className="flex flex-col space-y-8 max-w-2xl mx-auto">
           {tiers?.map((tier) => (
             <SubscriptionTierCard
               key={tier.id}
