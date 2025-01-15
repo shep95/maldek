@@ -15,6 +15,14 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
   const [error, setError] = useState<string | null>(null);
   const mediaRef = useRef<HTMLVideoElement | null>(null);
 
+  // Reset loading state when media changes
+  useEffect(() => {
+    if (selectedMedia) {
+      setIsLoading(true);
+      setError(null);
+    }
+  }, [selectedMedia]);
+
   // Cleanup media playback when dialog closes or media changes
   useEffect(() => {
     return () => {
@@ -109,6 +117,10 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
               controls
               playsInline
               className="max-h-full max-w-full rounded-lg"
+              onLoadStart={() => {
+                console.log('Media loading started');
+                setIsLoading(true);
+              }}
               onLoadedData={() => {
                 console.log('Media loaded successfully');
                 setIsLoading(false);
