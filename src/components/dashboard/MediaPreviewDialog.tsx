@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Download, ExternalLink } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface MediaPreviewDialogProps {
@@ -13,6 +13,19 @@ interface MediaPreviewDialogProps {
 export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialogProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mediaRef = useRef<HTMLVideoElement | null>(null);
+
+  // Cleanup media playback when dialog closes or media changes
+  useEffect(() => {
+    return () => {
+      if (mediaRef.current) {
+        console.log('Cleaning up media playback');
+        mediaRef.current.pause();
+        mediaRef.current.src = '';
+        mediaRef.current.load();
+      }
+    };
+  }, [selectedMedia]);
 
   if (!selectedMedia) return null;
 
@@ -38,8 +51,18 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
     window.open(selectedMedia, '_blank');
   };
 
+  const handleClose = () => {
+    if (mediaRef.current) {
+      console.log('Stopping media playback before closing');
+      mediaRef.current.pause();
+      mediaRef.current.src = '';
+      mediaRef.current.load();
+    }
+    onClose();
+  };
+
   return (
-    <Dialog open={!!selectedMedia} onOpenChange={onClose}>
+    <Dialog open={!!selectedMedia} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[95vw] h-[95vh] flex items-center justify-center bg-black/95 p-0 gap-0 border-none">
         <div className="absolute top-4 right-4 flex gap-2 z-50">
           <Button
@@ -64,7 +87,7 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
             variant="ghost"
             size="icon"
             className="text-white hover:bg-white/10"
-            onClick={onClose}
+            onClick={handleClose}
             title="Close preview"
           >
             <X className="h-5 w-5" />
@@ -81,17 +104,21 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
             </div>
           ) : isVideoFile(selectedMedia) ? (
             <video
+              ref={mediaRef}
               src={selectedMedia}
               controls
               playsInline
               className="max-h-full max-w-full rounded-lg"
-              onLoadedData={() => setIsLoading(false)}
-              onError={(e) => {
-                console.error('Video error:', e);
+              onLoadedData={() => {
+                console.log('Media loaded successfully');
                 setIsLoading(false);
-                setError('Failed to load video');
               }}
-              autoPlay
+              onError={(e) => {
+                console.error('Media error:', e);
+                setIsLoading(false);
+                setError('Failed to load media');
+              }}
+              preload="metadata"
             />
           ) : (
             <AspectRatio ratio={16 / 9} className="w-full max-h-[90vh]">
