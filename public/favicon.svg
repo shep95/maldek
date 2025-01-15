@@ -10,9 +10,9 @@
   <!-- Base shape with rounded corners -->
   <rect width="32" height="32" rx="8" fill="url(#grad)"/>
   
-  <!-- Triangle logo centered -->
+  <!-- Letter B logo centered -->
   <path 
-    d="M16 8 L24 22 L8 22 Z" 
+    d="M10 8 h8 a4 4 0 0 1 4 4 v0 a4 4 0 0 1-4 4 h0 a4 4 0 0 1 4 4 v0 a4 4 0 0 1-4 4 h-8 v-16 z" 
     fill="#FFFFFF"
     stroke="none"
   />
