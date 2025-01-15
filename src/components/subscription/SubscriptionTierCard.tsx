@@ -36,6 +36,11 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
     return "";
   };
 
+  // Format the price to ensure it shows as a whole number when there are no decimals
+  const formatPrice = (price: number) => {
+    return price % 1 === 0 ? price.toFixed(0) : price.toFixed(2);
+  };
+
   return (
     <Card className={cn(
       "relative overflow-hidden backdrop-blur-sm transition-all duration-300",
@@ -65,7 +70,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
       {/* Price */}
       <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-bold">${isEmperor ? '50,000' : tier.price}</span>
+        <span className="text-4xl font-bold">${isEmperor ? '50,000' : formatPrice(tier.price)}</span>
         <span className="text-sm text-muted-foreground">/month</span>
       </div>
 
