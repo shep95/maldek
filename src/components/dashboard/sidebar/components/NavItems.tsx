@@ -27,7 +27,6 @@ export const NavItems = ({
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
-      // Close the mobile sheet by setting isOpen to false
       const mobileSheet = document.querySelector('[data-mobile="true"]');
       if (mobileSheet) {
         const closeButton = mobileSheet.querySelector('button[aria-label="Close"]') as HTMLButtonElement | null;
@@ -36,6 +35,18 @@ export const NavItems = ({
         }
       }
     }
+
+    // Check if it's the Daarp AI path and if we should redirect
+    if (path === "/daarp-ai") {
+      const redirectDate = new Date("2025-05-08");
+      const currentDate = new Date();
+      
+      if (currentDate >= redirectDate) {
+        window.location.href = "https://www.zukoi.app/";
+        return;
+      }
+    }
+    
     onNavigate(path);
   };
 
