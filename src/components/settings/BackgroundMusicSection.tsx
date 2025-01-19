@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useBackgroundMusic } from "@/hooks/useBackgroundMusic";
+import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusicProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Music, Upload } from "lucide-react";
 
 export const BackgroundMusicSection = () => {
   const [isUploading, setIsUploading] = useState(false);
-  const { isPlaying, volume, togglePlay, setVolume } = useBackgroundMusic();
+  const { isPlaying, volume, togglePlay, setVolume } = useBackgroundMusicContext();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types/database';
+import { Database } from '@/integrations/supabase/types';
 
 type BackgroundMusic = Database['public']['Tables']['user_background_music']['Row'];
 
