@@ -4,6 +4,7 @@ import { VideoControls } from "./player/VideoControls";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink } from "lucide-react";
+import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusicProvider";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -21,8 +22,21 @@ export const VideoPlayer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const backgroundMusic = useBackgroundMusicContext();
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
+
+  const handlePlay = () => {
+    backgroundMusic.fadeOut();
+  };
+
+  const handlePause = () => {
+    backgroundMusic.fadeIn();
+  };
+
+  const handleEnded = () => {
+    backgroundMusic.fadeIn();
+  };
 
   const handleDownload = async () => {
     if (!publicUrl) return;
@@ -150,6 +164,9 @@ export const VideoPlayer = ({
           controls={controls}
           onError={handleVideoError}
           onLoadedData={handleVideoLoaded}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onEnded={handleEnded}
           playsInline
           preload="auto"
           crossOrigin="anonymous"
