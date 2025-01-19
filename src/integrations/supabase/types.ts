@@ -1476,6 +1476,7 @@ export type Database = {
           duration: number
           id: string
           music_url: string
+          playlist_order: number | null
           title: string
           user_id: string
         }
@@ -1484,6 +1485,7 @@ export type Database = {
           duration: number
           id?: string
           music_url: string
+          playlist_order?: number | null
           title: string
           user_id: string
         }
@@ -1492,6 +1494,7 @@ export type Database = {
           duration?: number
           id?: string
           music_url?: string
+          playlist_order?: number | null
           title?: string
           user_id?: string
         }
