@@ -12,8 +12,12 @@ export const BackgroundMusicSection = () => {
   const { isPlaying, volume, togglePlay, setVolume } = useBackgroundMusicContext();
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("File upload triggered"); // Debug log
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log("No file selected"); // Debug log
+      return;
+    }
 
     // Check file duration
     const audio = new Audio(URL.createObjectURL(file));
@@ -28,6 +32,7 @@ export const BackgroundMusicSection = () => {
 
     setIsUploading(true);
     try {
+      console.log("Starting upload process"); // Debug log
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -39,7 +44,10 @@ export const BackgroundMusicSection = () => {
         .from('background-music')
         .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError); // Debug log
+        throw uploadError;
+      }
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -56,7 +64,10 @@ export const BackgroundMusicSection = () => {
           duration: Math.floor(audio.duration)
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database error:', dbError); // Debug log
+        throw dbError;
+      }
 
       toast.success("Background music updated successfully");
     } catch (error) {
