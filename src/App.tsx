@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthenticationWrapper } from "@/components/auth/AuthenticationWrapper";
 import { AppRoutes } from "@/components/routing/AppRoutes";
 import { useEffect } from "react";
+import { BackgroundMusicProvider } from "@/components/providers/BackgroundMusicProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,9 +34,11 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <TooltipProvider>
-            <AuthenticationWrapper>
-              <AppRoutes />
-            </AuthenticationWrapper>
+            <BackgroundMusicProvider>
+              <AuthenticationWrapper>
+                <AppRoutes />
+              </AuthenticationWrapper>
+            </BackgroundMusicProvider>
             <Toaster />
             <Sonner />
           </TooltipProvider>
