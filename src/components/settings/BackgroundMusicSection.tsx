@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusicProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Music, Upload } from "lucide-react";
 export const BackgroundMusicSection = () => {
   const [isUploading, setIsUploading] = useState(false);
   const { isPlaying, volume, togglePlay, setVolume } = useBackgroundMusicContext();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("File upload triggered"); // Debug log
@@ -84,6 +85,10 @@ export const BackgroundMusicSection = () => {
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -97,8 +102,9 @@ export const BackgroundMusicSection = () => {
           >
             <Music className="h-4 w-4" />
           </Button>
-          <label className="cursor-pointer">
+          <div className="cursor-pointer">
             <Input
+              ref={fileInputRef}
               type="file"
               className="hidden"
               accept="audio/mpeg"
@@ -106,12 +112,12 @@ export const BackgroundMusicSection = () => {
               disabled={isUploading}
             />
             <div className="flex items-center gap-2">
-              <Button variant="outline" disabled={isUploading}>
+              <Button variant="outline" onClick={handleUploadClick} disabled={isUploading}>
                 <Upload className="h-4 w-4 mr-2" />
                 Upload Music
               </Button>
             </div>
-          </label>
+          </div>
         </div>
       </div>
       <div className="space-y-2">
