@@ -5,12 +5,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Music, Upload } from "lucide-react";
+import { Music, Upload, Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 
 export const BackgroundMusicSection = () => {
   const [isUploading, setIsUploading] = useState(false);
-  const { isPlaying, volume, togglePlay, setVolume } = useBackgroundMusicContext();
+  const { 
+    isPlaying, 
+    volume, 
+    togglePlay, 
+    setVolume,
+    playNext,
+    playPrevious,
+    currentTrack,
+    updatePlaylistOrder 
+  } = useBackgroundMusicContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: musicList = [], refetch: refetchMusicList } = useQuery({
+    queryKey: ['background-music'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('user_background_music')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('playlist_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching music:', error);
+        return [];
+      }
+
+      return data;
+    }
+  });
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log("File upload triggered"); // Debug log
@@ -89,19 +122,129 @@ export const BackgroundMusicSection = () => {
     fileInputRef.current?.click();
   };
 
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(musicList);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update the playlist_order in the database
+    try {
+      const updates = items.map((item, index) => ({
+        id: item.id,
+        playlist_order: index
+      }));
+
+      const { error } = await supabase
+        .from('user_background_music')
+        .upsert(updates);
+
+      if (error) throw error;
+
+      updatePlaylistOrder(items);
+      refetchMusicList();
+    } catch (error) {
+      console.error('Error updating playlist order:', error);
+      toast.error("Failed to update playlist order");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Background Music</h3>
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={togglePlay}
-            className="h-8 w-8"
-          >
-            <Music className="h-4 w-4" />
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+              >
+                <Music className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Music Playlist</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={playPrevious}
+                    className="h-8 w-8"
+                  >
+                    <SkipBack className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={togglePlay}
+                    className="h-8 w-8"
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={playNext}
+                    className="h-8 w-8"
+                  >
+                    <SkipForward className="h-4 w-4" />
+                  </Button>
+                </div>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="music-list">
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-2"
+                      >
+                        {musicList.map((track, index) => (
+                          <Draggable
+                            key={track.id}
+                            draggableId={track.id}
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`p-2 border rounded-md ${
+                                  currentTrack?.id === track.id
+                                    ? "bg-primary/10 border-primary"
+                                    : "bg-card"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">
+                                    {index + 1}.
+                                  </span>
+                                  <span className="flex-1 truncate">
+                                    {track.title}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              </div>
+            </DialogContent>
+          </Dialog>
           <div className="cursor-pointer">
             <Input
               ref={fileInputRef}

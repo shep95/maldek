@@ -10,6 +10,8 @@ export const useBackgroundMusic = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
   const [isFading, setIsFading] = useState(false);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [playlist, setPlaylist] = useState<BackgroundMusic[]>([]);
 
   const { data: backgroundMusic } = useQuery({
     queryKey: ['background-music'],
@@ -21,28 +23,28 @@ export const useBackgroundMusic = () => {
         .from('user_background_music')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('playlist_order', { ascending: true });
 
       if (error) {
         console.error('Error fetching background music:', error);
         return null;
       }
 
-      return data;
+      setPlaylist(data);
+      return data[currentTrackIndex];
     }
   });
 
   useEffect(() => {
     if (backgroundMusic?.music_url && !audioRef.current) {
       audioRef.current = new Audio(backgroundMusic.music_url);
-      audioRef.current.loop = true;
+      audioRef.current.loop = false;
       audioRef.current.volume = volume;
+      audioRef.current.play().catch(console.error);
+      setIsPlaying(true);
       
       audioRef.current.addEventListener('ended', () => {
-        if (audioRef.current) {
-          audioRef.current.currentTime = 0;
-          audioRef.current.play();
-        }
+        playNext();
       });
     }
 
@@ -53,6 +55,28 @@ export const useBackgroundMusic = () => {
       }
     };
   }, [backgroundMusic]);
+
+  const playNext = () => {
+    if (playlist.length === 0) return;
+    const nextIndex = (currentTrackIndex + 1) % playlist.length;
+    setCurrentTrackIndex(nextIndex);
+    if (audioRef.current) {
+      audioRef.current.src = playlist[nextIndex].music_url;
+      audioRef.current.play().catch(console.error);
+      setIsPlaying(true);
+    }
+  };
+
+  const playPrevious = () => {
+    if (playlist.length === 0) return;
+    const prevIndex = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
+    setCurrentTrackIndex(prevIndex);
+    if (audioRef.current) {
+      audioRef.current.src = playlist[prevIndex].music_url;
+      audioRef.current.play().catch(console.error);
+      setIsPlaying(true);
+    }
+  };
 
   const fadeOut = () => {
     if (!audioRef.current || isFading) return;
@@ -106,12 +130,20 @@ export const useBackgroundMusic = () => {
     }
   };
 
+  const updatePlaylistOrder = (newPlaylist: BackgroundMusic[]) => {
+    setPlaylist(newPlaylist);
+  };
+
   return {
     isPlaying,
     volume,
     togglePlay,
     setVolume: setMusicVolume,
     fadeOut,
-    fadeIn
+    fadeIn,
+    playNext,
+    playPrevious,
+    currentTrack: playlist[currentTrackIndex],
+    updatePlaylistOrder
   };
 };
