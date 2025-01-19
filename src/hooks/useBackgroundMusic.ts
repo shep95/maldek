@@ -28,7 +28,7 @@ export const useBackgroundMusic = () => {
         return null;
       }
 
-      return data as BackgroundMusic;
+      return data;
     }
   });
 

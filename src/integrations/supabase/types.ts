@@ -1470,6 +1470,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_background_music: {
+        Row: {
+          created_at: string
+          duration: number
+          id: string
+          music_url: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration: number
+          id?: string
+          music_url: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          id?: string
+          music_url?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_background_music_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_settings: {
         Row: {
           created_at: string
