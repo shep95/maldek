@@ -19,6 +19,12 @@ export const BackgroundMusicSection = () => {
       return;
     }
 
+    // Check file type
+    if (file.type !== 'audio/mpeg') {
+      toast.error("Only MP3 files are allowed");
+      return;
+    }
+
     // Check file duration
     const audio = new Audio(URL.createObjectURL(file));
     await new Promise((resolve) => {
@@ -95,7 +101,7 @@ export const BackgroundMusicSection = () => {
             <Input
               type="file"
               className="hidden"
-              accept="audio/*"
+              accept="audio/mpeg"
               onChange={handleFileUpload}
               disabled={isUploading}
             />
