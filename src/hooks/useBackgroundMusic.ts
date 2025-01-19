@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types/database';
+
+type BackgroundMusic = Database['public']['Tables']['user_background_music']['Row'];
 
 export const useBackgroundMusic = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -25,17 +28,16 @@ export const useBackgroundMusic = () => {
         return null;
       }
 
-      return data;
+      return data as BackgroundMusic;
     }
   });
 
   useEffect(() => {
     if (backgroundMusic?.music_url && !audioRef.current) {
       audioRef.current = new Audio(backgroundMusic.music_url);
-      audioRef.current.loop = true; // Enable auto-replay
+      audioRef.current.loop = true;
       audioRef.current.volume = volume;
       
-      // Add ended event listener for auto-replay
       audioRef.current.addEventListener('ended', () => {
         if (audioRef.current) {
           audioRef.current.currentTime = 0;

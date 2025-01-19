@@ -636,6 +636,42 @@ export interface Database {
           },
         ]
       }
+
+      user_background_music: {
+        Row: {
+          id: string
+          user_id: string
+          music_url: string
+          title: string
+          duration: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          music_url: string
+          title: string
+          duration: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          music_url?: string
+          title?: string
+          duration?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_background_music_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

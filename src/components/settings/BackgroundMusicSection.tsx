@@ -35,7 +35,7 @@ export const BackgroundMusicSection = () => {
       const fileName = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
 
       // Upload to storage
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('background-music')
         .upload(fileName, file);
 
