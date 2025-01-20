@@ -30,6 +30,27 @@ const App = () => {
     if (shouldAutoplay) {
       localStorage.setItem('background_music_autoplay', 'true');
     }
+
+    // Load user's background image if it exists
+    const loadBackgroundImage = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const { data: backgroundImage } = await supabase
+          .from('user_background_images')
+          .select('image_url')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (backgroundImage?.image_url) {
+          document.body.style.backgroundImage = `url(${backgroundImage.image_url})`;
+          document.body.style.backgroundSize = 'cover';
+          document.body.style.backgroundPosition = 'center';
+          document.body.style.backgroundAttachment = 'fixed';
+        }
+      }
+    };
+
+    loadBackgroundImage();
   }, []);
 
   return (
