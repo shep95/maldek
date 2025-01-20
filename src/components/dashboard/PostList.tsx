@@ -163,7 +163,8 @@ export const PostList = () => {
                     avatar_url: post.quoted_post.profiles.avatar_url,
                     name: post.quoted_post.profiles.username
                   },
-                  timestamp: new Date(post.quoted_post.created_at)
+                  timestamp: new Date(post.quoted_post.created_at),
+                  quoted_post: null // Prevent infinite nesting
                 } : null
               }}
               currentUserId={session?.user?.id || ''}

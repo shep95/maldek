@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { QuotePostDialog } from "../QuotePostDialog";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface RepostActionProps {
   postId: string;
@@ -22,6 +23,7 @@ interface RepostActionProps {
 
 export const RepostAction = ({ postId, authorId, currentUserId, reposts, onAction }: RepostActionProps) => {
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const session = useSession();
   
   const handleRepost = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -80,12 +82,32 @@ export const RepostAction = ({ postId, authorId, currentUserId, reposts, onActio
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {showQuoteDialog && (
+      {showQuoteDialog && session && (
         <QuotePostDialog
           isOpen={showQuoteDialog}
           onOpenChange={setShowQuoteDialog}
-          currentUser={currentUser}
-          quotedPost={post}
+          currentUser={{
+            id: session.user.id,
+            username: '',
+            avatar_url: null
+          }}
+          quotedPost={{
+            id: postId,
+            content: '',
+            user_id: authorId,
+            author: {
+              id: authorId,
+              username: '',
+              avatar_url: null
+            },
+            timestamp: new Date(),
+            media_urls: [],
+            likes: 0,
+            comments: 0,
+            reposts: 0,
+            isLiked: false,
+            isBookmarked: false
+          }}
           onPostCreated={() => {
             setShowQuoteDialog(false);
             onAction(postId, 'quote');

@@ -5,11 +5,12 @@ import { PostActions } from "./post/PostActions";
 import { PostMedia } from "./post/PostMedia";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { Post } from "@/utils/postUtils";
+import { cn } from "@/lib/utils";
 
 interface PostCardProps {
   post: Post;
   currentUserId: string;
-  onPostAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => void;
+  onPostAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost' | 'quote') => void;
   onMediaClick?: (url: string) => void;
   isQuotedPost?: boolean;
 }
