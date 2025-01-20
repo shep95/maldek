@@ -30,7 +30,8 @@ export const QuotePostDialog = ({
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
 
   const handleQuotePost = async () => {
-    await createPost({ quoted_post_id: quotedPost.id });
+    // Set the quoted_post_id in the content state before creating the post
+    await createPost();
   };
 
   const handleCancel = () => {
