@@ -31,20 +31,46 @@ export const BackgroundImageSection = () => {
 
     try {
       setIsUploading(true);
+      console.log('Starting image upload:', file.name);
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image must be less than 5MB');
+        return;
+      }
+
       const fileExt = file.name.split('.').pop();
       const filePath = `${session.user.id}/${crypto.randomUUID()}.${fileExt}`;
+
+      console.log('Uploading to path:', filePath);
 
       // Upload image to storage
       const { error: uploadError, data } = await supabase.storage
         .from('background-images')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful, getting public URL');
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('background-images')
         .getPublicUrl(filePath);
+
+      console.log('Public URL obtained:', publicUrl);
 
       // Save to database
       const { error: dbError } = await supabase
@@ -54,7 +80,10 @@ export const BackgroundImageSection = () => {
           image_url: publicUrl,
         });
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database error:', dbError);
+        throw dbError;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['background-image'] });
       toast.success('Background image updated successfully');
@@ -66,7 +95,7 @@ export const BackgroundImageSection = () => {
       document.body.style.backgroundAttachment = 'fixed';
     } catch (error) {
       console.error('Error uploading background image:', error);
-      toast.error('Failed to upload background image');
+      toast.error('Failed to upload background image. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -80,12 +109,17 @@ export const BackgroundImageSection = () => {
       const urlParts = backgroundImage.image_url.split('/');
       const filePath = `${session.user.id}/${urlParts[urlParts.length - 1]}`;
 
+      console.log('Removing file from path:', filePath);
+
       // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('background-images')
         .remove([filePath]);
 
-      if (storageError) throw storageError;
+      if (storageError) {
+        console.error('Storage deletion error:', storageError);
+        throw storageError;
+      }
 
       // Delete from database
       const { error: dbError } = await supabase
@@ -93,7 +127,10 @@ export const BackgroundImageSection = () => {
         .delete()
         .eq('user_id', session.user.id);
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        console.error('Database deletion error:', dbError);
+        throw dbError;
+      }
 
       queryClient.invalidateQueries({ queryKey: ['background-image'] });
       toast.success('Background image removed');
