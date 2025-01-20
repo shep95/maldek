@@ -140,38 +140,51 @@ export const PostList = () => {
 
       <div className="space-y-6">
         {posts && posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={{
-                ...post,
-                author: {
-                  id: post.profiles.id,
-                  username: post.profiles.username,
-                  avatar_url: post.profiles.avatar_url,
-                  name: post.profiles.username
-                },
-                timestamp: new Date(post.created_at),
-                comments: post.comments?.length || 0,
-                isLiked: post.post_likes?.some(like => like.id) || false,
-                isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false,
-                quoted_post: post.quoted_post_id ? {
-                  ...post.quoted_post,
+          posts.map((post) => {
+            // Prepare the quoted post data if it exists
+            const quotedPost = post.quoted_post_id ? {
+              ...post,
+              id: post.quoted_post_id,
+              content: post.quoted_post_content || '',
+              author: {
+                id: post.quoted_post_user_id || '',
+                username: post.quoted_post_username || '',
+                avatar_url: post.quoted_post_avatar_url,
+                name: post.quoted_post_username || ''
+              },
+              timestamp: post.quoted_post_created_at ? new Date(post.quoted_post_created_at) : new Date(),
+              media_urls: post.quoted_post_media_urls || [],
+              likes: post.quoted_post_likes || 0,
+              comments: post.quoted_post_comments?.length || 0,
+              reposts: post.quoted_post_reposts || 0,
+              isLiked: false,
+              isBookmarked: false,
+              quoted_post: null // Prevent infinite nesting
+            } : null;
+
+            return (
+              <PostCard
+                key={post.id}
+                post={{
+                  ...post,
                   author: {
-                    id: post.quoted_post.profiles.id,
-                    username: post.quoted_post.profiles.username,
-                    avatar_url: post.quoted_post.profiles.avatar_url,
-                    name: post.quoted_post.profiles.username
+                    id: post.profiles.id,
+                    username: post.profiles.username,
+                    avatar_url: post.profiles.avatar_url,
+                    name: post.profiles.username
                   },
-                  timestamp: new Date(post.quoted_post.created_at),
-                  quoted_post: null // Prevent infinite nesting
-                } : null
-              }}
-              currentUserId={session?.user?.id || ''}
-              onPostAction={handlePostAction}
-              onMediaClick={setSelectedMedia}
-            />
-          ))
+                  timestamp: new Date(post.created_at),
+                  comments: post.comments?.length || 0,
+                  isLiked: post.post_likes?.some(like => like.id) || false,
+                  isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false,
+                  quoted_post: quotedPost
+                }}
+                currentUserId={session?.user?.id || ''}
+                onPostAction={handlePostAction}
+                onMediaClick={setSelectedMedia}
+              />
+            );
+          })
         ) : (
           <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
             <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
