@@ -5,10 +5,15 @@ import { Database } from '@/integrations/supabase/types';
 
 type BackgroundMusic = Database['public']['Tables']['user_background_music']['Row'];
 
+const VOLUME_STORAGE_KEY = 'background_music_volume';
+
 export const useBackgroundMusic = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.5);
+  const [volume, setVolume] = useState(() => {
+    const savedVolume = localStorage.getItem(VOLUME_STORAGE_KEY);
+    return savedVolume ? parseFloat(savedVolume) : 0.5;
+  });
   const [isFading, setIsFading] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [playlist, setPlaylist] = useState<BackgroundMusic[]>([]);
@@ -76,6 +81,11 @@ export const useBackgroundMusic = () => {
       }
     };
   }, [backgroundMusic]);
+
+  // Save volume to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(VOLUME_STORAGE_KEY, volume.toString());
+  }, [volume]);
 
   const playNext = () => {
     console.log('Playing next track');
@@ -151,10 +161,12 @@ export const useBackgroundMusic = () => {
     
     if (isPlaying) {
       audioRef.current.pause();
+      setIsPlaying(false);
     } else {
       audioRef.current.play().catch(error => {
         console.error('Error toggling play:', error);
       });
+      setIsPlaying(true);
     }
   };
 
