@@ -30,6 +30,7 @@ export const useBackgroundMusic = () => {
         return null;
       }
 
+      console.log('Fetched playlist:', data);
       setPlaylist(data);
       return data[currentTrackIndex];
     }
@@ -37,15 +38,35 @@ export const useBackgroundMusic = () => {
 
   useEffect(() => {
     if (backgroundMusic?.music_url && !audioRef.current) {
+      console.log('Initializing audio with URL:', backgroundMusic.music_url);
       audioRef.current = new Audio(backgroundMusic.music_url);
-      audioRef.current.loop = false;
       audioRef.current.volume = volume;
-      audioRef.current.play().catch(console.error);
-      setIsPlaying(true);
       
+      // Set up event listeners
       audioRef.current.addEventListener('ended', () => {
+        console.log('Track ended, playing next');
         playNext();
       });
+
+      audioRef.current.addEventListener('play', () => {
+        console.log('Audio started playing');
+        setIsPlaying(true);
+      });
+
+      audioRef.current.addEventListener('pause', () => {
+        console.log('Audio paused');
+        setIsPlaying(false);
+      });
+
+      audioRef.current.addEventListener('error', (e) => {
+        console.error('Audio playback error:', e);
+      });
+
+      // Start playing
+      audioRef.current.play().catch(error => {
+        console.error('Error starting playback:', error);
+      });
+      setIsPlaying(true);
     }
 
     return () => {
@@ -57,23 +78,35 @@ export const useBackgroundMusic = () => {
   }, [backgroundMusic]);
 
   const playNext = () => {
+    console.log('Playing next track');
     if (playlist.length === 0) return;
+    
     const nextIndex = (currentTrackIndex + 1) % playlist.length;
+    console.log('Next track index:', nextIndex);
     setCurrentTrackIndex(nextIndex);
+    
     if (audioRef.current) {
       audioRef.current.src = playlist[nextIndex].music_url;
-      audioRef.current.play().catch(console.error);
+      audioRef.current.play().catch(error => {
+        console.error('Error playing next track:', error);
+      });
       setIsPlaying(true);
     }
   };
 
   const playPrevious = () => {
+    console.log('Playing previous track');
     if (playlist.length === 0) return;
+    
     const prevIndex = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
+    console.log('Previous track index:', prevIndex);
     setCurrentTrackIndex(prevIndex);
+    
     if (audioRef.current) {
       audioRef.current.src = playlist[prevIndex].music_url;
-      audioRef.current.play().catch(console.error);
+      audioRef.current.play().catch(error => {
+        console.error('Error playing previous track:', error);
+      });
       setIsPlaying(true);
     }
   };
@@ -113,14 +146,16 @@ export const useBackgroundMusic = () => {
   };
 
   const togglePlay = () => {
+    console.log('Toggling play/pause');
     if (!audioRef.current) return;
     
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch(error => {
+        console.error('Error toggling play:', error);
+      });
     }
-    setIsPlaying(!isPlaying);
   };
 
   const setMusicVolume = (newVolume: number) => {
@@ -131,6 +166,7 @@ export const useBackgroundMusic = () => {
   };
 
   const updatePlaylistOrder = (newPlaylist: BackgroundMusic[]) => {
+    console.log('Updating playlist order:', newPlaylist);
     setPlaylist(newPlaylist);
   };
 
