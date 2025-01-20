@@ -60,14 +60,10 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     console.log('2. Username:', author.username);
     console.log('3. Current path:', window.location.pathname);
     
-    const username = author.username.startsWith('@') ? author.username : `@${author.username}`;
+    const username = author.username.startsWith('@') ? author.username : `/@${author.username}`;
     console.log('4. Target path:', username);
     
     navigate(username);
-    
-    setTimeout(() => {
-      console.log('5. Path after navigation:', window.location.pathname);
-    }, 100);
   };
 
   const getTimeAgo = (date: Date) => {
