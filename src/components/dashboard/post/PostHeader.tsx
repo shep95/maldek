@@ -15,10 +15,11 @@ interface PostHeaderProps {
   author: Author;
   timestamp: Date;
   onDelete?: () => void;
-  currentUserId: string;
+  currentUserId?: string;
+  onUsernameClick?: (e: React.MouseEvent) => void;
 }
 
-export const PostHeader = ({ author, timestamp, onDelete, currentUserId }: PostHeaderProps) => {
+export const PostHeader = ({ author, timestamp, onDelete, currentUserId, onUsernameClick }: PostHeaderProps) => {
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
@@ -52,7 +53,7 @@ export const PostHeader = ({ author, timestamp, onDelete, currentUserId }: PostH
         <div className="flex flex-col">
           <div className="flex items-center space-x-2">
             <button
-              onClick={handleProfileClick}
+              onClick={onUsernameClick || handleProfileClick}
               className="font-semibold hover:underline"
             >
               @{author.username}
