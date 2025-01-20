@@ -133,6 +133,10 @@ export const BackgroundMusicSection = () => {
     try {
       const updates = items.map((item, index) => ({
         id: item.id,
+        user_id: item.user_id,
+        music_url: item.music_url,
+        title: item.title,
+        duration: item.duration,
         playlist_order: index
       }));
 
