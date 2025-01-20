@@ -60,10 +60,12 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
     console.log('2. Username:', author.username);
     console.log('3. Current path:', window.location.pathname);
     
-    const username = author.username.startsWith('@') ? author.username : `/@${author.username}`;
-    console.log('4. Target path:', username);
+    // Remove any existing @ symbol and ensure we have the correct format
+    const cleanUsername = author.username.replace(/^@/, '');
+    const profilePath = `/@${cleanUsername}`;
+    console.log('4. Target path:', profilePath);
     
-    navigate(username);
+    navigate(profilePath);
   };
 
   const getTimeAgo = (date: Date) => {
