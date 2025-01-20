@@ -7,8 +7,8 @@
     </linearGradient>
   </defs>
   
-  <!-- Base shape with rounded corners -->
-  <rect width="32" height="32" rx="8" fill="url(#grad)"/>
+  <!-- Base shape with 22px rounded corners -->
+  <rect width="32" height="32" rx="22" fill="url(#grad)"/>
   
   <!-- Letter B logo centered -->
   <path 
