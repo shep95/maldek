@@ -6,6 +6,7 @@ import { Database } from '@/integrations/supabase/types';
 type BackgroundMusic = Database['public']['Tables']['user_background_music']['Row'];
 
 const VOLUME_STORAGE_KEY = 'background_music_volume';
+const AUTOPLAY_STORAGE_KEY = 'background_music_autoplay';
 
 export const useBackgroundMusic = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -67,11 +68,13 @@ export const useBackgroundMusic = () => {
         console.error('Audio playback error:', e);
       });
 
-      // Start playing
-      audioRef.current.play().catch(error => {
-        console.error('Error starting playback:', error);
-      });
-      setIsPlaying(true);
+      // Check if autoplay is enabled
+      const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) !== 'false';
+      if (shouldAutoplay) {
+        audioRef.current.play().catch(error => {
+          console.error('Error starting autoplay:', error);
+        });
+      }
     }
 
     return () => {
@@ -100,7 +103,6 @@ export const useBackgroundMusic = () => {
       audioRef.current.play().catch(error => {
         console.error('Error playing next track:', error);
       });
-      setIsPlaying(true);
     }
   };
 
@@ -117,7 +119,6 @@ export const useBackgroundMusic = () => {
       audioRef.current.play().catch(error => {
         console.error('Error playing previous track:', error);
       });
-      setIsPlaying(true);
     }
   };
 
@@ -162,11 +163,13 @@ export const useBackgroundMusic = () => {
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'false');
     } else {
       audioRef.current.play().catch(error => {
         console.error('Error toggling play:', error);
       });
       setIsPlaying(true);
+      localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
     }
   };
 

@@ -8,10 +8,10 @@ import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { BackgroundMusicSection } from "@/components/settings/BackgroundMusicSection";
 
 const Settings = () => {
-  console.log("Rendering Settings page"); // Debug log
+  console.log("Rendering Settings page");
 
   return (
-    <div className="container max-w-4xl py-8 space-y-8 animate-fade-in">
+    <div className="container max-w-4xl py-8 space-y-8 animate-fade-in bg-background">
       <h1 className="text-3xl font-bold">Settings</h1>
       <ThemeToggle />
       <BackgroundMusicSection />

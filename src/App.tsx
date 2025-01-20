@@ -24,6 +24,12 @@ const App = () => {
     // Initialize theme from localStorage or default to dark
     const theme = localStorage.getItem('theme') || 'dark';
     document.documentElement.classList.add(theme);
+
+    // Initialize autoplay state
+    const shouldAutoplay = localStorage.getItem('background_music_autoplay') !== 'false';
+    if (shouldAutoplay) {
+      localStorage.setItem('background_music_autoplay', 'true');
+    }
   }, []);
 
   return (
