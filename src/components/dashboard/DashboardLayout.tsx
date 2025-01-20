@@ -30,7 +30,7 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex flex-col md:flex-row">
         <Sidebar setIsCreatingPost={setIsCreatingPost} />
         <div className={cn(
