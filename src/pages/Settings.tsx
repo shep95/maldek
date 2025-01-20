@@ -6,7 +6,6 @@ import { DownloadSection } from "@/components/settings/DownloadSection";
 import { LanguageSection } from "@/components/settings/LanguageSection";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { BackgroundMusicSection } from "@/components/settings/BackgroundMusicSection";
-import { BackgroundImageSection } from "@/components/settings/BackgroundImageSection";
 
 const Settings = () => {
   console.log("Rendering Settings page");
@@ -14,7 +13,6 @@ const Settings = () => {
   return (
     <div className="container max-w-4xl py-8 space-y-8 animate-fade-in bg-background">
       <h1 className="text-3xl font-bold">Settings</h1>
-      <BackgroundImageSection />
       <ThemeToggle />
       <BackgroundMusicSection />
       <DownloadSection />
