@@ -29,19 +29,28 @@ export const QuotePostDialog = ({
     resetFormState
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
 
-  const handleQuotePost = async () => {
-    // Set the quoted_post_id in the content state before creating the post
-    await createPost();
+  const handleQuotePost = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    try {
+      await createPost({ quoted_post_id: quotedPost.id });
+    } catch (error) {
+      console.error('Error creating quote post:', error);
+    }
   };
 
-  const handleCancel = () => {
+  const handleCancel = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
     resetFormState();
     onOpenChange(false);
   };
 
+  const handleDialogClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent clicks from propagating to parent elements
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-card">
+      <DialogContent className="sm:max-w-[600px] bg-card" onClick={handleDialogClick}>
         <DialogHeader>
           <DialogTitle>Quote Post</DialogTitle>
         </DialogHeader>
@@ -53,7 +62,7 @@ export const QuotePostDialog = ({
             onHashtag={(tag) => setContent(prev => `${prev}#${tag} `)}
           />
           
-          <div className="border border-border rounded-lg p-4 bg-muted/30">
+          <div className="border border-border rounded-lg p-4 bg-muted/30" onClick={e => e.stopPropagation()}>
             <PostCard
               post={quotedPost}
               currentUserId={currentUser.id}
