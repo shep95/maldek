@@ -62,7 +62,7 @@ const Auth = () => {
           password: formData.password,
           options: {
             data: {
-              username: formData.username.toLowerCase() // Store username in lowercase
+              username: formData.username.toLowerCase()
             }
           }
         });
@@ -104,8 +104,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 bg-background">
-      <div className="w-full max-w-md bg-card/50 backdrop-blur-sm rounded-xl shadow-xl border border-accent/10 p-4 md:p-8 animate-fade-in">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8">
+      <div className="w-full max-w-md bg-card rounded-xl shadow-xl border border-accent/10 p-4 md:p-8 animate-fade-in">
         <AuthHeader isLogin={isLogin} />
         <AuthForm isLogin={isLogin} onSubmit={handleSubmit} />
         <div className="text-center mt-6">
