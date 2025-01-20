@@ -27,13 +27,13 @@
   }
 
   .dark {
-    --background: 0 0% 0%;  /* Pure black in dark mode */
+    --background: 0 0% 3%;  /* Dark gray instead of pure black */
     --foreground: 0 0% 98%;
     --card: 0 0% 3%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 0%;  /* Pure black in dark mode */
+    --primary: 0 0% 3%;  /* Dark gray instead of pure black */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 3.7% 5.1%;  /* #0d0d0d in dark mode */
     --secondary-foreground: 0 0% 98%;
