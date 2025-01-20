@@ -11,26 +11,38 @@ interface PostCardProps {
   currentUserId: string;
   onPostAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => void;
   onMediaClick?: (url: string) => void;
+  isQuotedPost?: boolean;
 }
 
-export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: PostCardProps) => {
+export const PostCard = ({ 
+  post, 
+  currentUserId, 
+  onPostAction, 
+  onMediaClick,
+  isQuotedPost = false 
+}: PostCardProps) => {
   const navigate = useNavigate();
   const { data: userSettings } = useUserSettings();
 
   const handlePostClick = () => {
-    console.log('Navigating to post:', post.id);
-    navigate(`/post/${post.id}`);
+    if (!isQuotedPost) {
+      console.log('Navigating to post:', post.id);
+      navigate(`/post/${post.id}`);
+    }
   };
 
   const handleUsernameClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent post click
+    e.stopPropagation();
     console.log('Navigating to profile:', post.author.username);
     navigate(`/@${post.author.username}`);
   };
 
   return (
     <div 
-      className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 cursor-pointer hover:bg-accent/5 transition-colors duration-200"
+      className={cn(
+        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4",
+        !isQuotedPost && "cursor-pointer hover:bg-accent/5 transition-colors duration-200"
+      )}
       onClick={handlePostClick}
     >
       <PostHeader 
@@ -43,17 +55,29 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         userLanguage={userSettings?.preferred_language || 'en'}
         isEditing={false}
       />
+      {post.quoted_post && (
+        <div className="mt-4 border border-border rounded-lg">
+          <PostCard
+            post={post.quoted_post}
+            currentUserId={currentUserId}
+            onPostAction={onPostAction}
+            isQuotedPost={true}
+          />
+        </div>
+      )}
       {post.media_urls && post.media_urls.length > 0 && (
         <PostMedia 
           mediaUrls={post.media_urls} 
           onMediaClick={onMediaClick}
         />
       )}
-      <PostActions
-        post={post}
-        currentUserId={currentUserId}
-        onAction={onPostAction}
-      />
+      {!isQuotedPost && (
+        <PostActions
+          post={post}
+          currentUserId={currentUserId}
+          onAction={onPostAction}
+        />
+      )}
     </div>
   );
 };

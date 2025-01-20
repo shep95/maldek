@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { QuotePostDialog } from "../QuotePostDialog";
 
 interface RepostActionProps {
   postId: string;
@@ -19,6 +21,8 @@ interface RepostActionProps {
 }
 
 export const RepostAction = ({ postId, authorId, currentUserId, reposts, onAction }: RepostActionProps) => {
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  
   const handleRepost = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -48,31 +52,46 @@ export const RepostAction = ({ postId, authorId, currentUserId, reposts, onActio
       toast.error('Please sign in to quote');
       return;
     }
-    onAction(postId, 'quote');
+    setShowQuoteDialog(true);
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2"
-        >
-          <Share2 className="h-4 w-4" />
-          <span>{reposts || 0}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem onClick={handleRepost}>
-          <Share2 className="h-4 w-4 mr-2" />
-          Repost
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleQuote}>
-          <Quote className="h-4 w-4 mr-2" />
-          Quote Post
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+          >
+            <Share2 className="h-4 w-4" />
+            <span>{reposts || 0}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={handleRepost}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Repost
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleQuote}>
+            <Quote className="h-4 w-4 mr-2" />
+            Quote Post
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {showQuoteDialog && (
+        <QuotePostDialog
+          isOpen={showQuoteDialog}
+          onOpenChange={setShowQuoteDialog}
+          currentUser={currentUser}
+          quotedPost={post}
+          onPostCreated={() => {
+            setShowQuoteDialog(false);
+            onAction(postId, 'quote');
+          }}
+        />
+      )}
+    </>
   );
 };

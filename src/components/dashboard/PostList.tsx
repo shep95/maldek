@@ -89,7 +89,7 @@ export const PostList = () => {
     };
   }, [queryClient, session?.user?.id, posts]);
 
-  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
+  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost' | 'quote') => {
     try {
       if (action === 'delete') {
         const { error } = await supabase
@@ -154,7 +154,17 @@ export const PostList = () => {
                 timestamp: new Date(post.created_at),
                 comments: post.comments?.length || 0,
                 isLiked: post.post_likes?.some(like => like.id) || false,
-                isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false
+                isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false,
+                quoted_post: post.quoted_post_id ? {
+                  ...post.quoted_post,
+                  author: {
+                    id: post.quoted_post.profiles.id,
+                    username: post.quoted_post.profiles.username,
+                    avatar_url: post.quoted_post.profiles.avatar_url,
+                    name: post.quoted_post.profiles.username
+                  },
+                  timestamp: new Date(post.quoted_post.created_at)
+                } : null
               }}
               currentUserId={session?.user?.id || ''}
               onPostAction={handlePostAction}
