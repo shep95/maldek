@@ -7,13 +7,26 @@
     </linearGradient>
   </defs>
   
-  <!-- Base shape with 22px rounded corners -->
-  <rect width="32" height="32" rx="22" fill="url(#grad)"/>
-  
-  <!-- Letter B logo centered -->
+  <!-- Triangle with rounded corners -->
   <path 
-    d="M10 8 h8 a4 4 0 0 1 4 4 v0 a4 4 0 0 1-4 4 h0 a4 4 0 0 1 4 4 v0 a4 4 0 0 1-4 4 h-8 v-16 z" 
-    fill="#FFFFFF"
+    d="M16 4 L28 26 L4 26 Z"
+    fill="url(#grad)"
     stroke="none"
+    rx="22"
+    style="filter: url(#round-corners)"
   />
+  
+  <!-- Filter for rounded corners -->
+  <defs>
+    <filter id="round-corners">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1" />
+      <feColorMatrix
+        type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 22 -15"
+      />
+    </filter>
+  </defs>
 </svg>
