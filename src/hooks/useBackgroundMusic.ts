@@ -39,7 +39,8 @@ export const useBackgroundMusic = () => {
       console.log('Fetched playlist:', data);
       setPlaylist(data);
       return data[currentTrackIndex];
-    }
+    },
+    staleTime: Infinity // Prevent unnecessary refetches
   });
 
   useEffect(() => {
@@ -77,10 +78,10 @@ export const useBackgroundMusic = () => {
       }
     }
 
+    // Cleanup function that only stops the audio but doesn't remove the element
     return () => {
-      if (audioRef.current) {
+      if (audioRef.current && !isPlaying) {
         audioRef.current.pause();
-        audioRef.current = null;
       }
     };
   }, [backgroundMusic]);
@@ -88,6 +89,9 @@ export const useBackgroundMusic = () => {
   // Save volume to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(VOLUME_STORAGE_KEY, volume.toString());
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
   }, [volume]);
 
   const playNext = () => {
