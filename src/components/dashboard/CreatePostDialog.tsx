@@ -46,6 +46,7 @@ export const CreatePostDialog = ({
 
   const handleMention = async (username: string) => {
     try {
+      // Get the mentioned user's ID
       const { data: mentionedUser, error: userError } = await supabase
         .from('profiles')
         .select('id')
@@ -58,16 +59,14 @@ export const CreatePostDialog = ({
       }
 
       console.log('Mentioned user found:', mentionedUser);
+      
+      // The actual mention will be created after the post is created
+      // This is handled in the usePostCreation hook
       setContent(prev => `${prev}@${username} `);
     } catch (error) {
       console.error('Error handling mention:', error);
       toast.error("Failed to process mention");
     }
-  };
-
-  const handleCreatePost = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    await createPost();
   };
 
   return (
@@ -128,7 +127,7 @@ export const CreatePostDialog = ({
               Cancel
             </Button>
             <Button 
-              onClick={handleCreatePost}
+              onClick={createPost} 
               className="w-full gap-2"
               disabled={isSubmitting}
               type="button"

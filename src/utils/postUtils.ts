@@ -17,8 +17,6 @@ export interface Post {
   reposts: number;
   isLiked: boolean;
   isBookmarked: boolean;
-  quoted_post?: Post | null;
-  quoted_post_id?: string | null;
 }
 
 export const createNewPost = async (content: string, mediaFiles: File[], author: Author): Promise<Post> => {
@@ -42,8 +40,6 @@ export const createNewPost = async (content: string, mediaFiles: File[], author:
     comments: 0,
     reposts: 0,
     isLiked: false,
-    isBookmarked: false,
-    quoted_post: null,
-    quoted_post_id: null
+    isBookmarked: false
   };
 };

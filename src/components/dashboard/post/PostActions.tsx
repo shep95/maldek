@@ -8,7 +8,7 @@ import { Post } from "@/utils/postUtils";
 interface PostActionsProps {
   post: Post;
   currentUserId: string;
-  onAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost' | 'quote') => void;
+  onAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => void;
 }
 
 export const PostActions = ({

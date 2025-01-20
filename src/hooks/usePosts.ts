@@ -28,20 +28,6 @@ export const usePosts = () => {
           ),
           comments (
             id
-          ),
-          quoted_post:posts!quoted_post_id (
-            id,
-            content,
-            created_at,
-            media_urls,
-            likes,
-            reposts,
-            user_id,
-            profiles (
-              id,
-              username,
-              avatar_url
-            )
           )
         `)
         .order('created_at', { ascending: false });

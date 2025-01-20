@@ -1,11 +1,10 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
+import { processImageFile, saveDraft } from "@/utils/postUploadUtils";
 import type { Author } from "@/utils/postUtils";
-
-interface CreatePostOptions {
-  quoted_post_id?: string;
-}
+import type { PostData } from "../types/postTypes";
 
 export const usePostCreation = (
   currentUser: Author,
@@ -14,71 +13,46 @@ export const usePostCreation = (
 ) => {
   const [content, setContent] = useState("");
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
-  const [mentionedUser, setMentionedUser] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
 
   const handleFileSelect = useCallback(async (files: FileList) => {
-    try {
-      console.log('Files selected:', Array.from(files).map(f => ({ 
-        name: f.name, 
-        type: f.type, 
-        size: `${(f.size / (1024 * 1024)).toFixed(2)}MB` 
-      })));
-      
-      const processedFiles = await Promise.all(
-        Array.from(files).map(async file => {
-          console.log('Processing file:', {
-            name: file.name,
-            type: file.type,
-            size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
-          });
-          return file;
-        })
-      );
+    console.log('Files selected:', Array.from(files).map(f => ({ name: f.name, type: f.type, size: f.size })));
+    
+    const processedFiles = await Promise.all(
+      Array.from(files).map(async file => {
+        if (file.type.startsWith('image/')) {
+          return processImageFile(file);
+        }
+        return file;
+      })
+    );
 
-      setMediaFiles(prev => [...prev, ...processedFiles]);
-      processedFiles.forEach(file => {
-        const previewUrl = URL.createObjectURL(file);
-        setMediaPreviewUrls(prev => [...prev, previewUrl]);
-      });
-    } catch (error) {
-      console.error('Error processing files:', error);
-      toast.error(`Failed to process file: ${error.message}`);
-    }
+    setMediaFiles(prev => [...prev, ...processedFiles]);
   }, []);
 
   const handlePaste = useCallback(async (file: File) => {
     console.log('File pasted:', file.name, file.type, file.size);
-    try {
-      setMediaFiles(prev => [...prev, file]);
-      const previewUrl = URL.createObjectURL(file);
-      setMediaPreviewUrls(prev => [...prev, previewUrl]);
-    } catch (error) {
-      console.error('Error processing pasted file:', error);
-      toast.error(`Failed to process pasted file: ${error.message}`);
-    }
+    const processedFile = await processImageFile(file);
+    setMediaFiles(prev => [...prev, processedFile]);
   }, []);
 
   const saveToDrafts = useCallback(() => {
-    try {
-      const draft = {
-        content,
-        mediaFiles: [], // Can't store File objects
-        scheduledFor: scheduledDate
-      };
-      console.log('Saving draft:', draft);
-      // Implementation for saving to drafts
-      toast.success('Draft saved');
-    } catch (error) {
-      console.error('Error saving draft:', error);
-      toast.error('Failed to save draft');
-    }
-  }, [content, scheduledDate]);
+    saveDraft({
+      content,
+      mediaFiles,
+      scheduledFor: scheduledDate
+    });
+  }, [content, mediaFiles, scheduledDate]);
 
-  const createPost = async (options?: CreatePostOptions) => {
+  const createPost = async () => {
+    if (!currentUser?.id) {
+      console.error('No user ID found');
+      toast.error("User authentication error. Please try logging in again.");
+      return;
+    }
+
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -95,35 +69,31 @@ export const usePostCreation = (
         for (const [index, file] of mediaFiles.entries()) {
           console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
           
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `${currentUser.id}/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('posts')
-            .upload(filePath, file);
-
-          if (uploadError) {
-            throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+          const publicUrl = await handleImageUpload(file, currentUser.id);
+          
+          if (!publicUrl) {
+            throw new Error(`Failed to upload ${file.name}`);
           }
 
-          const { data: { publicUrl } } = supabase.storage
-            .from('posts')
-            .getPublicUrl(filePath);
-
+          console.log('Upload successful. Public URL:', publicUrl);
           mediaUrls.push(publicUrl);
+
           totalProgress = ((index + 1) / mediaFiles.length) * 100;
           setUploadProgress(totalProgress);
         }
       }
 
-      const postData = {
+      console.log('Creating post with media URLs:', mediaUrls);
+
+      const postData: PostData = {
         content: content.trim(),
         user_id: currentUser.id,
         media_urls: mediaUrls,
-        ...(scheduledDate && { scheduled_for: scheduledDate.toISOString() }),
-        ...(options?.quoted_post_id && { quoted_post_id: options.quoted_post_id })
       };
+
+      if (scheduledDate) {
+        postData.scheduled_for = scheduledDate.toISOString();
+      }
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
@@ -132,10 +102,64 @@ export const usePostCreation = (
         .single();
 
       if (postError) {
+        console.error('Post creation error:', postError);
         throw new Error(`Failed to create post: ${postError.message}`);
       }
 
       console.log('Post created successfully:', newPost);
+
+      // Handle mentions
+      const mentionRegex = /@(\w+)/g;
+      const mentions = content.match(mentionRegex);
+
+      if (mentions) {
+        console.log('Processing mentions:', mentions);
+        
+        for (const mention of mentions) {
+          const username = mention.slice(1); // Remove @ symbol
+          
+          // Get the mentioned user's ID
+          const { data: mentionedUser, error: userError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('username', username)
+            .single();
+
+          if (userError || !mentionedUser) {
+            console.error('Error finding mentioned user:', userError);
+            continue;
+          }
+
+          // Create mention record
+          const { error: mentionError } = await supabase
+            .from('mentions')
+            .insert({
+              user_id: currentUser.id,
+              mentioned_user_id: mentionedUser.id,
+              post_id: newPost.id
+            });
+
+          if (mentionError) {
+            console.error('Error creating mention:', mentionError);
+            continue;
+          }
+
+          // Create notification for mentioned user
+          const { error: notificationError } = await supabase
+            .from('notifications')
+            .insert({
+              recipient_id: mentionedUser.id,
+              actor_id: currentUser.id,
+              post_id: newPost.id,
+              type: 'mention'
+            });
+
+          if (notificationError) {
+            console.error('Error creating notification:', notificationError);
+          }
+        }
+      }
+      
       resetFormState();
       onPostCreated(newPost);
       onOpenChange(false);
@@ -144,9 +168,7 @@ export const usePostCreation = (
     } catch (error) {
       console.error('Detailed error:', error);
       toast.error(error.message || "Failed to create post");
-    } finally {
       setIsSubmitting(false);
-      setUploadProgress(0);
     }
   };
 
@@ -155,7 +177,6 @@ export const usePostCreation = (
     setContent("");
     setIsSubmitting(false);
     setMediaFiles([]);
-    setMediaPreviewUrls([]);
     setUploadProgress(0);
     setScheduledDate(undefined);
   };
@@ -164,9 +185,7 @@ export const usePostCreation = (
     content,
     setContent,
     mediaFiles,
-    mentionedUser,
     isSubmitting,
-    mediaPreviewUrls,
     uploadProgress,
     scheduledDate,
     setScheduledDate,

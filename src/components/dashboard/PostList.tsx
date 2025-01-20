@@ -89,7 +89,7 @@ export const PostList = () => {
     };
   }, [queryClient, session?.user?.id, posts]);
 
-  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost' | 'quote') => {
+  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {
       if (action === 'delete') {
         const { error } = await supabase
@@ -140,49 +140,27 @@ export const PostList = () => {
 
       <div className="space-y-6">
         {posts && posts.length > 0 ? (
-          posts.map((post) => {
-            // Prepare the quoted post data if it exists
-            const quotedPost = post.quoted_post ? {
-              ...post.quoted_post,
-              author: {
-                id: post.quoted_post.profiles?.id || '',
-                username: post.quoted_post.profiles?.username || '',
-                avatar_url: post.quoted_post.profiles?.avatar_url,
-                name: post.quoted_post.profiles?.username || ''
-              },
-              timestamp: new Date(post.quoted_post.created_at),
-              media_urls: post.quoted_post.media_urls || [],
-              likes: post.quoted_post.likes || 0,
-              comments: 0, // We'll need to add this to the query if needed
-              reposts: post.quoted_post.reposts || 0,
-              isLiked: false,
-              isBookmarked: false,
-              quoted_post: null // Prevent infinite nesting
-            } : null;
-
-            return (
-              <PostCard
-                key={post.id}
-                post={{
-                  ...post,
-                  author: {
-                    id: post.profiles.id,
-                    username: post.profiles.username,
-                    avatar_url: post.profiles.avatar_url,
-                    name: post.profiles.username
-                  },
-                  timestamp: new Date(post.created_at),
-                  comments: post.comments?.length || 0,
-                  isLiked: post.post_likes?.some(like => like.id) || false,
-                  isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false,
-                  quoted_post: quotedPost
-                }}
-                currentUserId={session?.user?.id || ''}
-                onPostAction={handlePostAction}
-                onMediaClick={setSelectedMedia}
-              />
-            );
-          })
+          posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={{
+                ...post,
+                author: {
+                  id: post.profiles.id,
+                  username: post.profiles.username,
+                  avatar_url: post.profiles.avatar_url,
+                  name: post.profiles.username
+                },
+                timestamp: new Date(post.created_at),
+                comments: post.comments?.length || 0,
+                isLiked: post.post_likes?.some(like => like.id) || false,
+                isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false
+              }}
+              currentUserId={session?.user?.id || ''}
+              onPostAction={handlePostAction}
+              onMediaClick={setSelectedMedia}
+            />
+          ))
         ) : (
           <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
             <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
