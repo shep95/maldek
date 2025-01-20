@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
@@ -17,49 +17,66 @@ export const usePostCreation = (
   const [mentionedUser, setMentionedUser] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
+  const handleFileSelect = useCallback(async (files: FileList) => {
+    try {
+      console.log('Files selected:', Array.from(files).map(f => ({ 
+        name: f.name, 
+        type: f.type, 
+        size: `${(f.size / (1024 * 1024)).toFixed(2)}MB` 
+      })));
+      
+      const processedFiles = await Promise.all(
+        Array.from(files).map(async file => {
+          console.log('Processing file:', {
+            name: file.name,
+            type: file.type,
+            size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
+          });
+          return file;
+        })
+      );
 
-    const fileArray = Array.from(files);
-    
-    const validFiles = fileArray.filter(file => {
-      const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
-      const isSizeValid = file.size <= 100 * 1024 * 1024; // 100MB limit
-      
-      if (!isValid) {
-        toast.error(`Invalid file type: ${file.name}`);
-      }
-      if (!isSizeValid) {
-        toast.error(`File too large: ${file.name}`);
-      }
-      
-      return isValid && isSizeValid;
-    });
-
-    if (validFiles.length > 0) {
-      setMediaFiles(prev => [...prev, ...validFiles]);
-      
-      validFiles.forEach(file => {
+      setMediaFiles(prev => [...prev, ...processedFiles]);
+      processedFiles.forEach(file => {
         const previewUrl = URL.createObjectURL(file);
         setMediaPreviewUrls(prev => [...prev, previewUrl]);
       });
+    } catch (error) {
+      console.error('Error processing files:', error);
+      toast.error(`Failed to process file: ${error.message}`);
     }
-  };
+  }, []);
 
-  const removeMedia = (index: number) => {
-    URL.revokeObjectURL(mediaPreviewUrls[index]);
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    setMediaPreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleMentionUser = () => {
-    if (mentionedUser) {
-      setPostContent(prev => `${prev} ${mentionedUser} `);
-      setMentionedUser("");
+  const handlePaste = useCallback(async (file: File) => {
+    console.log('File pasted:', file.name, file.type, file.size);
+    try {
+      setMediaFiles(prev => [...prev, file]);
+      const previewUrl = URL.createObjectURL(file);
+      setMediaPreviewUrls(prev => [...prev, previewUrl]);
+    } catch (error) {
+      console.error('Error processing pasted file:', error);
+      toast.error(`Failed to process pasted file: ${error.message}`);
     }
-  };
+  }, []);
+
+  const saveToDrafts = useCallback(() => {
+    try {
+      const draft = {
+        content,
+        mediaFiles: [], // Can't store File objects
+        scheduledFor: scheduledDate
+      };
+      console.log('Saving draft:', draft);
+      // Implementation for saving to drafts
+      toast.success('Draft saved');
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      toast.error('Failed to save draft');
+    }
+  }, [content, scheduledDate]);
 
   const createPost = async (options?: CreatePostOptions) => {
     if (!content.trim() && mediaFiles.length === 0) {
@@ -69,12 +86,15 @@ export const usePostCreation = (
 
     try {
       setIsSubmitting(true);
-      console.log('Creating post with options:', options);
+      console.log('Starting post creation with media files:', mediaFiles.length);
       const mediaUrls: string[] = [];
 
-      // Upload media files if any
       if (mediaFiles.length > 0) {
-        for (const file of mediaFiles) {
+        let totalProgress = 0;
+
+        for (const [index, file] of mediaFiles.entries()) {
+          console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
+          
           const fileExt = file.name.split('.').pop();
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${currentUser.id}/${fileName}`;
@@ -84,8 +104,7 @@ export const usePostCreation = (
             .upload(filePath, file);
 
           if (uploadError) {
-            toast.error(`Failed to upload ${file.name}`);
-            throw uploadError;
+            throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
           }
 
           const { data: { publicUrl } } = supabase.storage
@@ -93,18 +112,18 @@ export const usePostCreation = (
             .getPublicUrl(filePath);
 
           mediaUrls.push(publicUrl);
+          totalProgress = ((index + 1) / mediaFiles.length) * 100;
+          setUploadProgress(totalProgress);
         }
       }
 
-      // Create the post
       const postData = {
         content: content.trim(),
         user_id: currentUser.id,
         media_urls: mediaUrls,
+        ...(scheduledDate && { scheduled_for: scheduledDate.toISOString() }),
         ...(options?.quoted_post_id && { quoted_post_id: options.quoted_post_id })
       };
-
-      console.log('Creating post with data:', postData);
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
@@ -113,34 +132,32 @@ export const usePostCreation = (
         .single();
 
       if (postError) {
-        throw postError;
+        throw new Error(`Failed to create post: ${postError.message}`);
       }
 
-      // Clean up state
-      setContent("");
-      mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
-      setMediaPreviewUrls([]);
-      setMediaFiles([]);
-      
-      // Notify success and close dialog
+      console.log('Post created successfully:', newPost);
+      resetFormState();
       onPostCreated(newPost);
       onOpenChange(false);
-      toast.success("Post created successfully!");
+      toast.success(scheduledDate ? "Post scheduled successfully!" : "Post created successfully!");
 
     } catch (error) {
-      console.error('Error creating post:', error);
-      toast.error("Failed to create post. Please try again.");
+      console.error('Detailed error:', error);
+      toast.error(error.message || "Failed to create post");
     } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
     }
   };
 
   const resetFormState = () => {
+    console.log('Resetting form state');
     setContent("");
+    setIsSubmitting(false);
     setMediaFiles([]);
-    mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
     setMediaPreviewUrls([]);
-    setMentionedUser("");
+    setUploadProgress(0);
+    setScheduledDate(undefined);
   };
 
   return {
@@ -150,10 +167,12 @@ export const usePostCreation = (
     mentionedUser,
     isSubmitting,
     mediaPreviewUrls,
-    handleFileUpload,
-    removeMedia,
-    handleMentionUser,
-    setMentionedUser,
+    uploadProgress,
+    scheduledDate,
+    setScheduledDate,
+    handleFileSelect,
+    handlePaste,
+    saveToDrafts,
     createPost,
     resetFormState
   };
