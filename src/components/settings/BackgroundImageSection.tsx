@@ -73,21 +73,34 @@ export const BackgroundImageSection = () => {
   };
 
   const removeBackground = async () => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || !backgroundImage) return;
 
     try {
-      const { error } = await supabase
+      // Extract filename from URL
+      const urlParts = backgroundImage.image_url.split('/');
+      const filePath = `${session.user.id}/${urlParts[urlParts.length - 1]}`;
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('background-images')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
         .from('user_background_images')
         .delete()
         .eq('user_id', session.user.id);
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
       queryClient.invalidateQueries({ queryKey: ['background-image'] });
       toast.success('Background image removed');
 
       // Remove background
       document.body.style.backgroundImage = 'none';
+      document.body.style.backgroundColor = 'var(--background)';
     } catch (error) {
       console.error('Error removing background image:', error);
       toast.error('Failed to remove background image');
