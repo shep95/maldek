@@ -1,15 +1,21 @@
-import { Share2 } from "lucide-react";
+import { Share2, Quote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createNotification } from "../utils/notificationUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface RepostActionProps {
   postId: string;
   authorId: string;
   currentUserId: string;
   reposts: number;
-  onAction: (postId: string, action: 'repost') => void;
+  onAction: (postId: string, action: 'repost' | 'quote') => void;
 }
 
 export const RepostAction = ({ postId, authorId, currentUserId, reposts, onAction }: RepostActionProps) => {
@@ -36,15 +42,37 @@ export const RepostAction = ({ postId, authorId, currentUserId, reposts, onActio
     }
   };
 
+  const handleQuote = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUserId) {
+      toast.error('Please sign in to quote');
+      return;
+    }
+    onAction(postId, 'quote');
+  };
+
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="gap-2"
-      onClick={handleRepost}
-    >
-      <Share2 className="h-4 w-4" />
-      <span>{reposts || 0}</span>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+        >
+          <Share2 className="h-4 w-4" />
+          <span>{reposts || 0}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={handleRepost}>
+          <Share2 className="h-4 w-4 mr-2" />
+          Repost
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleQuote}>
+          <Quote className="h-4 w-4 mr-2" />
+          Quote Post
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
