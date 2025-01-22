@@ -1,9 +1,9 @@
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createNotification } from "../utils/notificationUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 interface LikeActionProps {
   postId: string;
@@ -14,8 +14,55 @@ interface LikeActionProps {
   onAction: (postId: string, action: 'like') => void;
 }
 
-export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, onAction }: LikeActionProps) => {
+export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLikes, isLiked: initialIsLiked, onAction }: LikeActionProps) => {
   const queryClient = useQueryClient();
+  const [likeCount, setLikeCount] = useState(initialLikes);
+  const [isLiked, setIsLiked] = useState(initialIsLiked);
+
+  // Subscribe to real-time like updates
+  useEffect(() => {
+    console.log('Setting up real-time like subscription for post:', postId);
+    
+    const channel = supabase
+      .channel(`post-likes-${postId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes',
+          filter: `post_id=eq.${postId}`
+        },
+        async (payload) => {
+          console.log('Received like update:', payload);
+          
+          // Fetch the current like count
+          const { count } = await supabase
+            .from('post_likes')
+            .select('*', { count: 'exact', head: true })
+            .eq('post_id', postId);
+            
+          console.log('Updated like count:', count);
+          setLikeCount(count || 0);
+          
+          // Update isLiked status for current user
+          const { data: userLike } = await supabase
+            .from('post_likes')
+            .select('id')
+            .eq('post_id', postId)
+            .eq('user_id', currentUserId)
+            .single();
+            
+          setIsLiked(!!userLike);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up like subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [postId, currentUserId]);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -37,7 +84,7 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, on
         // Update posts count
         await supabase
           .from('posts')
-          .update({ likes: likes - 1 })
+          .update({ likes: likeCount - 1 })
           .eq('id', postId);
 
       } else {
@@ -53,23 +100,25 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, on
         // Update posts count
         await supabase
           .from('posts')
-          .update({ likes: likes + 1 })
+          .update({ likes: likeCount + 1 })
           .eq('id', postId);
 
-        // Create notification with UUID post_id
-        const { error: notificationError } = await supabase
-          .from('notifications')
-          .insert({
-            recipient_id: authorId,
-            actor_id: currentUserId,
-            type: 'like',
-            post_id: postId // Now this will be properly cast to UUID by Supabase
-          });
+        // Create notification
+        if (authorId !== currentUserId) {
+          const { error: notificationError } = await supabase
+            .from('notifications')
+            .insert({
+              recipient_id: authorId,
+              actor_id: currentUserId,
+              type: 'like',
+              post_id: postId
+            });
 
-        if (notificationError) {
-          console.error('Error creating notification:', notificationError);
-          // Don't throw here to avoid rolling back the like
-          toast.error('Failed to create notification');
+          if (notificationError) {
+            console.error('Error creating notification:', notificationError);
+            // Don't throw here to avoid rolling back the like
+            toast.error('Failed to send notification');
+          }
         }
       }
 
@@ -90,7 +139,7 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes, isLiked, on
       onClick={handleLike}
     >
       <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-      <span>{likes || 0}</span>
+      <span>{likeCount}</span>
     </Button>
   );
 };
