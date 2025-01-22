@@ -102,24 +102,6 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
           .from('posts')
           .update({ likes: likeCount + 1 })
           .eq('id', postId);
-
-        // Create notification
-        if (authorId !== currentUserId) {
-          const { error: notificationError } = await supabase
-            .from('notifications')
-            .insert({
-              recipient_id: authorId,
-              actor_id: currentUserId,
-              type: 'like',
-              post_id: postId
-            });
-
-          if (notificationError) {
-            console.error('Error creating notification:', notificationError);
-            // Don't throw here to avoid rolling back the like
-            toast.error('Failed to send notification');
-          }
-        }
       }
 
       // Invalidate posts query to trigger a refetch
