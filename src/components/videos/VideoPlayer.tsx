@@ -35,7 +35,8 @@ export const VideoPlayer = ({
   };
 
   const handleEnded = () => {
-    backgroundMusic.fadeIn();
+    // Remove this since we're using loop now
+    // backgroundMusic.fadeIn();
   };
 
   const handleDownload = async () => {
@@ -168,6 +169,7 @@ export const VideoPlayer = ({
           onPause={handlePause}
           onEnded={handleEnded}
           playsInline
+          loop
           preload="auto"
           crossOrigin="anonymous"
           autoPlay={autoPlay}

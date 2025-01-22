@@ -40,6 +40,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                     src={publicUrl}
                     controls
                     playsInline
+                    loop
                     preload="metadata"
                     className="w-full h-full object-cover bg-muted rounded-[22px]"
                     onClick={(e) => e.stopPropagation()}

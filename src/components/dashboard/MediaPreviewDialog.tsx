@@ -116,6 +116,7 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
               src={selectedMedia}
               controls
               playsInline
+              loop
               className="max-h-full max-w-full rounded-lg"
               onLoadStart={() => {
                 console.log('Media loading started');
