@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Languages, Check, Reply, X } from "lucide-react";
+import { Languages, Check, Reply, X, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface CommentCardProps {
   comment: {
@@ -62,6 +63,51 @@ export const CommentCard = ({
     },
   });
 
+  const getVerificationBadge = () => {
+    if (!subscription?.tier?.name) return null;
+
+    const badgeConfig = {
+      'True Emperor': {
+        icon: Crown,
+        color: "text-yellow-500",
+        shadow: "shadow-[0_0_12px_rgba(234,179,8,0.6)]",
+        border: "border-yellow-500"
+      },
+      'Creator': {
+        icon: Check,
+        color: "text-orange-500",
+        shadow: "shadow-[0_0_12px_rgba(249,115,22,0.6)]",
+        border: "border-orange-500"
+      },
+      'Business': {
+        icon: Check,
+        color: "text-purple-500",
+        shadow: "shadow-[0_0_12px_rgba(168,85,247,0.6)]",
+        border: "border-purple-500"
+      }
+    };
+
+    const config = badgeConfig[subscription.tier.name as keyof typeof badgeConfig];
+    if (!config) return null;
+
+    const Icon = config.icon;
+
+    return (
+      <div className="group relative">
+        <div className={cn(
+          "h-5 w-5 rounded-full flex items-center justify-center",
+          "border-2 bg-black/50 backdrop-blur-sm",
+          config.border
+        )}>
+          <Icon className={cn("h-3 w-3", config.color, config.shadow)} />
+        </div>
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+          {subscription.tier.name}
+        </div>
+      </div>
+    );
+  };
+
   const handleTranslate = async () => {
     if (isTranslating || !userLanguage) return;
     
@@ -95,9 +141,6 @@ export const CommentCard = ({
     }
   };
 
-  // Only allow nesting up to 3 levels deep
-  const canReply = level < 3;
-
   return (
     <div className="space-y-3">
       <Card className={`p-4 transition-all duration-200 hover:bg-accent/5 ${level > 0 ? 'ml-6' : ''}`}>
@@ -118,26 +161,7 @@ export const CommentCard = ({
                 >
                   @{comment.user.username}
                 </h4>
-                {subscription?.tier?.name === 'Creator' && (
-                  <div className="group relative">
-                    <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(249,115,22,0.6)] border-2 border-orange-500 bg-black/50 backdrop-blur-sm">
-                      <Check className="h-4 w-4 text-orange-500 stroke-[3]" />
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-                      Creator
-                    </div>
-                  </div>
-                )}
-                {subscription?.tier?.name === 'Business' && (
-                  <div className="group relative">
-                    <div className="h-6 w-6 rounded-full flex items-center justify-center shadow-[0_0_12px_rgba(234,179,8,0.6)] border-2 border-yellow-500 bg-black/50 backdrop-blur-sm">
-                      <Check className="h-4 w-4 text-yellow-500 stroke-[3]" />
-                    </div>
-                    <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-                      Business
-                    </div>
-                  </div>
-                )}
+                {getVerificationBadge()}
               </div>
               <span className="text-sm text-muted-foreground">
                 {new Date(comment.created_at).toLocaleDateString()}
@@ -165,7 +189,7 @@ export const CommentCard = ({
                   Show original
                 </Button>
               )}
-              {canReply && (
+              {level < 3 && (
                 <Button
                   variant="ghost"
                   size="sm"
