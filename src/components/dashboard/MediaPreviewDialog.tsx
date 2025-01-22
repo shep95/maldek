@@ -4,6 +4,7 @@ import { X, Download, ExternalLink } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
 import { useState, useEffect, useRef } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { toast } from "sonner";
 
 interface MediaPreviewDialogProps {
   selectedMedia: string | null;
@@ -49,9 +50,11 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      toast.success('Download started');
     } catch (err) {
       console.error('Download error:', err);
       setError('Failed to download media');
+      toast.error('Failed to download media');
     }
   };
 
