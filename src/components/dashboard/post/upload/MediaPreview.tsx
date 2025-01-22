@@ -26,7 +26,7 @@ export const MediaPreview = ({
 
   if (hasError) {
     return (
-      <div className="relative aspect-video bg-muted rounded-lg flex items-center justify-center">
+      <div className="relative aspect-video bg-muted rounded-[22px] flex items-center justify-center">
         <div className="text-center p-4">
           <AlertCircle className="h-8 w-8 mx-auto mb-2 text-destructive" />
           <p className="text-sm text-muted-foreground">Failed to load media</p>
@@ -45,7 +45,7 @@ export const MediaPreview = ({
 
   return (
     <div className="relative group">
-      <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+      <div className="relative aspect-video bg-muted rounded-[22px] overflow-hidden">
         {isVideo ? (
           <video
             src={url}
