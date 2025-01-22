@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Author } from "@/utils/postUtils";
-import { Crown } from "lucide-react";
+import { Check, Crown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -35,12 +35,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
           return null;
         }
 
-        if (!subscriptionData) {
-          console.log('No active subscription found for user');
-          return null;
-        }
-
-        console.log('Subscription data:', subscriptionData);
+        console.log('Subscription data for user:', author.id, subscriptionData);
         return subscriptionData;
       } catch (error) {
         console.error('Error in subscription query:', error);
@@ -84,18 +79,49 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
 
   const timeAgo = getTimeAgo(new Date(timestamp));
 
-  const getCrownColor = () => {
-    if (!subscription?.tier?.name) return "";
-    switch (subscription.tier.name) {
-      case 'True Emperor':
-        return "text-yellow-500 shadow-[0_0_12px_rgba(234,179,8,0.6)]";
-      case 'Creator':
-        return "text-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.6)]";
-      case 'Business':
-        return "text-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.6)]";
-      default:
-        return "";
-    }
+  const getVerificationBadge = () => {
+    if (!subscription?.tier?.name) return null;
+
+    const badgeConfig = {
+      'True Emperor': {
+        icon: Crown,
+        color: "text-yellow-500",
+        shadow: "shadow-[0_0_12px_rgba(234,179,8,0.6)]",
+        border: "border-yellow-500"
+      },
+      'Creator': {
+        icon: Check,
+        color: "text-orange-500",
+        shadow: "shadow-[0_0_12px_rgba(249,115,22,0.6)]",
+        border: "border-orange-500"
+      },
+      'Business': {
+        icon: Check,
+        color: "text-purple-500",
+        shadow: "shadow-[0_0_12px_rgba(168,85,247,0.6)]",
+        border: "border-purple-500"
+      }
+    };
+
+    const config = badgeConfig[subscription.tier.name as keyof typeof badgeConfig];
+    if (!config) return null;
+
+    const Icon = config.icon;
+
+    return (
+      <div className="group relative">
+        <div className={cn(
+          "h-5 w-5 rounded-full flex items-center justify-center",
+          "border-2 bg-black/50 backdrop-blur-sm",
+          config.border
+        )}>
+          <Icon className={cn("h-3 w-3", config.color, config.shadow)} />
+        </div>
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
+          {subscription.tier.name}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -116,22 +142,7 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
             >
               {author.name}
             </button>
-            {subscription?.tier?.name && (
-              <div className="group relative">
-                <div className={cn(
-                  "h-6 w-6 rounded-full flex items-center justify-center",
-                  "border-2 bg-black/50 backdrop-blur-sm",
-                  subscription.tier.name === 'True Emperor' && "border-yellow-500",
-                  subscription.tier.name === 'Creator' && "border-orange-500",
-                  subscription.tier.name === 'Business' && "border-purple-500"
-                )}>
-                  <Crown className={cn("h-4 w-4", getCrownColor())} />
-                </div>
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-                  {subscription.tier.name}
-                </div>
-              </div>
-            )}
+            {getVerificationBadge()}
           </div>
           <button
             onClick={handleProfileClick}
