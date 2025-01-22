@@ -24,7 +24,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   useEffect(() => {
     console.log('Setting up view count subscription and interval for post:', post.id);
     
-    // Subscribe to view count updates
+    // Subscribe to real-time view count updates
     const channel = supabase
       .channel(`post-views-${post.id}`)
       .on(
@@ -35,10 +35,18 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
           table: 'posts',
           filter: `id=eq.${post.id}`
         },
-        (payload: any) => {
-          console.log('Received view count update:', payload);
-          if (payload.new && payload.new.view_count !== undefined) {
-            setViewCount(payload.new.view_count);
+        async () => {
+          console.log('Received view count update for post:', post.id);
+          
+          // Get current view count
+          const { data } = await supabase
+            .from('posts')
+            .select('view_count')
+            .eq('id', post.id)
+            .single();
+          
+          if (data) {
+            setViewCount(data.view_count || 0);
           }
         }
       )
