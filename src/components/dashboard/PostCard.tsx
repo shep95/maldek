@@ -22,9 +22,9 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const [viewCount, setViewCount] = useState(post.view_count || 0);
 
   useEffect(() => {
-    // Subscribe to view count updates
-    console.log('Setting up view count subscription for post:', post.id);
+    console.log('Setting up view count subscription and interval for post:', post.id);
     
+    // Subscribe to view count updates
     const channel = supabase
       .channel(`post-views-${post.id}`)
       .on(
@@ -44,9 +44,23 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
       )
       .subscribe();
 
+    // Set up 1-second interval for refreshing view count
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('posts')
+        .select('view_count')
+        .eq('id', post.id)
+        .single();
+      
+      if (data) {
+        setViewCount(data.view_count || 0);
+      }
+    }, 1000);
+
     return () => {
-      console.log('Cleaning up view count subscription');
+      console.log('Cleaning up view count subscription and interval');
       supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [post.id]);
 
@@ -54,7 +68,6 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     console.log('Navigating to post:', post.id);
     
     try {
-      // Increment view count using the database function
       const { error } = await supabase.rpc('increment_post_view', {
         post_id: post.id
       });
@@ -70,7 +83,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   };
 
   const handleUsernameClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent post click
+    e.stopPropagation();
     console.log('Navigating to profile:', post.author.username);
     navigate(`/@${post.author.username}`);
   };

@@ -19,10 +19,10 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
   const [likeCount, setLikeCount] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
 
-  // Subscribe to real-time like updates
   useEffect(() => {
     console.log('Setting up real-time like subscription for post:', postId);
     
+    // Subscribe to real-time like updates
     const channel = supabase
       .channel(`post-likes-${postId}`)
       .on(
@@ -33,10 +33,10 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
           table: 'post_likes',
           filter: `post_id=eq.${postId}`
         },
-        async (payload) => {
-          console.log('Received like update:', payload);
+        async () => {
+          console.log('Received like update for post:', postId);
           
-          // Fetch the current like count
+          // Get current like count
           const { count } = await supabase
             .from('post_likes')
             .select('*', { count: 'exact', head: true })
@@ -58,9 +58,20 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
       )
       .subscribe();
 
+    // Set up 1-second interval for refreshing like count
+    const interval = setInterval(async () => {
+      const { count } = await supabase
+        .from('post_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', postId);
+        
+      setLikeCount(count || 0);
+    }, 1000);
+
     return () => {
       console.log('Cleaning up like subscription');
       supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [postId, currentUserId]);
 
@@ -81,7 +92,6 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
         
         if (unlikeError) throw unlikeError;
 
-        // Update posts count
         await supabase
           .from('posts')
           .update({ likes: likeCount - 1 })
@@ -97,14 +107,12 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
         
         if (likeError) throw likeError;
 
-        // Update posts count
         await supabase
           .from('posts')
           .update({ likes: likeCount + 1 })
           .eq('id', postId);
       }
 
-      // Invalidate posts query to trigger a refetch
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       onAction(postId, 'like');
     } catch (error) {
