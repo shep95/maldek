@@ -18,46 +18,32 @@ export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderPro
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
-      try {
-        console.log('Fetching subscription for user:', author.id);
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('user_subscriptions')
-          .select(`
-            *,
-            tier:subscription_tiers(*)
-          `)
-          .eq('user_id', author.id)
-          .eq('status', 'active')
-          .maybeSingle();
+      console.log('Fetching subscription for user:', author.id);
+      const { data: subscriptionData, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          tier:subscription_tiers(*)
+        `)
+        .eq('user_id', author.id)
+        .eq('status', 'active')
+        .single();
 
-        if (subscriptionError) {
-          console.error('Error fetching subscription:', subscriptionError);
-          return null;
-        }
-
-        console.log('Subscription data for user:', author.id, subscriptionData);
-        return subscriptionData;
-      } catch (error) {
-        console.error('Error in subscription query:', error);
+      if (error) {
+        console.error('Error fetching subscription:', error);
         return null;
       }
+
+      console.log('Subscription data:', subscriptionData);
+      return subscriptionData;
     },
-    retry: false,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    console.log('=== Profile Navigation Debug ===');
-    console.log('1. Click event detected');
-    console.log('2. Username:', author.username);
-    console.log('3. Current path:', window.location.pathname);
-    
     const username = author.username.startsWith('@') ? author.username : `/@${author.username}`;
-    console.log('4. Target path:', username);
-    
     navigate(username);
   };
 
