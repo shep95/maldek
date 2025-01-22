@@ -3,6 +3,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { Eye, ThumbsUp, MessageSquare, Clock } from "lucide-react";
 import { AnalyticsCard } from "@/components/profile/tabs/analytics/AnalyticsCard";
 import { AnalyticsChart } from "@/components/profile/tabs/analytics/AnalyticsChart";
+import { AppAnalyticsCard } from "@/components/profile/tabs/analytics/AppAnalyticsCard";
 import { useAnalytics } from "@/components/profile/tabs/analytics/useAnalytics";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
@@ -79,37 +80,41 @@ const Analytics = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold mb-6">Analytics Dashboard</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <AnalyticsCard 
-          title="Total Views" 
-          value={analytics?.reduce((sum, day) => sum + day.views, 0) || 0}
-          trend={calculateTrend('views')}
-          icon={Eye}
-        />
-        <AnalyticsCard 
-          title="Total Likes" 
-          value={analytics?.reduce((sum, day) => sum + day.likes, 0) || 0}
-          trend={calculateTrend('likes')}
-          icon={ThumbsUp}
-        />
-        <AnalyticsCard 
-          title="Total Comments" 
-          value={analytics?.reduce((sum, day) => sum + day.comments, 0) || 0}
-          trend={calculateTrend('comments')}
-          icon={MessageSquare}
-        />
-        <AnalyticsCard 
-          title="Watch Time (mins)" 
-          value={analytics?.reduce((sum, day) => sum + day.watchTime, 0) || 0}
-          trend={calculateTrend('watchTime')}
-          icon={Clock}
-        />
+    <div className="container mx-auto p-4 space-y-12">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Personal Analytics</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <AnalyticsCard 
+            title="Total Views" 
+            value={analytics?.reduce((sum, day) => sum + day.views, 0) || 0}
+            trend={calculateTrend('views')}
+            icon={Eye}
+          />
+          <AnalyticsCard 
+            title="Total Likes" 
+            value={analytics?.reduce((sum, day) => sum + day.likes, 0) || 0}
+            trend={calculateTrend('likes')}
+            icon={ThumbsUp}
+          />
+          <AnalyticsCard 
+            title="Total Comments" 
+            value={analytics?.reduce((sum, day) => sum + day.comments, 0) || 0}
+            trend={calculateTrend('comments')}
+            icon={MessageSquare}
+          />
+          <AnalyticsCard 
+            title="Watch Time (mins)" 
+            value={analytics?.reduce((sum, day) => sum + day.watchTime, 0) || 0}
+            trend={calculateTrend('watchTime')}
+            icon={Clock}
+          />
+        </div>
+
+        <AnalyticsChart data={analytics || []} />
       </div>
 
-      <AnalyticsChart data={analytics || []} />
+      <AppAnalyticsCard />
     </div>
   );
 };
