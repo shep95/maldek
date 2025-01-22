@@ -35,9 +35,9 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
           table: 'posts',
           filter: `id=eq.${post.id}`
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Received view count update:', payload);
-          if (payload.new.view_count !== undefined) {
+          if (payload.new && payload.new.view_count !== undefined) {
             setViewCount(payload.new.view_count);
           }
         }
@@ -97,10 +97,10 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         />
       )}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Eye className="h-4 w-4" />
-          <span className="text-sm">{viewCount} views</span>
-        </div>
+          {viewCount}
+        </span>
         <PostActions
           post={post}
           currentUserId={currentUserId}

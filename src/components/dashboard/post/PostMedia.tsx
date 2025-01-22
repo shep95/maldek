@@ -48,7 +48,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
 
   return (
     <div className="mt-4">
-      <div className="grid grid-cols-2 gap-2">
+      <div className={`grid ${mediaUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
         {mediaUrls.map((url, i) => {
           const isVideo = isVideoFile(url);
           const publicUrl = getPublicUrl(url);
@@ -69,7 +69,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                 </AspectRatio>
               ) : (
                 <div onClick={() => onMediaClick?.(publicUrl)}>
-                  <AspectRatio ratio={16 / 9}>
+                  <AspectRatio ratio={mediaUrls.length === 1 ? 16 / 9 : 1}>
                     <img
                       src={publicUrl}
                       alt={`Media content ${i + 1}`}
