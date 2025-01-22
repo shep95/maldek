@@ -12,7 +12,7 @@
     d="M16 4 L28 26 L4 26 Z"
     fill="url(#grad)"
     stroke="none"
-    rx="22"
+    rx="2"
     style="filter: url(#round-corners)"
   />
   
