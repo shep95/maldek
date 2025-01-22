@@ -12,36 +12,59 @@ import { PremiumFeatureNotice } from "@/components/ai/components/PremiumFeatureN
 
 const Analytics = () => {
   const session = useSession();
+  console.log("Session state:", session?.user?.id);
 
   // Check if user has an active subscription
-  const { data: subscription } = useQuery({
+  const { data: subscription, isLoading: isLoadingSubscription } = useQuery({
     queryKey: ['user-subscription', session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) return null;
+      console.log("Fetching subscription data");
       
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*, tier:subscription_tiers(*)')
         .eq('user_id', session.user.id)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching subscription:', error);
         return null;
       }
 
+      console.log("Subscription data:", data);
       return data;
     },
     enabled: !!session?.user?.id
   });
 
   const { data: analytics, isLoading } = useAnalytics(session?.user?.id || '');
+  console.log("Analytics data:", analytics);
 
   if (!session?.user?.id) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
         <p className="text-lg text-gray-400">Please log in to view analytics.</p>
+      </div>
+    );
+  }
+
+  if (isLoadingSubscription) {
+    return (
+      <div className="container mx-auto p-4 space-y-6">
+        <h1 className="text-2xl font-bold mb-6">Analytics Dashboard</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="p-6">
+              <Skeleton className="h-4 w-24 mb-4" />
+              <Skeleton className="h-8 w-16" />
+            </Card>
+          ))}
+        </div>
+        <Card className="p-4">
+          <Skeleton className="h-[400px] w-full" />
+        </Card>
       </div>
     );
   }
