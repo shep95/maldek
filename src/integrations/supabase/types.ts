@@ -153,36 +153,6 @@ export type Database = {
           },
         ]
       }
-      app_analytics: {
-        Row: {
-          active_users_count: number | null
-          created_at: string | null
-          date: string
-          hourly_data: Json | null
-          id: string
-          new_signups_count: number | null
-          peak_hour: number | null
-        }
-        Insert: {
-          active_users_count?: number | null
-          created_at?: string | null
-          date?: string
-          hourly_data?: Json | null
-          id?: string
-          new_signups_count?: number | null
-          peak_hour?: number | null
-        }
-        Update: {
-          active_users_count?: number | null
-          created_at?: string | null
-          date?: string
-          hourly_data?: Json | null
-          id?: string
-          new_signups_count?: number | null
-          peak_hour?: number | null
-        }
-        Relationships: []
-      }
       bookmark_collection_items: {
         Row: {
           added_at: string | null
@@ -1749,10 +1719,6 @@ export type Database = {
           post_id: string
           watch_seconds: number
         }
-        Returns: undefined
-      }
-      update_app_analytics: {
-        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       update_trending_scores: {
