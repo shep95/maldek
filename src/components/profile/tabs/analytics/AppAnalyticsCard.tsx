@@ -33,8 +33,10 @@ export const AppAnalyticsCard = () => {
   const latestData = appAnalytics[0];
   const chartData = appAnalytics.map(day => ({
     date: format(new Date(day.date), 'MMM dd'),
-    activeUsers: day.active_users_count,
-    newSignups: day.new_signups_count
+    views: day.active_users_count || 0, // Map active users to views
+    likes: day.new_signups_count || 0,  // Map new signups to likes
+    comments: 0,  // Required by ChartData interface
+    watchTime: day.peak_hour || 0  // Map peak hour to watchTime
   })).reverse();
 
   const peakHourFormatted = latestData.peak_hour != null 
