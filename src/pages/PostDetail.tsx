@@ -36,7 +36,7 @@ const PostDetail = () => {
         .from('posts')
         .select(`
           *,
-          profiles (
+          author:profiles (
             id,
             username,
             avatar_url
@@ -62,10 +62,10 @@ const PostDetail = () => {
         content: data.content,
         user_id: data.user_id,
         author: {
-          id: data.profiles.id,
-          username: data.profiles.username,
-          avatar_url: data.profiles.avatar_url,
-          name: data.profiles.username
+          id: data.author.id,
+          username: data.author.username,
+          avatar_url: data.author.avatar_url,
+          name: data.author.username // Using username as name since name isn't in the query
         },
         timestamp: new Date(data.created_at),
         media_urls: data.media_urls || [],
@@ -85,7 +85,7 @@ const PostDetail = () => {
     refetchOnWindowFocus: false
   });
 
-  const { data: comments, isLoading: isLoadingComments } = useQuery({
+  const { data: comments = [] } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
       console.log('Fetching comments for post:', postId);
@@ -159,7 +159,7 @@ const PostDetail = () => {
 
   const handlePostAction = async (action: 'delete') => {
     try {
-      if (action === 'delete' && post.id) {
+      if (action === 'delete' && post?.id) {
         const { error } = await supabase
           .from('posts')
           .delete()
@@ -188,11 +188,7 @@ const PostDetail = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <PostDetailHeader
-        author={post.author}
-        timestamp={post.timestamp}
-        onUsernameClick={() => {}}
-      />
+      <PostDetailHeader />
       
       <PostDetailContent
         post={post}
@@ -202,7 +198,7 @@ const PostDetail = () => {
 
       <CommentSection
         postId={post.id}
-        comments={comments || []}
+        comments={comments}
         currentUserId={currentUserId || ''}
       />
     </div>
