@@ -8,7 +8,7 @@ import { PostList } from "@/components/dashboard/PostList";
 import { Author } from "@/utils/postUtils";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
-import { Grid, TrendingUp } from "lucide-react";
+import { Grid } from "lucide-react";
 import { DeletedPostsDialog } from "@/components/dashboard/DeletedPostsDialog";
 
 const Dashboard = () => {
@@ -99,12 +99,8 @@ const Dashboard = () => {
         <main className="w-full max-w-3xl px-4 py-6 md:py-8 md:pl-24 animate-fade-in">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <Grid className="h-6 w-6 text-accent" />
+              <Grid className="h-6 w-6 text-accent cursor-pointer hover:text-accent transition-colors" onClick={() => setShowDeletedPosts(true)} />
               <h1 className="text-3xl font-bold text-foreground">Home</h1>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-accent transition-colors" onClick={() => setShowDeletedPosts(true)}>
-              <TrendingUp className="h-4 w-4" />
-              <span>Latest posts</span>
             </div>
           </div>
           <PostList />
