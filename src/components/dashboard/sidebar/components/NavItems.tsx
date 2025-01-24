@@ -50,6 +50,11 @@ export const NavItems = ({
     onNavigate(path);
   };
 
+  const handleCreatePost = () => {
+    console.log('Create post clicked');
+    setIsCreatingPost(true);
+  };
+
   const navItems = [
     { 
       icon: Home, 
@@ -122,7 +127,7 @@ export const NavItems = ({
     { 
       icon: Plus, 
       label: "Create Post",
-      onClick: () => setIsCreatingPost(true),
+      onClick: handleCreatePost,
       className: "border-2 border-white hover:bg-accent/90 text-white"
     },
     { icon: Settings, label: "Settings", path: "/settings" },

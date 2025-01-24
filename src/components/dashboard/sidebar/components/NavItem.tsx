@@ -1,19 +1,25 @@
-import { Button } from "@/components/ui/button";
+import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Crown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavItemProps {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   path?: string;
   active?: boolean;
-  onClick?: () => void;
-  className?: string;
   premium?: boolean;
-  description?: string;
-  subscription?: any;
-  onNavigate: (path?: string) => void;
   badge?: number;
+  description?: string;
+  className?: string;
+  subscription?: any;
+  onClick?: () => void;
+  onNavigate: (path?: string) => void;
 }
 
 export const NavItem = ({
@@ -21,15 +27,16 @@ export const NavItem = ({
   label,
   path,
   active,
-  onClick,
-  className,
   premium,
+  badge,
   description,
+  className,
   subscription,
-  onNavigate,
-  badge
+  onClick,
+  onNavigate
 }: NavItemProps) => {
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (onClick) {
       onClick();
     } else if (path) {
@@ -37,46 +44,36 @@ export const NavItem = ({
     }
   };
 
-  return (
+  const content = (
     <Button
       variant="ghost"
-      onClick={handleClick}
       className={cn(
-        "w-full justify-start gap-4 hover:bg-accent hover:text-white transition-all",
-        "text-sm font-medium",
-        "min-h-[2.5rem] py-2 px-3",
-        "relative",
-        active && "bg-accent/10 text-accent",
-        premium && "text-accent font-medium",
+        "w-full justify-start gap-2",
+        active && "bg-accent",
         className
       )}
+      onClick={handleClick}
     >
-      <Icon className="h-5 w-5 flex-shrink-0" />
-      <div className="flex flex-col items-start text-left min-w-0 flex-1">
-        <span className="flex items-center gap-2 truncate w-full">
-          {label}
-          {premium && subscription?.tier && (
-            <Crown className={cn(
-              "h-4 w-4",
-              subscription.tier.name === "Creator" && "text-orange-500",
-              subscription.tier.name === "Business" && "text-purple-500"
-            )} />
-          )}
-        </span>
-        {description && (
-          <span className="text-xs text-muted-foreground truncate w-full">
-            {description}
-          </span>
-        )}
-      </div>
-      {premium && !subscription && (
-        <span className="ml-2 text-xs whitespace-nowrap shrink-0">$17/mo</span>
-      )}
-      {badge && (
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 min-w-[20px] h-5 rounded-full bg-accent text-white text-xs flex items-center justify-center px-1.5">
-          {badge > 99 ? '99+' : badge}
-        </span>
+      <Icon className="h-4 w-4" />
+      <span>{label}</span>
+      {badge !== undefined && (
+        <Badge variant="secondary" className="ml-auto">
+          {badge}
+        </Badge>
       )}
     </Button>
   );
+
+  if (description) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent>
+          <p>{description}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return content;
 };
