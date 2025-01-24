@@ -33,7 +33,7 @@ const PostDetail = () => {
     getCurrentUser();
   }, []);
 
-  const { data: post, isLoading: isLoadingPost } = useQuery({
+  const { data: post, isLoading: isLoadingPost, error } = useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
       console.log('Fetching post details for:', postId);
@@ -41,7 +41,22 @@ const PostDetail = () => {
         .from('posts')
         .select(`
           *,
-          author:profiles(*)
+          profiles:profiles (
+            id,
+            username,
+            avatar_url
+          ),
+          post_likes (
+            id,
+            user_id
+          ),
+          bookmarks (
+            id,
+            user_id
+          ),
+          comments (
+            id
+          )
         `)
         .eq('id', postId)
         .maybeSingle();
@@ -51,14 +66,25 @@ const PostDetail = () => {
         throw error;
       }
       
-      return data ? {
+      if (!data) {
+        throw new Error('Post not found');
+      }
+      
+      return {
         ...data,
-        isLiked: false,
-        isBookmarked: false,
+        author: {
+          id: data.profiles.id,
+          username: data.profiles.username,
+          avatar_url: data.profiles.avatar_url,
+          name: data.profiles.username
+        },
+        isLiked: data.post_likes?.some(like => like.user_id === currentUserId) || false,
+        isBookmarked: data.bookmarks?.some(bookmark => bookmark.user_id === currentUserId) || false,
         timestamp: new Date(data.created_at),
         mediaUrls: data.media_urls || []
-      } : null;
+      };
     },
+    retry: 1,
     staleTime: 1000 * 60 // Data stays fresh for 1 minute
   });
 
@@ -81,16 +107,31 @@ const PostDetail = () => {
       }
       return data;
     },
+    enabled: !!post // Only fetch comments if post exists
   });
 
-  if (isLoadingPost || isLoadingComments) {
+  if (error) {
+    return (
+      <div className="max-w-3xl mx-auto p-4 text-center">
+        <PostDetailHeader />
+        <div className="mt-8 p-6 bg-card/50 backdrop-blur-sm rounded-lg border border-muted">
+          <h2 className="text-xl font-semibold text-foreground">Post not found</h2>
+          <p className="text-muted-foreground mt-2">
+            This post may have been deleted or doesn't exist.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingPost) {
     return (
       <div className="max-w-3xl mx-auto p-4 animate-in fade-in-50">
         <PostDetailHeader />
-        <div className="space-y-4">
+        <div className="space-y-4 mt-8">
+          <Skeleton className="h-12 w-full rounded-lg" />
           <Skeleton className="h-48 w-full rounded-lg" />
           <Skeleton className="h-24 w-full rounded-lg" />
-          <Skeleton className="h-12 w-1/2 rounded-lg" />
         </div>
       </div>
     );
@@ -100,8 +141,12 @@ const PostDetail = () => {
     return (
       <div className="max-w-3xl mx-auto p-4 text-center">
         <PostDetailHeader />
-        <h2 className="text-xl font-semibold mt-8">Post not found</h2>
-        <p className="text-muted-foreground mt-2">This post may have been deleted or doesn't exist.</p>
+        <div className="mt-8 p-6 bg-card/50 backdrop-blur-sm rounded-lg border border-muted">
+          <h2 className="text-xl font-semibold text-foreground">Post not found</h2>
+          <p className="text-muted-foreground mt-2">
+            This post may have been deleted or doesn't exist.
+          </p>
+        </div>
       </div>
     );
   }

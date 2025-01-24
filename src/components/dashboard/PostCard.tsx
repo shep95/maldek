@@ -17,7 +17,15 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const navigate = useNavigate();
   const { data: userSettings } = useUserSettings();
 
-  const handlePostClick = () => {
+  const handlePostClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on interactive elements
+    if (
+      (e.target as HTMLElement).closest('button') ||
+      (e.target as HTMLElement).closest('a')
+    ) {
+      return;
+    }
+    console.log('Navigating to post:', post.id);
     navigate(`/post/${post.id}`);
   };
 
