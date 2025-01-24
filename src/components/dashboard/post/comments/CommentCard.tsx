@@ -143,31 +143,40 @@ export const CommentCard = ({
 
   return (
     <div className="space-y-3">
-      <Card className={`p-4 transition-all duration-200 hover:bg-accent/5 ${level > 0 ? 'ml-6' : ''}`}>
+      <Card className={cn(
+        "p-4 transition-all duration-200",
+        "bg-[#0d0d0d] hover:bg-[#151515] border-[#222226]",
+        "backdrop-blur-sm shadow-lg",
+        level > 0 ? 'ml-6' : ''
+      )}>
         <div className="flex items-start gap-3">
           <Avatar 
-            className="h-8 w-8 cursor-pointer" 
+            className="h-8 w-8 cursor-pointer ring-2 ring-[#222226] hover:ring-orange-500 transition-all" 
             onClick={() => navigate(`/@${comment.user.username}`)}
           >
             <AvatarImage src={comment.user.avatar_url || undefined} />
-            <AvatarFallback>{comment.user.username[0].toUpperCase()}</AvatarFallback>
+            <AvatarFallback className="bg-[#151515] text-orange-500">
+              {comment.user.username[0].toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-baseline gap-2">
               <div className="flex items-center gap-1">
                 <h4 
-                  className="font-semibold cursor-pointer hover:underline" 
+                  className="font-semibold cursor-pointer text-gray-100 hover:text-orange-500 transition-colors" 
                   onClick={() => navigate(`/@${comment.user.username}`)}
                 >
                   @{comment.user.username}
                 </h4>
                 {getVerificationBadge()}
               </div>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-gray-500">
                 {new Date(comment.created_at).toLocaleDateString()}
               </span>
             </div>
-            <p className="mt-1 text-foreground">{translatedContent || comment.content}</p>
+            <p className="mt-1 text-gray-200 leading-relaxed">
+              {translatedContent || comment.content}
+            </p>
             <div className="flex items-center gap-2 mt-2">
               {!translatedContent && userLanguage && (
                 <Button
@@ -175,6 +184,7 @@ export const CommentCard = ({
                   size="sm"
                   onClick={handleTranslate}
                   disabled={isTranslating}
+                  className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
                 >
                   <Languages className="h-4 w-4 mr-2" />
                   {isTranslating ? "Translating..." : "Translate"}
@@ -185,6 +195,7 @@ export const CommentCard = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => setTranslatedContent(null)}
+                  className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
                 >
                   Show original
                 </Button>
@@ -194,6 +205,7 @@ export const CommentCard = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsReplying(!isReplying)}
+                  className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
                 >
                   <Reply className="h-4 w-4 mr-2" />
                   {isReplying ? "Cancel Reply" : "Reply"}
@@ -206,13 +218,14 @@ export const CommentCard = ({
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
                   placeholder="Write your reply..."
-                  className="min-h-[100px]"
+                  className="min-h-[100px] bg-[#151515] border-[#222226] text-gray-200 placeholder:text-gray-500 focus:ring-orange-500"
                 />
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsReplying(false)}
+                    className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
                   >
                     <X className="h-4 w-4 mr-2" />
                     Cancel
@@ -221,6 +234,7 @@ export const CommentCard = ({
                     size="sm"
                     onClick={handleReplySubmit}
                     disabled={!replyContent.trim()}
+                    className="bg-orange-500 hover:bg-orange-600 text-white"
                   >
                     <Reply className="h-4 w-4 mr-2" />
                     Post Reply
@@ -232,9 +246,8 @@ export const CommentCard = ({
         </div>
       </Card>
 
-      {/* Render nested replies */}
       {replies.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-3 border-l-2 border-[#222226] pl-4">
           {replies.map((reply) => (
             <CommentCard
               key={reply.id}
