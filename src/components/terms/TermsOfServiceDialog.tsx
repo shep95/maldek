@@ -33,8 +33,9 @@ export const TermsOfServiceDialog = ({
       // Check if user has already accepted terms
       const { data: acceptance, error } = await supabase
         .from('terms_acceptance')
-        .select('*')
+        .select('accepted_at')
         .eq('user_id', user.id)
+        .eq('version', '1.0')
         .single();
 
       if (error) {
