@@ -87,13 +87,21 @@ export const PostList = () => {
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {
+      console.log('Handling post action:', action, 'for post:', postId);
+      
       if (action === 'delete') {
+        console.log('Attempting to delete post:', postId);
         const { error } = await supabase
           .from('posts')
           .delete()
           .eq('id', postId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error deleting post:', error);
+          throw error;
+        }
+        
+        console.log('Post deleted successfully');
         queryClient.invalidateQueries({ queryKey: ['posts'] });
         toast.success('Post deleted successfully');
       }

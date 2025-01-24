@@ -1,7 +1,5 @@
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 interface DeleteActionProps {
   postId: string;
@@ -13,29 +11,23 @@ interface DeleteActionProps {
 export const DeleteAction = ({ postId, authorId, currentUserId, onAction }: DeleteActionProps) => {
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      const { error: deleteError } = await supabase
-        .from('posts')
-        .delete()
-        .eq('id', postId);
-      
-      if (deleteError) throw deleteError;
-      onAction(postId, 'delete');
-      toast.success('Post deleted successfully');
-    } catch (error) {
-      console.error('Error deleting post:', error);
-      toast.error('Failed to delete post');
-    }
+    console.log('Delete button clicked for post:', postId);
+    onAction(postId, 'delete');
   };
 
-  return authorId === currentUserId ? (
+  // Only show delete button if the current user is the author
+  if (authorId !== currentUserId) {
+    return null;
+  }
+
+  return (
     <Button
       variant="ghost"
       size="sm"
-      className="text-red-500 hover:text-red-600"
+      className="text-red-500 hover:text-red-600 hover:bg-red-100/10"
       onClick={handleDelete}
     >
       <Trash2 className="h-4 w-4" />
     </Button>
-  ) : null;
+  );
 };
