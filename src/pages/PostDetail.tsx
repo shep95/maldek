@@ -33,6 +33,9 @@ const PostDetail = () => {
     getCurrentUser();
   }, []);
 
+  // Try to get post from cache first
+  const cachedPost = queryClient.getQueryData(['post', postId]);
+
   const { data: post, isLoading: isLoadingPost, error } = useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
@@ -40,8 +43,12 @@ const PostDetail = () => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          *,
-          profiles:profiles (
+          id,
+          content,
+          user_id,
+          media_urls,
+          created_at,
+          profiles (
             id,
             username,
             avatar_url
@@ -84,8 +91,11 @@ const PostDetail = () => {
         mediaUrls: data.media_urls || []
       };
     },
-    retry: 1,
-    staleTime: 1000 * 60 // Data stays fresh for 1 minute
+    initialData: cachedPost, // Use cached data if available
+    staleTime: 1000 * 30, // Data stays fresh for 30 seconds
+    cacheTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
+    retry: false, // Don't retry on error
+    refetchOnWindowFocus: false // Don't refetch when window regains focus
   });
 
   const { data: comments, isLoading: isLoadingComments } = useQuery({
@@ -107,7 +117,11 @@ const PostDetail = () => {
       }
       return data;
     },
-    enabled: !!post // Only fetch comments if post exists
+    enabled: !!post, // Only fetch comments if post exists
+    staleTime: 1000 * 30,
+    cacheTime: 1000 * 60 * 5,
+    retry: false,
+    refetchOnWindowFocus: false
   });
 
   if (error) {
