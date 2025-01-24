@@ -5,8 +5,6 @@ import { PostActions } from "./post/PostActions";
 import { PostMedia } from "./post/PostMedia";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { Post } from "@/utils/postUtils";
-import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface PostCardProps {
   post: Post;
@@ -18,44 +16,8 @@ interface PostCardProps {
 export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: PostCardProps) => {
   const navigate = useNavigate();
   const { data: userSettings } = useUserSettings();
-  const queryClient = useQueryClient();
-
-  const prefetchPostData = async () => {
-    try {
-      // Check if data is already in cache
-      const existingData = queryClient.getQueryData(['post', post.id]);
-      if (existingData) {
-        return;
-      }
-
-      // Optimized query with only necessary fields
-      const { data } = await supabase
-        .from('posts')
-        .select(`
-          id,
-          content,
-          media_urls,
-          created_at,
-          user_id,
-          profiles (
-            id,
-            username,
-            avatar_url
-          )
-        `)
-        .eq('id', post.id)
-        .maybeSingle();
-
-      if (data) {
-        queryClient.setQueryData(['post', post.id], data);
-      }
-    } catch (err) {
-      console.error('Error prefetching post data:', err);
-    }
-  };
 
   const handlePostClick = () => {
-    prefetchPostData(); // Prefetch as soon as user clicks
     navigate(`/post/${post.id}`);
   };
 

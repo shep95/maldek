@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PostDetailHeader } from "@/components/dashboard/post/detail/PostDetailHeader";
 import { PostDetailContent } from "@/components/dashboard/post/detail/PostDetailContent";
 import { CommentSection } from "@/components/dashboard/post/detail/CommentSection";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PostDetail = () => {
   const { postId } = useParams();
@@ -35,6 +36,7 @@ const PostDetail = () => {
   const { data: post, isLoading: isLoadingPost } = useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
+      console.log('Fetching post details for:', postId);
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -44,7 +46,10 @@ const PostDetail = () => {
         .eq('id', postId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching post:', error);
+        throw error;
+      }
       
       return data ? {
         ...data,
@@ -60,6 +65,7 @@ const PostDetail = () => {
   const { data: comments, isLoading: isLoadingComments } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
+      console.log('Fetching comments for post:', postId);
       const { data, error } = await supabase
         .from('comments')
         .select(`
@@ -69,18 +75,22 @@ const PostDetail = () => {
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching comments:', error);
+        throw error;
+      }
       return data;
     },
   });
 
   if (isLoadingPost || isLoadingComments) {
     return (
-      <div className="max-w-3xl mx-auto p-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-12 bg-muted rounded-lg"></div>
-          <div className="h-48 bg-muted rounded-lg"></div>
-          <div className="h-24 bg-muted rounded-lg"></div>
+      <div className="max-w-3xl mx-auto p-4 animate-in fade-in-50">
+        <PostDetailHeader />
+        <div className="space-y-4">
+          <Skeleton className="h-48 w-full rounded-lg" />
+          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-12 w-1/2 rounded-lg" />
         </div>
       </div>
     );
@@ -88,15 +98,16 @@ const PostDetail = () => {
 
   if (!post) {
     return (
-      <div className="p-4 text-center">
-        <h2 className="text-xl font-semibold">Post not found</h2>
+      <div className="max-w-3xl mx-auto p-4 text-center">
         <PostDetailHeader />
+        <h2 className="text-xl font-semibold mt-8">Post not found</h2>
+        <p className="text-muted-foreground mt-2">This post may have been deleted or doesn't exist.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
+    <div className="max-w-3xl mx-auto p-4 animate-in fade-in-50">
       <PostDetailHeader />
       
       <PostDetailContent
