@@ -8,12 +8,10 @@ import { PostList } from "@/components/dashboard/PostList";
 import { Author } from "@/utils/postUtils";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
-import { Grid } from "lucide-react";
-import { DeletedPostsDialog } from "@/components/dashboard/DeletedPostsDialog";
+import { Grid, TrendingUp } from "lucide-react";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
-  const [showDeletedPosts, setShowDeletedPosts] = useState(false);
   const session = useSession();
 
   const { data: profile, isLoading, error } = useQuery({
@@ -99,8 +97,12 @@ const Dashboard = () => {
         <main className="w-full max-w-3xl px-4 py-6 md:py-8 md:pl-24 animate-fade-in">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <Grid className="h-6 w-6 text-accent cursor-pointer hover:text-accent transition-colors" onClick={() => setShowDeletedPosts(true)} />
+              <Grid className="h-6 w-6 text-accent" />
               <h1 className="text-3xl font-bold text-foreground">Home</h1>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <TrendingUp className="h-4 w-4" />
+              <span>Latest posts</span>
             </div>
           </div>
           <PostList />
@@ -112,11 +114,6 @@ const Dashboard = () => {
         onOpenChange={setIsCreatingPost}
         currentUser={currentUser}
         onPostCreated={handlePostCreated}
-      />
-
-      <DeletedPostsDialog
-        open={showDeletedPosts}
-        onOpenChange={setShowDeletedPosts}
       />
     </div>
   );

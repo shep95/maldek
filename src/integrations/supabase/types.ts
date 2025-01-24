@@ -1032,10 +1032,8 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          deleted_at: string | null
           engagement_score: number | null
           id: string
-          is_deleted: boolean | null
           is_pinned: boolean | null
           last_score_update: string | null
           likes: number | null
@@ -1053,10 +1051,8 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
-          deleted_at?: string | null
           engagement_score?: number | null
           id?: string
-          is_deleted?: boolean | null
           is_pinned?: boolean | null
           last_score_update?: string | null
           likes?: number | null
@@ -1074,10 +1070,8 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
-          deleted_at?: string | null
           engagement_score?: number | null
           id?: string
-          is_deleted?: boolean | null
           is_pinned?: boolean | null
           last_score_update?: string | null
           likes?: number | null

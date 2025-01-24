@@ -7,16 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
-import { DeletedPostsDialog } from "./DeletedPostsDialog";
-import { Button } from "@/components/ui/button";
-import { BarChart3 } from "lucide-react";
 
 export const PostList = () => {
   const session = useSession();
   const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const [showDeletedPosts, setShowDeletedPosts] = useState(false);
 
   useEffect(() => {
     console.log('Setting up real-time subscriptions for posts and interactions');
@@ -94,10 +90,7 @@ export const PostList = () => {
       if (action === 'delete') {
         const { error } = await supabase
           .from('posts')
-          .update({ 
-            is_deleted: true,
-            deleted_at: new Date().toISOString()
-          })
+          .delete()
           .eq('id', postId);
 
         if (error) throw error;
@@ -140,22 +133,6 @@ export const PostList = () => {
         selectedMedia={selectedMedia}
         onClose={() => setSelectedMedia(null)}
       />
-
-      <DeletedPostsDialog
-        open={showDeletedPosts}
-        onOpenChange={setShowDeletedPosts}
-      />
-
-      <div className="flex justify-between items-center mb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowDeletedPosts(true)}
-          className="ml-auto"
-        >
-          <BarChart3 className="h-5 w-5" />
-        </Button>
-      </div>
 
       <div className="space-y-6">
         {posts && posts.length > 0 ? (
