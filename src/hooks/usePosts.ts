@@ -15,6 +15,8 @@ export const usePosts = () => {
           media_urls,
           created_at,
           user_id,
+          likes,
+          reposts,
           profiles (
             id,
             username,
