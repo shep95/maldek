@@ -9,6 +9,7 @@ interface PostContentProps {
   isEditing: boolean;
   editedContent?: string;
   onEditContentChange?: (content: string) => void;
+  truncate?: boolean;
 }
 
 export const PostContent = ({
@@ -16,7 +17,8 @@ export const PostContent = ({
   userLanguage,
   isEditing,
   editedContent,
-  onEditContentChange
+  onEditContentChange,
+  truncate = true
 }: PostContentProps) => {
   const [translatedContent, setTranslatedContent] = useState<string | null>(null);
 
@@ -35,6 +37,7 @@ export const PostContent = ({
         content={content}
         translatedContent={translatedContent}
         onShowOriginal={() => setTranslatedContent(null)}
+        truncate={truncate}
       />
       {!translatedContent && (
         <PostTranslation
