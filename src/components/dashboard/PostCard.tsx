@@ -8,6 +8,7 @@ import { Post } from "@/utils/postUtils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface PostCardProps {
   post: Post;
@@ -20,6 +21,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const navigate = useNavigate();
   const { data: userSettings } = useUserSettings();
   const [viewCount, setViewCount] = useState(post.view_count || 0);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     console.log('Setting up view count subscription and interval for post:', post.id);
@@ -64,6 +66,43 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     };
   }, [post.id]);
 
+  const prefetchPostData = async () => {
+    console.log('Prefetching post data:', post.id);
+    
+    try {
+      const { data } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles (
+            id,
+            username,
+            avatar_url
+          ),
+          post_likes (
+            id,
+            user_id
+          ),
+          bookmarks (
+            id,
+            user_id
+          ),
+          comments (
+            id
+          )
+        `)
+        .eq('id', post.id)
+        .single();
+
+      if (data) {
+        queryClient.setQueryData(['post', post.id], data);
+        console.log('Post data prefetched and cached');
+      }
+    } catch (err) {
+      console.error('Error prefetching post data:', err);
+    }
+  };
+
   const handlePostClick = async () => {
     console.log('Navigating to post:', post.id);
     
@@ -92,6 +131,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     <div 
       className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 cursor-pointer hover:bg-accent/5 transition-colors duration-200"
       onClick={handlePostClick}
+      onMouseEnter={prefetchPostData}
     >
       <PostHeader 
         author={post.author} 
