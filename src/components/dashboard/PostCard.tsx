@@ -21,16 +21,13 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const queryClient = useQueryClient();
 
   const prefetchPostData = async () => {
-    console.log('Prefetching post data:', post.id);
-    
-    // Check if data is already in cache
-    const existingData = queryClient.getQueryData(['post', post.id]);
-    if (existingData) {
-      console.log('Post data already in cache');
-      return;
-    }
-
     try {
+      // Check if data is already in cache
+      const existingData = queryClient.getQueryData(['post', post.id]);
+      if (existingData) {
+        return;
+      }
+
       // Optimized query with only necessary fields
       const { data } = await supabase
         .from('posts')
@@ -44,25 +41,13 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
             id,
             username,
             avatar_url
-          ),
-          post_likes (
-            id,
-            user_id
-          ),
-          bookmarks (
-            id,
-            user_id
-          ),
-          comments (
-            id
           )
         `)
         .eq('id', post.id)
-        .single();
+        .maybeSingle();
 
       if (data) {
         queryClient.setQueryData(['post', post.id], data);
-        console.log('Post data prefetched and cached');
       }
     } catch (err) {
       console.error('Error prefetching post data:', err);
@@ -70,13 +55,12 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   };
 
   const handlePostClick = () => {
-    console.log('Navigating to post:', post.id);
+    prefetchPostData(); // Prefetch as soon as user clicks
     navigate(`/post/${post.id}`);
   };
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log('Navigating to profile:', post.author.username);
     navigate(`/@${post.author.username}`);
   };
 
@@ -84,7 +68,6 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     <div 
       className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 cursor-pointer hover:bg-accent/5 transition-colors duration-200"
       onClick={handlePostClick}
-      onMouseEnter={prefetchPostData}
     >
       <PostHeader 
         author={post.author} 
