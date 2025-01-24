@@ -1,19 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Comment } from "@/utils/commentUtils"; // Assuming you have a Comment type defined
+import { Comment } from "@/utils/commentUtils";
 
 interface CommentSectionProps {
   postId: string;
-  comments: Array<{
-    id: string;
-    content: string;
-    created_at: string;
-    user: {
-      username: string;
-      avatar_url: string | null;
-    };
-  }>;
+  comments: Comment[];
   currentUserId: string;
 }
 

@@ -158,7 +158,7 @@ export const PostList = () => {
                 timestamp: new Date(post.created_at),
                 likes: post.likes || 0,
                 reposts: post.reposts || 0,
-                comments: post.comments || 0,
+                comments: 0, // We're not loading comments count in the feed
                 isLiked: post.post_likes?.some(like => like.id) || false,
                 isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false
               }}
