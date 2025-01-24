@@ -40,7 +40,7 @@ interface CommentData {
   created_at: string;
   post_id: string;
   user_id: string;
-  parent_id: string | null;
+  parent_id: string;
   user: {
     username: string;
     avatar_url: string | null;
@@ -93,17 +93,11 @@ const PostDetail = () => {
             username,
             avatar_url
           ),
-          post_likes (
-            id,
-            user_id
-          ),
-          bookmarks (
-            id,
-            user_id
-          ),
-          comments (
-            id
-          )
+          (select count(*) from post_likes where post_id = posts.id) as likes_count,
+          (select count(*) from bookmarks where post_id = posts.id) as bookmarks_count,
+          (select count(*) from comments where post_id = posts.id) as comments_count,
+          (select exists(select 1 from post_likes where post_id = posts.id and user_id = '${currentUserId}')) as is_liked,
+          (select exists(select 1 from bookmarks where post_id = posts.id and user_id = '${currentUserId}')) as is_bookmarked
         `)
         .eq('id', postId)
         .maybeSingle();
@@ -125,8 +119,8 @@ const PostDetail = () => {
           avatar_url: data.profiles.avatar_url,
           name: data.profiles.username
         },
-        isLiked: data.post_likes?.some(like => like.user_id === currentUserId) || false,
-        isBookmarked: data.bookmarks?.some(bookmark => bookmark.user_id === currentUserId) || false,
+        isLiked: data.is_liked,
+        isBookmarked: data.is_bookmarked,
         timestamp: new Date(data.created_at),
         mediaUrls: data.media_urls || []
       };
@@ -138,7 +132,7 @@ const PostDetail = () => {
     refetchOnWindowFocus: false
   });
 
-  const { data: comments, isLoading: isLoadingComments } = useQuery<CommentData[]>({
+  const { data: comments, isLoading: isLoadingComments } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
       console.log('Fetching comments for post:', postId);
