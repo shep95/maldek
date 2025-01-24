@@ -156,7 +156,6 @@ export const PostList = () => {
                   name: post.profiles.username
                 },
                 timestamp: new Date(post.created_at),
-                comments: post.comments?.length || 0,
                 likes: post.likes || 0,
                 reposts: post.reposts || 0,
                 isLiked: post.post_likes?.some(like => like.id) || false,
