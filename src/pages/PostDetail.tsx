@@ -39,14 +39,8 @@ const PostDetail = () => {
           profiles (
             id,
             username,
-            avatar_url,
-            name
-          ),
-          comments:comments(count),
-          likes,
-          reposts,
-          is_liked:post_likes!inner(id),
-          is_bookmarked:bookmarks!inner(id)
+            avatar_url
+          )
         `)
         .eq('id', postId)
         .maybeSingle();
@@ -71,16 +65,16 @@ const PostDetail = () => {
           id: data.profiles.id,
           username: data.profiles.username,
           avatar_url: data.profiles.avatar_url,
-          name: data.profiles.name
+          name: data.profiles.username
         },
         timestamp: new Date(data.created_at),
         media_urls: data.media_urls || [],
-        likes: data.likes || 0,
-        comments: data.comments || 0,
-        reposts: data.reposts || 0,
-        isLiked: !!data.is_liked,
-        isBookmarked: !!data.is_bookmarked,
-        view_count: data.view_count || 0
+        likes: 0,
+        comments: 0,
+        reposts: 0,
+        isLiked: false,
+        isBookmarked: false,
+        view_count: 0
       };
 
       return transformedPost;
@@ -163,17 +157,7 @@ const PostDetail = () => {
     };
   }, [postId, queryClient]);
 
-  if (isLoadingPost || !post) {
-    return (
-      <div className="space-y-6 p-6">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
-  }
-
-  const handlePostAction = async (action: 'like' | 'bookmark' | 'delete' | 'repost') => {
+  const handlePostAction = async (action: 'delete') => {
     try {
       if (action === 'delete' && post.id) {
         const { error } = await supabase
@@ -191,6 +175,16 @@ const PostDetail = () => {
       toast.error(`Failed to ${action} post`);
     }
   };
+
+  if (isLoadingPost || !post) {
+    return (
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">
