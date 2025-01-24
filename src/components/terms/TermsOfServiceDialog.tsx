@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Shield, AlertOctagon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface TermsOfServiceDialogProps {
   isOpen: boolean;
@@ -17,15 +17,32 @@ export const TermsOfServiceDialog = ({
   onAccept,
 }: TermsOfServiceDialogProps) => {
   const [isAccepting, setIsAccepting] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    
+    if (isOpen) {
+      getUserId();
+    }
+  }, [isOpen]);
 
   const handleAccept = async () => {
+    if (!userId) {
+      toast.error('Unable to verify user identity');
+      return;
+    }
+
     try {
       setIsAccepting(true);
       
       const { error } = await supabase
         .from('terms_acceptance')
         .insert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userId,
           version: '1.0'
         });
 
@@ -81,7 +98,7 @@ export const TermsOfServiceDialog = ({
           <Button 
             className="w-full"
             onClick={handleAccept}
-            disabled={isAccepting}
+            disabled={isAccepting || !userId}
           >
             {isAccepting ? 'Accepting...' : 'Accept Terms of Service'}
           </Button>
