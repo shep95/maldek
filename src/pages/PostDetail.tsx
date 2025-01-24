@@ -25,6 +25,7 @@ const PostDetail = () => {
     }
   }, [postId, navigate]);
 
+  // Optimized post query with minimal data fetching
   const { data: post, isLoading: isLoadingPost } = useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
@@ -34,7 +35,11 @@ const PostDetail = () => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          *,
+          id,
+          content,
+          user_id,
+          media_urls,
+          created_at,
           author:profiles (
             id,
             username,
@@ -56,6 +61,7 @@ const PostDetail = () => {
 
       console.log('Post data fetched:', data);
       
+      // Transform the data with minimal processing
       const transformedPost: Post = {
         id: data.id,
         content: data.content,
@@ -78,12 +84,10 @@ const PostDetail = () => {
 
       return transformedPost;
     },
-    gcTime: 1000 * 60 * 5,
-    staleTime: 1000 * 30,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
+    staleTime: 1000 * 60 // Cache for 1 minute
   });
 
+  // Optimized comments query
   const { data: comments = [] } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
@@ -109,28 +113,17 @@ const PostDetail = () => {
 
       console.log('Comments fetched:', data);
       return data;
-    }
+    },
+    staleTime: 1000 * 60 // Cache for 1 minute
   });
 
+  // Simplified real-time subscription
   useEffect(() => {
     if (!postId) return;
 
-    console.log('Setting up real-time subscriptions for post and comments');
+    console.log('Setting up real-time subscription for comments');
     const channel = supabase
       .channel(`post-${postId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: `id=eq.${postId}`
-        },
-        () => {
-          console.log('Post update received');
-          queryClient.invalidateQueries({ queryKey: ['post', postId] });
-        }
-      )
       .on(
         'postgres_changes',
         {
