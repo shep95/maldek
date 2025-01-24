@@ -31,10 +31,15 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     }
 
     try {
+      // Optimized query with only necessary fields
       const { data } = await supabase
         .from('posts')
         .select(`
-          *,
+          id,
+          content,
+          media_urls,
+          created_at,
+          user_id,
           profiles (
             id,
             username,
@@ -56,7 +61,10 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         .single();
 
       if (data) {
-        queryClient.setQueryData(['post', post.id], data);
+        // Cache the data with a longer stale time
+        queryClient.setQueryData(['post', post.id], data, {
+          staleTime: 1000 * 60 * 5 // Data stays fresh for 5 minutes
+        });
         console.log('Post data prefetched and cached');
       }
     } catch (err) {

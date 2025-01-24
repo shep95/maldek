@@ -1,10 +1,8 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const usePosts = () => {
-  const queryClient = useQueryClient();
-
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
@@ -12,7 +10,11 @@ export const usePosts = () => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          *,
+          id,
+          content,
+          media_urls,
+          created_at,
+          user_id,
           profiles (
             id,
             username,
@@ -41,7 +43,7 @@ export const usePosts = () => {
       console.log('Posts fetched:', data);
       return data;
     },
-    refetchInterval: 0 // Disable polling since we're using real-time updates
+    staleTime: 1000 * 60 * 5 // Data stays fresh for 5 minutes
   });
 
   return { posts, isLoading };

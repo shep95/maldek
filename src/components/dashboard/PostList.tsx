@@ -14,7 +14,6 @@ export const PostList = () => {
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
-  // Enhanced real-time subscriptions with notifications
   useEffect(() => {
     console.log('Setting up real-time subscriptions for posts and interactions');
     
@@ -31,9 +30,7 @@ export const PostList = () => {
           console.log('Post update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['posts'] });
           
-          // Show notifications for new posts from followed users
           if (payload.eventType === 'INSERT' && payload.new.user_id !== session?.user?.id) {
-            // Check if the post is from a followed user
             supabase
               .from('followers')
               .select('*')
@@ -59,7 +56,6 @@ export const PostList = () => {
           console.log('Like update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['posts'] });
           
-          // Show notification for likes on user's posts
           if (payload.eventType === 'INSERT' && posts?.some(post => 
             post.id === payload.new.post_id && 
             post.user_id === session?.user?.id &&
