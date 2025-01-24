@@ -8,37 +8,8 @@ import { PostDetailHeader } from "@/components/dashboard/post/detail/PostDetailH
 import { CommentSection } from "@/components/dashboard/post/detail/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-
-interface PostData {
-  id: string;
-  content: string;
-  user_id: string;
-  media_urls: string[];
-  created_at: string;
-  profiles: {
-    id: string;
-    username: string;
-    avatar_url: string | null;
-  };
-  likes: number;
-  reposts: number;
-  comments: number;
-  is_liked: boolean;
-  is_bookmarked: boolean;
-}
-
-interface CommentData {
-  id: string;
-  content: string;
-  created_at: string;
-  post_id: string;
-  user_id: string;
-  parent_id: string;
-  user: {
-    username: string;
-    avatar_url: string | null;
-  };
-}
+import { Post } from "@/utils/postUtils";
+import { Comment } from "@/utils/commentUtils";
 
 const PostDetail = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -68,11 +39,14 @@ const PostDetail = () => {
           profiles (
             id,
             username,
-            avatar_url
+            avatar_url,
+            name
           ),
-          (select count(*) from comments where post_id = posts.id) as comments,
-          (select exists(select 1 from post_likes where post_id = posts.id and user_id = '${currentUserId}')) as is_liked,
-          (select exists(select 1 from bookmarks where post_id = posts.id and user_id = '${currentUserId}')) as is_bookmarked
+          comments:comments(count),
+          likes,
+          reposts,
+          is_liked:post_likes!inner(id),
+          is_bookmarked:bookmarks!inner(id)
         `)
         .eq('id', postId)
         .maybeSingle();
@@ -88,7 +62,28 @@ const PostDetail = () => {
       }
 
       console.log('Post data fetched:', data);
-      return data as PostData;
+      
+      const transformedPost: Post = {
+        id: data.id,
+        content: data.content,
+        user_id: data.user_id,
+        author: {
+          id: data.profiles.id,
+          username: data.profiles.username,
+          avatar_url: data.profiles.avatar_url,
+          name: data.profiles.name
+        },
+        timestamp: new Date(data.created_at),
+        media_urls: data.media_urls || [],
+        likes: data.likes || 0,
+        comments: data.comments || 0,
+        reposts: data.reposts || 0,
+        isLiked: !!data.is_liked,
+        isBookmarked: !!data.is_bookmarked,
+        view_count: data.view_count || 0
+      };
+
+      return transformedPost;
     },
     gcTime: 1000 * 60 * 5,
     staleTime: 1000 * 30,
@@ -120,7 +115,7 @@ const PostDetail = () => {
       }
 
       console.log('Comments fetched:', data);
-      return data as CommentData[];
+      return data as Comment[];
     },
     gcTime: 1000 * 60 * 5,
     staleTime: 1000 * 30,
@@ -200,24 +195,20 @@ const PostDetail = () => {
   return (
     <div className="space-y-6 p-6">
       <PostDetailHeader
-        author={{
-          id: post.profiles.id,
-          username: post.profiles.username,
-          avatar_url: post.profiles.avatar_url,
-          name: post.profiles.username
-        }}
-        timestamp={new Date(post.created_at)}
+        author={post.author}
+        timestamp={post.timestamp}
+        onUsernameClick={() => {}}
       />
       
       <PostDetailContent
-        content={post.content}
-        mediaUrls={post.media_urls}
+        post={post}
+        currentUserId={currentUserId || ''}
+        onPostAction={handlePostAction}
       />
 
       <CommentSection
         postId={post.id}
         comments={comments || []}
-        isLoading={isLoadingComments}
         currentUserId={currentUserId || ''}
       />
     </div>
