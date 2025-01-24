@@ -61,10 +61,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         .single();
 
       if (data) {
-        // Cache the data with a longer stale time
-        queryClient.setQueryData(['post', post.id], data, {
-          staleTime: 1000 * 60 * 5 // Data stays fresh for 5 minutes
-        });
+        queryClient.setQueryData(['post', post.id], data);
         console.log('Post data prefetched and cached');
       }
     } catch (err) {
