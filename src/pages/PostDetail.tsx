@@ -7,6 +7,35 @@ import { PostDetailContent } from "@/components/dashboard/post/detail/PostDetail
 import { CommentSection } from "@/components/dashboard/post/detail/CommentSection";
 import { Skeleton } from "@/components/ui/skeleton";
 
+interface PostData {
+  id: string;
+  content: string;
+  user_id: string;
+  media_urls: string[];
+  created_at: string;
+  profiles: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+  };
+  post_likes: { id: string; user_id: string; }[];
+  bookmarks: { id: string; user_id: string; }[];
+  comments: { id: string; }[];
+}
+
+interface CommentData {
+  id: string;
+  content: string;
+  created_at: string;
+  post_id: string;
+  user_id: string;
+  parent_id: string | null;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
 const PostDetail = () => {
   const { postId } = useParams();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -34,7 +63,7 @@ const PostDetail = () => {
   }, []);
 
   // Try to get post from cache first
-  const cachedPost = queryClient.getQueryData(['post', postId]);
+  const cachedPost = queryClient.getQueryData<PostData>(['post', postId]);
 
   const { data: post, isLoading: isLoadingPost, error } = useQuery({
     queryKey: ['post', postId],
@@ -91,14 +120,14 @@ const PostDetail = () => {
         mediaUrls: data.media_urls || []
       };
     },
-    initialData: cachedPost, // Use cached data if available
+    initialData: cachedPost,
     staleTime: 1000 * 30, // Data stays fresh for 30 seconds
-    cacheTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
-    retry: false, // Don't retry on error
-    refetchOnWindowFocus: false // Don't refetch when window regains focus
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
+    retry: false,
+    refetchOnWindowFocus: false
   });
 
-  const { data: comments, isLoading: isLoadingComments } = useQuery({
+  const { data: comments, isLoading: isLoadingComments } = useQuery<CommentData[]>({
     queryKey: ['comments', postId],
     queryFn: async () => {
       console.log('Fetching comments for post:', postId);
@@ -117,9 +146,9 @@ const PostDetail = () => {
       }
       return data;
     },
-    enabled: !!post, // Only fetch comments if post exists
+    enabled: !!post,
     staleTime: 1000 * 30,
-    cacheTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 5,
     retry: false,
     refetchOnWindowFocus: false
   });
