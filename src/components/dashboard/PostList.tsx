@@ -94,6 +94,7 @@ export const PostList = () => {
               key={post.id}
               post={{
                 ...post,
+                user_id: post.profiles.id, // Add the user_id from the profile
                 author: {
                   id: post.profiles.id,
                   username: post.profiles.username,
