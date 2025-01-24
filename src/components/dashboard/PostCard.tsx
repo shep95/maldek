@@ -23,10 +23,10 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const [viewCount, setViewCount] = useState(post.view_count || 0);
   const queryClient = useQueryClient();
 
+  // Optimize real-time subscription to reduce overhead
   useEffect(() => {
-    console.log('Setting up view count subscription and interval for post:', post.id);
+    console.log('Setting up view count subscription for post:', post.id);
     
-    // Subscribe to view count updates
     const channel = supabase
       .channel(`post-views-${post.id}`)
       .on(
@@ -46,29 +46,23 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
       )
       .subscribe();
 
-    // Set up 1-second interval for refreshing view count
-    const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('posts')
-        .select('view_count')
-        .eq('id', post.id)
-        .single();
-      
-      if (data) {
-        setViewCount(data.view_count || 0);
-      }
-    }, 1000);
-
+    // Remove interval and rely on real-time updates only
     return () => {
-      console.log('Cleaning up view count subscription and interval');
+      console.log('Cleaning up view count subscription');
       supabase.removeChannel(channel);
-      clearInterval(interval);
     };
   }, [post.id]);
 
   const prefetchPostData = async () => {
     console.log('Prefetching post data:', post.id);
     
+    // Check if data is already in cache
+    const existingData = queryClient.getQueryData(['post', post.id]);
+    if (existingData) {
+      console.log('Post data already in cache');
+      return;
+    }
+
     try {
       const { data } = await supabase
         .from('posts')
@@ -107,18 +101,18 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     console.log('Navigating to post:', post.id);
     
     try {
-      const { error } = await supabase.rpc('increment_post_view', {
+      // Increment view count in background
+      supabase.rpc('increment_post_view', {
         post_id: post.id
+      }).then(({ error }) => {
+        if (error) console.error('Error incrementing view count:', error);
       });
 
-      if (error) {
-        console.error('Error incrementing view count:', error);
-      }
+      // Navigate immediately without waiting for view count update
+      navigate(`/post/${post.id}`);
     } catch (err) {
-      console.error('Failed to increment view count:', err);
+      console.error('Failed to handle post click:', err);
     }
-
-    navigate(`/post/${post.id}`);
   };
 
   const handleUsernameClick = (e: React.MouseEvent) => {
@@ -142,6 +136,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         content={post.content} 
         userLanguage={userSettings?.preferred_language || 'en'}
         isEditing={false}
+        truncate={true}
       />
       {post.media_urls && post.media_urls.length > 0 && (
         <PostMedia 
