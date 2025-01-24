@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Comment } from "@/utils/commentUtils";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { CommentCard } from "../comments/CommentCard";
 
 interface CommentSectionProps {
   postId: string;
@@ -45,34 +48,32 @@ export const CommentSection = ({
   };
 
   return (
-    <div className="mt-6">
-      <h3 className="text-lg font-medium">Comments</h3>
-      <form onSubmit={handleCommentSubmit} className="mt-4">
-        <textarea
+    <div className="mt-6 space-y-6">
+      <h3 className="text-lg font-medium text-gray-100">Comments</h3>
+      <form onSubmit={handleCommentSubmit} className="space-y-4">
+        <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
-          className="w-full p-2 border rounded"
+          className="min-h-[100px] bg-[#151515] border-[#222226] text-gray-200 placeholder:text-gray-500 focus:ring-orange-500 rounded-lg"
         />
-        <button type="submit" className="mt-2 btn">
+        <Button 
+          type="submit" 
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          disabled={!newComment.trim()}
+        >
           Add Comment
-        </button>
+        </Button>
       </form>
-      <div className="mt-4">
+      <div className="space-y-4">
         {commentList.map((comment) => (
-          <div key={comment.id} className="border-b py-2">
-            <div className="flex items-center">
-              {comment.user.avatar_url && (
-                <img
-                  src={comment.user.avatar_url}
-                  alt={comment.user.username}
-                  className="h-8 w-8 rounded-full mr-2"
-                />
-              )}
-              <span className="font-semibold">{comment.user.username}</span>
-            </div>
-            <p className="mt-1">{comment.content}</p>
-          </div>
+          <CommentCard
+            key={comment.id}
+            comment={comment}
+            userLanguage="en"
+            level={0}
+            replies={[]}
+          />
         ))}
       </div>
     </div>
