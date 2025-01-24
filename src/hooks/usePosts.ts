@@ -6,7 +6,7 @@ export const usePosts = () => {
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
-      console.log('Fetching posts...');
+      console.log('Fetching posts with minimal data...');
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -14,21 +14,10 @@ export const usePosts = () => {
           content,
           media_urls,
           created_at,
-          user_id,
-          likes,
-          reposts,
           profiles (
             id,
             username,
             avatar_url
-          ),
-          post_likes (
-            id,
-            user_id
-          ),
-          bookmarks (
-            id,
-            user_id
           )
         `)
         .order('created_at', { ascending: false });
@@ -39,7 +28,7 @@ export const usePosts = () => {
         throw error;
       }
 
-      console.log('Posts fetched:', data);
+      console.log('Posts fetched successfully:', data);
       return data;
     },
     staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes

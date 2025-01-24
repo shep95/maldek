@@ -18,7 +18,7 @@ export const PostList = () => {
   useEffect(() => {
     if (!session?.user?.id) return;
     
-    console.log('Setting up real-time subscriptions');
+    console.log('Setting up real-time subscriptions for posts');
     
     const channel = supabase
       .channel('post-updates')
@@ -42,7 +42,7 @@ export const PostList = () => {
     };
   }, [queryClient, session?.user?.id]);
 
-  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
+  const handlePostAction = async (postId: string, action: 'delete') => {
     try {
       if (action === 'delete') {
         const { error } = await supabase
@@ -74,11 +74,6 @@ export const PostList = () => {
               </div>
             </div>
             <Skeleton className="h-24 w-full" />
-            <div className="flex justify-between">
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-8 w-24" />
-            </div>
           </div>
         ))}
       </div>
@@ -106,11 +101,11 @@ export const PostList = () => {
                   name: post.profiles.username
                 },
                 timestamp: new Date(post.created_at),
-                likes: post.likes || 0,
-                reposts: post.reposts || 0,
+                likes: 0,
+                reposts: 0,
                 comments: 0,
-                isLiked: post.post_likes?.some(like => like.id) || false,
-                isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false
+                isLiked: false,
+                isBookmarked: false
               }}
               currentUserId={session?.user?.id || ''}
               onPostAction={handlePostAction}
