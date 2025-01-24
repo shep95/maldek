@@ -18,17 +18,42 @@ export const TermsOfServiceDialog = ({
 }: TermsOfServiceDialogProps) => {
   const [isAccepting, setIsAccepting] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [hasAccepted, setHasAccepted] = useState(false);
 
   useEffect(() => {
-    const getUserId = async () => {
+    const checkAcceptance = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id || null);
+      if (!user?.id) {
+        console.error('No user found');
+        return;
+      }
+
+      setUserId(user.id);
+
+      // Check if user has already accepted terms
+      const { data: acceptance, error } = await supabase
+        .from('terms_acceptance')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking terms acceptance:', error);
+        return;
+      }
+
+      if (acceptance) {
+        console.log('User has already accepted terms');
+        setHasAccepted(true);
+        onAccept(); // Automatically trigger accept callback
+        onOpenChange(false); // Close dialog
+      }
     };
     
     if (isOpen) {
-      getUserId();
+      checkAcceptance();
     }
-  }, [isOpen]);
+  }, [isOpen, onAccept, onOpenChange]);
 
   const handleAccept = async () => {
     if (!userId) {
@@ -48,6 +73,7 @@ export const TermsOfServiceDialog = ({
 
       if (error) throw error;
 
+      setHasAccepted(true);
       onAccept();
       onOpenChange(false);
       toast.success('Terms of Service accepted');
@@ -58,6 +84,11 @@ export const TermsOfServiceDialog = ({
       setIsAccepting(false);
     }
   };
+
+  // If user has already accepted, don't render the dialog
+  if (hasAccepted) {
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
