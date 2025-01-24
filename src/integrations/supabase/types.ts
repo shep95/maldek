@@ -1506,6 +1506,35 @@ export type Database = {
         }
         Relationships: []
       }
+      terms_acceptance: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          user_id: string
+          version?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_acceptance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_background_music: {
         Row: {
           created_at: string
