@@ -5,7 +5,22 @@ import { PostActions } from "../PostActions";
 import { useNavigate } from "react-router-dom";
 
 interface PostDetailContentProps {
-  post: any;
+  post: {
+    id: string;
+    content: string;
+    media_urls: string[];
+    author: {
+      id: string;
+      username: string;
+      avatar_url: string | null;
+      name: string;
+    };
+    timestamp: Date;
+    likes: number;
+    reposts: number;
+    isLiked: boolean;
+    isBookmarked: boolean;
+  };
   currentUserId: string;
   onPostAction: (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => void;
 }
@@ -27,12 +42,7 @@ export const PostDetailContent = ({
   return (
     <Card className="mb-6 p-6">
       <PostHeader 
-        author={{
-          id: post.author.id,
-          username: post.author.username,
-          avatar_url: post.author.avatar_url,
-          name: post.author.username
-        }} 
+        author={post.author}
         timestamp={post.timestamp}
         onUsernameClick={handleUsernameClick}
       />

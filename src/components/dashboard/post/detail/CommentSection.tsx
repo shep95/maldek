@@ -1,158 +1,86 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { CommentCard } from "../comments/CommentCard";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { Comment } from "@/utils/commentUtils"; // Assuming you have a Comment type defined
 
 interface CommentSectionProps {
   postId: string;
-  postAuthorId: string;
-  currentUserId: string | null;
-  comments: any[];
-  userLanguage: string;
-  onCommentAdded: () => void;
+  comments: Array<{
+    id: string;
+    content: string;
+    created_at: string;
+    user: {
+      username: string;
+      avatar_url: string | null;
+    };
+  }>;
+  currentUserId: string;
 }
 
 export const CommentSection = ({
   postId,
-  postAuthorId,
-  currentUserId,
   comments,
-  userLanguage,
-  onCommentAdded
+  currentUserId
 }: CommentSectionProps) => {
-  const [newComment, setNewComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
+  const [newComment, setNewComment] = useState<string>("");
+  const [commentList, setCommentList] = useState(comments);
 
-  // Organize comments into a tree structure
-  const organizeComments = (comments: any[]) => {
-    const commentMap = new Map();
-    const rootComments: any[] = [];
+  useEffect(() => {
+    setCommentList(comments);
+  }, [comments]);
 
-    // First pass: Create a map of all comments
-    comments.forEach(comment => {
-      commentMap.set(comment.id, { ...comment, replies: [] });
-    });
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
 
-    // Second pass: Organize into tree structure
-    comments.forEach(comment => {
-      const commentWithReplies = commentMap.get(comment.id);
-      if (comment.parent_id) {
-        const parentComment = commentMap.get(comment.parent_id);
-        if (parentComment) {
-          parentComment.replies.push(commentWithReplies);
-        }
-      } else {
-        rootComments.push(commentWithReplies);
-      }
-    });
-
-    return rootComments;
-  };
-
-  const handleSubmitComment = async (content: string, parentId?: string) => {
-    if (!currentUserId) {
-      toast.error("Please sign in to comment");
-      return;
-    }
-
-    if (!content.trim()) {
-      toast.error("Comment cannot be empty");
-      return;
-    }
-
-    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('comments')
         .insert({
-          content: content.trim(),
+          content: newComment,
           post_id: postId,
-          user_id: currentUserId,
-          parent_id: parentId || null
+          user_id: currentUserId
         });
 
       if (error) throw error;
 
-      // Clear input if this is a new top-level comment
-      if (!parentId) {
-        setNewComment("");
-      }
-
-      // Refresh comments
-      onCommentAdded();
-      
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-
-      // Create notification for post author if it's not their own comment
-      if (currentUserId !== postAuthorId) {
-        await supabase
-          .from('notifications')
-          .insert({
-            recipient_id: postAuthorId,
-            actor_id: currentUserId,
-            type: 'comment',
-            post_id: postId
-          });
-      }
-
-      // If this is a reply, also notify the parent comment author
-      if (parentId) {
-        const parentComment = comments.find(c => c.id === parentId);
-        if (parentComment && parentComment.user.id !== currentUserId) {
-          await supabase
-            .from('notifications')
-            .insert({
-              recipient_id: parentComment.user.id,
-              actor_id: currentUserId,
-              type: 'comment',
-              post_id: postId
-            });
-        }
-      }
-
+      setNewComment("");
+      toast.success("Comment added successfully");
     } catch (error) {
-      console.error('Error posting comment:', error);
-      toast.error("Failed to post comment");
-    } finally {
-      setIsSubmitting(false);
+      console.error("Error adding comment:", error);
+      toast.error("Failed to add comment");
     }
   };
 
-  const organizedComments = organizeComments(comments);
-
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <Textarea
+    <div className="mt-6">
+      <h3 className="text-lg font-medium">Comments</h3>
+      <form onSubmit={handleCommentSubmit} className="mt-4">
+        <textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
-          className="min-h-[100px]"
+          className="w-full p-2 border rounded"
         />
-        <div className="flex justify-end">
-          <Button
-            onClick={() => handleSubmitComment(newComment)}
-            disabled={isSubmitting || !newComment.trim()}
-          >
-            {isSubmitting ? "Posting..." : "Post Comment"}
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {organizedComments.map((comment) => (
-          <CommentCard
-            key={comment.id}
-            comment={comment}
-            userLanguage={userLanguage}
-            onReplySubmit={handleSubmitComment}
-            replies={comment.replies}
-          />
+        <button type="submit" className="mt-2 btn">
+          Add Comment
+        </button>
+      </form>
+      <div className="mt-4">
+        {commentList.map((comment) => (
+          <div key={comment.id} className="border-b py-2">
+            <div className="flex items-center">
+              {comment.user.avatar_url && (
+                <img
+                  src={comment.user.avatar_url}
+                  alt={comment.user.username}
+                  className="h-8 w-8 rounded-full mr-2"
+                />
+              )}
+              <span className="font-semibold">{comment.user.username}</span>
+            </div>
+            <p className="mt-1">{comment.content}</p>
+          </div>
         ))}
       </div>
     </div>
