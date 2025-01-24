@@ -10,8 +10,6 @@ import { usePostCreation } from "./post/hooks/usePostCreation";
 import type { CreatePostDialogProps } from "./post/types/postTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { TermsOfServiceDialog } from "@/components/terms/TermsOfServiceDialog";
 
 export const CreatePostDialog = ({
   isOpen,
@@ -19,10 +17,6 @@ export const CreatePostDialog = ({
   currentUser,
   onPostCreated
 }: CreatePostDialogProps) => {
-  const [showTerms, setShowTerms] = useState(false);
-  const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
-  const [isCheckingTerms, setIsCheckingTerms] = useState(true);
-
   const {
     content,
     setContent,
@@ -36,38 +30,6 @@ export const CreatePostDialog = ({
     createPost,
     resetFormState
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
-
-  useEffect(() => {
-    const checkTermsAcceptance = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('terms_acceptance')
-          .select('accepted_at')
-          .eq('version', '1.0')
-          .single();
-
-        if (error) throw error;
-        setHasAcceptedTerms(!!data);
-      } catch (error) {
-        console.error('Error checking terms acceptance:', error);
-        setHasAcceptedTerms(false);
-      } finally {
-        setIsCheckingTerms(false);
-      }
-    };
-
-    if (isOpen) {
-      checkTermsAcceptance();
-    }
-  }, [isOpen]);
-
-  const handleCreatePost = async () => {
-    if (!hasAcceptedTerms) {
-      setShowTerms(true);
-      return;
-    }
-    await createPost();
-  };
 
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -103,90 +65,75 @@ export const CreatePostDialog = ({
     }
   };
 
-  if (isCheckingTerms) {
-    return null;
-  }
-
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[525px] bg-card">
-          <DialogHeader>
-            <DialogTitle>Create a New Post</DialogTitle>
-            <DialogDescription>
-              Share your thoughts, media, or mention other users in your post.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <RichTextEditor
-              value={content}
-              onChange={setContent}
-              onMention={handleMention}
-              onHashtag={(tag) => setContent(prev => `${prev}#${tag} `)}
-            />
-            
-            <EnhancedUploadZone
-              onFileSelect={handleFileSelect}
-              onPaste={handlePaste}
-              isUploading={isSubmitting}
-              uploadProgress={uploadProgress}
-            />
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[525px] bg-card">
+        <DialogHeader>
+          <DialogTitle>Create a New Post</DialogTitle>
+          <DialogDescription>
+            Share your thoughts, media, or mention other users in your post.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <RichTextEditor
+            value={content}
+            onChange={setContent}
+            onMention={handleMention}
+            onHashtag={(tag) => setContent(prev => `${prev}#${tag} `)}
+          />
+          
+          <EnhancedUploadZone
+            onFileSelect={handleFileSelect}
+            onPaste={handlePaste}
+            isUploading={isSubmitting}
+            uploadProgress={uploadProgress}
+          />
 
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={`w-full justify-start text-left font-normal ${
-                    !scheduledDate && "text-muted-foreground"
-                  }`}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={scheduledDate}
-                  onSelect={setScheduledDate}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleCancel}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
                 variant="outline"
-                className="w-full gap-2"
-                type="button"
+                className={`w-full justify-start text-left font-normal ${
+                  !scheduledDate && "text-muted-foreground"
+                }`}
               >
-                <X className="h-4 w-4" />
-                Cancel
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
               </Button>
-              <Button 
-                onClick={handleCreatePost} 
-                className="w-full gap-2"
-                disabled={isSubmitting}
-                type="button"
-              >
-                <Send className="h-4 w-4" />
-                {isSubmitting ? 'Creating...' : scheduledDate ? 'Schedule' : 'Create Post'}
-              </Button>
-            </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={scheduledDate}
+                onSelect={setScheduledDate}
+                disabled={(date) => date < new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleCancel}
+              variant="outline"
+              className="w-full gap-2"
+              type="button"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button 
+              onClick={createPost} 
+              className="w-full gap-2"
+              disabled={isSubmitting}
+              type="button"
+            >
+              <Send className="h-4 w-4" />
+              {isSubmitting ? 'Creating...' : scheduledDate ? 'Schedule' : 'Create Post'}
+            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <TermsOfServiceDialog
-        isOpen={showTerms}
-        onOpenChange={setShowTerms}
-        onAccept={() => {
-          setHasAcceptedTerms(true);
-          createPost();
-        }}
-      />
-    </>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
