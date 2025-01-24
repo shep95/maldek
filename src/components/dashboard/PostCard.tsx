@@ -5,9 +5,6 @@ import { PostActions } from "./post/PostActions";
 import { PostMedia } from "./post/PostMedia";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { Post } from "@/utils/postUtils";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Eye } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface PostCardProps {
@@ -20,36 +17,7 @@ interface PostCardProps {
 export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: PostCardProps) => {
   const navigate = useNavigate();
   const { data: userSettings } = useUserSettings();
-  const [viewCount, setViewCount] = useState(post.view_count || 0);
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    console.log('Setting up view count subscription for post:', post.id);
-    
-    const channel = supabase
-      .channel(`post-views-${post.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts',
-          filter: `id=eq.${post.id}`
-        },
-        (payload: any) => {
-          console.log('Received view count update:', payload);
-          if (payload.new && payload.new.view_count !== undefined) {
-            setViewCount(payload.new.view_count);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up view count subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [post.id]);
 
   const prefetchPostData = async () => {
     console.log('Prefetching post data:', post.id);
@@ -97,15 +65,6 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
 
   const handlePostClick = () => {
     console.log('Navigating to post:', post.id);
-    
-    // Increment view count in background
-    supabase.rpc('increment_post_view', {
-      post_id: post.id
-    }).then(({ error }) => {
-      if (error) console.error('Error incrementing view count:', error);
-    });
-
-    // Navigate immediately without waiting for view count update
     navigate(`/post/${post.id}`);
   };
 
@@ -138,17 +97,11 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
           onMediaClick={onMediaClick}
         />
       )}
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Eye className="h-4 w-4" />
-          {viewCount}
-        </span>
-        <PostActions
-          post={post}
-          currentUserId={currentUserId}
-          onAction={onPostAction}
-        />
-      </div>
+      <PostActions
+        post={post}
+        currentUserId={currentUserId}
+        onAction={onPostAction}
+      />
     </div>
   );
 };
