@@ -9,7 +9,6 @@ import { CommentSection } from "@/components/dashboard/post/detail/CommentSectio
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Post } from "@/utils/postUtils";
-import { Comment } from "@/utils/commentUtils";
 
 const PostDetail = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -65,7 +64,7 @@ const PostDetail = () => {
           id: data.author.id,
           username: data.author.username,
           avatar_url: data.author.avatar_url,
-          name: data.author.username // Using username as name since name isn't in the query
+          name: data.author.username
         },
         timestamp: new Date(data.created_at),
         media_urls: data.media_urls || [],
@@ -109,12 +108,8 @@ const PostDetail = () => {
       }
 
       console.log('Comments fetched:', data);
-      return data as Comment[];
-    },
-    gcTime: 1000 * 60 * 5,
-    staleTime: 1000 * 30,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false
+      return data;
+    }
   });
 
   useEffect(() => {
