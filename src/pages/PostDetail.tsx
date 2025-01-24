@@ -21,6 +21,17 @@ interface PostData {
   post_likes: { id: string; user_id: string; }[];
   bookmarks: { id: string; user_id: string; }[];
   comments: { id: string; }[];
+  // Add transformed properties
+  author: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+    name: string;
+  };
+  isLiked: boolean;
+  isBookmarked: boolean;
+  timestamp: Date;
+  mediaUrls: string[];
 }
 
 interface CommentData {
