@@ -14,8 +14,11 @@ export const PostList = () => {
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
+  // Optimized real-time subscriptions
   useEffect(() => {
-    console.log('Setting up real-time subscriptions for posts and interactions');
+    if (!session?.user?.id) return;
+    
+    console.log('Setting up real-time subscriptions');
     
     const channel = supabase
       .channel('post-updates')
@@ -29,52 +32,6 @@ export const PostList = () => {
         (payload) => {
           console.log('Post update received:', payload);
           queryClient.invalidateQueries({ queryKey: ['posts'] });
-          
-          if (payload.eventType === 'INSERT' && payload.new.user_id !== session?.user?.id) {
-            supabase
-              .from('followers')
-              .select('*')
-              .eq('follower_id', session?.user?.id)
-              .eq('following_id', payload.new.user_id)
-              .single()
-              .then(({ data }) => {
-                if (data) {
-                  toast.info('New post from someone you follow! Pull to refresh.');
-                }
-              });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'post_likes'
-        },
-        (payload) => {
-          console.log('Like update received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['posts'] });
-          
-          if (payload.eventType === 'INSERT' && posts?.some(post => 
-            post.id === payload.new.post_id && 
-            post.user_id === session?.user?.id &&
-            payload.new.user_id !== session?.user?.id
-          )) {
-            toast.success('Someone liked your post!');
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bookmarks'
-        },
-        () => {
-          console.log('Bookmark update received');
-          queryClient.invalidateQueries({ queryKey: ['posts'] });
         }
       )
       .subscribe();
@@ -83,25 +40,18 @@ export const PostList = () => {
       console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(channel);
     };
-  }, [queryClient, session?.user?.id, posts]);
+  }, [queryClient, session?.user?.id]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {
-      console.log('Handling post action:', action, 'for post:', postId);
-      
       if (action === 'delete') {
-        console.log('Attempting to delete post:', postId);
         const { error } = await supabase
           .from('posts')
           .delete()
           .eq('id', postId);
 
-        if (error) {
-          console.error('Error deleting post:', error);
-          throw error;
-        }
+        if (error) throw error;
         
-        console.log('Post deleted successfully');
         queryClient.invalidateQueries({ queryKey: ['posts'] });
         toast.success('Post deleted successfully');
       }
@@ -158,7 +108,7 @@ export const PostList = () => {
                 timestamp: new Date(post.created_at),
                 likes: post.likes || 0,
                 reposts: post.reposts || 0,
-                comments: 0, // We're not loading comments count in the feed
+                comments: 0,
                 isLiked: post.post_likes?.some(like => like.id) || false,
                 isBookmarked: post.bookmarks?.some(bookmark => bookmark.id) || false
               }}
