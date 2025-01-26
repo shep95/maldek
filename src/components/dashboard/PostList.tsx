@@ -53,6 +53,7 @@ export const PostList = () => {
     if (action === 'delete') {
       try {
         console.log('Attempting to delete post:', postId);
+        console.log('Current user session:', session);
         console.log('Current user email:', session?.user?.email);
 
         // Only attempt delete if user is admin
@@ -67,10 +68,13 @@ export const PostList = () => {
           old?.filter(post => post.id !== postId)
         );
 
-        const { error } = await supabase
+        const { error, data } = await supabase
           .from('posts')
           .delete()
-          .eq('id', postId);
+          .eq('id', postId)
+          .select();
+
+        console.log('Delete response:', { error, data });
 
         if (error) {
           console.error('Error deleting post:', error);

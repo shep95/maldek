@@ -15,11 +15,13 @@ export const DeleteAction = ({ postId, authorId, currentUserId, onAction }: Dele
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Delete button clicked for post:', postId);
+    console.log('Current session:', session?.user);
     onAction(postId, 'delete');
   };
 
   // Only show delete button if the current user is killerbattleasher@gmail.com
   if (session?.user?.email !== 'killerbattleasher@gmail.com') {
+    console.log('Delete button hidden - user not admin:', session?.user?.email);
     return null;
   }
 
