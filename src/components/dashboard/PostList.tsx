@@ -21,27 +21,25 @@ export const PostList = () => {
       
       console.log('Fetching post stats...');
       
-      // Get comment counts using a subquery
+      // Get comment counts
       const { data: commentCounts, error: commentError } = await supabase
         .from('comments')
-        .select(`
-          post_id,
-          count:count(*)
-        `)
-        .in('post_id', posts.map(p => p.id));
+        .select('post_id, count')
+        .in('post_id', posts.map(p => p.id))
+        .select('count(*)')
+        .throwOnError();
         
       if (commentError) {
         console.error('Error fetching comment counts:', commentError);
       }
 
-      // Get like counts using a subquery
+      // Get like counts
       const { data: likeCounts, error: likeError } = await supabase
         .from('post_likes')
-        .select(`
-          post_id,
-          count:count(*)
-        `)
-        .in('post_id', posts.map(p => p.id));
+        .select('post_id, count')
+        .in('post_id', posts.map(p => p.id))
+        .select('count(*)')
+        .throwOnError();
         
       if (likeError) {
         console.error('Error fetching like counts:', likeError);
