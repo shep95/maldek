@@ -5,6 +5,7 @@ import { Comment } from "@/utils/commentUtils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentCard } from "../comments/CommentCard";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CommentSectionProps {
   postId: string;
@@ -19,6 +20,7 @@ export const CommentSection = ({
 }: CommentSectionProps) => {
   const [newComment, setNewComment] = useState<string>("");
   const [commentList, setCommentList] = useState(comments);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     setCommentList(comments);
@@ -39,6 +41,8 @@ export const CommentSection = ({
 
       if (error) throw error;
 
+      // Optimistically update the UI
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       setNewComment("");
       toast.success("Comment added successfully");
     } catch (error) {

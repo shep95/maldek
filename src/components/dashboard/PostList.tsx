@@ -13,6 +13,51 @@ export const PostList = () => {
   const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const [postStats, setPostStats] = useState<Record<string, { likes: number, comments: number }>>({});
+
+  useEffect(() => {
+    const fetchPostStats = async () => {
+      if (!posts) return;
+      
+      console.log('Fetching post stats...');
+      
+      // Get comment counts
+      const { data: commentCounts, error: commentError } = await supabase
+        .from('comments')
+        .select('post_id, count', { count: 'exact' })
+        .in('post_id', posts.map(p => p.id))
+        .groupBy('post_id');
+        
+      if (commentError) {
+        console.error('Error fetching comment counts:', commentError);
+      }
+
+      // Get like counts
+      const { data: likeCounts, error: likeError } = await supabase
+        .from('post_likes')
+        .select('post_id, count', { count: 'exact' })
+        .in('post_id', posts.map(p => p.id))
+        .groupBy('post_id');
+        
+      if (likeError) {
+        console.error('Error fetching like counts:', likeError);
+      }
+
+      // Combine stats
+      const stats: Record<string, { likes: number, comments: number }> = {};
+      posts.forEach(post => {
+        stats[post.id] = {
+          likes: likeCounts?.find(l => l.post_id === post.id)?.count || 0,
+          comments: commentCounts?.find(c => c.post_id === post.id)?.count || 0
+        };
+      });
+
+      console.log('Post stats:', stats);
+      setPostStats(stats);
+    };
+
+    fetchPostStats();
+  }, [posts]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -56,14 +101,12 @@ export const PostList = () => {
         console.log('Current user session:', session);
         console.log('Current user email:', session?.user?.email);
 
-        // Only attempt delete if user is admin
         if (session?.user?.email !== 'killerbattleasher@gmail.com') {
           console.error('Unauthorized deletion attempt');
           toast.error('Only administrators can delete posts');
           return;
         }
 
-        // Optimistic update
         queryClient.setQueryData(['posts'], (old: any[]) => 
           old?.filter(post => post.id !== postId)
         );
@@ -86,7 +129,6 @@ export const PostList = () => {
       } catch (error) {
         console.error('Error deleting post:', error);
         toast.error('Failed to delete post');
-        // Revert optimistic update on error
         queryClient.invalidateQueries({ queryKey: ['posts'] });
       }
     }
@@ -133,9 +175,9 @@ export const PostList = () => {
                   name: post.profiles.username
                 },
                 timestamp: new Date(post.created_at),
-                likes: 0,
+                likes: postStats[post.id]?.likes || 0,
+                comments: postStats[post.id]?.comments || 0,
                 reposts: 0,
-                comments: 0,
                 isLiked: false,
                 isBookmarked: false
               }}
