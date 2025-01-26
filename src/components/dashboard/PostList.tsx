@@ -24,9 +24,8 @@ export const PostList = () => {
       // Get comment counts
       const { data: commentCounts, error: commentError } = await supabase
         .from('comments')
-        .select('post_id, count')
+        .select('post_id, count(*)', { count: 'exact' })
         .in('post_id', posts.map(p => p.id))
-        .select('count(*)')
         .throwOnError();
         
       if (commentError) {
@@ -36,9 +35,8 @@ export const PostList = () => {
       // Get like counts
       const { data: likeCounts, error: likeError } = await supabase
         .from('post_likes')
-        .select('post_id, count')
+        .select('post_id, count(*)', { count: 'exact' })
         .in('post_id', posts.map(p => p.id))
-        .select('count(*)')
         .throwOnError();
         
       if (likeError) {
