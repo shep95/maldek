@@ -21,23 +21,23 @@ export const PostList = () => {
       
       console.log('Fetching post stats...');
       
-      // Get comment counts
+      // Get comment counts using count aggregation
       const { data: commentCounts, error: commentError } = await supabase
         .from('comments')
-        .select('post_id, count', { count: 'exact' })
+        .select('post_id, count(*)')
         .in('post_id', posts.map(p => p.id))
-        .groupBy('post_id');
+        .group('post_id');
         
       if (commentError) {
         console.error('Error fetching comment counts:', commentError);
       }
 
-      // Get like counts
+      // Get like counts using count aggregation
       const { data: likeCounts, error: likeError } = await supabase
         .from('post_likes')
-        .select('post_id, count', { count: 'exact' })
+        .select('post_id, count(*)')
         .in('post_id', posts.map(p => p.id))
-        .groupBy('post_id');
+        .group('post_id');
         
       if (likeError) {
         console.error('Error fetching like counts:', likeError);
