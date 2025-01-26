@@ -15,8 +15,8 @@ export const DeleteAction = ({ postId, authorId, currentUserId, onAction }: Dele
     onAction(postId, 'delete');
   };
 
-  // Only show delete button if the current user is the author
-  if (authorId !== currentUserId) {
+  // Only show delete button if the current user is killerbattleasher@gmail.com
+  if (currentUserId !== 'c6f6face-1466-4351-92fa-ee42d8978536') {
     return null;
   }
 

@@ -14,7 +14,6 @@ export const PostList = () => {
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
-  // Optimized real-time subscription with debouncing
   useEffect(() => {
     if (!session?.user?.id) return;
     
@@ -31,14 +30,12 @@ export const PostList = () => {
         },
         (payload) => {
           console.log('Post update received:', payload);
-          // Use optimistic updates for better UX
           if (payload.eventType === 'INSERT') {
             queryClient.setQueryData(['posts'], (old: any[]) => {
               if (!old) return [payload.new];
               return [payload.new, ...old];
             });
           }
-          // Only invalidate for updates and deletes
           if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
             queryClient.invalidateQueries({ queryKey: ['posts'] });
           }
@@ -55,6 +52,12 @@ export const PostList = () => {
   const handlePostAction = async (postId: string, action: 'delete') => {
     if (action === 'delete') {
       try {
+        // Only attempt delete if user is admin
+        if (session?.user?.email !== 'killerbattleasher@gmail.com') {
+          toast.error('Only administrators can delete posts');
+          return;
+        }
+
         // Optimistic update
         queryClient.setQueryData(['posts'], (old: any[]) => 
           old?.filter(post => post.id !== postId)
