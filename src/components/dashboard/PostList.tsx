@@ -52,8 +52,12 @@ export const PostList = () => {
   const handlePostAction = async (postId: string, action: 'delete') => {
     if (action === 'delete') {
       try {
+        console.log('Attempting to delete post:', postId);
+        console.log('Current user email:', session?.user?.email);
+
         // Only attempt delete if user is admin
         if (session?.user?.email !== 'killerbattleasher@gmail.com') {
+          console.error('Unauthorized deletion attempt');
           toast.error('Only administrators can delete posts');
           return;
         }
@@ -68,12 +72,16 @@ export const PostList = () => {
           .delete()
           .eq('id', postId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error deleting post:', error);
+          throw error;
+        }
         
+        console.log('Post deleted successfully:', postId);
         toast.success('Post deleted successfully');
       } catch (error) {
-        console.error(`Error performing ${action}:`, error);
-        toast.error(`Failed to ${action} post`);
+        console.error('Error deleting post:', error);
+        toast.error('Failed to delete post');
         // Revert optimistic update on error
         queryClient.invalidateQueries({ queryKey: ['posts'] });
       }
