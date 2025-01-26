@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSession } from '@supabase/auth-helpers-react';
 
 interface DeleteActionProps {
   postId: string;
@@ -9,6 +10,8 @@ interface DeleteActionProps {
 }
 
 export const DeleteAction = ({ postId, authorId, currentUserId, onAction }: DeleteActionProps) => {
+  const session = useSession();
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     console.log('Delete button clicked for post:', postId);
@@ -16,7 +19,7 @@ export const DeleteAction = ({ postId, authorId, currentUserId, onAction }: Dele
   };
 
   // Only show delete button if the current user is killerbattleasher@gmail.com
-  if (currentUserId !== 'c6f6face-1466-4351-92fa-ee42d8978536') {
+  if (session?.user?.email !== 'killerbattleasher@gmail.com') {
     return null;
   }
 
