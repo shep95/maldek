@@ -20,7 +20,8 @@ export const usePosts = () => {
             avatar_url
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20); // Limit initial load for better performance
 
       if (error) {
         console.error('Error fetching posts:', error);
@@ -31,8 +32,8 @@ export const usePosts = () => {
       console.log('Posts fetched successfully:', data);
       return data;
     },
-    staleTime: 1000 * 60 * 5, // Data stays fresh for 5 minutes
-    gcTime: 1000 * 60 * 10, // Keep unused data for 10 minutes
+    staleTime: 1000 * 30, // Data stays fresh for 30 seconds
+    gcTime: 1000 * 60 * 5, // Keep unused data for 5 minutes
   });
 
   return { posts, isLoading };

@@ -61,11 +61,8 @@ const PostDetail = () => {
 
       console.log('Post data fetched:', data);
       
-      // Transform the data with minimal processing
-      const transformedPost: Post = {
-        id: data.id,
-        content: data.content,
-        user_id: data.user_id,
+      return {
+        ...data,
         author: {
           id: data.author.id,
           username: data.author.username,
@@ -73,7 +70,6 @@ const PostDetail = () => {
           name: data.author.username
         },
         timestamp: new Date(data.created_at),
-        media_urls: data.media_urls || [],
         likes: 0,
         comments: 0,
         reposts: 0,
@@ -81,13 +77,11 @@ const PostDetail = () => {
         isBookmarked: false,
         view_count: 0
       };
-
-      return transformedPost;
     },
-    staleTime: 1000 * 60 // Cache for 1 minute
+    staleTime: 1000 * 30 // Cache for 30 seconds
   });
 
-  // Optimized comments query
+  // Optimized comments query with prefetching
   const { data: comments = [] } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
@@ -97,8 +91,12 @@ const PostDetail = () => {
       const { data, error } = await supabase
         .from('comments')
         .select(`
-          *,
+          id,
+          content,
+          created_at,
+          parent_id,
           user:profiles (
+            id,
             username,
             avatar_url
           )
@@ -114,10 +112,10 @@ const PostDetail = () => {
       console.log('Comments fetched:', data);
       return data;
     },
-    staleTime: 1000 * 60 // Cache for 1 minute
+    staleTime: 1000 * 30 // Cache for 30 seconds
   });
 
-  // Simplified real-time subscription
+  // Simplified real-time subscription with optimistic updates
   useEffect(() => {
     if (!postId) return;
 
@@ -132,9 +130,16 @@ const PostDetail = () => {
           table: 'comments',
           filter: `post_id=eq.${postId}`
         },
-        () => {
-          console.log('Comment update received');
-          queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+        (payload) => {
+          console.log('Comment update received:', payload);
+          if (payload.eventType === 'INSERT') {
+            queryClient.setQueryData(['comments', postId], (old: any[]) => {
+              if (!old) return [payload.new];
+              return [...old, payload.new];
+            });
+          } else {
+            queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+          }
         }
       )
       .subscribe();

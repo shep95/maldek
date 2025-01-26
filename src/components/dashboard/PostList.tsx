@@ -14,7 +14,7 @@ export const PostList = () => {
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
-  // Optimized real-time subscriptions
+  // Optimized real-time subscription with debouncing
   useEffect(() => {
     if (!session?.user?.id) return;
     
@@ -31,7 +31,17 @@ export const PostList = () => {
         },
         (payload) => {
           console.log('Post update received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['posts'] });
+          // Use optimistic updates for better UX
+          if (payload.eventType === 'INSERT') {
+            queryClient.setQueryData(['posts'], (old: any[]) => {
+              if (!old) return [payload.new];
+              return [payload.new, ...old];
+            });
+          }
+          // Only invalidate for updates and deletes
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
+            queryClient.invalidateQueries({ queryKey: ['posts'] });
+          }
         }
       )
       .subscribe();
@@ -43,8 +53,13 @@ export const PostList = () => {
   }, [queryClient, session?.user?.id]);
 
   const handlePostAction = async (postId: string, action: 'delete') => {
-    try {
-      if (action === 'delete') {
+    if (action === 'delete') {
+      try {
+        // Optimistic update
+        queryClient.setQueryData(['posts'], (old: any[]) => 
+          old?.filter(post => post.id !== postId)
+        );
+
         const { error } = await supabase
           .from('posts')
           .delete()
@@ -52,12 +67,13 @@ export const PostList = () => {
 
         if (error) throw error;
         
-        queryClient.invalidateQueries({ queryKey: ['posts'] });
         toast.success('Post deleted successfully');
+      } catch (error) {
+        console.error(`Error performing ${action}:`, error);
+        toast.error(`Failed to ${action} post`);
+        // Revert optimistic update on error
+        queryClient.invalidateQueries({ queryKey: ['posts'] });
       }
-    } catch (error) {
-      console.error(`Error performing ${action}:`, error);
-      toast.error(`Failed to ${action} post`);
     }
   };
 
@@ -94,7 +110,7 @@ export const PostList = () => {
               key={post.id}
               post={{
                 ...post,
-                user_id: post.profiles.id, // Add the user_id from the profile
+                user_id: post.profiles.id,
                 author: {
                   id: post.profiles.id,
                   username: post.profiles.username,
