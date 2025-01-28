@@ -5,6 +5,10 @@ import { PostActions } from "./post/PostActions";
 import { PostMedia } from "./post/PostMedia";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { Post } from "@/utils/postUtils";
+import { useState } from "react";
+import { EditControls } from "./post/EditControls";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostCardProps {
   post: Post;
@@ -16,9 +20,10 @@ interface PostCardProps {
 export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: PostCardProps) => {
   const navigate = useNavigate();
   const { data: userSettings } = useUserSettings();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(post.content);
 
   const handlePostClick = (e: React.MouseEvent) => {
-    // Don't navigate if clicking on interactive elements
     if (
       (e.target as HTMLElement).closest('button') ||
       (e.target as HTMLElement).closest('a')
@@ -34,6 +39,29 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     navigate(`/@${post.author.username}`);
   };
 
+  const handleEdit = async () => {
+    try {
+      console.log('Updating post:', post.id, 'with content:', editedContent);
+      const { error } = await supabase
+        .from('posts')
+        .update({ content: editedContent })
+        .eq('id', post.id)
+        .eq('user_id', currentUserId);
+
+      if (error) throw error;
+
+      toast.success('Post updated successfully');
+      setIsEditing(false);
+      // Update the local post content
+      post.content = editedContent;
+    } catch (error) {
+      console.error('Error updating post:', error);
+      toast.error('Failed to update post');
+    }
+  };
+
+  const canEdit = currentUserId === post.author.id;
+
   return (
     <div 
       className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 cursor-pointer hover:bg-accent/5 transition-colors duration-200"
@@ -43,11 +71,16 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         author={post.author} 
         timestamp={post.timestamp} 
         onUsernameClick={handleUsernameClick}
+        canEdit={canEdit}
+        isEditing={isEditing}
+        onEditClick={() => setIsEditing(true)}
       />
       <PostContent 
         content={post.content} 
         userLanguage={userSettings?.preferred_language || 'en'}
-        isEditing={false}
+        isEditing={isEditing}
+        editedContent={editedContent}
+        onEditContentChange={setEditedContent}
         truncate={true}
       />
       {post.media_urls && post.media_urls.length > 0 && (
@@ -56,11 +89,21 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
           onMediaClick={onMediaClick}
         />
       )}
-      <PostActions
-        post={post}
-        currentUserId={currentUserId}
-        onAction={onPostAction}
-      />
+      {isEditing ? (
+        <EditControls
+          onCancel={() => {
+            setIsEditing(false);
+            setEditedContent(post.content);
+          }}
+          onSave={handleEdit}
+        />
+      ) : (
+        <PostActions
+          post={post}
+          currentUserId={currentUserId}
+          onAction={onPostAction}
+        />
+      )}
     </div>
   );
 };

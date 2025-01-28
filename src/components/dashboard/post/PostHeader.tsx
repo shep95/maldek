@@ -1,158 +1,57 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Author } from "@/utils/postUtils";
-import { Check, Crown } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { formatDistanceToNow } from "date-fns";
+import { Edit2 } from "lucide-react";
+import type { Author } from "@/utils/postUtils";
 
 interface PostHeaderProps {
   author: Author;
   timestamp: Date;
   onUsernameClick: (e: React.MouseEvent) => void;
+  canEdit?: boolean;
+  isEditing?: boolean;
+  onEditClick?: () => void;
 }
 
-export const PostHeader = ({ author, timestamp, onUsernameClick }: PostHeaderProps) => {
-  const navigate = useNavigate();
-  
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', author.id],
-    queryFn: async () => {
-      try {
-        console.log('Fetching subscription for user:', author.id);
-        const { data: subscriptionData, error: subscriptionError } = await supabase
-          .from('user_subscriptions')
-          .select(`
-            *,
-            tier:subscription_tiers(*)
-          `)
-          .eq('user_id', author.id)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (subscriptionError) {
-          console.error('Error fetching subscription:', subscriptionError);
-          return null;
-        }
-
-        console.log('Subscription data for user:', author.id, subscriptionData);
-        return subscriptionData;
-      } catch (error) {
-        console.error('Error in subscription query:', error);
-        return null;
-      }
-    },
-    retry: false,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  });
-
-  const handleProfileClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    console.log('=== Profile Navigation Debug ===');
-    console.log('1. Click event detected');
-    console.log('2. Username:', author.username);
-    console.log('3. Current path:', window.location.pathname);
-    
-    const username = author.username.startsWith('@') ? author.username : `/@${author.username}`;
-    console.log('4. Target path:', username);
-    
-    navigate(username);
-  };
-
-  const getTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return `${diffInSeconds}s`;
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `${diffInDays}d`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w`;
-    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)}mo`;
-    return `${Math.floor(diffInDays / 365)}y`;
-  };
-
-  const timeAgo = getTimeAgo(new Date(timestamp));
-
-  const getVerificationBadge = () => {
-    if (!subscription?.tier?.name) return null;
-
-    const badgeConfig = {
-      'True Emperor': {
-        icon: Crown,
-        color: "text-yellow-500",
-        shadow: "shadow-[0_0_12px_rgba(234,179,8,0.6)]",
-        border: "border-yellow-500"
-      },
-      'Creator': {
-        icon: Check,
-        color: "text-orange-500",
-        shadow: "shadow-[0_0_12px_rgba(249,115,22,0.6)]",
-        border: "border-orange-500"
-      },
-      'Business': {
-        icon: Check,
-        color: "text-purple-500",
-        shadow: "shadow-[0_0_12px_rgba(168,85,247,0.6)]",
-        border: "border-purple-500"
-      }
-    };
-
-    const config = badgeConfig[subscription.tier.name as keyof typeof badgeConfig];
-    if (!config) return null;
-
-    const Icon = config.icon;
-
-    return (
-      <div className="group relative">
-        <div className={cn(
-          "h-5 w-5 rounded-full flex items-center justify-center",
-          "border-2 bg-black/50 backdrop-blur-sm",
-          config.border
-        )}>
-          <Icon className={cn("h-3 w-3", config.color, config.shadow)} />
-        </div>
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-          {subscription.tier.name}
-        </div>
-      </div>
-    );
-  };
-
+export const PostHeader = ({ 
+  author, 
+  timestamp, 
+  onUsernameClick,
+  canEdit,
+  isEditing,
+  onEditClick 
+}: PostHeaderProps) => {
   return (
-    <div className="flex items-start gap-3">
-      <Avatar 
-        className="h-10 w-10 cursor-pointer" 
-        onClick={handleProfileClick}
-      >
-        <AvatarImage src={author.avatar_url || ''} alt={author.name} />
-        <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1">
-        <div className="flex items-baseline gap-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={handleProfileClick}
-              className="font-semibold hover:underline"
-            >
-              {author.name}
-            </button>
-            {getVerificationBadge()}
-          </div>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={author.avatar_url || undefined} />
+          <AvatarFallback>{author.username[0].toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div>
           <button
-            onClick={handleProfileClick}
-            className="text-sm text-muted-foreground hover:underline"
+            onClick={onUsernameClick}
+            className="font-semibold hover:underline"
           >
             @{author.username}
           </button>
+          <p className="text-sm text-muted-foreground">
+            {formatDistanceToNow(timestamp, { addSuffix: true })}
+          </p>
         </div>
       </div>
-      <span className="text-sm text-muted-foreground">{timeAgo}</span>
+      {canEdit && !isEditing && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditClick?.();
+          }}
+        >
+          <Edit2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 };
