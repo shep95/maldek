@@ -76,21 +76,6 @@ const Followers = () => {
         throw followError;
       }
 
-      // Create notification - Note: We're using the user's ID as the post_id since this is a follow notification
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          recipient_id: userId,
-          actor_id: session.user.id,
-          type: 'new_follow',
-          post_id: userId // Using the user's ID directly, no need for casting
-        });
-
-      if (notificationError) {
-        console.error("Notification error:", notificationError);
-        // Don't throw here as the follow was successful
-      }
-
       toast.success("Successfully followed user");
     } catch (error) {
       console.error("Error following user:", error);
