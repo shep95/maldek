@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
-import Messages from "@/pages/Messages";
+import Followers from "@/pages/Followers";
 import Notifications from "@/pages/Notifications";
 import Videos from "@/pages/Videos";
 import PostDetail from "@/pages/PostDetail";
@@ -94,7 +94,7 @@ export const AppRoutes = () => {
       <Route element={<DashboardLayout />}>
         <Route path="/@:username" element={<Profiles />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/messages" element={<Messages />} />
+        <Route path="/followers" element={<Followers />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />

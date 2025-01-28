@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Home, MessageCircle, Bell, Video, Menu } from "lucide-react";
+import { Home, Users2, Bell, Video, Menu } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
@@ -58,7 +58,7 @@ export const MobileNav = () => {
 
   const navItems: NavItem[] = [
     { icon: Home, label: "Home", path: "/dashboard" },
-    { icon: MessageCircle, label: "Messages", path: "/messages" },
+    { icon: Users2, label: "Followers", path: "/followers" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
     { icon: Video, label: "Videos", path: "/videos" },
   ];

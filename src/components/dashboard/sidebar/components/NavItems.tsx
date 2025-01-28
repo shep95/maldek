@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown } from "lucide-react";
+import { Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, Users2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -35,18 +35,6 @@ export const NavItems = ({
         }
       }
     }
-
-    // Check if it's the Daarp AI path and if we should redirect
-    if (path === "/daarp-ai") {
-      const redirectDate = new Date("2025-05-08");
-      const currentDate = new Date();
-      
-      if (currentDate >= redirectDate) {
-        window.location.href = "https://www.zukoi.app/";
-        return;
-      }
-    }
-    
     onNavigate(path);
   };
 
@@ -63,10 +51,11 @@ export const NavItems = ({
       active: location.pathname === "/dashboard" 
     },
     { 
-      icon: MessageCircle, 
-      label: "Messages", 
-      path: "/messages", 
-      active: location.pathname === "/messages" 
+      icon: Users2, 
+      label: "Followers", 
+      path: "/followers", 
+      active: location.pathname === "/followers",
+      description: "Find and follow users"
     },
     { 
       icon: Bell, 

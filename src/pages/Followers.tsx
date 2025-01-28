@@ -1,0 +1,135 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
+import { Search } from "lucide-react";
+
+const Followers = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const session = useSession();
+
+  const { data: searchResults, isLoading } = useQuery({
+    queryKey: ['user-search', searchQuery],
+    queryFn: async () => {
+      if (!searchQuery.trim()) return [];
+
+      console.log('Searching for users:', searchQuery);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .ilike('username', `%${searchQuery}%`)
+        .limit(10);
+
+      if (error) {
+        console.error('Error searching users:', error);
+        throw error;
+      }
+
+      console.log('Search results:', data);
+      return data;
+    },
+    enabled: searchQuery.length > 0
+  });
+
+  const handleFollow = async (userId: string) => {
+    try {
+      console.log('Following user:', userId);
+      
+      if (!session?.user?.id) {
+        toast.error("Please sign in to follow users");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('followers')
+        .insert({
+          follower_id: session.user.id,
+          following_id: userId
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast.error("You are already following this user");
+          return;
+        }
+        console.error("Follow error:", error);
+        throw error;
+      }
+
+      toast.success("Successfully followed user");
+    } catch (error) {
+      console.error("Error following user:", error);
+      toast.error("Failed to follow user");
+    }
+  };
+
+  return (
+    <div className="container max-w-2xl mx-auto p-4 space-y-6">
+      <div className="relative">
+        <Input
+          type="text"
+          placeholder="Search users by username..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+      </div>
+
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="animate-pulse space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-muted" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-muted rounded w-1/4" />
+                    <div className="h-3 bg-muted rounded w-1/3" />
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : searchResults?.length ? (
+          searchResults.map((user) => (
+            <Card key={user.id} className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={user.avatar_url || ''} />
+                    <AvatarFallback>{user.username[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold">@{user.username}</h3>
+                    <p className="text-sm text-muted-foreground">{user.follower_count} followers</p>
+                  </div>
+                </div>
+                {session?.user?.id !== user.id && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleFollow(user.id)}
+                    className="ml-4"
+                  >
+                    Follow
+                  </Button>
+                )}
+              </div>
+            </Card>
+          ))
+        ) : searchQuery ? (
+          <p className="text-center text-muted-foreground">No users found</p>
+        ) : (
+          <p className="text-center text-muted-foreground">Search for users to follow</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Followers;
