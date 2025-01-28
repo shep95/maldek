@@ -20,6 +20,7 @@ export const CommentSection = ({
 }: CommentSectionProps) => {
   const [newComment, setNewComment] = useState<string>("");
   const [commentList, setCommentList] = useState(comments);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -28,26 +29,55 @@ export const CommentSection = ({
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    console.log("Submitting comment...");
 
     try {
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('comments')
         .insert({
           content: newComment,
           post_id: postId,
           user_id: currentUserId
-        });
+        })
+        .select(`
+          id,
+          content,
+          created_at,
+          parent_id,
+          user:profiles (
+            id,
+            username,
+            avatar_url
+          )
+        `)
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error adding comment:", error);
+        throw error;
+      }
+
+      console.log("Comment added successfully:", data);
 
       // Optimistically update the UI
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      const newCommentObj = data as Comment;
+      setCommentList(prevComments => [...prevComments, newCommentObj]);
+      
+      // Clear the input
       setNewComment("");
+      
+      // Invalidate the comments query to trigger a refresh
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      
       toast.success("Comment added successfully");
     } catch (error) {
-      console.error("Error adding comment:", error);
+      console.error("Failed to add comment:", error);
       toast.error("Failed to add comment");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -64,9 +94,9 @@ export const CommentSection = ({
         <Button 
           type="submit" 
           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          disabled={!newComment.trim()}
+          disabled={!newComment.trim() || isSubmitting}
         >
-          Add Comment
+          {isSubmitting ? "Adding Comment..." : "Add Comment"}
         </Button>
       </form>
       <div className="space-y-4">
