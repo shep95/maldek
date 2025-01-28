@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { debounce } from "lodash";
 import { SearchResults } from "./sidebar/SearchResults";
-import { TrendingUsers } from "./sidebar/TrendingUsers";
+import { TrendingPosts } from "./sidebar/TrendingPosts";
 
 export const RightSidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,44 +85,45 @@ export const RightSidebar = () => {
     enabled: searchQuery.length > 0
   });
 
-  // Enhanced trending users with activity metrics and engagement
-  const { data: trendingUsers, isLoading: isLoadingTrending } = useQuery({
-    queryKey: ['trending-users'],
+  // Fetch trending posts from the last 72 hours
+  const { data: trendingPosts, isLoading: isLoadingTrending } = useQuery({
+    queryKey: ['trending-posts'],
     queryFn: async () => {
-      console.log("Fetching trending users with enhanced metrics...");
+      console.log("Fetching trending posts from last 72 hours...");
       
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        console.log("No active session, skipping trending users fetch");
+        console.log("No active session, skipping trending posts fetch");
         return [];
       }
 
-      // Get users who have been active recently and have good engagement
-      const { data: users, error } = await supabase
-        .from('profiles')
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setHours(threeDaysAgo.getHours() - 72);
+
+      const { data: posts, error } = await supabase
+        .from('posts')
         .select(`
-          id, 
-          username, 
-          follower_count, 
-          avatar_url,
-          total_posts,
-          total_likes_received,
-          total_views,
-          last_active
+          id,
+          content,
+          created_at,
+          engagement_score,
+          profiles (
+            username,
+            avatar_url
+          )
         `)
-        .gt('last_active', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Active in last 7 days
-        .gt('total_posts', 0) // Has made at least one post
-        .order('total_likes_received', { ascending: false })
+        .gt('created_at', threeDaysAgo.toISOString())
+        .order('engagement_score', { ascending: false })
         .limit(5);
 
       if (error) {
-        console.error("Trending users error:", error);
+        console.error("Trending posts error:", error);
         throw error;
       }
 
-      return users || [];
+      return posts || [];
     },
-    refetchInterval: 60000 // Refresh every minute
+    refetchInterval: 300000 // Refresh every 5 minutes
   });
 
   const handleSearch = debounce((value: string) => {
@@ -157,11 +158,11 @@ export const RightSidebar = () => {
         <div className="flex flex-col gap-4">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-accent" />
-            Trending Users
+            Trending Posts
           </h3>
-          <TrendingUsers 
+          <TrendingPosts 
             isLoading={isLoadingTrending} 
-            users={trendingUsers} 
+            posts={trendingPosts} 
           />
         </div>
       </Card>
