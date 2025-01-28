@@ -71,8 +71,9 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
 
   return (
     <div 
+      id={`post-${post.id}`} // Add ID for scroll targeting
       className={cn(
-        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4",
+        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 transition-all duration-300", // Added transition
         !isEditing && "cursor-pointer hover:bg-accent/5 transition-colors duration-200"
       )}
       onClick={handlePostClick}

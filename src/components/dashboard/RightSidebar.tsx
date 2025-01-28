@@ -114,7 +114,7 @@ export const RightSidebar = () => {
         `)
         .gt('created_at', threeDaysAgo.toISOString())
         .order('engagement_score', { ascending: false })
-        .limit(5);
+        .limit(3); // Only fetch top 3 trending posts
 
       if (error) {
         console.error("Trending posts error:", error);

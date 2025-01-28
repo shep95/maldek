@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -18,17 +17,23 @@ interface TrendingPostsProps {
 }
 
 export const TrendingPosts = ({ isLoading, posts }: TrendingPostsProps) => {
-  const navigate = useNavigate();
-
   const handlePostClick = (postId: string) => {
-    console.log('Navigating to post:', postId);
-    navigate(`/post/${postId}`);
+    console.log('Scrolling to post:', postId);
+    const postElement = document.getElementById(`post-${postId}`);
+    if (postElement) {
+      postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a highlight effect
+      postElement.classList.add('ring-2', 'ring-accent', 'ring-offset-2');
+      setTimeout(() => {
+        postElement.classList.remove('ring-2', 'ring-accent', 'ring-offset-2');
+      }, 2000);
+    }
   };
 
   if (isLoading) {
     return (
       <div className="space-y-4 animate-pulse">
-        {[1, 2, 3, 4, 5].map((i) => (
+        {[1, 2, 3].map((i) => (
           <div key={i} className="flex flex-col gap-3 p-3 rounded-lg bg-muted/5">
             <div className="flex items-center gap-2">
               <Skeleton className="h-6 w-6 rounded-full" />
