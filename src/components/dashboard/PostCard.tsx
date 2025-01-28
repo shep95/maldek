@@ -22,11 +22,13 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const { data: userSettings } = useUserSettings();
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handlePostClick = (e: React.MouseEvent) => {
     if (
       (e.target as HTMLElement).closest('button') ||
-      (e.target as HTMLElement).closest('a')
+      (e.target as HTMLElement).closest('textarea') ||
+      isEditing
     ) {
       return;
     }
@@ -41,7 +43,9 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
 
   const handleEdit = async () => {
     try {
+      setIsSaving(true);
       console.log('Updating post:', post.id, 'with content:', editedContent);
+      
       const { error } = await supabase
         .from('posts')
         .update({ content: editedContent })
@@ -57,6 +61,8 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     } catch (error) {
       console.error('Error updating post:', error);
       toast.error('Failed to update post');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -64,7 +70,10 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
 
   return (
     <div 
-      className="p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 cursor-pointer hover:bg-accent/5 transition-colors duration-200"
+      className={cn(
+        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4",
+        !isEditing && "cursor-pointer hover:bg-accent/5 transition-colors duration-200"
+      )}
       onClick={handlePostClick}
     >
       <PostHeader 
@@ -96,6 +105,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
             setEditedContent(post.content);
           }}
           onSave={handleEdit}
+          isSaving={isSaving}
         />
       ) : (
         <PostActions

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface PostEditorProps {
   content: string;
@@ -8,10 +8,17 @@ interface PostEditorProps {
 
 export const PostEditor = ({ content, onEditContentChange }: PostEditorProps) => {
   return (
-    <textarea
+    <Textarea
       value={content}
       onChange={(e) => onEditContentChange(e.target.value)}
-      className="w-full min-h-[100px] p-2 border rounded"
+      className={cn(
+        "w-full min-h-[100px] p-4 bg-background/50 backdrop-blur-sm",
+        "border border-input focus:border-primary",
+        "rounded-lg resize-none transition-all duration-200",
+        "placeholder:text-muted-foreground focus:ring-1 focus:ring-primary"
+      )}
+      placeholder="What's on your mind?"
+      autoFocus
     />
   );
 };
