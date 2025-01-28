@@ -43,6 +43,11 @@ const Followers = () => {
         return;
       }
 
+      if (session.user.id === userId) {
+        toast.error("You cannot follow yourself");
+        return;
+      }
+
       console.log('Following user:', userId);
       
       // First check if already following
@@ -58,20 +63,32 @@ const Followers = () => {
         return;
       }
 
-      const { error } = await supabase
+      // Insert the follow relationship
+      const { error: followError } = await supabase
         .from('followers')
         .insert({
           follower_id: session.user.id,
           following_id: userId
         });
 
-      if (error) {
-        console.error("Follow error:", error);
-        if (error.code === '23505') {
-          toast.error("You are already following this user");
-          return;
-        }
-        throw error;
+      if (followError) {
+        console.error("Follow error:", followError);
+        throw followError;
+      }
+
+      // Create notification - Note: We're using the user's ID as the post_id since this is a follow notification
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          recipient_id: userId,
+          actor_id: session.user.id,
+          type: 'new_follow',
+          post_id: userId // Using the user's ID directly, no need for casting
+        });
+
+      if (notificationError) {
+        console.error("Notification error:", notificationError);
+        // Don't throw here as the follow was successful
       }
 
       toast.success("Successfully followed user");
