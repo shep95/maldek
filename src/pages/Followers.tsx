@@ -38,10 +38,23 @@ const Followers = () => {
 
   const handleFollow = async (userId: string) => {
     try {
-      console.log('Following user:', userId);
-      
       if (!session?.user?.id) {
         toast.error("Please sign in to follow users");
+        return;
+      }
+
+      console.log('Following user:', userId);
+      
+      // First check if already following
+      const { data: existingFollow } = await supabase
+        .from('followers')
+        .select('*')
+        .eq('follower_id', session.user.id)
+        .eq('following_id', userId)
+        .single();
+
+      if (existingFollow) {
+        toast.error("You are already following this user");
         return;
       }
 
@@ -53,11 +66,11 @@ const Followers = () => {
         });
 
       if (error) {
+        console.error("Follow error:", error);
         if (error.code === '23505') {
           toast.error("You are already following this user");
           return;
         }
-        console.error("Follow error:", error);
         throw error;
       }
 
