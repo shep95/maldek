@@ -73,7 +73,8 @@ const Followers = () => {
 
       if (followError) {
         console.error("Follow error:", followError);
-        throw followError;
+        toast.error("Failed to follow user");
+        return;
       }
 
       toast.success("Successfully followed user");
