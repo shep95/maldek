@@ -120,7 +120,14 @@ const Followers = () => {
                   </Avatar>
                   <div>
                     <h3 className="font-semibold">@{user.username}</h3>
-                    <p className="text-sm text-muted-foreground">{user.follower_count} followers</p>
+                    <div className="text-sm text-muted-foreground space-x-3">
+                      <span>{user.follower_count} followers</span>
+                      <span>•</span>
+                      <span>{user.total_posts || 0} posts</span>
+                    </div>
+                    {user.bio && (
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{user.bio}</p>
+                    )}
                   </div>
                 </div>
                 {session?.user?.id !== user.id && (
