@@ -1709,6 +1709,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      delete_inactive_accounts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       delete_user_account: {
         Args: Record<PropertyKey, never>
         Returns: undefined

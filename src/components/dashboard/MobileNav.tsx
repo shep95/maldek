@@ -85,8 +85,8 @@ export const MobileNav = () => {
         className="fixed inset-0 md:hidden pointer-events-none"
       />
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0d0d0d] border-t border-muted p-2 md:hidden z-50">
-        <div className="flex justify-around items-center">
+      <nav className="fixed bottom-4 left-4 right-4 md:hidden z-50">
+        <div className="flex justify-around items-center bg-black/70 backdrop-blur-sm rounded-lg border border-muted/20 p-2">
           <Button
             variant="ghost"
             size="icon"
