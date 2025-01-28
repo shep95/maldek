@@ -85,11 +85,11 @@ export const RightSidebar = () => {
     enabled: searchQuery.length > 0
   });
 
-  // Fetch trending posts from the last 72 hours
+  // Fetch only top 3 trending posts from the last 72 hours
   const { data: trendingPosts, isLoading: isLoadingTrending } = useQuery({
     queryKey: ['trending-posts'],
     queryFn: async () => {
-      console.log("Fetching trending posts from last 72 hours...");
+      console.log("Fetching top 3 trending posts from last 72 hours...");
       
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
@@ -114,7 +114,7 @@ export const RightSidebar = () => {
         `)
         .gt('created_at', threeDaysAgo.toISOString())
         .order('engagement_score', { ascending: false })
-        .limit(3); // Only fetch top 3 trending posts
+        .limit(3); // Explicitly limit to top 3 trending posts
 
       if (error) {
         console.error("Trending posts error:", error);
