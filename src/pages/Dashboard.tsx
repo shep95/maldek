@@ -9,10 +9,15 @@ import { Author } from "@/utils/postUtils";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
 import { Grid, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['profile', session?.user?.id],
@@ -93,18 +98,30 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex justify-center">
-        <main className="w-full max-w-3xl px-4 py-6 md:py-8 md:pl-24 animate-fade-in">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <Grid className="h-6 w-6 text-accent" />
-              <h1 className="text-3xl font-bold text-foreground">Home</h1>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <TrendingUp className="h-4 w-4" />
-              <span>Latest posts</span>
-            </div>
+      {/* Floating Top Navigation */}
+      <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
+        <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 shadow-lg">
+          <button 
+            onClick={scrollToTop}
+            className="flex items-center gap-3 text-foreground hover:text-accent transition-colors"
+          >
+            <Grid className="h-6 w-6 text-accent" />
+            <span className="text-lg font-bold">Home</span>
+          </button>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <TrendingUp className="h-4 w-4" />
+            <span>Latest posts</span>
           </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <main className={cn(
+          "w-full max-w-3xl px-4",
+          "py-6 md:py-8 md:pl-24",
+          "animate-fade-in",
+          "mt-20 md:mt-0" // Add top margin to account for floating nav on mobile
+        )}>
           <PostList />
         </main>
       </div>
