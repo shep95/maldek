@@ -86,7 +86,7 @@ export const MobileNav = () => {
       />
 
       <nav className="fixed bottom-4 left-4 right-4 md:hidden z-50">
-        <div className="flex justify-around items-center bg-black/70 backdrop-blur-sm rounded-lg border border-muted/20 p-2">
+        <div className="flex justify-around items-center bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-2 shadow-lg">
           <Button
             variant="ghost"
             size="icon"
