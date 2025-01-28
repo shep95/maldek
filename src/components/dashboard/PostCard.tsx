@@ -9,6 +9,7 @@ import { useState } from "react";
 import { EditControls } from "./post/EditControls";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 interface PostCardProps {
   post: Post;
