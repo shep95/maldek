@@ -1,4 +1,4 @@
-import { Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, Users2 } from "lucide-react";
+import { Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -51,11 +51,11 @@ export const NavItems = ({
       active: location.pathname === "/dashboard" 
     },
     { 
-      icon: Users2, 
-      label: "Followers", 
+      icon: User, 
+      label: "User Info", 
       path: "/followers", 
       active: location.pathname === "/followers",
-      description: "Find and follow users"
+      description: "View user profiles"
     },
     { 
       icon: Bell, 
