@@ -13,7 +13,7 @@ export const PostList = () => {
   const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const [postStats, setPostStats] = useState<Record<string, { likes: number, comments: number }>>({});
+  const [postStats, setPostStats] = useState<Record<string, { likes: number, comments: number, isLiked: boolean }>>({});
 
   useEffect(() => {
     const fetchPostStats = async () => {
@@ -21,43 +21,50 @@ export const PostList = () => {
       
       console.log('Fetching post stats...');
       
-      // Get comment counts
-      const { data: commentCounts, error: commentError } = await supabase
-        .from('comments')
-        .select('post_id')
-        .in('post_id', posts.map(p => p.id))
-        .throwOnError();
-        
-      if (commentError) {
-        console.error('Error fetching comment counts:', commentError);
+      try {
+        // Get comment counts
+        const { data: commentCounts, error: commentError } = await supabase
+          .from('comments')
+          .select('post_id')
+          .in('post_id', posts.map(p => p.id));
+          
+        if (commentError) {
+          console.error('Error fetching comment counts:', commentError);
+          throw commentError;
+        }
+
+        // Get all likes in one query
+        const { data: allLikes, error: likeError } = await supabase
+          .from('post_likes')
+          .select('post_id, user_id')
+          .in('post_id', posts.map(p => p.id));
+          
+        if (likeError) {
+          console.error('Error fetching like counts:', likeError);
+          throw likeError;
+        }
+
+        // Combine stats
+        const stats: Record<string, { likes: number, comments: number, isLiked: boolean }> = {};
+        posts.forEach(post => {
+          const postLikes = allLikes?.filter(l => l.post_id === post.id) || [];
+          stats[post.id] = {
+            likes: postLikes.length,
+            comments: commentCounts?.filter(c => c.post_id === post.id).length || 0,
+            isLiked: postLikes.some(like => like.user_id === session?.user?.id)
+          };
+        });
+
+        console.log('Post stats:', stats);
+        setPostStats(stats);
+      } catch (error) {
+        console.error('Error fetching post stats:', error);
+        toast.error('Failed to load post statistics');
       }
-
-      // Get like counts
-      const { data: likeCounts, error: likeError } = await supabase
-        .from('post_likes')
-        .select('post_id')
-        .in('post_id', posts.map(p => p.id))
-        .throwOnError();
-        
-      if (likeError) {
-        console.error('Error fetching like counts:', likeError);
-      }
-
-      // Combine stats
-      const stats: Record<string, { likes: number, comments: number }> = {};
-      posts.forEach(post => {
-        stats[post.id] = {
-          likes: likeCounts?.filter(l => l.post_id === post.id).length || 0,
-          comments: commentCounts?.filter(c => c.post_id === post.id).length || 0
-        };
-      });
-
-      console.log('Post stats:', stats);
-      setPostStats(stats);
     };
 
     fetchPostStats();
-  }, [posts]);
+  }, [posts, session?.user?.id]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -94,7 +101,7 @@ export const PostList = () => {
     };
   }, [queryClient, session?.user?.id]);
 
-  const handlePostAction = async (postId: string, action: 'delete') => {
+  const handlePostAction = async (postId: string, action: 'delete' | 'like' | 'unlike') => {
     if (action === 'delete') {
       try {
         console.log('Attempting to delete post:', postId);
@@ -111,13 +118,10 @@ export const PostList = () => {
           old?.filter(post => post.id !== postId)
         );
 
-        const { error, data } = await supabase
+        const { error } = await supabase
           .from('posts')
           .delete()
-          .eq('id', postId)
-          .select();
-
-        console.log('Delete response:', { error, data });
+          .eq('id', postId);
 
         if (error) {
           console.error('Error deleting post:', error);
@@ -178,7 +182,7 @@ export const PostList = () => {
                 likes: postStats[post.id]?.likes || 0,
                 comments: postStats[post.id]?.comments || 0,
                 reposts: 0,
-                isLiked: false,
+                isLiked: postStats[post.id]?.isLiked || false,
                 isBookmarked: false
               }}
               currentUserId={session?.user?.id || ''}
