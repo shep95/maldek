@@ -41,24 +41,19 @@ export const CommentCard = ({
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
 
-  // Add null check for comment and comment.user
-  if (!comment || !comment.user) {
-    console.error('Invalid comment data:', comment);
-    return null;
-  }
-
+  // Initialize subscription data as null
   const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', comment.user.id],
+    queryKey: ['user-subscription', comment?.user?.id],
     queryFn: async () => {
       try {
-        console.log('Fetching subscription for user:', comment.user.id);
+        console.log('Fetching subscription for user:', comment?.user?.id);
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select(`
             *,
             tier:subscription_tiers(*)
           `)
-          .eq('user_id', comment.user.id)
+          .eq('user_id', comment?.user?.id)
           .eq('status', 'active')
           .maybeSingle();
 
@@ -74,8 +69,14 @@ export const CommentCard = ({
         return null;
       }
     },
-    enabled: !!comment.user.id // Only run query if user.id exists
+    enabled: !!comment?.user?.id
   });
+
+  // Early return if comment or user is invalid
+  if (!comment?.user) {
+    console.error('Invalid comment data:', comment);
+    return null;
+  }
 
   const getVerificationBadge = () => {
     if (!subscription?.tier?.name) return null;
