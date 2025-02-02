@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Home, User, Bell, Video, Menu } from "lucide-react";
+import { Home, User, Bell, Menu, Upload } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
@@ -10,7 +10,8 @@ import { toast } from "sonner";
 interface NavItem {
   icon: any;
   label: string;
-  path: string;
+  path?: string;
+  action?: () => void;
 }
 
 export const MobileNav = () => {
@@ -37,10 +38,15 @@ export const MobileNav = () => {
     touchStartX.current = null;
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path?: string, action?: () => void) => {
     try {
-      if (location.pathname === path) {
-        console.log('Already on path:', path);
+      if (action) {
+        action();
+        return;
+      }
+
+      if (!path || location.pathname === path) {
+        console.log('Already on path or no path provided:', path);
         return;
       }
 
@@ -56,11 +62,18 @@ export const MobileNav = () => {
     }
   };
 
+  const handleCreatePost = () => {
+    console.log('Opening create post dialog from mobile nav');
+    if (window.setIsCreatingPost) {
+      window.setIsCreatingPost(true);
+    }
+  };
+
   const navItems: NavItem[] = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: User, label: "User Info", path: "/followers" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
-    { icon: Video, label: "Videos", path: "/videos" },
+    { icon: Upload, label: "Create Post", action: handleCreatePost },
   ];
 
   return (
@@ -101,13 +114,13 @@ export const MobileNav = () => {
               key={item.label}
               variant="ghost"
               size="icon"
-              onClick={() => handleNavigation(item.path)}
+              onClick={() => handleNavigation(item.path, item.action)}
               className={cn(
                 "text-muted-foreground",
                 "active:scale-95 transition-transform",
                 "touch-manipulation select-none",
                 "min-w-[44px] min-h-[44px]",
-                location.pathname === item.path && "text-accent bg-accent/10"
+                item.path && location.pathname === item.path && "text-accent bg-accent/10"
               )}
             >
               <item.icon className="h-5 w-5" />
