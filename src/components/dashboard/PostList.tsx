@@ -29,7 +29,9 @@ export const PostList = () => {
           supabase
             .from('comments')
             .select('post_id, count')
-            .in('post_id', postIds),
+            .in('post_id', postIds)
+            .select('post_id, count(*)')
+            .groupBy('post_id'),
           supabase
             .from('post_likes')
             .select('post_id, user_id')
@@ -43,9 +45,11 @@ export const PostList = () => {
         const stats: Record<string, { likes: number, comments: number, isLiked: boolean }> = {};
         postIds.forEach(postId => {
           const postLikes = likesResult.data?.filter(l => l.post_id === postId) || [];
+          const commentCount = commentCountsResult.data?.find(c => c.post_id === postId)?.count || 0;
+          
           stats[postId] = {
             likes: postLikes.length,
-            comments: commentCountsResult.data?.filter(c => c.post_id === postId).length || 0,
+            comments: commentCount,
             isLiked: postLikes.some(like => like.user_id === session?.user?.id)
           };
         });
