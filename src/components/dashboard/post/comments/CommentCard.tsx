@@ -41,6 +41,12 @@ export const CommentCard = ({
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
 
+  // Add null check for comment and comment.user
+  if (!comment || !comment.user) {
+    console.error('Invalid comment data:', comment);
+    return null;
+  }
+
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', comment.user.id],
     queryFn: async () => {
@@ -68,6 +74,7 @@ export const CommentCard = ({
         return null;
       }
     },
+    enabled: !!comment.user.id // Only run query if user.id exists
   });
 
   const getVerificationBadge = () => {
