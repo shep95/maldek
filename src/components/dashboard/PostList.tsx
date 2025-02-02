@@ -13,7 +13,7 @@ export const PostList = () => {
   const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const [postStats, setPostStats] = useState<Record<string, { likes: number, comments: number, isLiked: boolean }>>({});
+  const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean }>>({});
 
   useEffect(() => {
     const fetchPostStats = async () => {
@@ -24,32 +24,21 @@ export const PostList = () => {
       try {
         const postIds = posts.map(p => p.id);
         
-        // Get all stats in parallel using Promise.all
-        const [commentCountsResult, likesResult] = await Promise.all([
-          supabase
-            .from('comments')
-            .select('post_id, count')
-            .in('post_id', postIds)
-            .select('count(*)', { count: 'exact' })
-            .in('post_id', postIds),
-          supabase
-            .from('post_likes')
-            .select('post_id, user_id')
-            .in('post_id', postIds)
-        ]);
+        // Get likes in a single query
+        const { data: likesData, error: likesError } = await supabase
+          .from('post_likes')
+          .select('post_id, user_id')
+          .in('post_id', postIds);
 
-        if (commentCountsResult.error) throw commentCountsResult.error;
-        if (likesResult.error) throw likesResult.error;
+        if (likesError) throw likesError;
 
         // Process the results
-        const stats: Record<string, { likes: number, comments: number, isLiked: boolean }> = {};
+        const stats: Record<string, { likes: number, isLiked: boolean }> = {};
         postIds.forEach(postId => {
-          const postLikes = likesResult.data?.filter(l => l.post_id === postId) || [];
-          const commentCount = commentCountsResult.count || 0;
+          const postLikes = likesData?.filter(l => l.post_id === postId) || [];
           
           stats[postId] = {
             likes: postLikes.length,
-            comments: commentCount,
             isLiked: postLikes.some(like => like.user_id === session?.user?.id)
           };
         });
@@ -182,7 +171,7 @@ export const PostList = () => {
                 },
                 timestamp: new Date(post.created_at),
                 likes: postStats[post.id]?.likes || 0,
-                comments: postStats[post.id]?.comments || 0,
+                comments: 0, // Removed comment count from home feed
                 reposts: 0,
                 isLiked: postStats[post.id]?.isLiked || false,
                 isBookmarked: false
