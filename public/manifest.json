@@ -39,5 +39,14 @@
   "related_applications": [],
   "launch_handler": {
     "client_mode": ["focus-existing", "auto"]
+  },
+  "cross_origin_embedder_policy": {
+    "value": "require-corp"
+  },
+  "cross_origin_opener_policy": {
+    "value": "same-origin-allow-popups"
+  },
+  "cross_origin_resource_policy": {
+    "value": "cross-origin"
   }
 }
