@@ -105,21 +105,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 bg-gradient-to-br from-black via-[#0d0d0d] to-black relative overflow-hidden">
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 bg-black relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute w-[500px] h-[500px] -top-48 -right-48 bg-accent/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute w-[500px] h-[500px] -bottom-48 -left-48 bg-accent/20 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
-
-      {/* Grid pattern overlay */}
-      <div 
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: 'linear-gradient(#ff5e00 1px, transparent 1px), linear-gradient(to right, #ff5e00 1px, transparent 1px)',
-          backgroundSize: '50px 50px'
-        }}
-      />
 
       {/* Main content */}
       <motion.div 
