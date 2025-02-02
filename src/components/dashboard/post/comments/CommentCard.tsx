@@ -44,22 +44,29 @@ export const CommentCard = ({
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', comment.user.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          tier:subscription_tiers(*)
-        `)
-        .eq('user_id', comment.user.id)
-        .eq('status', 'active')
-        .single();
+      try {
+        console.log('Fetching subscription for user:', comment.user.id);
+        const { data, error } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            tier:subscription_tiers(*)
+          `)
+          .eq('user_id', comment.user.id)
+          .eq('status', 'active')
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching subscription:', error);
+        if (error) {
+          console.error('Error fetching subscription:', error);
+          return null;
+        }
+
+        console.log('Subscription data:', data);
+        return data;
+      } catch (error) {
+        console.error('Error in subscription query:', error);
         return null;
       }
-
-      return data;
     },
   });
 
@@ -168,7 +175,7 @@ export const CommentCard = ({
                 >
                   @{comment.user.username}
                 </h4>
-                {getVerificationBadge()}
+                {subscription && getVerificationBadge()}
               </div>
               <span className="text-sm text-gray-500">
                 {new Date(comment.created_at).toLocaleDateString()}
