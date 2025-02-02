@@ -28,10 +28,10 @@ export const PostList = () => {
         const [commentCountsResult, likesResult] = await Promise.all([
           supabase
             .from('comments')
-            .select('post_id, count')
+            .select('post_id, count(*)')
             .in('post_id', postIds)
             .select('post_id, count')
-            .filter('count', 'not.is', null),
+            .groupBy('post_id'),
           supabase
             .from('post_likes')
             .select('post_id, user_id')
