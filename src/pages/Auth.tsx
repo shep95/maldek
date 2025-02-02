@@ -4,6 +4,7 @@ import { AuthForm } from "@/components/auth/AuthForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -104,18 +105,51 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 bg-background">
-      <div className="w-full max-w-md bg-card/50 backdrop-blur-sm rounded-xl shadow-xl border border-accent/10 p-4 md:p-8 animate-fade-in">
-        <AuthHeader isLogin={isLogin} />
-        <AuthForm isLogin={isLogin} onSubmit={handleSubmit} />
-        <div className="text-center mt-6">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-muted-foreground hover:text-accent transition-colors"
-          >
-            {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-          </button>
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 bg-gradient-to-br from-black via-[#0d0d0d] to-black relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute w-[500px] h-[500px] -top-48 -right-48 bg-accent/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute w-[500px] h-[500px] -bottom-48 -left-48 bg-accent/20 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      {/* Grid pattern overlay */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: 'linear-gradient(#ff5e00 1px, transparent 1px), linear-gradient(to right, #ff5e00 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }}
+      />
+
+      {/* Main content */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md relative"
+      >
+        <div className="bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl border border-accent/10 p-4 md:p-8">
+          <AuthHeader isLogin={isLogin} />
+          <AuthForm isLogin={isLogin} onSubmit={handleSubmit} />
+          
+          {/* Toggle button with futuristic style */}
+          <div className="text-center mt-6">
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-sm text-muted-foreground hover:text-accent transition-colors relative group"
+            >
+              <span className="relative z-10">
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </span>
+              <span className="absolute inset-0 bg-accent/10 scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-full -z-10" />
+            </button>
+          </div>
         </div>
+      </motion.div>
+
+      {/* Decorative elements */}
+      <div className="absolute bottom-4 left-4 text-xs text-muted-foreground/50">
+        Bosley © 2024
       </div>
     </div>
   );
