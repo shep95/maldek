@@ -13,7 +13,7 @@ export const PostList = () => {
   const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean }>>({});
+  const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
 
   useEffect(() => {
     const fetchPostStats = async () => {
@@ -32,14 +32,24 @@ export const PostList = () => {
 
         if (likesError) throw likesError;
 
+        // Get comments count in a single query
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('comments')
+          .select('post_id')
+          .in('post_id', postIds);
+
+        if (commentsError) throw commentsError;
+
         // Process the results
-        const stats: Record<string, { likes: number, isLiked: boolean }> = {};
+        const stats: Record<string, { likes: number, isLiked: boolean, comments: number }> = {};
         postIds.forEach(postId => {
           const postLikes = likesData?.filter(l => l.post_id === postId) || [];
+          const postComments = commentsData?.filter(c => c.post_id === postId) || [];
           
           stats[postId] = {
             likes: postLikes.length,
-            isLiked: postLikes.some(like => like.user_id === session?.user?.id)
+            isLiked: postLikes.some(like => like.user_id === session?.user?.id),
+            comments: postComments.length
           };
         });
 
@@ -54,7 +64,7 @@ export const PostList = () => {
     fetchPostStats();
 
     // Set up a single real-time subscription for all posts
-    console.log('Setting up real-time subscription for posts and likes');
+    console.log('Setting up real-time subscription for posts, likes and comments');
     
     const channel = supabase.channel('post-updates')
       .on(
@@ -86,6 +96,18 @@ export const PostList = () => {
         },
         () => {
           console.log('Like update received, refreshing stats');
+          fetchPostStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments'
+        },
+        () => {
+          console.log('Comment update received, refreshing stats');
           fetchPostStats();
         }
       )
@@ -171,7 +193,7 @@ export const PostList = () => {
                 },
                 timestamp: new Date(post.created_at),
                 likes: postStats[post.id]?.likes || 0,
-                comments: 0, // Removed comment count from home feed
+                comments: postStats[post.id]?.comments || 0,
                 reposts: 0,
                 isLiked: postStats[post.id]?.isLiked || false,
                 isBookmarked: false
