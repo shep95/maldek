@@ -17,62 +17,53 @@ export const PostList = () => {
 
   useEffect(() => {
     const fetchPostStats = async () => {
-      if (!posts) return;
+      if (!posts?.length) return;
       
-      console.log('Fetching post stats...');
+      console.log('Fetching post stats in batch...');
       
       try {
-        // Get comment counts
-        const { data: commentCounts, error: commentError } = await supabase
-          .from('comments')
-          .select('post_id')
-          .in('post_id', posts.map(p => p.id));
-          
-        if (commentError) {
-          console.error('Error fetching comment counts:', commentError);
-          throw commentError;
-        }
+        const postIds = posts.map(p => p.id);
+        
+        // Get all stats in parallel using Promise.all
+        const [commentCountsResult, likesResult] = await Promise.all([
+          supabase
+            .from('comments')
+            .select('post_id, count')
+            .in('post_id', postIds),
+          supabase
+            .from('post_likes')
+            .select('post_id, user_id')
+            .in('post_id', postIds)
+        ]);
 
-        // Get all likes in one query
-        const { data: allLikes, error: likeError } = await supabase
-          .from('post_likes')
-          .select('post_id, user_id')
-          .in('post_id', posts.map(p => p.id));
-          
-        if (likeError) {
-          console.error('Error fetching like counts:', likeError);
-          throw likeError;
-        }
+        if (commentCountsResult.error) throw commentCountsResult.error;
+        if (likesResult.error) throw likesResult.error;
 
-        // Combine stats
+        // Process the results
         const stats: Record<string, { likes: number, comments: number, isLiked: boolean }> = {};
-        posts.forEach(post => {
-          const postLikes = allLikes?.filter(l => l.post_id === post.id) || [];
-          stats[post.id] = {
+        postIds.forEach(postId => {
+          const postLikes = likesResult.data?.filter(l => l.post_id === postId) || [];
+          stats[postId] = {
             likes: postLikes.length,
-            comments: commentCounts?.filter(c => c.post_id === post.id).length || 0,
+            comments: commentCountsResult.data?.filter(c => c.post_id === postId).length || 0,
             isLiked: postLikes.some(like => like.user_id === session?.user?.id)
           };
         });
 
-        console.log('Post stats:', stats);
+        console.log('Post stats fetched successfully:', stats);
         setPostStats(stats);
       } catch (error) {
         console.error('Error fetching post stats:', error);
-        toast.error('Failed to load post statistics');
+        toast.error("Failed to load post statistics");
       }
     };
 
     fetchPostStats();
-  }, [posts, session?.user?.id]);
 
-  useEffect(() => {
-    if (!session?.user?.id) return;
+    // Set up a single real-time subscription for all posts
+    console.log('Setting up real-time subscription for posts and likes');
     
-    console.log('Setting up real-time subscriptions for posts');
-    
-    const channel = supabase
-      .channel('post-updates')
+    const channel = supabase.channel('post-updates')
       .on(
         'postgres_changes',
         {
@@ -93,21 +84,31 @@ export const PostList = () => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        },
+        () => {
+          console.log('Like update received, refreshing stats');
+          fetchPostStats();
+        }
+      )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscriptions');
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [queryClient, session?.user?.id]);
+  }, [posts, session?.user?.id, queryClient]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     if (action === 'delete') {
       try {
         console.log('Attempting to delete post:', postId);
-        console.log('Current user session:', session);
-        console.log('Current user email:', session?.user?.email);
-
+        
         if (session?.user?.email !== 'killerbattleasher@gmail.com') {
           console.error('Unauthorized deletion attempt');
           toast.error('Only administrators can delete posts');
@@ -123,10 +124,7 @@ export const PostList = () => {
           .delete()
           .eq('id', postId);
 
-        if (error) {
-          console.error('Error deleting post:', error);
-          throw error;
-        }
+        if (error) throw error;
         
         console.log('Post deleted successfully:', postId);
         toast.success('Post deleted successfully');
