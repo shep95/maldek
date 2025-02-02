@@ -101,7 +101,7 @@ export const PostList = () => {
     };
   }, [queryClient, session?.user?.id]);
 
-  const handlePostAction = async (postId: string, action: 'delete' | 'like' | 'unlike') => {
+  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     if (action === 'delete') {
       try {
         console.log('Attempting to delete post:', postId);
