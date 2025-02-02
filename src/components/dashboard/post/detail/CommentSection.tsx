@@ -93,11 +93,11 @@ export const CommentSection = ({
     }
   };
 
-  const handleReplySubmit = async (content: string, parentId: string) => {
+  const handleReplySubmit = async (content: string, parentId: string): Promise<void> => {
     if (!content.trim()) return;
 
     try {
-      const { error, data } = await supabase
+      const { error } = await supabase
         .from('comments')
         .insert({
           content,
@@ -122,8 +122,6 @@ export const CommentSection = ({
 
       // Invalidate the comments query to refresh the thread
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-
-      return data;
     } catch (error) {
       console.error("Failed to add reply:", error);
       throw error;

@@ -8,4 +8,5 @@ export interface Comment {
     username: string;
     avatar_url: string | null;
   };
+  replies?: Comment[];
 }
