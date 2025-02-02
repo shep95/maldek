@@ -19,12 +19,30 @@ export const CommentSection = ({
   currentUserId
 }: CommentSectionProps) => {
   const [newComment, setNewComment] = useState<string>("");
-  const [commentList, setCommentList] = useState(comments);
+  const [commentList, setCommentList] = useState<Comment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    setCommentList(comments);
+    // Organize comments into a tree structure
+    const commentMap = new Map();
+    const rootComments: Comment[] = [];
+
+    comments.forEach(comment => {
+      comment.replies = [];
+      commentMap.set(comment.id, comment);
+      
+      if (comment.parent_id) {
+        const parent = commentMap.get(comment.parent_id);
+        if (parent) {
+          parent.replies.push(comment);
+        }
+      } else {
+        rootComments.push(comment);
+      }
+    });
+
+    setCommentList(rootComments);
   }, [comments]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -55,21 +73,15 @@ export const CommentSection = ({
         `)
         .single();
 
-      if (error) {
-        console.error("Error adding comment:", error);
-        throw error;
-      }
+      if (error) throw error;
 
       console.log("Comment added successfully:", data);
-
-      // Optimistically update the UI
-      const newCommentObj = data as Comment;
-      setCommentList(prevComments => [...prevComments, newCommentObj]);
       
-      // Clear the input
+      // Update the UI optimistically
+      setCommentList(prevComments => [...prevComments, data as Comment]);
       setNewComment("");
       
-      // Invalidate the comments query to trigger a refresh
+      // Invalidate the comments query
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       
       toast.success("Comment added successfully");
@@ -78,6 +90,43 @@ export const CommentSection = ({
       toast.error("Failed to add comment");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleReplySubmit = async (content: string, parentId: string) => {
+    if (!content.trim()) return;
+
+    try {
+      const { error, data } = await supabase
+        .from('comments')
+        .insert({
+          content,
+          post_id: postId,
+          user_id: currentUserId,
+          parent_id: parentId
+        })
+        .select(`
+          id,
+          content,
+          created_at,
+          parent_id,
+          user:profiles (
+            id,
+            username,
+            avatar_url
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Invalidate the comments query to refresh the thread
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+
+      return data;
+    } catch (error) {
+      console.error("Failed to add reply:", error);
+      throw error;
     }
   };
 
@@ -105,8 +154,9 @@ export const CommentSection = ({
             key={comment.id}
             comment={comment}
             userLanguage="en"
+            onReplySubmit={handleReplySubmit}
             level={0}
-            replies={[]}
+            replies={comment.replies || []}
           />
         ))}
       </div>
