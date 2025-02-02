@@ -11,6 +11,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^7.0.1",
+    "@capacitor/cli": "^7.0.1",
+    "@capacitor/core": "^7.0.1",
     "@ffmpeg/ffmpeg": "^0.12.7",
     "@ffmpeg/util": "^0.12.1",
     "@hello-pangea/dnd": "^17.0.0",
