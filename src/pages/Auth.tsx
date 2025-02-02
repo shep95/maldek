@@ -112,6 +112,15 @@ const Auth = () => {
         <div className="absolute w-[500px] h-[500px] -bottom-48 -left-48 bg-accent/20 rounded-full blur-3xl animate-pulse delay-1000" />
       </div>
 
+      {/* Grid pattern overlay */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: 'linear-gradient(#ff5e00 1px, transparent 1px), linear-gradient(to right, #ff5e00 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }}
+      />
+
       {/* Main content */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
