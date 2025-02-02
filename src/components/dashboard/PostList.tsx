@@ -30,8 +30,8 @@ export const PostList = () => {
             .from('comments')
             .select('post_id, count')
             .in('post_id', postIds)
-            .select('post_id, count(*)')
-            .groupBy('post_id'),
+            .select('post_id, count')
+            .filter('count', 'not.is', null),
           supabase
             .from('post_likes')
             .select('post_id, user_id')
