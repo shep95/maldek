@@ -9,6 +9,9 @@ interface SearchResultsProps {
       id: string;
       username: string;
       avatar_url: string | null;
+      follower_count?: number;
+      total_posts?: number;
+      bio?: string;
     }>;
     posts: Array<{
       id: string;
@@ -50,21 +53,33 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
       {results.users.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-muted-foreground">Users</h4>
           {results.users.map((user) => (
             <div 
               key={user.id} 
-              className="flex items-center gap-3 p-2 hover:bg-accent/10 rounded-md cursor-pointer"
+              className="flex flex-col gap-2 p-3 hover:bg-accent/10 rounded-md cursor-pointer transition-colors"
               onClick={() => handleUserClick(user.username)}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar_url || ''} />
-                <AvatarFallback>{user.username[0]}</AvatarFallback>
-              </Avatar>
-              <span>@{user.username}</span>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 border border-border/50">
+                  <AvatarImage src={user.avatar_url || ''} />
+                  <AvatarFallback>{user.username[0]?.toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-medium">@{user.username}</span>
+                  {user.follower_count !== undefined && (
+                    <span className="text-sm text-muted-foreground">
+                      {user.follower_count} followers • {user.total_posts || 0} posts
+                    </span>
+                  )}
+                </div>
+              </div>
+              {user.bio && (
+                <p className="text-sm text-muted-foreground line-clamp-2">{user.bio}</p>
+              )}
             </div>
           ))}
         </div>
@@ -76,20 +91,20 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
           {results.posts.map((post) => (
             <div 
               key={post.id} 
-              className="p-2 hover:bg-accent/10 rounded-md cursor-pointer space-y-1"
+              className="p-3 hover:bg-accent/10 rounded-md cursor-pointer transition-colors"
               onClick={() => handlePostClick(post.id)}
             >
               <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6">
+                <Avatar className="h-6 w-6 border border-border/50">
                   <AvatarImage src={post.profiles.avatar_url || ''} />
-                  <AvatarFallback>{post.profiles.username[0]}</AvatarFallback>
+                  <AvatarFallback>{post.profiles.username[0]?.toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <span className="text-sm">@{post.profiles.username}</span>
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                 </span>
               </div>
-              <p className="text-sm truncate">{post.content}</p>
+              <p className="text-sm mt-2 line-clamp-2">{post.content}</p>
             </div>
           ))}
         </div>
