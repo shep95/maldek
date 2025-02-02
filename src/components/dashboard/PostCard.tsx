@@ -24,6 +24,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [isSaving, setIsSaving] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
 
   const handlePostClick = (e: React.MouseEvent) => {
     if (
@@ -71,9 +72,9 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
 
   return (
     <div 
-      id={`post-${post.id}`} // Add ID for scroll targeting
+      id={`post-${post.id}`}
       className={cn(
-        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 transition-all duration-300", // Added transition
+        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 transition-all duration-300",
         !isEditing && "cursor-pointer hover:bg-accent/5 transition-colors duration-200"
       )}
       onClick={handlePostClick}
@@ -111,7 +112,10 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         />
       ) : (
         <PostActions
-          post={post}
+          post={{
+            ...post,
+            comments: post.comments || 0 // Ensure comments count is passed
+          }}
           currentUserId={currentUserId}
           onAction={onPostAction}
         />
