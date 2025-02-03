@@ -16,13 +16,13 @@
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 24 95% 53%;  /* Default orange #F97316 */
+    --accent: 24 71% 86%;  /* #F8D5C1 in light mode */
     --accent-foreground: 24 95% 53%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 24 95% 53%;
+    --ring: 24 71% 86%;  /* #F8D5C1 in light mode */
     --radius: 0.75rem;
   }
 
@@ -39,13 +39,13 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 15%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 24 95% 53%;  /* Default orange #F97316 */
+    --accent: 24 95% 53%;  /* Orange in dark mode */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 24 95% 53%;
+    --ring: 24 95% 53%;  /* Orange in dark mode */
   }
 }
 
