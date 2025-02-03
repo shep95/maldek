@@ -1123,11 +1123,13 @@ export type Database = {
       }
       posts: {
         Row: {
+          community_id: string | null
           content: string
           created_at: string
           deleted_at: string | null
           engagement_score: number | null
           id: string
+          is_community_post: boolean | null
           is_deleted: boolean | null
           is_pinned: boolean | null
           last_score_update: string | null
@@ -1144,11 +1146,13 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          community_id?: string | null
           content: string
           created_at?: string
           deleted_at?: string | null
           engagement_score?: number | null
           id?: string
+          is_community_post?: boolean | null
           is_deleted?: boolean | null
           is_pinned?: boolean | null
           last_score_update?: string | null
@@ -1165,11 +1169,13 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          community_id?: string | null
           content?: string
           created_at?: string
           deleted_at?: string | null
           engagement_score?: number | null
           id?: string
+          is_community_post?: boolean | null
           is_deleted?: boolean | null
           is_pinned?: boolean | null
           last_score_update?: string | null
@@ -1186,6 +1192,13 @@ export type Database = {
           view_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "posts_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_quoted_post_id_fkey"
             columns: ["quoted_post_id"]
