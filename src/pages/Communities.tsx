@@ -9,12 +9,14 @@ import { Plus, Search, Users } from "lucide-react";
 import { CreateCommunityDialog } from "@/components/communities/CreateCommunityDialog";
 import { CommunityCard } from "@/components/communities/CommunityCard";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Communities = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("trending");
 
-  const { data: communities, isLoading } = useQuery({
+  const { data: communities, isLoading: isTrendingLoading } = useQuery({
     queryKey: ['trending-communities'],
     queryFn: async () => {
       console.log('Fetching trending communities');
@@ -22,7 +24,7 @@ const Communities = () => {
         .from('communities')
         .select(`
           *,
-          creator:profiles(username, avatar_url),
+          creator:profiles!communities_creator_id_fkey(username, avatar_url),
           members:community_members(count)
         `)
         .order('trending_score', { ascending: false })
@@ -39,10 +41,39 @@ const Communities = () => {
     }
   });
 
-  const filteredCommunities = communities?.filter(community =>
+  const { data: joinedCommunities, isLoading: isJoinedLoading } = useQuery({
+    queryKey: ['joined-communities'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('community_members')
+        .select(`
+          community:communities (
+            *,
+            creator:profiles!communities_creator_id_fkey(username, avatar_url),
+            members:community_members(count)
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching joined communities:', error);
+        toast.error('Failed to load joined communities');
+        throw error;
+      }
+
+      return data.map(item => item.community);
+    }
+  });
+
+  const filteredCommunities = (activeTab === "trending" ? communities : joinedCommunities)?.filter(community =>
     community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     community.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const isLoading = activeTab === "trending" ? isTrendingLoading : isJoinedLoading;
 
   return (
     <div className="container max-w-6xl p-4 mx-auto">
@@ -53,6 +84,13 @@ const Communities = () => {
           Create Community
         </Button>
       </div>
+
+      <Tabs defaultValue="trending" className="mb-6" onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+          <TabsTrigger value="trending">Trending</TabsTrigger>
+          <TabsTrigger value="joined">Joined</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="relative mb-6">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -76,7 +114,9 @@ const Communities = () => {
             <Users className="w-12 h-12 mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold">No communities found</h3>
             <p className="text-muted-foreground">
-              Try adjusting your search or create a new community
+              {activeTab === "trending" 
+                ? "Try adjusting your search or create a new community"
+                : "Join some communities to see them here"}
             </p>
           </div>
         ) : (
