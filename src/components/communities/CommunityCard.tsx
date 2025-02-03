@@ -5,12 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface CommunityCardProps {
   community: any; // We'll properly type this once types are generated
 }
 
 export const CommunityCard = ({ community }: CommunityCardProps) => {
+  const navigate = useNavigate();
   const { data: isMember, refetch } = useQuery({
     queryKey: ['community-membership', community.id],
     queryFn: async () => {
@@ -33,7 +35,8 @@ export const CommunityCard = ({ community }: CommunityCardProps) => {
     }
   });
 
-  const handleJoinLeave = async () => {
+  const handleJoinLeave = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking the join/leave button
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -69,8 +72,15 @@ export const CommunityCard = ({ community }: CommunityCardProps) => {
     }
   };
 
+  const handleCardClick = () => {
+    navigate(`/community/${community.id}`);
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Card 
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" 
+      onClick={handleCardClick}
+    >
       <CardHeader className="p-0">
         {community.banner_url ? (
           <img
