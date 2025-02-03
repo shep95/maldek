@@ -17,8 +17,6 @@ import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import Subscription from "@/pages/Subscription";
 import EmperorChatPage from "@/pages/EmperorChat";
-import Communities from "@/pages/Communities";
-import CommunityDetail from "@/pages/CommunityDetail";
 
 const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -99,8 +97,6 @@ export const AppRoutes = () => {
         <Route path="/followers" element={<Followers />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
-        <Route path="/communities" element={<Communities />} />
-        <Route path="/community/:communityId" element={<CommunityDetail />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
         <Route path="/post/:postId" element={<PostDetail />} />

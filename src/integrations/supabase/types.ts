@@ -336,99 +336,6 @@ export type Database = {
           },
         ]
       }
-      communities: {
-        Row: {
-          avatar_url: string | null
-          banner_url: string | null
-          created_at: string | null
-          creator_id: string
-          description: string | null
-          id: string
-          member_count: number | null
-          name: string
-          rules: string[] | null
-          trending_score: number | null
-          updated_at: string | null
-          visibility: Database["public"]["Enums"]["community_visibility"] | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          banner_url?: string | null
-          created_at?: string | null
-          creator_id: string
-          description?: string | null
-          id?: string
-          member_count?: number | null
-          name: string
-          rules?: string[] | null
-          trending_score?: number | null
-          updated_at?: string | null
-          visibility?:
-            | Database["public"]["Enums"]["community_visibility"]
-            | null
-        }
-        Update: {
-          avatar_url?: string | null
-          banner_url?: string | null
-          created_at?: string | null
-          creator_id?: string
-          description?: string | null
-          id?: string
-          member_count?: number | null
-          name?: string
-          rules?: string[] | null
-          trending_score?: number | null
-          updated_at?: string | null
-          visibility?:
-            | Database["public"]["Enums"]["community_visibility"]
-            | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "communities_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      community_members: {
-        Row: {
-          community_id: string
-          joined_at: string | null
-          role: string | null
-          user_id: string
-        }
-        Insert: {
-          community_id: string
-          joined_at?: string | null
-          role?: string | null
-          user_id: string
-        }
-        Update: {
-          community_id?: string
-          joined_at?: string | null
-          role?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "community_members_community_id_fkey"
-            columns: ["community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "community_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       emperor_chat_messages: {
         Row: {
           content: string
@@ -1192,13 +1099,6 @@ export type Database = {
           view_count?: number | null
         }
         Relationships: [
-          {
-            foreignKeyName: "posts_community_id_fkey"
-            columns: ["community_id"]
-            isOneToOne: false
-            referencedRelation: "communities"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "posts_quoted_post_id_fkey"
             columns: ["quoted_post_id"]
