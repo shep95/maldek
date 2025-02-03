@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Palette, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -33,45 +33,67 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   const [customColor, setCustomColor] = useState('');
   const [selectedColor, setSelectedColor] = useState(DEFAULT_COLOR);
 
+  // Load saved color preference on mount
+  useEffect(() => {
+    if (profile?.theme_preference) {
+      try {
+        const theme = JSON.parse(profile.theme_preference);
+        if (theme.accent_color) {
+          setSelectedColor(theme.accent_color);
+          document.documentElement.style.setProperty('--accent', theme.accent_color);
+        }
+      } catch (error) {
+        console.error('Error parsing theme preference:', error);
+      }
+    }
+  }, [profile?.theme_preference]);
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
   const handleColorChange = async (color: string) => {
     setSelectedColor(color);
-  };
-
-  const handleSave = async () => {
+    document.documentElement.style.setProperty('--accent', color);
+    
+    // Auto-save the color preference
     try {
-      const colorToSave = customColor || selectedColor;
-      console.log('Saving accent color:', colorToSave);
-      
       const { error } = await supabase
         .from('profiles')
         .update({
-          theme_preference: JSON.stringify({ accent_color: colorToSave })
+          theme_preference: JSON.stringify({ accent_color: color })
         })
         .eq('id', session?.user?.id);
 
       if (error) throw error;
-
-      // Update CSS variable
-      document.documentElement.style.setProperty('--accent', colorToSave);
-      toast.success('Theme updated successfully');
-      setShowColorPicker(false);
-      setCustomColor('');
+      
+      console.log('Theme preference saved:', { accent_color: color });
     } catch (error) {
-      console.error('Error updating theme:', error);
-      toast.error('Failed to update theme');
+      console.error('Error saving theme preference:', error);
+      toast.error('Failed to save color preference');
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     document.documentElement.style.setProperty('--accent', DEFAULT_COLOR);
     setSelectedColor(DEFAULT_COLOR);
     setCustomColor('');
-    handleSave();
-    toast.success('Theme reset to default');
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          theme_preference: JSON.stringify({ accent_color: DEFAULT_COLOR })
+        })
+        .eq('id', session?.user?.id);
+
+      if (error) throw error;
+      
+      toast.success('Theme reset to default');
+    } catch (error) {
+      console.error('Error resetting theme:', error);
+      toast.error('Failed to reset theme');
+    }
   };
 
   const validateHexColor = (color: string) => {
@@ -156,13 +178,6 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reset
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSave}
-                className="bg-accent text-white hover:bg-accent/90"
-              >
-                Save
               </Button>
             </div>
           </motion.div>
