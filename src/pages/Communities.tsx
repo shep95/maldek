@@ -19,7 +19,6 @@ const Communities = () => {
   const { data: communities, isLoading: isTrendingLoading } = useQuery({
     queryKey: ['trending-communities'],
     queryFn: async () => {
-      console.log('Fetching trending communities');
       const { data, error } = await supabase
         .from('communities')
         .select(`
@@ -46,7 +45,8 @@ const Communities = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // Fetch both joined communities and created communities
+      const { data: joinedData, error: joinedError } = await supabase
         .from('community_members')
         .select(`
           community:communities (
@@ -57,23 +57,7 @@ const Communities = () => {
         `)
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching joined communities:', error);
-        toast.error('Failed to load joined communities');
-        throw error;
-      }
-
-      return data.map(item => item.community);
-    }
-  });
-
-  const { data: ownedCommunities, isLoading: isOwnedLoading } = useQuery({
-    queryKey: ['owned-communities'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      const { data, error } = await supabase
+      const { data: createdData, error: createdError } = await supabase
         .from('communities')
         .select(`
           *,
@@ -82,22 +66,23 @@ const Communities = () => {
         `)
         .eq('creator_id', user.id);
 
-      if (error) {
-        console.error('Error fetching owned communities:', error);
-        toast.error('Failed to load your communities');
-        throw error;
+      if (joinedError || createdError) {
+        console.error('Error fetching communities:', joinedError || createdError);
+        toast.error('Failed to load joined communities');
+        throw joinedError || createdError;
       }
 
-      return data;
+      // Combine and deduplicate communities
+      const joinedCommunities = joinedData?.map(item => item.community) || [];
+      const allCommunities = [...joinedCommunities, ...(createdData || [])];
+      const uniqueCommunities = Array.from(new Map(allCommunities.map(item => [item.id, item])).values());
+
+      return uniqueCommunities;
     }
   });
 
   const filteredCommunities = (() => {
-    const communityList = activeTab === "trending" 
-      ? communities 
-      : activeTab === "joined" 
-        ? joinedCommunities 
-        : ownedCommunities;
+    const communityList = activeTab === "trending" ? communities : joinedCommunities;
 
     return communityList?.filter(community =>
       community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -105,11 +90,7 @@ const Communities = () => {
     );
   })();
 
-  const isLoading = activeTab === "trending" 
-    ? isTrendingLoading 
-    : activeTab === "joined" 
-      ? isJoinedLoading 
-      : isOwnedLoading;
+  const isLoading = activeTab === "trending" ? isTrendingLoading : isJoinedLoading;
 
   return (
     <div className="container max-w-6xl p-4 mx-auto">
@@ -122,10 +103,9 @@ const Communities = () => {
       </div>
 
       <Tabs defaultValue="trending" className="mb-6" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
           <TabsTrigger value="trending">Trending</TabsTrigger>
           <TabsTrigger value="joined">Joined</TabsTrigger>
-          <TabsTrigger value="owned">Your Communities</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -153,9 +133,7 @@ const Communities = () => {
             <p className="text-muted-foreground">
               {activeTab === "trending" 
                 ? "Try adjusting your search or create a new community"
-                : activeTab === "joined"
-                  ? "Join some communities to see them here"
-                  : "Create a community to see it here"}
+                : "Join some communities to see them here"}
             </p>
           </div>
         ) : (
