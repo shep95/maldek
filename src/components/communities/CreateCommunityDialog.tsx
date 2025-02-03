@@ -27,11 +27,19 @@ export const CreateCommunityDialog = ({ open, onOpenChange }: CreateCommunityDia
     console.log('Creating community:', data);
 
     try {
+      // Get the current user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       const { data: newCommunity, error } = await supabase
         .from('communities')
         .insert({
           name: data.name,
           description: data.description,
+          creator_id: user.id, // Add the creator_id
         })
         .select()
         .single();
