@@ -36,7 +36,6 @@ const Communities = () => {
         throw error;
       }
 
-      console.log('Fetched communities:', data);
       return data;
     }
   });
@@ -68,12 +67,49 @@ const Communities = () => {
     }
   });
 
-  const filteredCommunities = (activeTab === "trending" ? communities : joinedCommunities)?.filter(community =>
-    community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    community.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const { data: ownedCommunities, isLoading: isOwnedLoading } = useQuery({
+    queryKey: ['owned-communities'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
 
-  const isLoading = activeTab === "trending" ? isTrendingLoading : isJoinedLoading;
+      const { data, error } = await supabase
+        .from('communities')
+        .select(`
+          *,
+          creator:profiles!communities_creator_id_fkey(username, avatar_url),
+          members:community_members(count)
+        `)
+        .eq('creator_id', user.id);
+
+      if (error) {
+        console.error('Error fetching owned communities:', error);
+        toast.error('Failed to load your communities');
+        throw error;
+      }
+
+      return data;
+    }
+  });
+
+  const filteredCommunities = (() => {
+    const communityList = activeTab === "trending" 
+      ? communities 
+      : activeTab === "joined" 
+        ? joinedCommunities 
+        : ownedCommunities;
+
+    return communityList?.filter(community =>
+      community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      community.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  })();
+
+  const isLoading = activeTab === "trending" 
+    ? isTrendingLoading 
+    : activeTab === "joined" 
+      ? isJoinedLoading 
+      : isOwnedLoading;
 
   return (
     <div className="container max-w-6xl p-4 mx-auto">
@@ -86,9 +122,10 @@ const Communities = () => {
       </div>
 
       <Tabs defaultValue="trending" className="mb-6" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
           <TabsTrigger value="trending">Trending</TabsTrigger>
           <TabsTrigger value="joined">Joined</TabsTrigger>
+          <TabsTrigger value="owned">Your Communities</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -116,7 +153,9 @@ const Communities = () => {
             <p className="text-muted-foreground">
               {activeTab === "trending" 
                 ? "Try adjusting your search or create a new community"
-                : "Join some communities to see them here"}
+                : activeTab === "joined"
+                  ? "Join some communities to see them here"
+                  : "Create a community to see it here"}
             </p>
           </div>
         ) : (
