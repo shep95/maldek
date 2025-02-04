@@ -1,22 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <!-- Background with gradient -->
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
-    </linearGradient>
-    <!-- Add clip path for rounded corners -->
     <clipPath id="rounded-corners">
       <rect x="0" y="0" width="32" height="32" rx="6" ry="6" />
     </clipPath>
   </defs>
   
-  <!-- Triangle with rounded corners -->
   <g clip-path="url(#rounded-corners)">
-    <path 
-      d="M16 4 L28 26 L4 26 Z"
-      fill="url(#grad)"
-      stroke="none"
+    <image 
+      href="/lovable-uploads/87caaad4-37ef-4a36-8610-fc3603fab7b0.png"
+      width="32" 
+      height="32"
+      preserveAspectRatio="xMidYMid slice"
     />
   </g>
 </svg>
