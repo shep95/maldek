@@ -5,28 +5,18 @@
       <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
     </linearGradient>
+    <!-- Add clip path for rounded corners -->
+    <clipPath id="rounded-corners">
+      <rect x="0" y="0" width="32" height="32" rx="6" ry="6" />
+    </clipPath>
   </defs>
   
   <!-- Triangle with rounded corners -->
-  <path 
-    d="M16 4 L28 26 L4 26 Z"
-    fill="url(#grad)"
-    stroke="none"
-    rx="2"
-    style="filter: url(#round-corners)"
-  />
-  
-  <!-- Filter for rounded corners -->
-  <defs>
-    <filter id="round-corners">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="1" />
-      <feColorMatrix
-        type="matrix"
-        values="1 0 0 0 0
-                0 1 0 0 0
-                0 0 1 0 0
-                0 0 0 22 -15"
-      />
-    </filter>
-  </defs>
+  <g clip-path="url(#rounded-corners)">
+    <path 
+      d="M16 4 L28 26 L4 26 Z"
+      fill="url(#grad)"
+      stroke="none"
+    />
+  </g>
 </svg>
