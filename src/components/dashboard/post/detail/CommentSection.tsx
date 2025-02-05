@@ -97,6 +97,7 @@ export const CommentSection = ({
     if (!content.trim()) return;
 
     try {
+      console.log("Submitting reply to comment:", parentId);
       const { error } = await supabase
         .from('comments')
         .insert({

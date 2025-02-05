@@ -146,6 +146,7 @@ export const CommentCard = ({
     if (!replyContent.trim() || !onReplySubmit) return;
 
     try {
+      console.log('Submitting reply to comment:', comment.id);
       await onReplySubmit(replyContent, comment.id);
       setReplyContent("");
       setIsReplying(false);
