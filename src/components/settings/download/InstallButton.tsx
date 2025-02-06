@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadProgress } from "@/components/spaces/recording/DownloadProgress";
 import { supabase } from "@/integrations/supabase/client";
+import { checkForUpdate } from "@/utils/appCenterConfig";
 
 interface InstallButtonProps {
   deferredPrompt: any;
@@ -16,8 +16,14 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [appCenterUpdate, setAppCenterUpdate] = useState<any>(null);
 
   useEffect(() => {
+    const checkUpdates = async () => {
+      const update = await checkForUpdate();
+      setAppCenterUpdate(update);
+    };
+
     const fetchCurrentVersion = async () => {
       const platform = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' : 
                       /Android/.test(navigator.userAgent) ? 'android' : 'web';
@@ -34,6 +40,7 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
       }
     };
 
+    checkUpdates();
     fetchCurrentVersion();
   }, []);
 
@@ -83,44 +90,25 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
         return;
       }
 
-      // Get the latest version for the platform
-      const { data: versionData, error: versionError } = await supabase
-        .from('app_versions')
-        .select('*')
-        .eq('platform', platform)
-        .eq('is_latest', true)
-        .single();
-
-      if (versionError || !versionData) {
-        throw new Error('Could not find latest version');
+      // If there's an App Center update available, download it
+      if (appCenterUpdate) {
+        simulateProgress();
+        await appCenterUpdate.download();
+        toast({
+          description: "New version downloaded! The app will update on next restart.",
+        });
+        return;
       }
 
-      // Start download progress animation
-      simulateProgress();
-
-      // Get the app build from storage
-      const { data, error } = await supabase.storage
-        .from('app_builds')
-        .download(versionData.file_path);
-
-      if (error) {
-        throw error;
-      }
-
-      // Create download link
-      const url = window.URL.createObjectURL(data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = platform === 'ios' ? 'bosley.ipa' : 'bosley.apk';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
+      // Otherwise, direct to App Center distribution page
+      const distributionUrl = platform === 'ios' 
+        ? 'YOUR_IOS_DISTRIBUTION_URL'
+        : 'YOUR_ANDROID_DISTRIBUTION_URL';
+      
+      window.open(distributionUrl, '_blank');
+      
       toast({
-        description: platform === 'ios' 
-          ? "Download complete! Follow your device's prompts to install Bosley."
-          : "Download complete! Open the APK file to install Bosley.",
+        description: `Opening ${platform === 'ios' ? 'iOS' : 'Android'} app distribution page...`,
       });
 
     } catch (error) {
