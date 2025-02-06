@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,24 @@ interface EditProfileDialogProps {
 export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState(profile?.username || "");
-  const [bio, setBio] = useState(profile?.bio || "");
+  const [bio, setBio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+
+  // Load saved bio from localStorage when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      const savedBio = localStorage.getItem(`bio_draft_${profile?.id}`);
+      setBio(savedBio || profile?.bio || "");
+    }
+  }, [isOpen, profile?.id, profile?.bio]);
+
+  // Save bio to localStorage when it changes
+  useEffect(() => {
+    if (bio) {
+      localStorage.setItem(`bio_draft_${profile?.id}`, bio);
+    }
+  }, [bio, profile?.id]);
 
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -44,6 +59,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
     setIsSubmitting(true);
 
     try {
+      console.log('Updating profile with:', { username, bio, avatarUrl });
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -55,6 +71,9 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
 
       if (error) throw error;
 
+      // Clear saved draft after successful update
+      localStorage.removeItem(`bio_draft_${profile?.id}`);
+      
       toast.success("Profile updated successfully");
       onProfileUpdate();
       setIsOpen(false);
@@ -64,6 +83,11 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleClose = () => {
+    // Keep the draft in localStorage when closing
+    setIsOpen(false);
   };
 
   return (
@@ -128,7 +152,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               disabled={isSubmitting}
             >
               Cancel
