@@ -77,10 +77,10 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
         return;
       }
 
-      // If we have a download URL from version info, use it
-      if (versionInfo?.download_url) {
+      // If we have a file path from version info, use it as download URL
+      if (versionInfo?.file_path) {
         simulateProgress();
-        window.open(versionInfo.download_url, '_blank');
+        window.open(versionInfo.file_path, '_blank');
         toast({
           description: `Opening ${platform === 'ios' ? 'iOS' : 'Android'} app download page...`,
         });
