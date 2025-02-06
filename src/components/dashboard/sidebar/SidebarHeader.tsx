@@ -12,9 +12,9 @@ export const SidebarHeader = ({ collapsed }: SidebarHeaderProps) => {
     )}>
       <div className="relative w-8 h-8">
         <img 
-          src="/lovable-uploads/87caaad4-37ef-4a36-8610-fc3603fab7b0.png"
+          src="/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png"
           alt="Bosley Logo"
-          className="w-full h-full object-contain rounded-lg"
+          className="w-full h-full object-contain rounded-full bg-black"
         />
       </div>
       {!collapsed && (
