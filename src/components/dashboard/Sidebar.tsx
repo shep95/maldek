@@ -16,14 +16,19 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
   
   return (
     <div className={cn(
-      "hidden md:block fixed left-0 h-screen transition-all duration-300",
-      isCollapsed ? "w-16" : "w-64"
+      "hidden md:block fixed left-0 h-screen transition-all duration-300 pl-4",
+      isCollapsed ? "w-20" : "w-64"
     )}>
-      <Card className="h-full flex flex-col bg-black/20 border-border/50 backdrop-blur-md relative">
+      <Card className={cn(
+        "h-full flex flex-col bg-black/20 border-border/50 backdrop-blur-md relative",
+        "rounded-xl shadow-lg hover:shadow-xl transition-all",
+        // Add extra shadow and glow effect when collapsed
+        isCollapsed && "shadow-lg hover:shadow-xl hover:shadow-accent/5"
+      )}>
         <Button 
           variant="ghost" 
           size="icon"
-          className="absolute -right-3 top-6 z-50 bg-background border"
+          className="absolute -right-3 top-6 z-50 bg-background border shadow-md"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
