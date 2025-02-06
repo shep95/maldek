@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,27 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCurrentVersion = async () => {
+      const platform = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' : 
+                      /Android/.test(navigator.userAgent) ? 'android' : 'web';
+      
+      const { data, error } = await supabase
+        .from('app_versions')
+        .select('version')
+        .eq('platform', platform)
+        .eq('is_latest', true)
+        .single();
+
+      if (!error && data) {
+        setCurrentVersion(data.version);
+      }
+    };
+
+    fetchCurrentVersion();
+  }, []);
 
   const simulateProgress = () => {
     setIsDownloading(true);
@@ -123,11 +144,10 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
         disabled={isDownloading}
       >
         <Download className="mr-2 h-5 w-5" />
-        {isDownloading ? "Downloading..." : "Download Bosley App"}
+        {isDownloading ? "Downloading..." : `Download Bosley App${currentVersion ? ` v${currentVersion}` : ''}`}
       </Button>
       
       {isDownloading && <DownloadProgress progress={progress} />}
     </div>
   );
 };
-
