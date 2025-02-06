@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadProgress } from "@/components/spaces/recording/DownloadProgress";
-import { supabase } from "@/integrations/supabase/client";
 import { checkForUpdate } from "@/utils/appCenterConfig";
+import type { Database } from '@/integrations/supabase/types';
+
+type AppVersion = Database['public']['Tables']['app_versions']['Row'];
 
 interface InstallButtonProps {
   deferredPrompt: any;
@@ -16,15 +18,13 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [versionInfo, setVersionInfo] = useState<AppVersion | null>(null);
 
   useEffect(() => {
     const checkUpdates = async () => {
       const latestVersion = await checkForUpdate();
       if (latestVersion) {
-        setCurrentVersion(latestVersion.version);
-        setDownloadUrl(latestVersion.download_url);
+        setVersionInfo(latestVersion);
       }
     };
 
@@ -77,10 +77,10 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
         return;
       }
 
-      // If we have a download URL, use it
-      if (downloadUrl) {
+      // If we have a download URL from version info, use it
+      if (versionInfo?.download_url) {
         simulateProgress();
-        window.open(downloadUrl, '_blank');
+        window.open(versionInfo.download_url, '_blank');
         toast({
           description: `Opening ${platform === 'ios' ? 'iOS' : 'Android'} app download page...`,
         });
@@ -113,7 +113,7 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
         disabled={isDownloading}
       >
         <Download className="mr-2 h-5 w-5" />
-        {isDownloading ? "Downloading..." : `Download Bosley App${currentVersion ? ` v${currentVersion}` : ''}`}
+        {isDownloading ? "Downloading..." : `Download Bosley App${versionInfo?.version ? ` v${versionInfo.version}` : ''}`}
       </Button>
       
       {isDownloading && <DownloadProgress progress={progress} />}
