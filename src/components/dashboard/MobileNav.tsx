@@ -78,7 +78,7 @@ export const MobileNav = () => {
           side="left" 
           className="w-72 p-0 bg-[#0d0d0d] my-4 mx-2 rounded-xl border border-border/50 shadow-xl"
         >
-          <div className="flex h-full w-full flex-col py-6">
+          <div className="flex h-full w-full flex-col py-6 pb-24">
             <SidebarNav 
               setIsCreatingPost={(value) => {
                 console.log('Mobile SidebarNav setIsCreatingPost called with:', value);
