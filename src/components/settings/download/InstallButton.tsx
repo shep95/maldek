@@ -62,14 +62,25 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
         return;
       }
 
+      // Get the latest version for the platform
+      const { data: versionData, error: versionError } = await supabase
+        .from('app_versions')
+        .select('*')
+        .eq('platform', platform)
+        .eq('is_latest', true)
+        .single();
+
+      if (versionError || !versionData) {
+        throw new Error('Could not find latest version');
+      }
+
       // Start download progress animation
       simulateProgress();
 
-      // Get the appropriate app build URL from storage
-      const fileName = platform === 'ios' ? 'bosley.ipa' : 'bosley.apk';
+      // Get the app build from storage
       const { data, error } = await supabase.storage
         .from('app_builds')
-        .download(fileName);
+        .download(versionData.file_path);
 
       if (error) {
         throw error;
@@ -79,7 +90,7 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
       const url = window.URL.createObjectURL(data);
       const link = document.createElement('a');
       link.href = url;
-      link.download = fileName;
+      link.download = platform === 'ios' ? 'bosley.ipa' : 'bosley.apk';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -119,3 +130,4 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
     </div>
   );
 };
+

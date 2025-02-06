@@ -183,6 +183,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_versions: {
+        Row: {
+          build_number: number
+          created_at: string
+          file_path: string
+          id: string
+          is_latest: boolean | null
+          platform: string
+          release_notes: string | null
+          version: string
+        }
+        Insert: {
+          build_number: number
+          created_at?: string
+          file_path: string
+          id?: string
+          is_latest?: boolean | null
+          platform: string
+          release_notes?: string | null
+          version: string
+        }
+        Update: {
+          build_number?: number
+          created_at?: string
+          file_path?: string
+          id?: string
+          is_latest?: boolean | null
+          platform?: string
+          release_notes?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       bookmark_collection_items: {
         Row: {
           added_at: string | null
