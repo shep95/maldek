@@ -1,3 +1,4 @@
+
 self.addEventListener('sync', (event) => {
   if (event.tag === 'video-upload') {
     event.waitUntil(
@@ -18,6 +19,26 @@ self.addEventListener('sync', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'INSTALL_APP') {
+    event.waitUntil(
+      (async () => {
+        try {
+          await cache.addAll([
+            '/',
+            '/index.html',
+            '/manifest.json'
+          ]);
+          const clients = await self.clients.matchAll();
+          if (clients.length > 0) {
+            clients[0].postMessage({ type: 'INSTALLATION_COMPLETE' });
+          }
+        } catch (error) {
+          console.error('Error installing app:', error);
+        }
+      })()
+    );
   }
 });
 
