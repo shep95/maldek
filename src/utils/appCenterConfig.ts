@@ -1,28 +1,28 @@
-
-import AppCenter from 'appcenter';
-import Analytics from 'appcenter-analytics';
-import Crashes from 'appcenter-crashes';
-
-// Note: You'll need to replace this with your actual App Center secret
-const APP_CENTER_SECRET = '';
+import { supabase } from '@/integrations/supabase/client';
 
 export const initializeAppCenter = async () => {
-  try {
-    await AppCenter.Configure(APP_CENTER_SECRET);
-    await Analytics.setEnabled(true);
-    await Crashes.setEnabled(true);
-    console.log('App Center initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize App Center:', error);
-  }
+  // No longer needed, but keeping the function for backward compatibility
+  console.log('Version tracking initialized');
 };
 
 export const checkForUpdate = async () => {
   try {
-    // App Center's codepush functionality needs to be set up first
-    // For now, we'll return null to indicate no updates
-    console.log('Checking for updates...');
-    return null;
+    const platform = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' : 
+                    /Android/.test(navigator.userAgent) ? 'android' : 'web';
+
+    const { data, error } = await supabase
+      .from('app_versions')
+      .select('version, download_url')
+      .eq('platform', platform)
+      .eq('is_latest', true)
+      .single();
+
+    if (error) {
+      console.error('Error checking for updates:', error);
+      return null;
+    }
+
+    return data;
   } catch (error) {
     console.error('Failed to check for update:', error);
     return null;

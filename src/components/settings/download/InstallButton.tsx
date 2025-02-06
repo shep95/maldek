@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
@@ -16,32 +17,18 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
   const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
-  const [appCenterUpdate, setAppCenterUpdate] = useState<any>(null);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUpdates = async () => {
-      const update = await checkForUpdate();
-      setAppCenterUpdate(update);
-    };
-
-    const fetchCurrentVersion = async () => {
-      const platform = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' : 
-                      /Android/.test(navigator.userAgent) ? 'android' : 'web';
-      
-      const { data, error } = await supabase
-        .from('app_versions')
-        .select('version')
-        .eq('platform', platform)
-        .eq('is_latest', true)
-        .single();
-
-      if (!error && data) {
-        setCurrentVersion(data.version);
+      const latestVersion = await checkForUpdate();
+      if (latestVersion) {
+        setCurrentVersion(latestVersion.version);
+        setDownloadUrl(latestVersion.download_url);
       }
     };
 
     checkUpdates();
-    fetchCurrentVersion();
   }, []);
 
   const simulateProgress = () => {
@@ -90,25 +77,19 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
         return;
       }
 
-      // If there's an App Center update available, download it
-      if (appCenterUpdate) {
+      // If we have a download URL, use it
+      if (downloadUrl) {
         simulateProgress();
-        await appCenterUpdate.download();
+        window.open(downloadUrl, '_blank');
         toast({
-          description: "New version downloaded! The app will update on next restart.",
+          description: `Opening ${platform === 'ios' ? 'iOS' : 'Android'} app download page...`,
         });
         return;
       }
 
-      // Otherwise, direct to App Center distribution page
-      const distributionUrl = platform === 'ios' 
-        ? 'YOUR_IOS_DISTRIBUTION_URL'
-        : 'YOUR_ANDROID_DISTRIBUTION_URL';
-      
-      window.open(distributionUrl, '_blank');
-      
       toast({
-        description: `Opening ${platform === 'ios' ? 'iOS' : 'Android'} app distribution page...`,
+        description: "Download link not available. Please try again later.",
+        variant: "destructive"
       });
 
     } catch (error) {
