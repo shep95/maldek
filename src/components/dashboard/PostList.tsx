@@ -14,6 +14,9 @@ export const PostList = () => {
   const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000; // 2 seconds
 
   useEffect(() => {
     const fetchPostStats = async () => {
@@ -24,21 +27,57 @@ export const PostList = () => {
       try {
         const postIds = posts.map(p => p.id);
         
-        // Get likes in a single query
-        const { data: likesData, error: likesError } = await supabase
-          .from('post_likes')
-          .select('post_id, user_id')
-          .in('post_id', postIds);
+        // Get likes in a single query with retry logic
+        let likesData = null;
+        let likesError = null;
+        let attempts = 0;
 
-        if (likesError) throw likesError;
+        while (!likesData && attempts < MAX_RETRIES) {
+          try {
+            const { data, error } = await supabase
+              .from('post_likes')
+              .select('post_id, user_id')
+              .in('post_id', postIds);
 
-        // Get comments count in a single query
-        const { data: commentsData, error: commentsError } = await supabase
-          .from('comments')
-          .select('post_id')
-          .in('post_id', postIds);
+            if (error) throw error;
+            likesData = data;
+          } catch (error) {
+            console.error(`Attempt ${attempts + 1} failed:`, error);
+            likesError = error;
+            attempts++;
+            if (attempts < MAX_RETRIES) {
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            }
+          }
+        }
 
-        if (commentsError) throw commentsError;
+        if (likesError && !likesData) throw likesError;
+
+        // Get comments count with retry logic
+        let commentsData = null;
+        let commentsError = null;
+        attempts = 0;
+
+        while (!commentsData && attempts < MAX_RETRIES) {
+          try {
+            const { data, error } = await supabase
+              .from('comments')
+              .select('post_id')
+              .in('post_id', postIds);
+
+            if (error) throw error;
+            commentsData = data;
+          } catch (error) {
+            console.error(`Attempt ${attempts + 1} failed:`, error);
+            commentsError = error;
+            attempts++;
+            if (attempts < MAX_RETRIES) {
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            }
+          }
+        }
+
+        if (commentsError && !commentsData) throw commentsError;
 
         // Process the results
         const stats: Record<string, { likes: number, isLiked: boolean, comments: number }> = {};
@@ -55,9 +94,16 @@ export const PostList = () => {
 
         console.log('Post stats fetched successfully:', stats);
         setPostStats(stats);
+        setRetryCount(0); // Reset retry count on success
       } catch (error) {
         console.error('Error fetching post stats:', error);
-        toast.error("Failed to load post statistics");
+        if (retryCount < MAX_RETRIES) {
+          setRetryCount(prev => prev + 1);
+          toast.error("Having trouble loading some data. Retrying...");
+          setTimeout(fetchPostStats, RETRY_DELAY);
+        } else {
+          toast.error("Unable to load complete post data. Please refresh the page.");
+        }
       }
     };
 
@@ -117,7 +163,8 @@ export const PostList = () => {
       console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [posts, session?.user?.id, queryClient]);
+
+  }, [posts, session?.user?.id, queryClient, retryCount]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     if (action === 'delete') {
