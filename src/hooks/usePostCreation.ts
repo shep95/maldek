@@ -107,21 +107,18 @@ export const usePostCreation = (
         }
       }
 
-      console.log('Creating post with data:', {
+      const postData: PostData = {
         content: content.trim(),
         user_id: currentUser.id,
         media_urls: mediaUrls,
         scheduled_for: scheduledDate?.toISOString()
-      });
+      };
+
+      console.log('Creating post with data:', postData);
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
-        .insert({
-          content: content.trim(),
-          user_id: currentUser.id,
-          media_urls: mediaUrls,
-          scheduled_for: scheduledDate?.toISOString()
-        })
+        .insert(postData)
         .select('*, profiles(id, username, avatar_url)')
         .single();
 
@@ -139,7 +136,14 @@ export const usePostCreation = (
 
     } catch (error: any) {
       console.error('Post creation error:', error);
-      toast.error(error.message || "Failed to create post");
+      // More specific error messages based on error type
+      if (error.message?.includes('timeout')) {
+        toast.error("Connection timed out. Please try again.");
+      } else if (error.message?.includes('network')) {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error(error.message || "Failed to create post");
+      }
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
