@@ -672,6 +672,40 @@ export interface Database {
           }
         ]
       }
+      
+      app_versions: {
+        Row: {
+          id: string
+          version: string
+          platform: string
+          download_url: string | null
+          release_notes: string | null
+          release_date: string
+          is_latest: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          version: string
+          platform: string
+          download_url?: string | null
+          release_notes?: string | null
+          release_date?: string
+          is_latest?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          version?: string
+          platform?: string
+          download_url?: string | null
+          release_notes?: string | null
+          release_date?: string
+          is_latest?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
