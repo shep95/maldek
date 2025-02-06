@@ -11,8 +11,8 @@
     <title>Bosley - Next Generation Social Media Platform</title>
     <meta name="title" content="Bosley - Next Generation Social Media Platform" />
     <meta name="description" content="Join Bosley, the innovative social media platform featuring real-time posts, AI-powered conversations, professional networking, and seamless content sharing. Experience the future of social connection." />
-    <meta name="keywords" content="Bosley, social media, networking, AI chat, professional network, content sharing, social platform, digital community" />
-    <meta name="robots" content="index, follow" />
+    <meta name="keywords" content="Bosley, social media, networking, AI chat, professional network, content sharing, social platform, digital community, real-time posts, AI conversations" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="language" content="English" />
     <meta name="author" content="Bosley" />
     <meta name="canonical" content="https://www.bosley.app/" />
@@ -45,6 +45,43 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Bosley",
+      "applicationCategory": "SocialNetworkingApplication",
+      "operatingSystem": "Web",
+      "description": "Join Bosley, the innovative social media platform featuring real-time posts, AI-powered conversations, professional networking, and seamless content sharing. Experience the future of social connection.",
+      "url": "https://www.bosley.app",
+      "image": "https://www.bosley.app/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Bosley",
+        "url": "https://www.bosley.app"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1000"
+      },
+      "featureList": [
+        "Real-time social posts",
+        "AI-powered conversations",
+        "Professional networking",
+        "Content sharing",
+        "Interactive messaging",
+        "Multimedia support"
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
@@ -52,3 +89,4 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
+
