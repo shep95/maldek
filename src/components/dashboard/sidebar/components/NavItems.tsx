@@ -11,6 +11,7 @@ interface NavItemsProps {
   handleLogout: () => void;
   setIsCreatingPost: (value: boolean) => void;
   onNavigate: (path?: string) => void;
+  collapsed?: boolean;
 }
 
 export const NavItems = ({
@@ -19,7 +20,8 @@ export const NavItems = ({
   handlePremiumClick,
   handleLogout,
   setIsCreatingPost,
-  onNavigate
+  onNavigate,
+  collapsed
 }: NavItemsProps) => {
   const location = useLocation();
   const unreadCount = useNotificationCount(userId);
@@ -144,6 +146,7 @@ export const NavItems = ({
           {...item}
           subscription={subscription}
           onNavigate={handleNavigation}
+          collapsed={collapsed}
         />
       ))}
     </nav>

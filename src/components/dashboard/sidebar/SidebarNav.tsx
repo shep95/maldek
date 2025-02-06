@@ -6,7 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { NavItems } from "./components/NavItems";
 import { useEffect, useState } from "react";
 
-export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: boolean) => void }) => {
+interface SidebarNavProps {
+  setIsCreatingPost: (value: boolean) => void;
+  collapsed?: boolean;
+}
+
+export const SidebarNav = ({ setIsCreatingPost, collapsed }: SidebarNavProps) => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -98,6 +103,7 @@ export const SidebarNav = ({ setIsCreatingPost }: { setIsCreatingPost: (value: b
         handleLogout={handleLogout}
         setIsCreatingPost={setIsCreatingPost}
         onNavigate={handleNavigation}
+        collapsed={collapsed}
       />
     </ScrollArea>
   );

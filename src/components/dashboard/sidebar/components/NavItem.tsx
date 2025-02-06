@@ -18,6 +18,7 @@ interface NavItemProps {
   description?: string;
   className?: string;
   subscription?: any;
+  collapsed?: boolean;
   onClick?: () => void;
   onNavigate: (path?: string) => void;
 }
@@ -32,6 +33,7 @@ export const NavItem = ({
   description,
   className,
   subscription,
+  collapsed,
   onClick,
   onNavigate
 }: NavItemProps) => {
@@ -44,19 +46,20 @@ export const NavItem = ({
     }
   };
 
-  const content = (
+  const button = (
     <Button
       variant="ghost"
       className={cn(
         "w-full justify-start gap-2",
         active && "bg-accent",
+        collapsed && "justify-center px-2",
         className
       )}
       onClick={handleClick}
     >
       <Icon className="h-4 w-4" />
-      <span>{label}</span>
-      {badge !== undefined && (
+      {!collapsed && <span>{label}</span>}
+      {!collapsed && badge !== undefined && (
         <Badge variant="secondary" className="ml-auto">
           {badge}
         </Badge>
@@ -64,10 +67,23 @@ export const NavItem = ({
     </Button>
   );
 
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent side="right">
+          <p>{label}</p>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+          {badge !== undefined && <Badge variant="secondary">{badge}</Badge>}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
   if (description) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent>
           <p>{description}</p>
         </TooltipContent>
@@ -75,5 +91,5 @@ export const NavItem = ({
     );
   }
 
-  return content;
+  return button;
 };

@@ -1,14 +1,23 @@
-export const SidebarHeader = () => {
+import { cn } from "@/lib/utils";
+
+interface SidebarHeaderProps {
+  collapsed?: boolean;
+}
+
+export const SidebarHeader = ({ collapsed }: SidebarHeaderProps) => {
   return (
-    <div className="flex items-center gap-3 p-4">
-      <div className="w-8 h-8 rounded-2xl bg-black flex items-center justify-center overflow-hidden">
-        <img 
-          src="/lovable-uploads/87caaad4-37ef-4a36-8610-fc3603fab7b0.png"
-          alt="Bosley Logo"
-          className="w-6 h-6 object-cover rounded-xl"
-        />
-      </div>
-      <span className="text-2xl font-bold">Bosley</span>
+    <div className={cn(
+      "flex items-center p-4",
+      collapsed ? "justify-center" : "justify-start"
+    )}>
+      <img 
+        src="/favicon.svg" 
+        alt="Logo" 
+        className="h-8 w-8"
+      />
+      {!collapsed && (
+        <span className="ml-2 text-xl font-bold text-white">Bosley</span>
+      )}
     </div>
   );
 };
