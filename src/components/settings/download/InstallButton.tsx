@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadProgress } from "@/components/spaces/recording/DownloadProgress";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InstallButtonProps {
   deferredPrompt: any;
@@ -12,11 +13,11 @@ interface InstallButtonProps {
 
 export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButtonProps) => {
   const { toast } = useToast();
-  const [isInstalling, setIsInstalling] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const simulateProgress = () => {
-    setIsInstalling(true);
+    setIsDownloading(true);
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -27,90 +28,75 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
       });
     }, 500);
 
-    // Clear interval after completion
     setTimeout(() => {
       clearInterval(interval);
-      setIsInstalling(false);
+      setIsDownloading(false);
       setProgress(0);
     }, 5500);
 
     return interval;
   };
 
-  const handleInstall = async () => {
+  const handleDownload = async () => {
     try {
-      if (deferredPrompt) {
-        const progressInterval = simulateProgress();
-        
-        await deferredPrompt.prompt();
-        const result = await deferredPrompt.userChoice;
-        
-        if (result.outcome === 'accepted') {
-          toast({
-            description: "Bosley has been installed on your device!",
-          });
-        } else {
-          clearInterval(progressInterval);
-          setIsInstalling(false);
-          setProgress(0);
-        }
-        setDeferredPrompt(null);
-      } else {
-        // Check if already installed
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        if (!isStandalone) {
-          if ('standalone' in window.navigator && window.navigator.standalone) {
-            toast({
-              description: "Bosley is already installed on your device!",
-            });
-            return;
-          }
-
-          // Try native installation flow
+      const platform = /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'ios' : 
+                      /Android/.test(navigator.userAgent) ? 'android' : 'web';
+      
+      if (platform === 'web') {
+        if (deferredPrompt) {
           const progressInterval = simulateProgress();
+          await deferredPrompt.prompt();
+          const result = await deferredPrompt.userChoice;
           
-          if ('getInstalledRelatedApps' in navigator) {
-            try {
-              // @ts-ignore
-              const apps = await navigator.getInstalledRelatedApps();
-              if (apps.length === 0) {
-                // Trigger install
-                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                  navigator.serviceWorker.controller.postMessage({
-                    type: 'INSTALL_APP'
-                  });
-                  
-                  // Listen for installation success
-                  window.addEventListener('appinstalled', () => {
-                    toast({
-                      description: "Bosley has been installed successfully!",
-                    });
-                  });
-                } else {
-                  toast({
-                    description: "Please follow your device's installation prompt to complete installation.",
-                  });
-                }
-              }
-            } catch (e) {
-              console.error("Error checking installation:", e);
-              clearInterval(progressInterval);
-              setIsInstalling(false);
-              setProgress(0);
-              toast({
-                description: "There was an error during installation. Please try again.",
-                variant: "destructive"
-              });
-            }
+          if (result.outcome === 'accepted') {
+            toast({
+              description: "Bosley has been installed on your device!",
+            });
+          } else {
+            clearInterval(progressInterval);
+            setIsDownloading(false);
+            setProgress(0);
           }
+          setDeferredPrompt(null);
         }
+        return;
       }
+
+      // Start download progress animation
+      simulateProgress();
+
+      // Get the appropriate app build URL from storage
+      const fileName = platform === 'ios' ? 'bosley.ipa' : 'bosley.apk';
+      const { data, error } = await supabase.storage
+        .from('app_builds')
+        .download(fileName);
+
+      if (error) {
+        throw error;
+      }
+
+      // Create download link
+      const url = window.URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        description: platform === 'ios' 
+          ? "Download complete! Follow your device's prompts to install Bosley."
+          : "Download complete! Open the APK file to install Bosley.",
+      });
+
     } catch (error) {
-      console.error('Installation error:', error);
-      setIsInstalling(false);
+      console.error('Download error:', error);
+      setIsDownloading(false);
       setProgress(0);
       toast({
-        description: "There was an error installing Bosley. Please try again.",
+        description: "There was an error downloading the app. Please try again.",
         variant: "destructive"
       });
     }
@@ -119,17 +105,17 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
   return (
     <div className="space-y-4">
       <Button
-        onClick={handleInstall}
+        onClick={handleDownload}
         className="w-full"
         variant="default"
         size="lg"
-        disabled={isInstalling}
+        disabled={isDownloading}
       >
         <Download className="mr-2 h-5 w-5" />
-        {isInstalling ? "Installing..." : "Install Bosley App"}
+        {isDownloading ? "Downloading..." : "Download Bosley App"}
       </Button>
       
-      {isInstalling && <DownloadProgress progress={progress} />}
+      {isDownloading && <DownloadProgress progress={progress} />}
     </div>
   );
 };
