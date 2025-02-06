@@ -24,7 +24,6 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [isSaving, setIsSaving] = useState(false);
-  const [commentCount, setCommentCount] = useState(0);
 
   const handlePostClick = (e: React.MouseEvent) => {
     if (
@@ -44,13 +43,23 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   };
 
   const handleEdit = async () => {
+    if (post.is_edited) {
+      toast.error("This post has already been edited once");
+      return;
+    }
+
     try {
       setIsSaving(true);
       console.log('Updating post:', post.id, 'with content:', editedContent);
       
       const { error } = await supabase
         .from('posts')
-        .update({ content: editedContent })
+        .update({ 
+          content: editedContent,
+          is_edited: true,
+          original_content: post.content,
+          edit_count: 1
+        })
         .eq('id', post.id)
         .eq('user_id', currentUserId);
 
@@ -60,6 +69,8 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
       setIsEditing(false);
       // Update the local post content
       post.content = editedContent;
+      post.is_edited = true;
+      post.original_content = post.content;
     } catch (error) {
       console.error('Error updating post:', error);
       toast.error('Failed to update post');
@@ -68,7 +79,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     }
   };
 
-  const canEdit = currentUserId === post.author.id;
+  const canEdit = currentUserId === post.author.id && !post.is_edited;
 
   return (
     <div 
@@ -94,6 +105,8 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         editedContent={editedContent}
         onEditContentChange={setEditedContent}
         truncate={true}
+        isEdited={post.is_edited}
+        originalContent={post.original_content}
       />
       {post.media_urls && post.media_urls.length > 0 && (
         <PostMedia 
@@ -112,10 +125,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
         />
       ) : (
         <PostActions
-          post={{
-            ...post,
-            comments: post.comments || 0 // Ensure comments count is passed
-          }}
+          post={post}
           currentUserId={currentUserId}
           onAction={onPostAction}
         />

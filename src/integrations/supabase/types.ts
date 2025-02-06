@@ -1034,14 +1034,17 @@ export type Database = {
           content: string
           created_at: string
           deleted_at: string | null
+          edit_count: number | null
           engagement_score: number | null
           id: string
           is_community_post: boolean | null
           is_deleted: boolean | null
+          is_edited: boolean | null
           is_pinned: boolean | null
           last_score_update: string | null
           likes: number | null
           media_urls: string[] | null
+          original_content: string | null
           pinned_at: string | null
           quoted_post_id: string | null
           reposts: number | null
@@ -1057,14 +1060,17 @@ export type Database = {
           content: string
           created_at?: string
           deleted_at?: string | null
+          edit_count?: number | null
           engagement_score?: number | null
           id?: string
           is_community_post?: boolean | null
           is_deleted?: boolean | null
+          is_edited?: boolean | null
           is_pinned?: boolean | null
           last_score_update?: string | null
           likes?: number | null
           media_urls?: string[] | null
+          original_content?: string | null
           pinned_at?: string | null
           quoted_post_id?: string | null
           reposts?: number | null
@@ -1080,14 +1086,17 @@ export type Database = {
           content?: string
           created_at?: string
           deleted_at?: string | null
+          edit_count?: number | null
           engagement_score?: number | null
           id?: string
           is_community_post?: boolean | null
           is_deleted?: boolean | null
+          is_edited?: boolean | null
           is_pinned?: boolean | null
           last_score_update?: string | null
           likes?: number | null
           media_urls?: string[] | null
+          original_content?: string | null
           pinned_at?: string | null
           quoted_post_id?: string | null
           reposts?: number | null

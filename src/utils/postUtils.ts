@@ -18,6 +18,8 @@ export interface Post {
   isLiked: boolean;
   isBookmarked: boolean;
   view_count?: number;
+  is_edited?: boolean;
+  original_content?: string | null;
 }
 
 export const createNewPost = async (content: string, mediaFiles: File[], author: Author): Promise<Post> => {
@@ -42,6 +44,8 @@ export const createNewPost = async (content: string, mediaFiles: File[], author:
     reposts: 0,
     isLiked: false,
     isBookmarked: false,
-    view_count: 0
+    view_count: 0,
+    is_edited: false,
+    original_content: null
   };
 };
