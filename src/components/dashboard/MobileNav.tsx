@@ -27,14 +27,11 @@ export const MobileNav = () => {
 
   const handleTouchEnd = (e: TouchEvent) => {
     if (touchStartX.current === null) return;
-
     const touchEndX = e.changedTouches[0].clientX;
     const swipeDistance = touchEndX - touchStartX.current;
-
     if (swipeDistance > SWIPE_THRESHOLD) {
       setIsOpen(true);
     }
-
     touchStartX.current = null;
   };
 
@@ -51,11 +48,9 @@ export const MobileNav = () => {
       }
 
       console.log('Mobile navigation: Navigating to', path);
-      
       setIsOpen(false);
       navigate(path);
       window.scrollTo(0, 0);
-      
     } catch (error) {
       console.error('Navigation error:', error);
       toast.error("Navigation failed. Please try again.");
@@ -79,16 +74,21 @@ export const MobileNav = () => {
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="left" className="w-72 p-0 bg-[#0d0d0d]">
-          <SidebarNav 
-            setIsCreatingPost={(value) => {
-              console.log('Mobile SidebarNav setIsCreatingPost called with:', value);
-              setIsOpen(false);
-              if (window.setIsCreatingPost) {
-                window.setIsCreatingPost(value);
-              }
-            }} 
-          />
+        <SheetContent 
+          side="left" 
+          className="w-72 p-0 bg-[#0d0d0d] my-4 mx-2 rounded-xl border border-border/50 shadow-xl"
+        >
+          <div className="flex h-full w-full flex-col py-6">
+            <SidebarNav 
+              setIsCreatingPost={(value) => {
+                console.log('Mobile SidebarNav setIsCreatingPost called with:', value);
+                setIsOpen(false);
+                if (window.setIsCreatingPost) {
+                  window.setIsCreatingPost(value);
+                }
+              }} 
+            />
+          </div>
         </SheetContent>
       </Sheet>
 
@@ -98,7 +98,7 @@ export const MobileNav = () => {
         className="fixed inset-0 md:hidden pointer-events-none"
       />
 
-      <nav className="fixed bottom-4 left-4 right-4 md:hidden z-50">
+      <nav className="fixed bottom-6 left-4 right-4 md:hidden z-50">
         <div className="flex justify-around items-center bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-2 shadow-lg">
           <Button
             variant="ghost"

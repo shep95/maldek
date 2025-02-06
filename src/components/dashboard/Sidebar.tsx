@@ -16,14 +16,14 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
   
   return (
     <div className={cn(
-      "hidden md:block fixed left-0 h-screen transition-all duration-300 pl-4",
-      isCollapsed ? "w-20" : "w-64"
+      "hidden md:block fixed left-0 h-screen transition-all duration-300 px-4 py-6",
+      isCollapsed ? "w-24" : "w-72"
     )}>
       <Card className={cn(
         "h-full flex flex-col bg-black/20 border-border/50 backdrop-blur-md relative",
         "rounded-xl shadow-lg hover:shadow-xl transition-all",
-        // Add extra shadow and glow effect when collapsed
-        isCollapsed && "shadow-lg hover:shadow-xl hover:shadow-accent/5"
+        isCollapsed && "shadow-lg hover:shadow-xl hover:shadow-accent/5",
+        "py-6"
       )}>
         <Button 
           variant="ghost" 
