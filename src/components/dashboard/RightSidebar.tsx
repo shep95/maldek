@@ -1,4 +1,3 @@
-
 import { Search, TrendingUp, Handshake } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -184,18 +183,6 @@ export const RightSidebar = () => {
             Our Partnerships
           </h3>
           <div className="space-y-3">
-            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
-              <p className="text-sm font-medium">Supabase</p>
-              <p className="text-xs text-muted-foreground">Database & Authentication Partner</p>
-            </div>
-            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
-              <p className="text-sm font-medium">Agora</p>
-              <p className="text-xs text-muted-foreground">Real-time Communication Partner</p>
-            </div>
-            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
-              <p className="text-sm font-medium">Stripe</p>
-              <p className="text-xs text-muted-foreground">Payment Processing Partner</p>
-            </div>
             <a 
               href="https://zukoi.app" 
               onClick={handleZukoClick}
@@ -213,10 +200,13 @@ export const RightSidebar = () => {
                 </div>
               </div>
             </a>
+            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
+              <p className="text-sm font-medium">Stripe</p>
+              <p className="text-xs text-muted-foreground">Payment Processing Partner</p>
+            </div>
           </div>
         </div>
       </Card>
     </div>
   );
 };
-
