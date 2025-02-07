@@ -200,10 +200,6 @@ export const RightSidebar = () => {
                 </div>
               </div>
             </a>
-            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
-              <p className="text-sm font-medium">Stripe</p>
-              <p className="text-xs text-muted-foreground">Payment Processing Partner</p>
-            </div>
           </div>
         </div>
       </Card>
