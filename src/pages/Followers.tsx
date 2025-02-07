@@ -43,9 +43,14 @@ const Followers = () => {
   const { data: trendingUsers, isLoading: isTrendingLoading } = useQuery({
     queryKey: ['trending-users'],
     queryFn: async () => {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .not('avatar_url', 'is', null)
+        .gte('last_active', oneWeekAgo.toISOString())
         .order('follower_count', { ascending: false })
         .limit(10);
 

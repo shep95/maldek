@@ -17,7 +17,7 @@ interface TrendingUsersProps {
   }>;
 }
 
-export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
+export const TrendingUsers = ({ isLoading }: TrendingUsersProps) => {
   const navigate = useNavigate();
   const session = useSession();
 
@@ -26,9 +26,14 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
     queryKey: ['trending-users'],
     queryFn: async () => {
       console.log('Fetching trending users');
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .not('avatar_url', 'is', null)
+        .gte('last_active', oneWeekAgo.toISOString())
         .order('follower_count', { ascending: false })
         .limit(10);
 
@@ -95,25 +100,26 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
     );
   }
 
-  // Featured users that should always be shown
+  // Featured users that should always be shown first
   const featuredUsers = [
     {
       id: "featured-1",
-      username: "KillerBattleAsher",
-      email: "Killerbattleasher@gmail.com",
+      username: "NFTDEMON",
       avatar_url: null,
       follower_count: 100000
     },
     {
       id: "featured-2",
-      username: "NFTDEMON",
+      username: "KillerBattleAsher",
+      email: "Killerbattleasher@gmail.com",
       avatar_url: null,
       follower_count: 50000
     },
     ...(trendingUsers || [])
       .filter(user => 
         user.username !== "KillerBattleAsher" && 
-        user.username !== "NFTDEMON"
+        user.username !== "NFTDEMON" &&
+        user.avatar_url !== null
       )
       .slice(0, 3) // Show up to 3 additional trending users
   ];
