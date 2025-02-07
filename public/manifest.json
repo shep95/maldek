@@ -4,7 +4,7 @@
   "name": "Bosley Social",
   "short_name": "Bosley",
   "description": "Connect and share with friends on Bosley - A Modern Social Media Platform",
-  "start_url": "/dashboard",
+  "start_url": "https://app.bosley.social/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
