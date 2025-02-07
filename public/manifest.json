@@ -1,12 +1,14 @@
 
 {
-  "name": "Bosley",
+  "id": "app.bosley.social",
+  "name": "Bosley Social",
   "short_name": "Bosley",
-  "description": "A Modern Social Media Platform",
+  "description": "Connect and share with friends on Bosley - A Modern Social Media Platform",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#000000",
+  "background_color": "#ffffff",
   "theme_color": "#000000",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/lovable-uploads/a4f5f2d6-ab4d-4196-9295-1f9c2bc6965e.png",
@@ -28,7 +30,6 @@
   ],
   "prefer_related_applications": false,
   "categories": ["social", "lifestyle"],
-  "orientation": "portrait",
   "scope": "/",
   "shortcuts": [
     {
@@ -42,10 +43,19 @@
       "description": "View your messages"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/lovable-uploads/a4f5f2d6-ab4d-4196-9295-1f9c2bc6965e.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Bosley Social Homepage"
+    }
+  ],
   "related_applications": [],
   "launch_handler": {
-    "client_mode": ["focus-existing", "auto"]
+    "route_to": "existing-client",
+    "navigate_existing_client": "always"
   },
   "share_target": {
     "action": "/share-target",
