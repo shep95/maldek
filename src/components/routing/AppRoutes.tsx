@@ -17,6 +17,7 @@ import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import Subscription from "@/pages/Subscription";
 import EmperorChatPage from "@/pages/EmperorChat";
+import Advertisement from "@/pages/Advertisement";
 
 const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -102,6 +103,7 @@ export const AppRoutes = () => {
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/advertisement" element={<Advertisement />} />
         <Route 
           path="/daarp-ai" 
           element={
