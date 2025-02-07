@@ -1,6 +1,7 @@
+
 {
-  "id": "app.bosley.social",
-  "name": "Bosley Social",
+  "id": "app.bosley",
+  "name": "Bosley",
   "short_name": "Bosley",
   "description": "Connect and share with friends on Bosley - A Modern Social Media Platform",
   "start_url": "/dashboard",
@@ -52,7 +53,7 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Bosley Social Homepage"
+      "label": "Bosley Homepage"
     }
   ],
   "related_applications": [],
