@@ -189,10 +189,41 @@ export const AdvertisementDialog = ({ open, onOpenChange }: AdvertisementDialogP
             <p className="text-muted-foreground">
               You qualify for our partnerships program! Click below to send your details to Asher.
             </p>
-            <Button onClick={handlePartnershipQualified} className="gap-2">
-              <Mail className="h-4 w-4" />
-              Contact Asher
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button 
+                onClick={() => {
+                  const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=asher@bosley.app&su=Partnership Inquiry - ${companyName}&body=Company Name: ${companyName}%0D%0A%0D%0APlease include:%0D%0A- Your name%0D%0A- Business details%0D%0A- Starting bid ($3,500+ per month)`;
+                  window.open(gmailLink);
+                  toast.success("Opening Gmail...");
+                  onOpenChange(false);
+                }}
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Open in Gmail
+              </Button>
+              <Button 
+                onClick={() => {
+                  const outlookLink = `https://outlook.office.com/mail/deeplink/compose?to=asher@bosley.app&subject=Partnership Inquiry - ${companyName}&body=Company Name: ${companyName}%0D%0A%0D%0APlease include:%0D%0A- Your name%0D%0A- Business details%0D%0A- Starting bid ($3,500+ per month)`;
+                  window.open(outlookLink);
+                  toast.success("Opening Outlook...");
+                  onOpenChange(false);
+                }}
+                variant="outline"
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Open in Outlook
+              </Button>
+              <Button 
+                onClick={handlePartnershipQualified}
+                variant="outline"
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Open in Default Email Client
+              </Button>
+            </div>
           </div>
         );
 
@@ -203,10 +234,41 @@ export const AdvertisementDialog = ({ open, onOpenChange }: AdvertisementDialogP
             <p className="text-muted-foreground">
               You qualify for the shoutout program! Click below to send your details to Asher.
             </p>
-            <Button onClick={handleShoutoutQualified} className="gap-2">
-              <Mail className="h-4 w-4" />
-              Contact Asher
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button 
+                onClick={() => {
+                  const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=asher@bosley.app&su=Shoutout Inquiry - ${companyName}&body=Company Name: ${companyName}%0D%0A%0D%0APlease include:%0D%0A- Your phone number%0D%0A- Business details%0D%0A- Business founding date%0D%0A- Starting bid ($17,000+)%0D%0A- Confirmation of 5% equity and royalties agreement`;
+                  window.open(gmailLink);
+                  toast.success("Opening Gmail...");
+                  onOpenChange(false);
+                }}
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Open in Gmail
+              </Button>
+              <Button 
+                onClick={() => {
+                  const outlookLink = `https://outlook.office.com/mail/deeplink/compose?to=asher@bosley.app&subject=Shoutout Inquiry - ${companyName}&body=Company Name: ${companyName}%0D%0A%0D%0APlease include:%0D%0A- Your phone number%0D%0A- Business details%0D%0A- Business founding date%0D%0A- Starting bid ($17,000+)%0D%0A- Confirmation of 5% equity and royalties agreement`;
+                  window.open(outlookLink);
+                  toast.success("Opening Outlook...");
+                  onOpenChange(false);
+                }}
+                variant="outline"
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Open in Outlook
+              </Button>
+              <Button 
+                onClick={handleShoutoutQualified}
+                variant="outline"
+                className="gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Open in Default Email Client
+              </Button>
+            </div>
           </div>
         );
     }
@@ -220,3 +282,4 @@ export const AdvertisementDialog = ({ open, onOpenChange }: AdvertisementDialogP
     </Dialog>
   );
 };
+
