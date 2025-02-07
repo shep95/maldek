@@ -1,3 +1,4 @@
+
 import { Search, TrendingUp, Handshake } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -198,7 +199,7 @@ export const RightSidebar = () => {
             <a 
               href="https://zukoi.app" 
               onClick={handleZukoClick}
-              className={`block p-3 bg-[#1A1F2C] rounded-lg hover:bg-[#222222] transition-colors ${!isZukoLinkActive() ? 'cursor-not-allowed opacity-75' : ''}`}
+              className={`block p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors ${!isZukoLinkActive() ? 'cursor-not-allowed opacity-75' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <img
@@ -218,3 +219,4 @@ export const RightSidebar = () => {
     </div>
   );
 };
+
