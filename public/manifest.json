@@ -1,8 +1,9 @@
+
 {
   "name": "Bosley",
   "short_name": "Bosley",
   "description": "A Modern Social Media Platform",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
@@ -15,13 +16,19 @@
     },
     {
       "src": "/lovable-uploads/a4f5f2d6-ab4d-4196-9295-1f9c2bc6965e.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/lovable-uploads/a4f5f2d6-ab4d-4196-9295-1f9c2bc6965e.png",
       "sizes": "180x180",
       "type": "image/png"
     }
   ],
   "prefer_related_applications": false,
   "categories": ["social", "lifestyle"],
-  "orientation": "any",
+  "orientation": "portrait",
   "scope": "/",
   "shortcuts": [
     {
@@ -40,13 +47,20 @@
   "launch_handler": {
     "client_mode": ["focus-existing", "auto"]
   },
-  "cross_origin_embedder_policy": {
-    "value": "require-corp"
-  },
-  "cross_origin_opener_policy": {
-    "value": "same-origin-allow-popups"
-  },
-  "cross_origin_resource_policy": {
-    "value": "cross-origin"
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "media",
+          "accept": ["image/*", "video/*"]
+        }
+      ]
+    }
   }
 }
