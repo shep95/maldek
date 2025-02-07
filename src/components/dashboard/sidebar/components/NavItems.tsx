@@ -1,4 +1,5 @@
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User } from "lucide-react"
+
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2 } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -100,6 +101,13 @@ export const NavItems = ({
       label: "Analytics",
       path: "/analytics",
       active: location.pathname === "/analytics"
+    },
+    {
+      icon: BarChart2,
+      label: "Advertisement",
+      path: "/advertisement",
+      active: location.pathname === "/advertisement",
+      description: "Manage your ads"
     },
     { 
       icon: DollarSign, 
