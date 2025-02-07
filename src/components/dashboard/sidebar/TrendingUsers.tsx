@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface TrendingUsersProps {
   isLoading: boolean;
@@ -19,6 +20,27 @@ interface TrendingUsersProps {
 export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
   const navigate = useNavigate();
   const session = useSession();
+
+  // Fetch trending users
+  const { data: trendingUsers } = useQuery({
+    queryKey: ['trending-users'],
+    queryFn: async () => {
+      console.log('Fetching trending users');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('follower_count', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching trending users:', error);
+        throw error;
+      }
+
+      console.log('Trending users:', data);
+      return data;
+    }
+  });
 
   const handleUserClick = (e: React.MouseEvent, username: string) => {
     e.preventDefault();
@@ -88,10 +110,12 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
       avatar_url: null,
       follower_count: 50000
     },
-    ...(users || []).filter(user => 
-      user.username !== "KillerBattleAsher" && 
-      user.username !== "NFTDEMON"
-    ).slice(0, 3) // Show up to 3 additional trending users
+    ...(trendingUsers || [])
+      .filter(user => 
+        user.username !== "KillerBattleAsher" && 
+        user.username !== "NFTDEMON"
+      )
+      .slice(0, 3) // Show up to 3 additional trending users
   ];
 
   return (
