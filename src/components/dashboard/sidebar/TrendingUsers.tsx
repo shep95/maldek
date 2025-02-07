@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -72,13 +73,31 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
     );
   }
 
-  if (!users || users.length === 0) {
-    return <p className="text-muted-foreground">No trending users yet</p>;
-  }
+  // Featured users that should always be shown
+  const featuredUsers = [
+    {
+      id: "featured-1",
+      username: "KillerBattleAsher",
+      email: "Killerbattleasher@gmail.com",
+      avatar_url: null,
+      follower_count: 100000
+    },
+    {
+      id: "featured-2",
+      username: "NFTDEMON",
+      avatar_url: null,
+      follower_count: 50000
+    },
+    ...(users || []).filter(user => 
+      user.username !== "KillerBattleAsher" && 
+      user.username !== "NFTDEMON"
+    ).slice(0, 3) // Show up to 3 additional trending users
+  ];
 
   return (
     <div className="space-y-2">
-      {users.map((user) => (
+      <h3 className="font-semibold text-lg mb-4">Trending Users</h3>
+      {featuredUsers.map((user) => (
         <div 
           key={user.id} 
           className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors relative"
@@ -93,7 +112,7 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
             </Avatar>
             <div className="flex flex-col min-w-0">
               <span className="font-medium truncate">@{user.username}</span>
-              <span className="text-sm text-muted-foreground truncate">{user.follower_count} followers</span>
+              <span className="text-sm text-muted-foreground truncate">{user.follower_count.toLocaleString()} followers</span>
             </div>
           </div>
           {session?.user?.id !== user.id && (

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { useSession } from "@supabase/auth-helpers-react";
+import { TrendingUsers } from "@/components/dashboard/sidebar/TrendingUsers";
 
 const Followers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -121,6 +123,8 @@ const Followers = () => {
         />
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
       </div>
+
+      <TrendingUsers isLoading={false} users={[]} />
 
       <div className="space-y-4">
         {isLoading ? (
