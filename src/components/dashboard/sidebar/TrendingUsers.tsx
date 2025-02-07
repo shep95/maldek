@@ -1,11 +1,9 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 
 interface TrendingUsersProps {
   isLoading: boolean;
@@ -17,35 +15,9 @@ interface TrendingUsersProps {
   }>;
 }
 
-export const TrendingUsers = ({ isLoading }: TrendingUsersProps) => {
+export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
   const navigate = useNavigate();
   const session = useSession();
-
-  // Fetch trending users
-  const { data: trendingUsers } = useQuery({
-    queryKey: ['trending-users'],
-    queryFn: async () => {
-      console.log('Fetching trending users');
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .not('avatar_url', 'is', null)
-        .gte('last_active', oneWeekAgo.toISOString())
-        .order('follower_count', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('Error fetching trending users:', error);
-        throw error;
-      }
-
-      console.log('Trending users:', data);
-      return data;
-    }
-  });
 
   const handleUserClick = (e: React.MouseEvent, username: string) => {
     e.preventDefault();
@@ -100,34 +72,13 @@ export const TrendingUsers = ({ isLoading }: TrendingUsersProps) => {
     );
   }
 
-  // Featured users that should always be shown first
-  const featuredUsers = [
-    {
-      id: "featured-1",
-      username: "NFTDEMON",
-      avatar_url: null,
-      follower_count: 100000
-    },
-    {
-      id: "featured-2",
-      username: "KillerBattleAsher",
-      email: "Killerbattleasher@gmail.com",
-      avatar_url: null,
-      follower_count: 50000
-    },
-    ...(trendingUsers || [])
-      .filter(user => 
-        user.username !== "KillerBattleAsher" && 
-        user.username !== "NFTDEMON" &&
-        user.avatar_url !== null
-      )
-      .slice(0, 3) // Show up to 3 additional trending users
-  ];
+  if (!users || users.length === 0) {
+    return <p className="text-muted-foreground">No trending users yet</p>;
+  }
 
   return (
     <div className="space-y-2">
-      <h3 className="font-semibold text-lg mb-4">Trending Users</h3>
-      {featuredUsers.map((user) => (
+      {users.map((user) => (
         <div 
           key={user.id} 
           className="flex justify-between items-center hover:bg-accent/10 p-2 rounded-md transition-colors relative"
@@ -142,7 +93,7 @@ export const TrendingUsers = ({ isLoading }: TrendingUsersProps) => {
             </Avatar>
             <div className="flex flex-col min-w-0">
               <span className="font-medium truncate">@{user.username}</span>
-              <span className="text-sm text-muted-foreground truncate">{user.follower_count.toLocaleString()} followers</span>
+              <span className="text-sm text-muted-foreground truncate">{user.follower_count} followers</span>
             </div>
           </div>
           {session?.user?.id !== user.id && (

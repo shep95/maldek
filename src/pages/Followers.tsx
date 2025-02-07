@@ -9,7 +9,6 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { useSession } from "@supabase/auth-helpers-react";
-import { TrendingUsers } from "@/components/dashboard/sidebar/TrendingUsers";
 
 const Followers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,26 +36,6 @@ const Followers = () => {
       return data;
     },
     enabled: searchQuery.length > 0
-  });
-
-  // Fetch trending users
-  const { data: trendingUsers, isLoading: isTrendingLoading } = useQuery({
-    queryKey: ['trending-users'],
-    queryFn: async () => {
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .not('avatar_url', 'is', null)
-        .gte('last_active', oneWeekAgo.toISOString())
-        .order('follower_count', { ascending: false })
-        .limit(10);
-
-      if (error) throw error;
-      return data;
-    }
   });
 
   const { data: userPosts } = useQuery({
@@ -142,8 +121,6 @@ const Followers = () => {
         />
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
       </div>
-
-      <TrendingUsers isLoading={isTrendingLoading} users={trendingUsers} />
 
       <div className="space-y-4">
         {isLoading ? (
