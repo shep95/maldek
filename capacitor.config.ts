@@ -1,7 +1,8 @@
+
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.bosley.app',
+  appId: 'app.bosley.social',
   appName: 'Bosley',
   webDir: 'dist',
   server: {
