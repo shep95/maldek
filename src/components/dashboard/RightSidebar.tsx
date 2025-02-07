@@ -1,4 +1,5 @@
-import { Search, TrendingUp } from "lucide-react";
+
+import { Search, TrendingUp, Handshake } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
@@ -155,7 +156,7 @@ export const RightSidebar = () => {
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 mb-6">
           <h3 className="font-semibold text-lg flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-accent" />
             Trending Posts
@@ -164,6 +165,27 @@ export const RightSidebar = () => {
             isLoading={isLoadingTrending} 
             posts={trendingPosts} 
           />
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <h3 className="font-semibold text-lg flex items-center gap-2">
+            <Handshake className="h-5 w-5 text-accent" />
+            Our Partnerships
+          </h3>
+          <div className="space-y-3">
+            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
+              <p className="text-sm font-medium">Supabase</p>
+              <p className="text-xs text-muted-foreground">Database & Authentication Partner</p>
+            </div>
+            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
+              <p className="text-sm font-medium">Agora</p>
+              <p className="text-xs text-muted-foreground">Real-time Communication Partner</p>
+            </div>
+            <div className="p-3 bg-background/50 rounded-lg hover:bg-background/70 transition-colors">
+              <p className="text-sm font-medium">Stripe</p>
+              <p className="text-xs text-muted-foreground">Payment Processing Partner</p>
+            </div>
+          </div>
         </div>
       </Card>
     </div>
