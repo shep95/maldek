@@ -1,4 +1,3 @@
-
 import { Search, TrendingUp, Handshake } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -132,6 +131,17 @@ export const RightSidebar = () => {
     setSearchQuery(value);
   }, 300);
 
+  const isZukoLinkActive = () => {
+    const launchDate = new Date('2025-05-08T00:00:00Z');
+    return new Date() >= launchDate;
+  };
+
+  const handleZukoClick = (e: React.MouseEvent) => {
+    if (!isZukoLinkActive()) {
+      e.preventDefault();
+    }
+  };
+
   return (
     <div className="hidden lg:block fixed right-0 h-screen p-4 w-80">
       <Card className="h-[90vh] flex flex-col bg-black/20 border-border/50 backdrop-blur-md p-4 rounded-xl">
@@ -185,6 +195,23 @@ export const RightSidebar = () => {
               <p className="text-sm font-medium">Stripe</p>
               <p className="text-xs text-muted-foreground">Payment Processing Partner</p>
             </div>
+            <a 
+              href="https://zukoi.app" 
+              onClick={handleZukoClick}
+              className={`block p-3 bg-[#1A1F2C] rounded-lg hover:bg-[#222222] transition-colors ${!isZukoLinkActive() ? 'cursor-not-allowed opacity-75' : ''}`}
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src="/lovable-uploads/2a16aca0-4a66-480f-87a7-e08925ee962b.png"
+                  alt="Zuko Logo"
+                  className="w-8 h-8 rounded-lg"
+                />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Zuko</p>
+                  <p className="text-xs text-muted-foreground">AI & Machine Learning Partner</p>
+                </div>
+              </div>
+            </a>
           </div>
         </div>
       </Card>
