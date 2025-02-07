@@ -5,6 +5,15 @@ import App from './App';
 import './index.css';
 import { toast } from "sonner";
 
+// Extend ServiceWorkerRegistration type to include sync
+declare global {
+  interface ServiceWorkerRegistration {
+    sync?: {
+      register(tag: string): Promise<void>;
+    };
+  }
+}
+
 // Register service worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
@@ -44,7 +53,9 @@ if ('serviceWorker' in navigator) {
       // Handle offline/online status
       window.addEventListener('online', () => {
         toast.success("You're back online!");
-        registration.sync.register('pending-uploads');
+        if (registration.sync) {
+          registration.sync.register('pending-uploads');
+        }
       });
 
       window.addEventListener('offline', () => {
@@ -62,3 +73,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>
 );
+
