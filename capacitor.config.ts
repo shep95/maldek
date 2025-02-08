@@ -16,6 +16,16 @@ const config: CapacitorConfig = {
       minSdkVersion: 21,
       targetSdkVersion: 33,
     }
+  },
+  ios: {
+    contentInset: "always"
+  },
+  style: {
+    androidStatusBar: {
+      overlay: true,
+      backgroundColor: "#000000",
+      style: "dark"
+    }
   }
 };
 

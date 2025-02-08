@@ -5,6 +5,25 @@
   text-align: center;
 }
 
+/* Add status bar handling */
+@supports (-webkit-touch-callout: none) {
+  body {
+    /* Cover the status bar on iOS */
+    padding-top: env(safe-area-inset-top);
+    min-height: -webkit-fill-available;
+    background-color: hsl(var(--background));
+  }
+}
+
+@supports not (-webkit-touch-callout: none) {
+  body {
+    /* Cover the status bar on Android */
+    padding-top: 0;
+    min-height: 100vh;
+    background-color: hsl(var(--background));
+  }
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -58,6 +77,7 @@
   margin-right: auto;
   padding-left: 1rem;
   padding-right: 1rem;
+  padding-top: env(safe-area-inset-top);
 }
 
 @media (min-width: 640px) {
