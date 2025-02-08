@@ -38,41 +38,17 @@ serve(async (req) => {
       throw new Error('User not found')
     }
 
-    // Determine the price ID based on the tier
+    // Use the provided price IDs based on the tier
     let priceId;
     switch(tier.toLowerCase()) {
       case 'creator':
-        priceId = await stripe.prices.create({
-          currency: 'usd',
-          unit_amount: 1700, // $17.00
-          recurring: { interval: 'month' },
-          product_data: {
-            name: 'Creator Subscription',
-            description: 'Monthly subscription for Creator tier'
-          }
-        }).then(price => price.id);
+        priceId = 'price_1QqL77RIC2EosLwjbynMh9TU'; // $17/month
         break;
       case 'business':
-        priceId = await stripe.prices.create({
-          currency: 'usd',
-          unit_amount: 80000, // $800.00
-          recurring: { interval: 'month' },
-          product_data: {
-            name: 'Business Subscription',
-            description: 'Monthly subscription for Business tier'
-          }
-        }).then(price => price.id);
+        priceId = 'price_1QqL7NRIC2EosLwjd8FkAuzM'; // $800/month
         break;
       case 'true emperor':
-        priceId = await stripe.prices.create({
-          currency: 'usd',
-          unit_amount: 5000000, // $50,000.00
-          recurring: { interval: 'month' },
-          product_data: {
-            name: 'True Emperor Subscription',
-            description: 'Monthly subscription for True Emperor tier'
-          }
-        }).then(price => price.id);
+        priceId = 'price_1QqL8IRIC2EosLwjBF1OtArf'; // $17,000/month
         break;
       default:
         throw new Error('Invalid subscription tier');

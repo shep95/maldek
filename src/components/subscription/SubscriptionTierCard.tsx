@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -70,7 +71,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
       {/* Price */}
       <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-bold">${isEmperor ? '50,000' : formatPrice(tier.price)}</span>
+        <span className="text-4xl font-bold">${isEmperor ? '17,000' : formatPrice(tier.price)}</span>
         <span className="text-sm text-muted-foreground">/month</span>
       </div>
 
