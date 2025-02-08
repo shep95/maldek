@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@13.6.0'
@@ -41,13 +42,37 @@ serve(async (req) => {
     let priceId;
     switch(tier.toLowerCase()) {
       case 'creator':
-        priceId = 'price_1QXZOIApZ2oDcxDyFw0DXoh0';  // $17/month tier
+        priceId = await stripe.prices.create({
+          currency: 'usd',
+          unit_amount: 1700, // $17.00
+          recurring: { interval: 'month' },
+          product_data: {
+            name: 'Creator Subscription',
+            description: 'Monthly subscription for Creator tier'
+          }
+        }).then(price => price.id);
         break;
       case 'business':
-        priceId = 'price_1QVPPeApZ2oDcxDyezvlMWup'; // $800/month tier
+        priceId = await stripe.prices.create({
+          currency: 'usd',
+          unit_amount: 80000, // $800.00
+          recurring: { interval: 'month' },
+          product_data: {
+            name: 'Business Subscription',
+            description: 'Monthly subscription for Business tier'
+          }
+        }).then(price => price.id);
         break;
       case 'true emperor':
-        priceId = 'price_1QZ1VtApZ2oDcxDyuXGZXj95'; // $50,000/month tier
+        priceId = await stripe.prices.create({
+          currency: 'usd',
+          unit_amount: 5000000, // $50,000.00
+          recurring: { interval: 'month' },
+          product_data: {
+            name: 'True Emperor Subscription',
+            description: 'Monthly subscription for True Emperor tier'
+          }
+        }).then(price => price.id);
         break;
       default:
         throw new Error('Invalid subscription tier');
