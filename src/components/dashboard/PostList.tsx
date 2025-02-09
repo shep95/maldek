@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { PostCard } from "./PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,17 +20,24 @@ export const PostList = () => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
   const [retryCount, setRetryCount] = useState(0);
+  const [reachedEnd, setReachedEnd] = useState(false);
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 2000;
 
   // Load more posts when scrolling to bottom
   useEffect(() => {
-    if (inView && hasMore && !isLoading) {
+    if (inView && hasMore && !isLoading && !reachedEnd) {
       setPage(prev => prev + 1);
     }
-  }, [inView, hasMore, isLoading]);
+  }, [inView, hasMore, isLoading, reachedEnd]);
 
   useEffect(() => {
+    // If posts is null, we've reached the end
+    if (posts === null) {
+      setReachedEnd(true);
+      return;
+    }
+
     const fetchPostStats = async () => {
       if (!posts?.length) return;
       
@@ -121,53 +127,6 @@ export const PostList = () => {
     };
 
     fetchPostStats();
-
-    // Set up a single real-time subscription for all posts
-    console.log('Setting up real-time subscription for posts, likes and comments');
-    
-    const channel = supabase.channel('post-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'posts'
-        },
-        (payload) => {
-          console.log('Post update received:', payload);
-          queryClient.invalidateQueries({ queryKey: ['posts'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'post_likes'
-        },
-        () => {
-          console.log('Like update received, refreshing stats');
-          fetchPostStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comments'
-        },
-        () => {
-          console.log('Comment update received, refreshing stats');
-          fetchPostStats();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up real-time subscription');
-      supabase.removeChannel(channel);
-    };
 
   }, [posts, session?.user?.id, queryClient, retryCount]);
 
@@ -262,7 +221,7 @@ export const PostList = () => {
               ref={loadMoreRef} 
               className={`py-8 ${hasMore ? '' : 'text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50'}`}
             >
-              {hasMore ? (
+              {hasMore && !reachedEnd ? (
                 <div className="flex justify-center">
                   <Button disabled variant="ghost" size="sm">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -273,7 +232,9 @@ export const PostList = () => {
                 <div className="flex flex-col items-center gap-2 p-4">
                   <CheckCircle2 className="h-6 w-6 text-accent" />
                   <p className="text-foreground font-medium">You're all caught up!</p>
-                  <p className="text-muted-foreground text-sm">Check back later for new posts</p>
+                  <p className="text-muted-foreground text-sm">
+                    You've seen all posts from the last three days
+                  </p>
                 </div>
               )}
             </div>

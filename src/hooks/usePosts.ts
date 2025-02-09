@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const POSTS_PER_PAGE = 10; // Initial load of 10 posts
-const POSTS_PER_SCROLL = 1; // Load 1 post at a time when scrolling
+const POSTS_PER_SCROLL = 5; // Load 5 posts at a time when scrolling
 
 export const usePosts = (page: number = 1) => {
   const { data: posts, isLoading, error } = useQuery({
@@ -37,10 +37,9 @@ export const usePosts = (page: number = 1) => {
               avatar_url
             )
           `)
-          .gt('created_at', threeDaysAgo.toISOString()) // Only fetch posts newer than 3 days
+          .gt('created_at', threeDaysAgo.toISOString())
           .order('created_at', { ascending: false })
-          .range(start, start + pageSize - 1)
-          .limit(pageSize);
+          .range(start, start + pageSize - 1);
 
         if (error) {
           console.error('Error fetching posts:', error);
@@ -48,6 +47,13 @@ export const usePosts = (page: number = 1) => {
         }
 
         console.log(`Successfully fetched ${data?.length} posts for page ${page}`);
+        
+        // If no posts are returned and this isn't the first page,
+        // return null to indicate we've reached the end
+        if (!data?.length && page > 1) {
+          return null;
+        }
+
         return data;
       } catch (error) {
         console.error('Query error:', error);
@@ -58,14 +64,14 @@ export const usePosts = (page: number = 1) => {
     staleTime: 1000 * 30, // Data stays fresh for 30 seconds
     gcTime: 1000 * 60 * 5, // Keep unused data for 5 minutes
     retry: 3, // Try 3 times before giving up
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff with max 10s
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
   });
 
+  // Return null for hasMore if we got a null response, indicating end of posts
   return { 
     posts, 
     isLoading,
     error,
-    hasMore: posts?.length === (page === 1 ? POSTS_PER_PAGE : POSTS_PER_SCROLL)
+    hasMore: posts === null ? false : posts?.length === (page === 1 ? POSTS_PER_PAGE : POSTS_PER_SCROLL)
   };
 };
-
