@@ -1173,9 +1173,11 @@ export type Database = {
           bio: string | null
           created_at: string
           follower_count: number
+          has_set_security_code: boolean | null
           id: string
           last_active: string | null
           location: string | null
+          security_code: string | null
           social_links: Json | null
           theme_preference: string | null
           total_likes_received: number | null
@@ -1193,9 +1195,11 @@ export type Database = {
           bio?: string | null
           created_at?: string
           follower_count?: number
+          has_set_security_code?: boolean | null
           id: string
           last_active?: string | null
           location?: string | null
+          security_code?: string | null
           social_links?: Json | null
           theme_preference?: string | null
           total_likes_received?: number | null
@@ -1213,9 +1217,11 @@ export type Database = {
           bio?: string | null
           created_at?: string
           follower_count?: number
+          has_set_security_code?: boolean | null
           id?: string
           last_active?: string | null
           location?: string | null
+          security_code?: string | null
           social_links?: Json | null
           theme_preference?: string | null
           total_likes_received?: number | null
@@ -1822,6 +1828,13 @@ export type Database = {
       update_trending_scores: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      verify_security_code: {
+        Args: {
+          user_uuid: string
+          code: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
