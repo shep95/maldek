@@ -57,8 +57,8 @@ export const usePosts = (page: number = 1) => {
     },
     staleTime: 1000 * 30, // Data stays fresh for 30 seconds
     gcTime: 1000 * 60 * 5, // Keep unused data for 5 minutes
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    retry: 3, // Try 3 times before giving up
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff with max 10s
   });
 
   return { 
@@ -68,3 +68,4 @@ export const usePosts = (page: number = 1) => {
     hasMore: posts?.length === (page === 1 ? POSTS_PER_PAGE : POSTS_PER_SCROLL)
   };
 };
+
