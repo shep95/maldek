@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface SecurityCodeDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  action: 'verify' | 'set';
+  action: 'verify';
   onSuccess: (securityCode: string) => void | Promise<void>;
 }
 
@@ -28,31 +28,17 @@ export const SecurityCodeDialog = ({ isOpen, onOpenChange, action, onSuccess }: 
     setIsSubmitting(true);
 
     try {
-      if (action === 'set') {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ 
-            security_code: securityCode,
-            has_set_security_code: true 
-          })
-          .eq('id', (await supabase.auth.getUser()).data.user?.id);
+      const { data, error } = await supabase
+        .rpc('verify_security_code', {
+          user_uuid: (await supabase.auth.getUser()).data.user?.id,
+          code: securityCode
+        });
 
-        if (error) throw error;
-        
-        toast.success("Security code set successfully");
-      } else {
-        const { data, error } = await supabase
-          .rpc('verify_security_code', {
-            user_uuid: (await supabase.auth.getUser()).data.user?.id,
-            code: securityCode
-          });
-
-        if (error) throw error;
-        
-        if (!data) {
-          toast.error("Invalid security code");
-          return;
-        }
+      if (error) throw error;
+      
+      if (!data) {
+        toast.error("Invalid security code");
+        return;
       }
 
       await onSuccess(securityCode);
@@ -70,9 +56,7 @@ export const SecurityCodeDialog = ({ isOpen, onOpenChange, action, onSuccess }: 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {action === 'set' ? 'Set Security Code' : 'Enter Security Code'}
-          </DialogTitle>
+          <DialogTitle>Enter Security Code</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -85,7 +69,7 @@ export const SecurityCodeDialog = ({ isOpen, onOpenChange, action, onSuccess }: 
             required
           />
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Processing..." : (action === 'set' ? "Set Code" : "Verify Code")}
+            {isSubmitting ? "Verifying..." : "Verify Code"}
           </Button>
         </form>
       </DialogContent>

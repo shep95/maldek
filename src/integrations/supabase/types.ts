@@ -1173,11 +1173,10 @@ export type Database = {
           bio: string | null
           created_at: string
           follower_count: number
-          has_set_security_code: boolean | null
           id: string
           last_active: string | null
           location: string | null
-          security_code: string | null
+          security_code: string
           social_links: Json | null
           theme_preference: string | null
           total_likes_received: number | null
@@ -1195,11 +1194,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           follower_count?: number
-          has_set_security_code?: boolean | null
           id: string
           last_active?: string | null
           location?: string | null
-          security_code?: string | null
+          security_code: string
           social_links?: Json | null
           theme_preference?: string | null
           total_likes_received?: number | null
@@ -1217,11 +1215,10 @@ export type Database = {
           bio?: string | null
           created_at?: string
           follower_count?: number
-          has_set_security_code?: boolean | null
           id?: string
           last_active?: string | null
           location?: string | null
-          security_code?: string | null
+          security_code?: string
           social_links?: Json | null
           theme_preference?: string | null
           total_likes_received?: number | null
