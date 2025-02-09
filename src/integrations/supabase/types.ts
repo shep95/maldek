@@ -1518,6 +1518,47 @@ export type Database = {
           },
         ]
       }
+      stories: {
+        Row: {
+          created_at: string
+          duration: number | null
+          expires_at: string
+          id: string
+          is_expired: boolean | null
+          media_type: string
+          media_url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration?: number | null
+          expires_at?: string
+          id?: string
+          is_expired?: boolean | null
+          media_type: string
+          media_url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration?: number | null
+          expires_at?: string
+          id?: string
+          is_expired?: boolean | null
+          media_type?: string
+          media_url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_tiers: {
         Row: {
           checkmark_color: string
@@ -1806,6 +1847,10 @@ export type Database = {
         Args: {
           post_id: string
         }
+        Returns: undefined
+      }
+      mark_expired_stories: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       mute_all_speakers: {

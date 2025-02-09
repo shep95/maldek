@@ -1,8 +1,9 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Send, X, CalendarIcon } from "lucide-react";
+import { Send, X, CalendarIcon, Clock } from "lucide-react";
 import { EnhancedUploadZone } from "./post/upload/EnhancedUploadZone";
 import { RichTextEditor } from "./post/editor/RichTextEditor";
 import { format } from "date-fns";
@@ -10,6 +11,9 @@ import { usePostCreation } from "./post/hooks/usePostCreation";
 import type { CreatePostDialogProps } from "./post/types/postTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { validateMediaFile } from "@/utils/mediaUtils";
 
 export const CreatePostDialog = ({
   isOpen,
@@ -31,6 +35,36 @@ export const CreatePostDialog = ({
     resetFormState
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
 
+  const [isStory, setIsStory] = useState(false);
+
+  const handleFileSelectWithValidation = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files?.length) return;
+
+    // For stories, validate video duration
+    if (isStory) {
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith('video/')) {
+          const video = document.createElement('video');
+          video.preload = 'metadata';
+
+          await new Promise((resolve, reject) => {
+            video.onloadedmetadata = () => resolve(true);
+            video.onerror = () => reject();
+            video.src = URL.createObjectURL(file);
+          });
+
+          if (video.duration > 30) {
+            toast.error("Story videos must be 30 seconds or less");
+            return;
+          }
+        }
+      }
+    }
+
+    handleFileSelect(event);
+  };
+
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -42,6 +76,53 @@ export const CreatePostDialog = ({
     console.log('Cancelling post creation');
     resetFormState();
     onOpenChange(false);
+  };
+
+  const handleCreateContent = async () => {
+    if (isStory) {
+      try {
+        for (const file of mediaFiles) {
+          const validation = await validateMediaFile(file, currentUser.id);
+          if (!validation.isValid) {
+            toast.error(validation.error);
+            return;
+          }
+
+          const fileExt = file.name.split('.').pop();
+          const filePath = `${currentUser.id}/${Date.now()}_${crypto.randomUUID()}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('stories')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('stories')
+            .getPublicUrl(filePath);
+
+          // Create story record
+          const { error: storyError } = await supabase
+            .from('stories')
+            .insert({
+              user_id: currentUser.id,
+              media_url: publicUrl,
+              media_type: file.type.startsWith('video/') ? 'video' : 'image',
+              duration: file.type.startsWith('video/') ? 30 : 5 // 5 seconds for images, up to 30 for videos
+            });
+
+          if (storyError) throw storyError;
+        }
+
+        toast.success("Story created successfully!");
+        onOpenChange(false);
+      } catch (error) {
+        console.error('Error creating story:', error);
+        toast.error("Failed to create story");
+      }
+    } else {
+      await createPost();
+    }
   };
 
   const handleMention = async (username: string) => {
@@ -75,42 +156,56 @@ export const CreatePostDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <RichTextEditor
-            value={content}
-            onChange={setContent}
-            onMention={handleMention}
-            onHashtag={(tag) => setContent(prev => `${prev}#${tag} `)}
-          />
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="story-mode"
+              checked={isStory}
+              onCheckedChange={setIsStory}
+            />
+            <Label htmlFor="story-mode">Post as Story</Label>
+          </div>
+
+          {!isStory && (
+            <RichTextEditor
+              value={content}
+              onChange={setContent}
+              onMention={handleMention}
+              onHashtag={(tag) => setContent(prev => `${prev}#${tag} `)}
+            />
+          )}
           
           <EnhancedUploadZone
-            onFileSelect={handleFileSelect}
+            onFileSelect={handleFileSelectWithValidation}
             onPaste={handlePaste}
             isUploading={isSubmitting}
             uploadProgress={uploadProgress}
+            accept={isStory ? "image/*,video/mp4,video/quicktime,video/webm" : undefined}
           />
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={`w-full justify-start text-left font-normal ${
-                  !scheduledDate && "text-muted-foreground"
-                }`}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={scheduledDate}
-                onSelect={setScheduledDate}
-                disabled={(date) => date < new Date()}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+          {!isStory && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-full justify-start text-left font-normal ${
+                    !scheduledDate && "text-muted-foreground"
+                  }`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={scheduledDate}
+                  onSelect={setScheduledDate}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          )}
           
           <div className="flex gap-2">
             <Button 
@@ -123,13 +218,13 @@ export const CreatePostDialog = ({
               Cancel
             </Button>
             <Button 
-              onClick={createPost} 
+              onClick={handleCreateContent} 
               className="w-full gap-2"
               disabled={isSubmitting}
               type="button"
             >
               <Send className="h-4 w-4" />
-              {isSubmitting ? 'Creating...' : scheduledDate ? 'Schedule' : 'Create Post'}
+              {isSubmitting ? 'Creating...' : isStory ? 'Create Story' : scheduledDate ? 'Schedule' : 'Create Post'}
             </Button>
           </div>
         </div>
