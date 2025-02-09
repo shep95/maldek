@@ -3,14 +3,21 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const POSTS_PER_PAGE = 10; // Reasonable batch size for mobile
+const POSTS_PER_PAGE = 10; // Initial load of 10 posts
+const POSTS_PER_SCROLL = 1; // Load 1 post at a time when scrolling
 
 export const usePosts = (page: number = 1) => {
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ['posts', page],
     queryFn: async () => {
       console.log(`Fetching posts page ${page}...`);
-      const start = (page - 1) * POSTS_PER_PAGE;
+      
+      // For first page, load POSTS_PER_PAGE items
+      // For subsequent pages, load POSTS_PER_SCROLL items
+      const pageSize = page === 1 ? POSTS_PER_PAGE : POSTS_PER_SCROLL;
+      const start = page === 1 
+        ? 0 
+        : POSTS_PER_PAGE + ((page - 2) * POSTS_PER_SCROLL);
       
       try {
         // Calculate the date 3 days ago
@@ -32,8 +39,8 @@ export const usePosts = (page: number = 1) => {
           `)
           .gt('created_at', threeDaysAgo.toISOString()) // Only fetch posts newer than 3 days
           .order('created_at', { ascending: false })
-          .range(start, start + POSTS_PER_PAGE - 1)
-          .limit(POSTS_PER_PAGE);
+          .range(start, start + pageSize - 1)
+          .limit(pageSize);
 
         if (error) {
           console.error('Error fetching posts:', error);
@@ -58,6 +65,6 @@ export const usePosts = (page: number = 1) => {
     posts, 
     isLoading,
     error,
-    hasMore: posts?.length === POSTS_PER_PAGE
+    hasMore: posts?.length === (page === 1 ? POSTS_PER_PAGE : POSTS_PER_SCROLL)
   };
 };
