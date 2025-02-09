@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,7 +7,7 @@ export const usePosts = () => {
   const { data: posts, isLoading } = useQuery({
     queryKey: ['posts'],
     queryFn: async () => {
-      console.log('Fetching posts with minimal data...');
+      console.log('Fetching all posts without limit...');
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -20,8 +21,7 @@ export const usePosts = () => {
             avatar_url
           )
         `)
-        .order('created_at', { ascending: false })
-        .limit(20); // Limit initial load for better performance
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching posts:', error);
