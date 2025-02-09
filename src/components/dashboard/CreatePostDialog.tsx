@@ -1,9 +1,10 @@
 
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Send, X, CalendarIcon, Clock } from "lucide-react";
+import { Send, X, CalendarIcon } from "lucide-react";
 import { EnhancedUploadZone } from "./post/upload/EnhancedUploadZone";
 import { RichTextEditor } from "./post/editor/RichTextEditor";
 import { format } from "date-fns";
@@ -24,6 +25,7 @@ export const CreatePostDialog = ({
   const {
     content,
     setContent,
+    mediaFiles,
     isSubmitting,
     uploadProgress,
     scheduledDate,
@@ -62,7 +64,7 @@ export const CreatePostDialog = ({
       }
     }
 
-    handleFileSelect(event);
+    handleFileSelect(Array.from(files));
   };
 
   const handleCancel = (e: React.MouseEvent) => {
