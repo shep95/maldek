@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 
 export const PostList = () => {
@@ -257,15 +257,26 @@ export const PostList = () => {
               />
             ))}
             
-            {/* Load more trigger */}
-            {hasMore && (
-              <div ref={loadMoreRef} className="py-4 flex justify-center">
-                <Button disabled variant="ghost" size="sm">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Loading more posts...
-                </Button>
-              </div>
-            )}
+            {/* End of feed message */}
+            <div 
+              ref={loadMoreRef} 
+              className={`py-8 ${hasMore ? '' : 'text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50'}`}
+            >
+              {hasMore ? (
+                <div className="flex justify-center">
+                  <Button disabled variant="ghost" size="sm">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Loading more posts...
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2 p-4">
+                  <CheckCircle2 className="h-6 w-6 text-accent" />
+                  <p className="text-foreground font-medium">You're all caught up!</p>
+                  <p className="text-muted-foreground text-sm">Check back later for new posts</p>
+                </div>
+              )}
+            </div>
           </>
         ) : !isLoading && page === 1 ? (
           <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
@@ -279,4 +290,3 @@ export const PostList = () => {
     </>
   );
 };
-
