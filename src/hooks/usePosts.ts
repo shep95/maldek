@@ -54,6 +54,13 @@ export const usePosts = () => {
       }
 
       // If specific continent, fetch posts from users in same continent
+      const { data: userIds } = await supabase
+        .from('user_settings')
+        .select('user_id')
+        .eq('continent', continent);
+      
+      const continentUserIds = userIds?.map(u => u.user_id) || [];
+
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -67,12 +74,7 @@ export const usePosts = () => {
             avatar_url
           )
         `)
-        .in('user_id', (
-          supabase
-            .from('user_settings')
-            .select('user_id')
-            .eq('continent', continent)
-        ))
+        .in('user_id', continentUserIds)
         .order('created_at', { ascending: false });
 
       if (error) {
