@@ -10,6 +10,9 @@ import { RightSidebar } from "./RightSidebar";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 declare global {
   interface Window {
@@ -19,6 +22,8 @@ declare global {
 
 const DashboardLayout = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [isSettingSecurityCode, setIsSettingSecurityCode] = useState(false);
+  const [securityCode, setSecurityCode] = useState("");
   const session = useSession();
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,6 +36,50 @@ const DashboardLayout = () => {
     username: session?.user?.email?.split('@')[0] || '',
     avatar_url: '',
     name: session?.user?.email?.split('@')[0] || ''
+  };
+
+  // Check if user has set security code
+  useEffect(() => {
+    const checkSecurityCode = async () => {
+      if (session?.user?.id) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('has_set_security_code')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!data?.has_set_security_code) {
+          setIsSettingSecurityCode(true);
+        }
+      }
+    };
+
+    checkSecurityCode();
+  }, [session?.user?.id]);
+
+  const handleSetSecurityCode = async () => {
+    if (securityCode.length !== 4 || !/^\d{4}$/.test(securityCode)) {
+      toast.error("Please enter a valid 4-digit code");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          security_code: securityCode,
+          has_set_security_code: true 
+        })
+        .eq('id', session?.user?.id);
+
+      if (error) throw error;
+      
+      setIsSettingSecurityCode(false);
+      toast.success("Security code set successfully");
+    } catch (error) {
+      console.error('Error setting security code:', error);
+      toast.error("Failed to set security code");
+    }
   };
 
   // Handle keyboard shortcuts
@@ -121,6 +170,45 @@ const DashboardLayout = () => {
         }}
       />
       <MobileNav />
+
+      {/* Security Code Setup Dialog */}
+      <Dialog 
+        open={isSettingSecurityCode} 
+        onOpenChange={setIsSettingSecurityCode}
+        modal={true}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Your Security Code</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-4">
+            <p className="text-sm text-muted-foreground">
+              Create your security code. You can only use 4 digits and they must be numbers.
+              <br /><br />
+              <span className="font-bold text-destructive">
+                Warning: If you lose your code, you will lose access to your account.
+              </span>
+            </p>
+            <Input
+              type="password"
+              placeholder="Enter 4-digit code"
+              value={securityCode}
+              onChange={(e) => setSecurityCode(e.target.value)}
+              maxLength={4}
+              pattern="\d{4}"
+              required
+              className="text-center text-2xl tracking-widest"
+            />
+            <Button 
+              onClick={handleSetSecurityCode} 
+              className="w-full"
+              disabled={securityCode.length !== 4 || !/^\d{4}$/.test(securityCode)}
+            >
+              Set Security Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
