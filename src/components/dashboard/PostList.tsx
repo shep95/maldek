@@ -1,4 +1,5 @@
 
+import React, { useState } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePosts } from "@/hooks/usePosts";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
 import { CheckCircle2 } from "lucide-react";
-import { useState } from "react";
 
 export const PostList = () => {
   const session = useSession();
@@ -222,3 +222,4 @@ export const PostList = () => {
     </>
   );
 };
+
