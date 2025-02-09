@@ -1594,6 +1594,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          continent: string | null
           created_at: string
           preferred_language: string
           theme: string | null
@@ -1601,6 +1602,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          continent?: string | null
           created_at?: string
           preferred_language?: string
           theme?: string | null
@@ -1608,6 +1610,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          continent?: string | null
           created_at?: string
           preferred_language?: string
           theme?: string | null
@@ -1823,6 +1826,14 @@ export type Database = {
     }
     Enums: {
       community_visibility: "public" | "private"
+      continent_type:
+        | "north_america"
+        | "south_america"
+        | "europe"
+        | "asia"
+        | "africa"
+        | "oceania"
+        | "global"
       space_role: "host" | "co_host" | "speaker" | "listener"
       space_status: "scheduled" | "live" | "ended"
     }

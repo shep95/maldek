@@ -5,6 +5,7 @@ import { PasswordSection } from "@/components/settings/PasswordSection";
 import { DangerSection } from "@/components/settings/DangerSection";
 import { DownloadSection } from "@/components/settings/DownloadSection";
 import { LanguageSection } from "@/components/settings/LanguageSection";
+import { ContinentSection } from "@/components/settings/ContinentSection";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,7 @@ const Settings = () => {
       <h1 className="text-3xl font-bold">Settings</h1>
       <ThemeToggle />
       <DownloadSection />
+      <ContinentSection />
       <LanguageSection />
       <AccountSection />
       <EmailSection />
