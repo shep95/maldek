@@ -1,44 +1,27 @@
 
-import { useState, useEffect } from "react";
-import { PostCard } from "./PostCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { usePosts } from "@/hooks/usePosts";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PostCard } from "./PostCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { usePosts } from "@/hooks/usePosts";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
-import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2 } from "lucide-react";
-import { useInView } from "react-intersection-observer";
+import { CheckCircle2 } from "lucide-react";
+import { useState } from "react";
 
 export const PostList = () => {
-  const [page, setPage] = useState(1);
-  const { ref: loadMoreRef, inView } = useInView();
   const session = useSession();
   const queryClient = useQueryClient();
-  const { posts, isLoading, hasMore } = usePosts(page);
+  const { posts, isLoading } = usePosts();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
   const [retryCount, setRetryCount] = useState(0);
-  const [reachedEnd, setReachedEnd] = useState(false);
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 2000;
 
-  // Load more posts when scrolling to bottom
-  useEffect(() => {
-    if (inView && hasMore && !isLoading && !reachedEnd) {
-      setPage(prev => prev + 1);
-    }
-  }, [inView, hasMore, isLoading, reachedEnd]);
-
-  useEffect(() => {
-    // If posts is null, we've reached the end
-    if (posts === null) {
-      setReachedEnd(true);
-      return;
-    }
-
+  // Fetch stats for all posts
+  React.useEffect(() => {
     const fetchPostStats = async () => {
       if (!posts?.length) return;
       
@@ -128,7 +111,6 @@ export const PostList = () => {
     };
 
     fetchPostStats();
-
   }, [posts, session?.user?.id, queryClient, retryCount]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
@@ -163,7 +145,7 @@ export const PostList = () => {
     }
   };
 
-  if (isLoading && page === 1) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         {[1, 2, 3].map((i) => (
@@ -218,29 +200,17 @@ export const PostList = () => {
             ))}
             
             {/* End of feed message */}
-            <div 
-              ref={loadMoreRef} 
-              className={`py-8 ${hasMore ? '' : 'text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50'}`}
-            >
-              {hasMore && !reachedEnd ? (
-                <div className="flex justify-center">
-                  <Button disabled variant="ghost" size="sm">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Loading more posts...
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 p-4">
-                  <CheckCircle2 className="h-6 w-6 text-accent" />
-                  <p className="text-foreground font-medium">You're all caught up!</p>
-                  <p className="text-muted-foreground text-sm">
-                    You've seen all posts from the last three days
-                  </p>
-                </div>
-              )}
+            <div className="text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50 py-8">
+              <div className="flex flex-col items-center gap-2 p-4">
+                <CheckCircle2 className="h-6 w-6 text-accent" />
+                <p className="text-foreground font-medium">You're all caught up!</p>
+                <p className="text-muted-foreground text-sm">
+                  You've seen all posts from the last three days
+                </p>
+              </div>
             </div>
           </>
-        ) : !isLoading && page === 1 ? (
+        ) : !isLoading ? (
           <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
             <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
             <p className="text-muted-foreground">

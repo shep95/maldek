@@ -3,21 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const POSTS_PER_PAGE = 10; // Initial load of 10 posts
-const POSTS_PER_SCROLL = 5; // Load 5 posts at a time when scrolling
-
-export const usePosts = (page: number = 1) => {
+export const usePosts = () => {
   const { data: posts, isLoading, error } = useQuery({
-    queryKey: ['posts', page],
+    queryKey: ['posts'],
     queryFn: async () => {
-      console.log(`Fetching posts page ${page}...`);
-      
-      // For first page, load POSTS_PER_PAGE items
-      // For subsequent pages, load POSTS_PER_SCROLL items
-      const pageSize = page === 1 ? POSTS_PER_PAGE : POSTS_PER_SCROLL;
-      const start = page === 1 
-        ? 0 
-        : POSTS_PER_PAGE + ((page - 2) * POSTS_PER_SCROLL);
+      console.log('Fetching all posts from last 3 days...');
       
       try {
         // Calculate the date 3 days ago
@@ -38,22 +28,14 @@ export const usePosts = (page: number = 1) => {
             )
           `)
           .gt('created_at', threeDaysAgo.toISOString())
-          .order('created_at', { ascending: false })
-          .range(start, start + pageSize - 1);
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching posts:', error);
           throw error;
         }
 
-        console.log(`Successfully fetched ${data?.length} posts for page ${page}`);
-        
-        // If no posts are returned and this isn't the first page,
-        // return null to indicate we've reached the end
-        if (!data?.length && page > 1) {
-          return null;
-        }
-
+        console.log(`Successfully fetched ${data?.length} posts`);
         return data;
       } catch (error) {
         console.error('Query error:', error);
@@ -67,11 +49,9 @@ export const usePosts = (page: number = 1) => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
   });
 
-  // Return null for hasMore if we got a null response, indicating end of posts
   return { 
     posts, 
     isLoading,
     error,
-    hasMore: posts === null ? false : posts?.length === (page === 1 ? POSTS_PER_PAGE : POSTS_PER_SCROLL)
   };
 };
