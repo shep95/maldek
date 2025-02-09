@@ -10,7 +10,7 @@ interface SecurityCodeDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   action: 'verify' | 'set';
-  onSuccess: () => void;
+  onSuccess: (securityCode: string) => void | Promise<void>;
 }
 
 export const SecurityCodeDialog = ({ isOpen, onOpenChange, action, onSuccess }: SecurityCodeDialogProps) => {
@@ -55,7 +55,7 @@ export const SecurityCodeDialog = ({ isOpen, onOpenChange, action, onSuccess }: 
         }
       }
 
-      onSuccess();
+      await onSuccess(securityCode);
       onOpenChange(false);
       setSecurityCode("");
     } catch (error) {

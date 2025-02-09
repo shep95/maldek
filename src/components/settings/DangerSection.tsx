@@ -31,31 +31,6 @@ export const DangerSection = () => {
     setIsVerifyingForAccount(true);
   };
 
-  const handleDataDeletion = async () => {
-    try {
-      const { error } = await supabase.rpc('delete_user_data');
-      if (error) throw error;
-      toast.success("All data deleted successfully");
-    } catch (error) {
-      console.error('Error deleting data:', error);
-      toast.error("Failed to delete data");
-    }
-  };
-
-  const handleAccountDeletion = async () => {
-    try {
-      const { error } = await supabase.rpc('delete_user_account');
-      if (error) throw error;
-
-      await supabase.auth.signOut();
-      navigate("/auth");
-      toast.success("Account deleted successfully");
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast.error("Failed to delete account");
-    }
-  };
-
   const handleVerifyForData = async (securityCode: string) => {
     try {
       const { error } = await supabase.rpc('delete_user_data_with_code', {
