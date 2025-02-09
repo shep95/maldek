@@ -1,12 +1,15 @@
+
 import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
 
 type BackgroundMusic = Database['public']['Tables']['user_background_music']['Row'];
 
 const VOLUME_STORAGE_KEY = 'background_music_volume';
 const AUTOPLAY_STORAGE_KEY = 'background_music_autoplay';
+const LOOP_STORAGE_KEY = 'background_music_loop';
 
 export const useBackgroundMusic = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -15,9 +18,14 @@ export const useBackgroundMusic = () => {
     const savedVolume = localStorage.getItem(VOLUME_STORAGE_KEY);
     return savedVolume ? parseFloat(savedVolume) : 0.5;
   });
+  const [isLooping, setIsLooping] = useState(() => {
+    const savedLoop = localStorage.getItem(LOOP_STORAGE_KEY);
+    return savedLoop === 'true';
+  });
   const [isFading, setIsFading] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [playlist, setPlaylist] = useState<BackgroundMusic[]>([]);
+  const queryClient = useQueryClient();
 
   const { data: backgroundMusic } = useQuery({
     queryKey: ['background-music'],
@@ -48,11 +56,14 @@ export const useBackgroundMusic = () => {
       console.log('Initializing audio with URL:', backgroundMusic.music_url);
       audioRef.current = new Audio(backgroundMusic.music_url);
       audioRef.current.volume = volume;
+      audioRef.current.loop = isLooping;
       
       // Set up event listeners
       audioRef.current.addEventListener('ended', () => {
-        console.log('Track ended, playing next');
-        playNext();
+        console.log('Track ended');
+        if (!isLooping) {
+          playNext();
+        }
       });
 
       audioRef.current.addEventListener('play', () => {
@@ -94,6 +105,14 @@ export const useBackgroundMusic = () => {
     }
   }, [volume]);
 
+  // Save loop state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(LOOP_STORAGE_KEY, isLooping.toString());
+    if (audioRef.current) {
+      audioRef.current.loop = isLooping;
+    }
+  }, [isLooping]);
+
   const playNext = () => {
     console.log('Playing next track');
     if (playlist.length === 0) return;
@@ -126,38 +145,27 @@ export const useBackgroundMusic = () => {
     }
   };
 
-  const fadeOut = () => {
-    if (!audioRef.current || isFading) return;
-    
-    setIsFading(true);
-    const fadeInterval = setInterval(() => {
-      if (audioRef.current && audioRef.current.volume > 0.1) {
-        audioRef.current.volume = Math.max(0, audioRef.current.volume - 0.1);
-      } else {
-        clearInterval(fadeInterval);
-        if (audioRef.current) {
-          audioRef.current.volume = 0;
-        }
-        setIsFading(false);
-      }
-    }, 100);
-  };
+  const deleteTrack = async (trackId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_background_music')
+        .delete()
+        .eq('id', trackId);
 
-  const fadeIn = () => {
-    if (!audioRef.current || isFading) return;
-    
-    setIsFading(true);
-    const fadeInterval = setInterval(() => {
-      if (audioRef.current && audioRef.current.volume < volume) {
-        audioRef.current.volume = Math.min(volume, audioRef.current.volume + 0.1);
-      } else {
-        clearInterval(fadeInterval);
-        if (audioRef.current) {
-          audioRef.current.volume = volume;
-        }
-        setIsFading(false);
+      if (error) throw error;
+
+      // Update local state and refetch
+      await queryClient.invalidateQuery({ queryKey: ['background-music'] });
+      toast.success('Track deleted successfully');
+
+      // If the current track was deleted, play the next one
+      if (playlist[currentTrackIndex]?.id === trackId) {
+        playNext();
       }
-    }, 100);
+    } catch (error) {
+      console.error('Error deleting track:', error);
+      toast.error('Failed to delete track');
+    }
   };
 
   const togglePlay = () => {
@@ -177,6 +185,10 @@ export const useBackgroundMusic = () => {
     }
   };
 
+  const toggleLoop = () => {
+    setIsLooping(!isLooping);
+  };
+
   const setMusicVolume = (newVolume: number) => {
     setVolume(newVolume);
     if (audioRef.current) {
@@ -192,13 +204,15 @@ export const useBackgroundMusic = () => {
   return {
     isPlaying,
     volume,
+    isLooping,
     togglePlay,
+    toggleLoop,
     setVolume: setMusicVolume,
-    fadeOut,
-    fadeIn,
     playNext,
     playPrevious,
+    deleteTrack,
     currentTrack: playlist[currentTrackIndex],
-    updatePlaylistOrder
+    updatePlaylistOrder,
+    playlist
   };
 };

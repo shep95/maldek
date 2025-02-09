@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusicProvider";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,7 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { Music, Upload, Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { 
+  Music, 
+  Upload, 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward, 
+  Repeat, 
+  Trash2
+} from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
@@ -15,16 +25,20 @@ export const BackgroundMusicSection = () => {
   const { 
     isPlaying, 
     volume, 
+    isLooping,
     togglePlay, 
+    toggleLoop,
     setVolume,
     playNext,
     playPrevious,
+    deleteTrack,
     currentTrack,
-    updatePlaylistOrder 
+    updatePlaylistOrder,
+    playlist
   } = useBackgroundMusicContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: musicList = [], refetch: refetchMusicList } = useQuery({
+  const { refetch: refetchMusicList } = useQuery({
     queryKey: ['background-music'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -203,6 +217,14 @@ export const BackgroundMusicSection = () => {
                   >
                     <SkipForward className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={toggleLoop}
+                    className={`h-8 w-8 ${isLooping ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`}
+                  >
+                    <Repeat className="h-4 w-4" />
+                  </Button>
                 </div>
                 <DragDropContext onDragEnd={handleDragEnd}>
                   <Droppable droppableId="music-list">
@@ -212,7 +234,7 @@ export const BackgroundMusicSection = () => {
                         ref={provided.innerRef}
                         className="space-y-2"
                       >
-                        {musicList.map((track, index) => (
+                        {playlist.map((track, index) => (
                           <Draggable
                             key={track.id}
                             draggableId={track.id}
@@ -236,6 +258,17 @@ export const BackgroundMusicSection = () => {
                                   <span className="flex-1 truncate">
                                     {track.title}
                                   </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteTrack(track.id);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
                             )}
