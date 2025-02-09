@@ -13,6 +13,10 @@ export const usePosts = (page: number = 1) => {
       const start = (page - 1) * POSTS_PER_PAGE;
       
       try {
+        // Calculate the date 3 days ago
+        const threeDaysAgo = new Date();
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        
         const { data, error } = await supabase
           .from('posts')
           .select(`
@@ -26,6 +30,7 @@ export const usePosts = (page: number = 1) => {
               avatar_url
             )
           `)
+          .gt('created_at', threeDaysAgo.toISOString()) // Only fetch posts newer than 3 days
           .order('created_at', { ascending: false })
           .range(start, start + POSTS_PER_PAGE - 1)
           .limit(POSTS_PER_PAGE);
