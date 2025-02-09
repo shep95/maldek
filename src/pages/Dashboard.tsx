@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,36 +12,11 @@ import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoadin
 import { Grid, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import { ContinentSelectionDialog } from "@/components/settings/ContinentSelectionDialog";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
-  const [showContinentDialog, setShowContinentDialog] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkContinentPreference = async () => {
-      if (!session?.user?.id) return;
-
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('continent')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (error) {
-        console.error('Error checking continent preference:', error);
-        return;
-      }
-
-      if (!data?.continent) {
-        setShowContinentDialog(true);
-      }
-    };
-
-    checkContinentPreference();
-  }, [session?.user?.id]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -127,11 +103,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <ContinentSelectionDialog
-        isOpen={showContinentDialog}
-        onOpenChange={setShowContinentDialog}
-      />
-
+      {/* Floating Top Navigation */}
       <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
         <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 shadow-lg">
           <button 
@@ -153,7 +125,7 @@ const Dashboard = () => {
           "w-full max-w-3xl px-4",
           "py-6 md:py-8 md:pl-24",
           "animate-fade-in",
-          "mt-20 md:mt-0"
+          "mt-20 md:mt-0" // Add top margin to account for floating nav on mobile
         )}>
           <PostList />
         </main>
