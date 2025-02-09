@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import { processImageFile, saveDraft } from "@/utils/postUploadUtils";
 import { isVideoFile } from "@/utils/mediaUtils";
 import type { Author } from "@/utils/postUtils";
 import type { PostData } from "../components/dashboard/post/types/postTypes";
+import { useNavigate } from "react-router-dom";
 
 export const usePostCreation = (
   currentUser: Author,
@@ -17,6 +19,7 @@ export const usePostCreation = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
+  const navigate = useNavigate();
 
   const handleFileSelect = useCallback(async (files: FileList) => {
     try {
@@ -132,11 +135,16 @@ export const usePostCreation = (
       resetFormState();
       onPostCreated(newPost);
       onOpenChange(false);
+      
+      // Force navigation to dashboard and scroll to top
+      console.log('Navigating to dashboard after post creation');
+      navigate('/dashboard', { replace: true });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
       toast.success(scheduledDate ? "Post scheduled successfully!" : "Post created successfully!");
 
     } catch (error: any) {
       console.error('Post creation error:', error);
-      // More specific error messages based on error type
       if (error.message?.includes('timeout')) {
         toast.error("Connection timed out. Please try again.");
       } else if (error.message?.includes('network')) {

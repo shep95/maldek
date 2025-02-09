@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -5,6 +6,7 @@ import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
 import { processImageFile, saveDraft } from "@/utils/postUploadUtils";
 import type { Author } from "@/utils/postUtils";
 import type { PostData } from "../types/postTypes";
+import { useNavigate } from "react-router-dom";
 
 export const usePostCreation = (
   currentUser: Author,
@@ -16,24 +18,22 @@ export const usePostCreation = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
+  const navigate = useNavigate();
 
   const handleFileSelect = useCallback(async (files: FileList) => {
-    console.log('Files selected:', Array.from(files).map(f => ({ name: f.name, type: f.type, size: f.size })));
-    
+    console.log('Files selected:', Array.from(files));
     const processedFiles = await Promise.all(
       Array.from(files).map(async file => {
         if (file.type.startsWith('image/')) {
-          return processImageFile(file);
+          return await processImageFile(file);
         }
         return file;
       })
     );
-
     setMediaFiles(prev => [...prev, ...processedFiles]);
   }, []);
 
   const handlePaste = useCallback(async (file: File) => {
-    console.log('File pasted:', file.name, file.type, file.size);
     const processedFile = await processImageFile(file);
     setMediaFiles(prev => [...prev, processedFile]);
   }, []);
@@ -49,7 +49,7 @@ export const usePostCreation = (
   const createPost = async () => {
     if (!currentUser?.id) {
       console.error('No user ID found');
-      toast.error("User authentication error. Please try logging in again.");
+      toast.error("Please sign in to create a post");
       return;
     }
 
@@ -64,36 +64,24 @@ export const usePostCreation = (
       const mediaUrls: string[] = [];
 
       if (mediaFiles.length > 0) {
-        let totalProgress = 0;
-
         for (const [index, file] of mediaFiles.entries()) {
-          console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
-          
           const publicUrl = await handleImageUpload(file, currentUser.id);
           
           if (!publicUrl) {
             throw new Error(`Failed to upload ${file.name}`);
           }
 
-          console.log('Upload successful. Public URL:', publicUrl);
           mediaUrls.push(publicUrl);
-
-          totalProgress = ((index + 1) / mediaFiles.length) * 100;
-          setUploadProgress(totalProgress);
+          setUploadProgress(((index + 1) / mediaFiles.length) * 100);
         }
       }
-
-      console.log('Creating post with media URLs:', mediaUrls);
 
       const postData: PostData = {
         content: content.trim(),
         user_id: currentUser.id,
         media_urls: mediaUrls,
+        scheduled_for: scheduledDate?.toISOString()
       };
-
-      if (scheduledDate) {
-        postData.scheduled_for = scheduledDate.toISOString();
-      }
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
@@ -102,81 +90,35 @@ export const usePostCreation = (
         .single();
 
       if (postError) {
-        console.error('Post creation error:', postError);
-        throw new Error(`Failed to create post: ${postError.message}`);
+        throw postError;
       }
 
       console.log('Post created successfully:', newPost);
-
-      // Handle mentions
-      const mentionRegex = /@(\w+)/g;
-      const mentions = content.match(mentionRegex);
-
-      if (mentions) {
-        console.log('Processing mentions:', mentions);
-        
-        for (const mention of mentions) {
-          const username = mention.slice(1); // Remove @ symbol
-          
-          // Get the mentioned user's ID
-          const { data: mentionedUser, error: userError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('username', username)
-            .single();
-
-          if (userError || !mentionedUser) {
-            console.error('Error finding mentioned user:', userError);
-            continue;
-          }
-
-          // Create mention record
-          const { error: mentionError } = await supabase
-            .from('mentions')
-            .insert({
-              user_id: currentUser.id,
-              mentioned_user_id: mentionedUser.id,
-              post_id: newPost.id
-            });
-
-          if (mentionError) {
-            console.error('Error creating mention:', mentionError);
-            continue;
-          }
-
-          // Create notification for mentioned user
-          const { error: notificationError } = await supabase
-            .from('notifications')
-            .insert({
-              recipient_id: mentionedUser.id,
-              actor_id: currentUser.id,
-              post_id: newPost.id,
-              type: 'mention'
-            });
-
-          if (notificationError) {
-            console.error('Error creating notification:', notificationError);
-          }
-        }
-      }
-      
       resetFormState();
       onPostCreated(newPost);
       onOpenChange(false);
+      
+      // Force navigation to dashboard and scroll to top
+      console.log('Navigating to dashboard after post creation');
+      navigate('/dashboard', { replace: true });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
       toast.success(scheduledDate ? "Post scheduled successfully!" : "Post created successfully!");
 
-    } catch (error) {
-      console.error('Detailed error:', error);
+    } catch (error: any) {
+      console.error('Post creation error:', error);
       toast.error(error.message || "Failed to create post");
+    } finally {
       setIsSubmitting(false);
+      setUploadProgress(0);
     }
   };
 
   const resetFormState = () => {
     console.log('Resetting form state');
     setContent("");
-    setIsSubmitting(false);
     setMediaFiles([]);
+    setIsSubmitting(false);
     setUploadProgress(0);
     setScheduledDate(undefined);
   };
