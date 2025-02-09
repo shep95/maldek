@@ -1777,8 +1777,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      delete_user_account_with_code: {
+        Args: {
+          code: string
+        }
+        Returns: undefined
+      }
       delete_user_data: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      delete_user_data_with_code: {
+        Args: {
+          code: string
+        }
         Returns: undefined
       }
       increment_ad_click: {
