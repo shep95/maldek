@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -10,10 +11,12 @@ import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
 import { Grid, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const session = useSession();
+  const navigate = useNavigate();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -93,6 +96,8 @@ const Dashboard = () => {
   const handlePostCreated = (newPost: any) => {
     console.log('New post created:', newPost);
     setIsCreatingPost(false);
+    navigate('/dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     toast.success('Post created successfully!');
   };
 

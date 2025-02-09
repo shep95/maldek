@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Home, User, Bell, Menu, Upload } from "lucide-react";
@@ -48,7 +49,7 @@ export const MobileNav = () => {
       }
 
       console.log('Mobile navigation: Navigating to', path);
-      setIsOpen(false);
+      setIsOpen(false); // Close sidebar after navigation
       navigate(path);
       window.scrollTo(0, 0);
     } catch (error) {
@@ -59,6 +60,7 @@ export const MobileNav = () => {
 
   const handleCreatePost = () => {
     console.log('Opening create post dialog from mobile nav');
+    setIsOpen(false); // Close sidebar before opening dialog
     if (window.setIsCreatingPost) {
       window.setIsCreatingPost(true);
     }
@@ -82,7 +84,7 @@ export const MobileNav = () => {
             <SidebarNav 
               setIsCreatingPost={(value) => {
                 console.log('Mobile SidebarNav setIsCreatingPost called with:', value);
-                setIsOpen(false);
+                setIsOpen(false); // Close sidebar when opening create post dialog
                 if (window.setIsCreatingPost) {
                   window.setIsCreatingPost(value);
                 }
