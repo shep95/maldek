@@ -64,7 +64,7 @@ export const CreatePostDialog = ({
       }
     }
 
-    handleFileSelect(Array.from(files));
+    handleFileSelect(files);
   };
 
   const handleCancel = (e: React.MouseEvent) => {
@@ -177,7 +177,9 @@ export const CreatePostDialog = ({
           )}
           
           <EnhancedUploadZone
-            onFileSelect={handleFileSelectWithValidation}
+            onFileSelect={(files: FileList) => {
+              handleFileSelectWithValidation({ target: { files } } as React.ChangeEvent<HTMLInputElement>);
+            }}
             onPaste={handlePaste}
             isUploading={isSubmitting}
             uploadProgress={uploadProgress}
