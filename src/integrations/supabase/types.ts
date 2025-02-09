@@ -1837,6 +1837,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      update_profile_with_code: {
+        Args: {
+          p_avatar_url: string
+          p_bio: string
+          p_security_code: string
+        }
+        Returns: undefined
+      }
       update_trending_scores: {
         Args: Record<PropertyKey, never>
         Returns: undefined
