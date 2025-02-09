@@ -19,6 +19,9 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import { Database } from "@/integrations/supabase/types";
+
+type BackgroundMusic = Database['public']['Tables']['user_background_music']['Row'];
 
 export const BackgroundMusicSection = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -139,7 +142,7 @@ export const BackgroundMusicSection = () => {
   const handleDragEnd = async (result: any) => {
     if (!result.destination) return;
 
-    const items = Array.from(musicList);
+    const items = Array.from(playlist);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 

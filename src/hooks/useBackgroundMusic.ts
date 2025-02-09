@@ -155,7 +155,7 @@ export const useBackgroundMusic = () => {
       if (error) throw error;
 
       // Update local state and refetch
-      await queryClient.invalidateQuery({ queryKey: ['background-music'] });
+      await queryClient.invalidateQueries({ queryKey: ['background-music'] });
       toast.success('Track deleted successfully');
 
       // If the current track was deleted, play the next one

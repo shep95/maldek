@@ -27,16 +27,17 @@ export const VideoPlayer = ({
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
   const handlePlay = () => {
-    backgroundMusic.fadeOut();
+    if (backgroundMusic.isPlaying) {
+      backgroundMusic.togglePlay();
+    }
   };
 
   const handlePause = () => {
-    backgroundMusic.fadeIn();
+    // Optional: Resume background music on video pause
   };
 
   const handleEnded = () => {
-    // Remove this since we're using loop now
-    // backgroundMusic.fadeIn();
+    // Optional: Resume background music on video end
   };
 
   const handleDownload = async () => {
