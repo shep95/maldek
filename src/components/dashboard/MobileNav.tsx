@@ -39,17 +39,19 @@ export const MobileNav = () => {
   const handleNavigation = (path?: string, action?: () => void) => {
     try {
       if (action) {
+        setIsOpen(false); // Close sidebar before action
         action();
         return;
       }
 
       if (!path || location.pathname === path) {
         console.log('Already on path or no path provided:', path);
+        setIsOpen(false); // Close sidebar even if we're on the same path
         return;
       }
 
       console.log('Mobile navigation: Navigating to', path);
-      setIsOpen(false); // Close sidebar after navigation
+      setIsOpen(false); // Close sidebar before navigation
       navigate(path);
       window.scrollTo(0, 0);
     } catch (error) {
@@ -88,7 +90,8 @@ export const MobileNav = () => {
                 if (window.setIsCreatingPost) {
                   window.setIsCreatingPost(value);
                 }
-              }} 
+              }}
+              onSidebarClose={() => setIsOpen(false)} // Pass down close handler
             />
           </div>
         </SheetContent>
@@ -133,3 +136,4 @@ export const MobileNav = () => {
     </>
   );
 };
+

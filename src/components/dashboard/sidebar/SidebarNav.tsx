@@ -1,3 +1,4 @@
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,9 +10,10 @@ import { useEffect, useState } from "react";
 interface SidebarNavProps {
   setIsCreatingPost: (value: boolean) => void;
   collapsed?: boolean;
+  onSidebarClose?: () => void; // New prop for handling sidebar close
 }
 
-export const SidebarNav = ({ setIsCreatingPost, collapsed }: SidebarNavProps) => {
+export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: SidebarNavProps) => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -75,12 +77,14 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed }: SidebarNavProps) =>
   const handlePremiumClick = () => {
     navigate('/subscription');
     toast.info(subscription ? 'Viewing your subscription' : 'Explore premium features');
+    if (onSidebarClose) onSidebarClose(); // Close sidebar after navigation
   };
 
   const handleNavigation = (path?: string) => {
     if (path) {
       console.log('Navigating to:', path);
       navigate(path);
+      if (onSidebarClose) onSidebarClose(); // Close sidebar after navigation
     }
   };
 
@@ -101,10 +105,14 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed }: SidebarNavProps) =>
         userId={userId}
         handlePremiumClick={handlePremiumClick}
         handleLogout={handleLogout}
-        setIsCreatingPost={setIsCreatingPost}
+        setIsCreatingPost={(value) => {
+          setIsCreatingPost(value);
+          if (onSidebarClose) onSidebarClose(); // Close sidebar after creating post
+        }}
         onNavigate={handleNavigation}
         collapsed={collapsed}
       />
     </ScrollArea>
   );
 };
+
