@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
@@ -74,13 +75,8 @@ const DashboardLayout = () => {
       }
     };
 
-    // Add event listener
     window.addEventListener('keydown', handleKeyPress);
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
+    return () => window.removeEventListener('keydown', handleKeyPress);
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -96,15 +92,15 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex flex-col md:flex-row">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex flex-col md:flex-row min-h-screen">
         <Sidebar setIsCreatingPost={setIsCreatingPost} />
         <div className={cn(
-          "flex-1 transition-all duration-200",
+          "flex-1 transition-all duration-200 pb-24 md:pb-0",
           "md:ml-64",
           location.pathname === '/dashboard' && "lg:mr-80"
         )}>
-          <main className="min-h-screen pb-20 md:pb-0 px-4 md:px-8">
+          <main className="min-h-screen pb-20 md:pb-0 px-4 md:px-8 pt-safe pb-safe">
             <div className="max-w-3xl mx-auto">
               <Outlet />
             </div>

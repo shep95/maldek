@@ -39,19 +39,19 @@ export const MobileNav = () => {
   const handleNavigation = (path?: string, action?: () => void) => {
     try {
       if (action) {
-        setIsOpen(false); // Close sidebar before action
+        setIsOpen(false);
         action();
         return;
       }
 
       if (!path || location.pathname === path) {
         console.log('Already on path or no path provided:', path);
-        setIsOpen(false); // Close sidebar even if we're on the same path
+        setIsOpen(false);
         return;
       }
 
       console.log('Mobile navigation: Navigating to', path);
-      setIsOpen(false); // Close sidebar before navigation
+      setIsOpen(false);
       navigate(path);
       window.scrollTo(0, 0);
     } catch (error) {
@@ -62,7 +62,7 @@ export const MobileNav = () => {
 
   const handleCreatePost = () => {
     console.log('Opening create post dialog from mobile nav');
-    setIsOpen(false); // Close sidebar before opening dialog
+    setIsOpen(false);
     if (window.setIsCreatingPost) {
       window.setIsCreatingPost(true);
     }
@@ -86,12 +86,12 @@ export const MobileNav = () => {
             <SidebarNav 
               setIsCreatingPost={(value) => {
                 console.log('Mobile SidebarNav setIsCreatingPost called with:', value);
-                setIsOpen(false); // Close sidebar when opening create post dialog
+                setIsOpen(false);
                 if (window.setIsCreatingPost) {
                   window.setIsCreatingPost(value);
                 }
               }}
-              onSidebarClose={() => setIsOpen(false)} // Pass down close handler
+              onSidebarClose={() => setIsOpen(false)}
             />
           </div>
         </SheetContent>
@@ -103,7 +103,7 @@ export const MobileNav = () => {
         className="fixed inset-0 md:hidden pointer-events-none"
       />
 
-      <nav className="fixed bottom-6 left-4 right-4 md:hidden z-50">
+      <nav className="fixed bottom-6 left-4 right-4 md:hidden z-50 pb-safe">
         <div className="flex justify-around items-center bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-2 shadow-lg">
           <Button
             variant="ghost"
@@ -136,4 +136,3 @@ export const MobileNav = () => {
     </>
   );
 };
-
