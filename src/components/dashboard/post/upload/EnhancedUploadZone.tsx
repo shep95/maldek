@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Image, AlertCircle, X } from "lucide-react";
@@ -10,13 +11,15 @@ interface EnhancedUploadZoneProps {
   onPaste: (file: File) => void;
   isUploading: boolean;
   uploadProgress: number;
+  accept?: string; // Added accept prop as optional
 }
 
 export const EnhancedUploadZone = ({
   onFileSelect,
   onPaste,
   isUploading,
-  uploadProgress
+  uploadProgress,
+  accept
 }: EnhancedUploadZoneProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +118,7 @@ export const EnhancedUploadZone = ({
       )}>
         <input
           type="file"
-          accept="image/*,video/*"
+          accept={accept}
           multiple
           onChange={handleFileInputChange}
           className="hidden"
