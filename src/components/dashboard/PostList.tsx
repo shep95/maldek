@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { PostCard } from "./PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,16 +8,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { useInView } from "react-intersection-observer";
 
 export const PostList = () => {
+  const [page, setPage] = useState(1);
+  const { ref: loadMoreRef, inView } = useInView();
   const session = useSession();
   const queryClient = useQueryClient();
-  const { posts, isLoading } = usePosts();
+  const { posts, isLoading, hasMore } = usePosts(page);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
-  const RETRY_DELAY = 2000; // 2 seconds
+  const RETRY_DELAY = 2000;
+
+  // Load more posts when scrolling to bottom
+  useEffect(() => {
+    if (inView && hasMore && !isLoading) {
+      setPage(prev => prev + 1);
+    }
+  }, [inView, hasMore, isLoading]);
 
   useEffect(() => {
     const fetchPostStats = async () => {
@@ -93,8 +106,8 @@ export const PostList = () => {
         });
 
         console.log('Post stats fetched successfully:', stats);
-        setPostStats(stats);
-        setRetryCount(0); // Reset retry count on success
+        setPostStats(prev => ({ ...prev, ...stats }));
+        setRetryCount(0);
       } catch (error) {
         console.error('Error fetching post stats:', error);
         if (retryCount < MAX_RETRIES) {
@@ -122,15 +135,7 @@ export const PostList = () => {
         },
         (payload) => {
           console.log('Post update received:', payload);
-          if (payload.eventType === 'INSERT') {
-            queryClient.setQueryData(['posts'], (old: any[]) => {
-              if (!old) return [payload.new];
-              return [payload.new, ...old];
-            });
-          }
-          if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
-            queryClient.invalidateQueries({ queryKey: ['posts'] });
-          }
+          queryClient.invalidateQueries({ queryKey: ['posts'] });
         }
       )
       .on(
@@ -198,7 +203,7 @@ export const PostList = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && page === 1) {
     return (
       <div className="space-y-6">
         {[1, 2, 3].map((i) => (
@@ -226,30 +231,42 @@ export const PostList = () => {
 
       <div className="space-y-6">
         {posts && posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={{
-                ...post,
-                user_id: post.profiles.id,
-                author: {
-                  id: post.profiles.id,
-                  username: post.profiles.username,
-                  avatar_url: post.profiles.avatar_url,
-                  name: post.profiles.username
-                },
-                timestamp: new Date(post.created_at),
-                likes: postStats[post.id]?.likes || 0,
-                comments: postStats[post.id]?.comments || 0,
-                reposts: 0,
-                isLiked: postStats[post.id]?.isLiked || false,
-                isBookmarked: false
-              }}
-              currentUserId={session?.user?.id || ''}
-              onPostAction={handlePostAction}
-              onMediaClick={setSelectedMedia}
-            />
-          ))
+          <>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={{
+                  ...post,
+                  user_id: post.profiles.id,
+                  author: {
+                    id: post.profiles.id,
+                    username: post.profiles.username,
+                    avatar_url: post.profiles.avatar_url,
+                    name: post.profiles.username
+                  },
+                  timestamp: new Date(post.created_at),
+                  likes: postStats[post.id]?.likes || 0,
+                  comments: postStats[post.id]?.comments || 0,
+                  reposts: 0,
+                  isLiked: postStats[post.id]?.isLiked || false,
+                  isBookmarked: false
+                }}
+                currentUserId={session?.user?.id || ''}
+                onPostAction={handlePostAction}
+                onMediaClick={setSelectedMedia}
+              />
+            ))}
+            
+            {/* Load more trigger */}
+            {hasMore && (
+              <div ref={loadMoreRef} className="py-4 flex justify-center">
+                <Button disabled variant="ghost" size="sm">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading more posts...
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
             <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
