@@ -1,3 +1,4 @@
+
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,6 +85,20 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
       }
 
       if (isLiked) {
+        const { data: existingLike } = await supabase
+          .from('post_likes')
+          .select('*')
+          .eq('user_id', currentUserId)
+          .eq('post_id', postId)
+          .single();
+
+        if (existingLike) {
+          toast.error("You've already liked this post");
+          return;
+        }
+      }
+
+      if (isLiked) {
         const { error: unlikeError } = await supabase
           .from('post_likes')
           .delete()
@@ -117,7 +132,7 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
       onAction(postId, 'like');
     } catch (error) {
       console.error('Error handling like:', error);
-      toast.error('Failed to like post');
+      toast.error('Failed to update like status');
     }
   };
 

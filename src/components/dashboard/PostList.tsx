@@ -267,14 +267,14 @@ export const PostList = () => {
               </div>
             )}
           </>
-        ) : (
+        ) : !isLoading && page === 1 ? (
           <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
             <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
             <p className="text-muted-foreground">
               Be the first to share something with your network!
             </p>
           </div>
-        )}
+        ) : null}
       </div>
     </>
   );
