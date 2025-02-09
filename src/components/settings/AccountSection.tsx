@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +12,6 @@ export const AccountSection = () => {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [hasSetCode, setHasSetCode] = useState(false);
-  const [isSettingCode, setIsSettingCode] = useState(false);
 
   const handleUsernameCheck = async (username: string) => {
     if (!username || username.length < 3) {
@@ -45,21 +43,6 @@ export const AccountSection = () => {
     }
   };
 
-  const checkSecurityCodeStatus = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('has_set_security_code')
-      .eq('id', (await supabase.auth.getUser()).data.user?.id)
-      .single();
-
-    setHasSetCode(!!data?.has_set_security_code);
-    if (!data?.has_set_security_code) {
-      setIsSettingCode(true);
-    } else {
-      setIsVerifying(true);
-    }
-  };
-
   const handleUpdateUsername = async () => {
     if (!newUsername || newUsername.length < 3) {
       toast.error("Username must be at least 3 characters long");
@@ -71,7 +54,7 @@ export const AccountSection = () => {
       return;
     }
 
-    checkSecurityCodeStatus();
+    setIsVerifying(true);
   };
 
   const handleVerificationSuccess = async () => {
@@ -128,13 +111,6 @@ export const AccountSection = () => {
           Update Username
         </Button>
       </CardContent>
-
-      <SecurityCodeDialog
-        isOpen={isSettingCode}
-        onOpenChange={setIsSettingCode}
-        action="set"
-        onSuccess={handleUpdateUsername}
-      />
 
       <SecurityCodeDialog
         isOpen={isVerifying}

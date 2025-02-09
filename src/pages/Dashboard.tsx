@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -46,13 +45,15 @@ const Dashboard = () => {
         if (!profileData) {
           console.log('No profile found, creating default profile...');
           const username = session.user.email?.split('@')[0] || 'user';
+          const securityCode = Math.floor(1000 + Math.random() * 9000).toString(); // Generate random 4-digit code
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
             .insert({
               id: session.user.id,
               username: username,
-              avatar_url: null
+              avatar_url: null,
+              security_code: securityCode // Include required security_code
             })
             .select()
             .single();

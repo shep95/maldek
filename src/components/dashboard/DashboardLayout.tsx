@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
@@ -38,17 +37,18 @@ const DashboardLayout = () => {
     name: session?.user?.email?.split('@')[0] || ''
   };
 
-  // Check if user has set security code
+  // Check if user needs to set security code
   useEffect(() => {
     const checkSecurityCode = async () => {
       if (session?.user?.id) {
         const { data } = await supabase
           .from('profiles')
-          .select('has_set_security_code')
+          .select('security_code')
           .eq('id', session.user.id)
           .single();
 
-        if (!data?.has_set_security_code) {
+        // If no security code is set, show the dialog
+        if (!data?.security_code) {
           setIsSettingSecurityCode(true);
         }
       }
@@ -66,10 +66,7 @@ const DashboardLayout = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ 
-          security_code: securityCode,
-          has_set_security_code: true 
-        })
+        .update({ security_code: securityCode })
         .eq('id', session?.user?.id);
 
       if (error) throw error;
@@ -171,7 +168,7 @@ const DashboardLayout = () => {
       />
       <MobileNav />
 
-      {/* Security Code Setup Dialog */}
+      {/* Initial Security Code Setup Dialog */}
       <Dialog 
         open={isSettingSecurityCode} 
         onOpenChange={setIsSettingSecurityCode}
