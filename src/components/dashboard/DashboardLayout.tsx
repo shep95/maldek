@@ -47,7 +47,7 @@ const DashboardLayout = () => {
           .eq('id', session.user.id)
           .single();
 
-        // If no security code is set, show the dialog
+        // Only show dialog if security_code is null (should not happen after migration)
         if (!data?.security_code) {
           setIsSettingSecurityCode(true);
         }
