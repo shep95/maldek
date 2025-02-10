@@ -39,10 +39,7 @@ export const CreatePostDialog = ({
 
   const [isStory, setIsStory] = useState(false);
 
-  const handleFileSelectWithValidation = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files?.length) return;
-
+  const handleFileSelectWithValidation = async (files: FileList) => {
     // For stories, validate video duration
     if (isStory) {
       for (const file of Array.from(files)) {
@@ -97,7 +94,11 @@ export const CreatePostDialog = ({
             .from('stories')
             .upload(filePath, file);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('Upload error:', uploadError);
+            toast.error("Failed to upload story media");
+            return;
+          }
 
           const { data: { publicUrl } } = supabase.storage
             .from('stories')
@@ -113,11 +114,16 @@ export const CreatePostDialog = ({
               duration: file.type.startsWith('video/') ? 30 : 5 // 5 seconds for images, up to 30 for videos
             });
 
-          if (storyError) throw storyError;
+          if (storyError) {
+            console.error('Story creation error:', storyError);
+            toast.error("Failed to create story");
+            return;
+          }
         }
 
         toast.success("Story created successfully!");
         onOpenChange(false);
+        resetFormState();
       } catch (error) {
         console.error('Error creating story:', error);
         toast.error("Failed to create story");
@@ -177,9 +183,7 @@ export const CreatePostDialog = ({
           )}
           
           <EnhancedUploadZone
-            onFileSelect={(files: FileList) => {
-              handleFileSelectWithValidation({ target: { files } } as React.ChangeEvent<HTMLInputElement>);
-            }}
+            onFileSelect={handleFileSelectWithValidation}
             onPaste={handlePaste}
             isUploading={isSubmitting}
             uploadProgress={uploadProgress}
