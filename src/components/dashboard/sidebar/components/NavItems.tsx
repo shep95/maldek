@@ -94,7 +94,7 @@ export const NavItems = ({
       active: location.pathname === "/daarp-ai",
       premium: true,
       description: subscription ? "Chat with AI assistant" : "Unlock AI features",
-      className: "text-accent"
+      className: "text-accent hover:text-accent/80"
     },
     { 
       icon: TrendingUp, 
@@ -119,21 +119,29 @@ export const NavItems = ({
       ) : (
         "Unlock premium features"
       ),
-      className: subscription?.tier?.name === "Creator" ? "text-orange-500" : 
-                 subscription?.tier?.name === "Business" ? "text-yellow-500" : 
-                 "text-accent relative hover:bg-accent/10"
+      className: cn(
+        subscription?.tier?.name === "Creator" ? "text-orange-500 hover:text-orange-600" : 
+        subscription?.tier?.name === "Business" ? "text-yellow-500 hover:text-yellow-600" : 
+        "text-accent hover:text-accent/80 relative hover:bg-accent/10"
+      )
     },
     { 
       icon: Plus, 
       label: "Create Post",
       onClick: handleCreatePost,
-      className: "border-2 border-white hover:bg-accent/90 text-white"
+      className: "border-2 border-accent bg-accent text-accent-foreground hover:bg-accent/90"
     },
-    { icon: Settings, label: "Settings", path: "/settings" },
+    { 
+      icon: Settings, 
+      label: "Settings", 
+      path: "/settings",
+      active: location.pathname === "/settings"
+    },
     { 
       icon: LogOut, 
       label: "Logout", 
-      onClick: handleLogout
+      onClick: handleLogout,
+      className: "text-muted-foreground hover:text-foreground"
     },
     {
       icon: Crown,
@@ -142,7 +150,7 @@ export const NavItems = ({
       active: location.pathname === "/emperor-chat",
       premium: true,
       description: subscription?.tier?.name === "True Emperor" ? "Exclusive Emperor Chatroom" : "Unlock Emperor features",
-      className: subscription?.tier?.name === "True Emperor" ? "text-yellow-500" : "text-accent"
+      className: subscription?.tier?.name === "True Emperor" ? "text-yellow-500 hover:text-yellow-600" : "text-accent hover:text-accent/80"
     },
   ];
 
