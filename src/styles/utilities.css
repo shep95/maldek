@@ -1,3 +1,4 @@
+
 /* Custom Scrollbar */
 .scrollbar-custom::-webkit-scrollbar {
   width: 6px;
@@ -75,5 +76,38 @@
   
   .responsive-margin {
     @apply my-4 sm:my-6 md:my-8;
+  }
+
+  /* Safe area utilities */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Dynamic viewport height */
+  .h-screen-dynamic {
+    height: 100vh; /* Fallback */
+    height: 100dvh;
+  }
+
+  .min-h-screen-dynamic {
+    min-height: 100vh; /* Fallback */
+    min-height: 100dvh;
+  }
+
+  .max-h-screen-dynamic {
+    max-height: 100vh; /* Fallback */
+    max-height: 100dvh;
   }
 }

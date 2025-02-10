@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { SidebarHeader } from "./sidebar/SidebarHeader";
 import { SidebarNav } from "./sidebar/SidebarNav";
@@ -16,7 +17,7 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
   
   return (
     <div className={cn(
-      "hidden md:block fixed left-0 h-screen transition-all duration-300 px-4 py-6",
+      "hidden md:block fixed left-0 h-[calc(100dvh-2rem)] transition-all duration-300 px-4 py-6",
       isCollapsed ? "w-24" : "w-72"
     )}>
       <Card className={cn(

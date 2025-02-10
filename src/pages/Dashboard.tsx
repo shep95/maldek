@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -45,7 +46,7 @@ const Dashboard = () => {
         if (!profileData) {
           console.log('No profile found, creating default profile...');
           const username = session.user.email?.split('@')[0] || 'user';
-          const securityCode = Math.floor(1000 + Math.random() * 9000).toString(); // Generate random 4-digit code
+          const securityCode = Math.floor(1000 + Math.random() * 9000).toString();
           
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
@@ -53,7 +54,7 @@ const Dashboard = () => {
               id: session.user.id,
               username: username,
               avatar_url: null,
-              security_code: securityCode // Include required security_code
+              security_code: securityCode
             })
             .select()
             .single();
@@ -103,7 +104,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[100dvh] bg-background">
       {/* Floating Top Navigation */}
       <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
         <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 shadow-lg">
@@ -121,12 +122,13 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full">
         <main className={cn(
-          "w-full max-w-3xl px-4",
-          "py-6 md:py-8 md:pl-24",
+          "w-full max-w-3xl px-4 sm:px-6",
+          "py-6 md:py-8 md:pl-28 lg:pl-32",
           "animate-fade-in",
-          "mt-20 md:mt-0" // Add top margin to account for floating nav on mobile
+          "mt-20 md:mt-0", // Add top margin to account for floating nav on mobile
+          "min-h-[100dvh]"
         )}>
           <PostList />
         </main>
