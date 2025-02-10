@@ -9,10 +9,35 @@ import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
+import { SecurityCodeSection } from "@/components/settings/SecurityCodeSection";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
 
 const Settings = () => {
   const navigate = useNavigate();
-  console.log("Rendering Settings page");
+  const session = useSession();
+
+  const { data: profile } = useQuery({
+    queryKey: ['user-security-code', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('security_code')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Error checking security code:', error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!session?.user?.id,
+  });
 
   return (
     <div className="container max-w-4xl py-8 space-y-8 animate-fade-in bg-background">
@@ -20,6 +45,9 @@ const Settings = () => {
       <ThemeToggle />
       <DownloadSection />
       <LanguageSection />
+      {profile && !profile.security_code && (
+        <SecurityCodeSection />
+      )}
       <AccountSection />
       <EmailSection />
       <PasswordSection />
