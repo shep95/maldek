@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,11 +10,36 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PostCard } from "@/components/dashboard/PostCard";
 import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 const Followers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const session = useSession();
+
+  // Query to check if the current user is following a specific user
+  const { data: followingData, refetch: refetchFollowing } = useQuery({
+    queryKey: ['following-status', selectedUser?.id],
+    queryFn: async () => {
+      if (!session?.user?.id || !selectedUser?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('followers')
+        .select('*')
+        .eq('follower_id', session.user.id)
+        .eq('following_id', selectedUser.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is the "no rows returned" error
+        console.error('Error checking follow status:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!session?.user?.id && !!selectedUser?.id,
+  });
 
   const { data: searchResults, isLoading } = useQuery({
     queryKey: ['user-search', searchQuery],
@@ -108,6 +134,56 @@ const Followers = () => {
     enabled: !!selectedUser?.id
   });
 
+  const handleFollow = async (userId: string) => {
+    try {
+      if (!session?.user?.id) {
+        toast.error("Please sign in to follow users");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('followers')
+        .insert({
+          follower_id: session.user.id,
+          following_id: userId
+        });
+
+      if (error) {
+        if (error.code === '23505') { // Unique violation
+          toast.error("You are already following this user");
+          return;
+        }
+        throw error;
+      }
+
+      toast.success("Successfully followed user");
+      refetchFollowing(); // Refresh following status
+    } catch (error) {
+      console.error("Error following user:", error);
+      toast.error("Failed to follow user");
+    }
+  };
+
+  const handleUnfollow = async (userId: string) => {
+    try {
+      if (!session?.user?.id) return;
+
+      const { error } = await supabase
+        .from('followers')
+        .delete()
+        .eq('follower_id', session.user.id)
+        .eq('following_id', userId);
+
+      if (error) throw error;
+
+      toast.success("Successfully unfollowed user");
+      refetchFollowing(); // Refresh following status
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      toast.error("Failed to unfollow user");
+    }
+  };
+
   return (
     <div className="container max-w-2xl mx-auto p-4 space-y-6">
       <h1 className="text-2xl font-bold mb-6 text-center md:text-left">User Info</h1>
@@ -149,7 +225,7 @@ const Followers = () => {
                   <AvatarImage src={user.avatar_url || ''} />
                   <AvatarFallback>{user.username[0]?.toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold">@{user.username}</h3>
                   <div className="text-sm text-muted-foreground space-x-3">
                     <span>{user.follower_count} followers</span>
@@ -160,6 +236,19 @@ const Followers = () => {
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{user.bio}</p>
                   )}
                 </div>
+                {session?.user?.id !== user.id && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFollow(user.id);
+                    }}
+                    className="ml-2"
+                  >
+                    Follow
+                  </Button>
+                )}
               </div>
             </Card>
           ))
@@ -177,7 +266,7 @@ const Followers = () => {
               <AvatarImage src={selectedUser?.avatar_url || ''} />
               <AvatarFallback>{selectedUser?.username[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex-1">
               <h2 className="text-2xl font-bold">@{selectedUser?.username}</h2>
               <p className="text-muted-foreground">{selectedUser?.bio}</p>
               <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
@@ -185,6 +274,17 @@ const Followers = () => {
                 <span>{selectedUser?.total_posts || 0} posts</span>
               </div>
             </div>
+            {session?.user?.id !== selectedUser?.id && (
+              <Button 
+                variant="outline"
+                onClick={() => followingData ? 
+                  handleUnfollow(selectedUser.id) : 
+                  handleFollow(selectedUser.id)
+                }
+              >
+                {followingData ? 'Unfollow' : 'Follow'}
+              </Button>
+            )}
           </div>
 
           <Tabs defaultValue="posts" className="w-full">
