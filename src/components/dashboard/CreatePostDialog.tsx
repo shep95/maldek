@@ -40,28 +40,32 @@ export const CreatePostDialog = ({
   const [isStory, setIsStory] = useState(false);
 
   const handleFileSelectWithValidation = async (files: FileList) => {
-    // For stories, validate video duration
-    if (isStory) {
-      for (const file of Array.from(files)) {
-        if (file.type.startsWith('video/')) {
-          const video = document.createElement('video');
-          video.preload = 'metadata';
+    try {
+      if (isStory) {
+        for (const file of Array.from(files)) {
+          if (file.type.startsWith('video/')) {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
 
-          await new Promise((resolve, reject) => {
-            video.onloadedmetadata = () => resolve(true);
-            video.onerror = () => reject();
-            video.src = URL.createObjectURL(file);
-          });
+            await new Promise((resolve, reject) => {
+              video.onloadedmetadata = () => resolve(true);
+              video.onerror = () => reject();
+              video.src = URL.createObjectURL(file);
+            });
 
-          if (video.duration > 30) {
-            toast.error("Story videos must be 30 seconds or less");
-            return;
+            if (video.duration > 30) {
+              toast.error("Story videos must be 30 seconds or less");
+              return;
+            }
           }
         }
       }
-    }
 
-    handleFileSelect(files);
+      handleFileSelect(files);
+    } catch (error) {
+      console.error('Error handling file selection:', error);
+      toast.error("Failed to process selected files");
+    }
   };
 
   const handleCancel = (e: React.MouseEvent) => {
@@ -80,24 +84,28 @@ export const CreatePostDialog = ({
   const handleCreateContent = async () => {
     if (isStory) {
       try {
-        for (const file of mediaFiles) {
+        const results = await Promise.all(mediaFiles.map(async (file) => {
           const validation = await validateMediaFile(file, currentUser.id);
           if (!validation.isValid) {
-            toast.error(validation.error);
-            return;
+            throw new Error(validation.error);
           }
 
           const fileExt = file.name.split('.').pop();
-          const filePath = `${currentUser.id}/${Date.now()}_${crypto.randomUUID()}.${fileExt}`;
+          const fileName = `${Date.now()}_${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `${currentUser.id}/${fileName}`;
+          
+          console.log('Uploading story to path:', filePath);
           
           const { error: uploadError } = await supabase.storage
             .from('stories')
-            .upload(filePath, file);
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
 
           if (uploadError) {
             console.error('Upload error:', uploadError);
-            toast.error("Failed to upload story media");
-            return;
+            throw new Error('Failed to upload story media');
           }
 
           const { data: { publicUrl } } = supabase.storage
@@ -116,17 +124,19 @@ export const CreatePostDialog = ({
 
           if (storyError) {
             console.error('Story creation error:', storyError);
-            toast.error("Failed to create story");
-            return;
+            throw new Error('Failed to create story record');
           }
-        }
 
+          return publicUrl;
+        }));
+
+        console.log('Successfully created stories:', results);
         toast.success("Story created successfully!");
         onOpenChange(false);
         resetFormState();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error creating story:', error);
-        toast.error("Failed to create story");
+        toast.error(error.message || "Failed to create story");
       }
     } else {
       await createPost();
