@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
@@ -37,17 +38,22 @@ const DashboardLayout = () => {
     name: session?.user?.email?.split('@')[0] || ''
   };
 
-  // Check if user needs to set security code
+  // Check if user needs to set security code (only if they don't have one)
   useEffect(() => {
     const checkSecurityCode = async () => {
       if (session?.user?.id) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('profiles')
           .select('security_code')
           .eq('id', session.user.id)
           .single();
 
-        // Only show dialog if security_code is null (should not happen after migration)
+        if (error) {
+          console.error('Error checking security code:', error);
+          return;
+        }
+
+        // Only show dialog if security_code is null
         if (!data?.security_code) {
           setIsSettingSecurityCode(true);
         }
