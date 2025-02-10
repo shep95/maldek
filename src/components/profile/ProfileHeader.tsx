@@ -1,3 +1,4 @@
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProfilePosts } from "./ProfilePosts";
 import { ProfileMusicTab } from "./ProfileMusicTab";
@@ -6,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useSession } from "@supabase/auth-helpers-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { StoryRing } from "./StoryRing";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -23,10 +25,12 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   return (
     <div className="w-full">
       <div className="flex flex-col items-center p-8 space-y-4 border-b bg-black/20 backdrop-blur-sm">
-        <Avatar className="h-24 w-24 ring-2 ring-accent/20 transition-transform hover:scale-105">
-          <AvatarImage src={profile?.avatar_url} />
-          <AvatarFallback>{profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <StoryRing userId={profile?.id}>
+          <Avatar className="h-24 w-24 ring-2 ring-accent/20 transition-transform hover:scale-105">
+            <AvatarImage src={profile?.avatar_url} />
+            <AvatarFallback>{profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </StoryRing>
         <div className="text-center">
           <h1 className="text-2xl font-bold">@{profile?.username}</h1>
           <p className="text-muted-foreground">{profile?.bio || "No bio yet"}</p>

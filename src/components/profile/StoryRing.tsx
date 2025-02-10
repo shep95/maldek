@@ -1,13 +1,49 @@
 
+import { useSession } from "@supabase/auth-helpers-react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoryRingProps {
-  hasUnviewedStory: boolean;
+  hasUnviewedStory?: boolean; // Make optional since we'll compute it
   className?: string;
   children: React.ReactNode;
+  userId: string; // Add userId to check stories for specific user
 }
 
-export const StoryRing = ({ hasUnviewedStory, className, children }: StoryRingProps) => {
+export const StoryRing = ({ className, children, userId }: StoryRingProps) => {
+  const session = useSession();
+
+  const { data: hasUnviewedStory = false } = useQuery({
+    queryKey: ['unviewed-stories', userId],
+    queryFn: async () => {
+      if (!session?.user?.id) return false;
+
+      // Get active stories for the user (not expired)
+      const { data: stories } = await supabase
+        .from('stories')
+        .select('id')
+        .eq('user_id', userId)
+        .gt('expires_at', new Date().toISOString())
+        .eq('is_expired', false);
+
+      if (!stories?.length) return false;
+
+      // Check if the current user has viewed all stories
+      const { data: views } = await supabase
+        .from('story_views')
+        .select('story_id')
+        .eq('viewer_id', session.user.id)
+        .in('story_id', stories.map(s => s.id));
+
+      const viewedStoryIds = new Set(views?.map(v => v.story_id) || []);
+      
+      // Return true if there are any stories that haven't been viewed
+      return stories.some(story => !viewedStoryIds.has(story.id));
+    },
+    enabled: !!session?.user?.id && !!userId,
+  });
+
   return (
     <div className={cn(
       "relative rounded-full",
