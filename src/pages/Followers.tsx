@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +40,8 @@ const Followers = () => {
     enabled: !!session?.user?.id && !!selectedUser?.id,
   });
 
-  const { data: searchResults, isLoading } = useQuery({
+  // Add refetch to searchResults query
+  const { data: searchResults, isLoading, refetch: refetchSearch } = useQuery({
     queryKey: ['user-search', searchQuery],
     queryFn: async () => {
       if (!searchQuery.trim()) return [];
@@ -158,6 +158,20 @@ const Followers = () => {
 
       toast.success("Successfully followed user");
       refetchFollowing(); // Refresh following status
+      refetchSearch(); // Refresh the search results to update follower count
+      
+      // If the user is currently selected in the dialog, update their data
+      if (selectedUser?.id === userId) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (data) {
+          setSelectedUser(data);
+        }
+      }
     } catch (error) {
       console.error("Error following user:", error);
       toast.error("Failed to follow user");
@@ -178,6 +192,20 @@ const Followers = () => {
 
       toast.success("Successfully unfollowed user");
       refetchFollowing(); // Refresh following status
+      refetchSearch(); // Refresh the search results to update follower count
+      
+      // If the user is currently selected in the dialog, update their data
+      if (selectedUser?.id === userId) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
+          
+        if (data) {
+          setSelectedUser(data);
+        }
+      }
     } catch (error) {
       console.error("Error unfollowing user:", error);
       toast.error("Failed to unfollow user");
