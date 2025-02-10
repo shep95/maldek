@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { SidebarHeader } from "./sidebar/SidebarHeader";
 import { SidebarNav } from "./sidebar/SidebarNav";
@@ -21,9 +20,8 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
       isCollapsed ? "w-24" : "w-72"
     )}>
       <Card className={cn(
-        "h-full flex flex-col rounded-xl shadow-lg relative",
-        "dark:bg-black/20 dark:border-border/50 dark:backdrop-blur-md",
-        "bg-white/80 backdrop-blur-md border-border/20",
+        "h-full flex flex-col bg-black/20 border-border/50 backdrop-blur-md relative",
+        "rounded-xl shadow-lg hover:shadow-xl transition-all",
         isCollapsed && "shadow-lg hover:shadow-xl hover:shadow-accent/5",
         "py-6"
       )}>
