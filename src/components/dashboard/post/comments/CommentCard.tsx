@@ -32,6 +32,12 @@ export const CommentCard = ({
 
   console.log("Comment data:", comment); // Debug log to see the comment data
 
+  // Early return if comment or user data is missing
+  if (!comment || !comment.user) {
+    console.error("Invalid comment data:", comment);
+    return null;
+  }
+
   const handleReplySubmit = async () => {
     if ((!replyContent.trim() && !selectedGif) || isSubmitting) return;
 
@@ -55,6 +61,9 @@ export const CommentCard = ({
     setShowGifPicker(false);
   };
 
+  // Get the first letter of username safely
+  const userInitial = comment.user.username ? comment.user.username[0].toUpperCase() : '?';
+
   return (
     <div className="space-y-3">
       <div className={cn(
@@ -69,7 +78,7 @@ export const CommentCard = ({
           >
             <AvatarImage src={comment.user.avatar_url || undefined} />
             <AvatarFallback className="bg-[#151515] text-orange-500">
-              {comment.user.username[0].toUpperCase()}
+              {userInitial}
             </AvatarFallback>
           </Avatar>
           
