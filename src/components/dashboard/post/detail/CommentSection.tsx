@@ -46,6 +46,7 @@ export const CommentSection = ({
       }
     });
 
+    console.log("Setting comment list:", rootComments); // Debug log
     setCommentList(rootComments);
   }, [comments]);
 
@@ -65,7 +66,7 @@ export const CommentSection = ({
           console.log('Comment update received:', payload);
           
           if (payload.eventType === 'INSERT') {
-            // Fetch the complete comment data including user profile and gif_url
+            // Fetch the complete comment data including user profile
             const { data: newComment, error } = await supabase
               .from('comments')
               .select(`
@@ -89,36 +90,9 @@ export const CommentSection = ({
             }
 
             console.log('New comment data:', newComment);
-
+            
             if (newComment) {
-              // Transform the data to match the Comment type
-              const formattedComment: Comment = {
-                ...newComment,
-                user: {
-                  id: newComment.user.id,
-                  username: newComment.user.username,
-                  avatar_url: newComment.user.avatar_url
-                },
-                replies: []
-              };
-
-              // Update the comment list
-              setCommentList(prevComments => {
-                if (formattedComment.parent_id) {
-                  // This is a reply - find the parent and add it
-                  return prevComments.map(comment => {
-                    if (comment.id === formattedComment.parent_id) {
-                      return {
-                        ...comment,
-                        replies: [...(comment.replies || []), formattedComment]
-                      };
-                    }
-                    return comment;
-                  });
-                }
-                // This is a root comment
-                return [...prevComments, formattedComment];
-              });
+              queryClient.invalidateQueries({ queryKey: ['comments', postId] });
             }
           }
         }
@@ -128,7 +102,7 @@ export const CommentSection = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [postId]);
+  }, [postId, queryClient]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,14 +112,18 @@ export const CommentSection = ({
     console.log("Submitting comment with GIF:", selectedGif);
 
     try {
+      const commentData = {
+        content: newComment.trim(),
+        post_id: postId,
+        user_id: currentUserId,
+        gif_url: selectedGif
+      };
+
+      console.log("Submitting comment data:", commentData); // Debug log
+
       const { error, data } = await supabase
         .from('comments')
-        .insert({
-          content: newComment.trim(),
-          post_id: postId,
-          user_id: currentUserId,
-          gif_url: selectedGif
-        })
+        .insert(commentData)
         .select(`
           id,
           content,
@@ -164,12 +142,31 @@ export const CommentSection = ({
 
       console.log("Comment added successfully:", data);
       
+      // Add the new comment to the list immediately
+      if (data) {
+        const formattedComment: Comment = {
+          ...data,
+          user: {
+            id: data.user.id,
+            username: data.user.username,
+            avatar_url: data.user.avatar_url
+          },
+          gif_url: data.gif_url, // Ensure GIF URL is included
+          replies: []
+        };
+
+        setCommentList(prevComments => [...prevComments, formattedComment]);
+      }
+
       // Reset form
       setNewComment("");
       setSelectedGif(null);
       setShowGifPicker(false);
       
       toast.success("Comment added successfully");
+
+      // Refresh the comments list
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
     } catch (error) {
       console.error("Failed to add comment:", error);
       toast.error("Failed to add comment");
@@ -207,6 +204,9 @@ export const CommentSection = ({
         .single();
 
       if (error) throw error;
+      
+      // Refresh the comments list after adding a reply
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
     } catch (error) {
       console.error("Failed to add reply:", error);
       throw error;
