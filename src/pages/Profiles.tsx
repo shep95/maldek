@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -53,19 +54,24 @@ const Profiles = () => {
         throw new Error('No username or user ID available');
       }
 
-      const { data, error } = await query.single();
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        toast.error('Profile not found');
-        navigate('/dashboard');
+        toast.error('Error loading profile');
         throw error;
+      }
+
+      if (!data) {
+        console.error('Profile not found');
+        toast.error('Profile not found');
+        return null;
       }
 
       console.log('Profile fetched successfully:', data);
       return data;
     },
-    retry: false
+    retry: 1
   });
 
   const { data: posts, isLoading: postsLoading } = useQuery({
@@ -157,6 +163,20 @@ const Profiles = () => {
 
   if (profileLoading) {
     return <DashboardLoading />;
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold">Profile Not Found</h1>
+          <p className="text-muted-foreground">The profile you're looking for doesn't exist.</p>
+          <Button onClick={() => navigate('/dashboard')} variant="outline">
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
