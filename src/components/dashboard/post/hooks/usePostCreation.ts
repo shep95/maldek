@@ -89,8 +89,30 @@ export const usePostCreation = (
         .select('*, profiles(id, username, avatar_url)')
         .single();
 
-      if (postError) {
-        throw postError;
+      if (postError) throw postError;
+
+      // Extract mentions from content and create mention records
+      const mentions = content.match(/@(\w+)/g) || [];
+      if (mentions.length > 0) {
+        const usernames = mentions.map(mention => mention.slice(1));
+        const { data: mentionedUsers, error: mentionError } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('username', usernames);
+
+        if (mentionError) {
+          console.error('Error fetching mentioned users:', mentionError);
+        } else if (mentionedUsers) {
+          const mentionPromises = mentionedUsers.map(user => 
+            supabase.from('mentions').insert({
+              post_id: newPost.id,
+              user_id: currentUser.id,
+              mentioned_user_id: user.id
+            })
+          );
+          
+          await Promise.all(mentionPromises);
+        }
       }
 
       console.log('Post created successfully:', newPost);

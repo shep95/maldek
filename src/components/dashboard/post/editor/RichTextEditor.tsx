@@ -1,3 +1,4 @@
+
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Bold, Italic, Link, Hash, AtSign, Image, Smile, Code } from "lucide-react";
@@ -7,6 +8,7 @@ import { EmojiPicker } from "@/components/messages/EmojiPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface RichTextEditorProps {
   value: string;
