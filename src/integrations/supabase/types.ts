@@ -324,6 +324,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          gif_url: string | null
           id: string
           parent_id: string | null
           post_id: string
@@ -332,6 +333,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          gif_url?: string | null
           id?: string
           parent_id?: string | null
           post_id: string
@@ -340,6 +342,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          gif_url?: string | null
           id?: string
           parent_id?: string | null
           post_id?: string

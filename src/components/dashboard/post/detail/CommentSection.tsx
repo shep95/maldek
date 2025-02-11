@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentCard } from "../comments/CommentCard";
 import { useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
+import GifPicker from "@/components/GifPicker";
 
 interface CommentSectionProps {
   postId: string;
@@ -21,10 +23,11 @@ export const CommentSection = ({
   const [newComment, setNewComment] = useState<string>("");
   const [commentList, setCommentList] = useState<Comment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [selectedGif, setSelectedGif] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // Organize comments into a tree structure
     const commentMap = new Map();
     const rootComments: Comment[] = [];
 
@@ -47,7 +50,7 @@ export const CommentSection = ({
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || isSubmitting) return;
+    if ((!newComment.trim() && !selectedGif) || isSubmitting) return;
 
     setIsSubmitting(true);
     console.log("Submitting comment...");
@@ -58,13 +61,15 @@ export const CommentSection = ({
         .insert({
           content: newComment,
           post_id: postId,
-          user_id: currentUserId
+          user_id: currentUserId,
+          gif_url: selectedGif
         })
         .select(`
           id,
           content,
           created_at,
           parent_id,
+          gif_url,
           user:profiles (
             id,
             username,
@@ -77,11 +82,11 @@ export const CommentSection = ({
 
       console.log("Comment added successfully:", data);
       
-      // Update the UI optimistically
       setCommentList(prevComments => [...prevComments, data as Comment]);
       setNewComment("");
+      setSelectedGif(null);
+      setShowGifPicker(false);
       
-      // Invalidate the comments query
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       
       toast.success("Comment added successfully");
@@ -93,8 +98,8 @@ export const CommentSection = ({
     }
   };
 
-  const handleReplySubmit = async (content: string, parentId: string): Promise<void> => {
-    if (!content.trim()) return;
+  const handleReplySubmit = async (content: string, parentId: string, gifUrl?: string): Promise<void> => {
+    if (!content.trim() && !gifUrl) return;
 
     try {
       console.log("Submitting reply to comment:", parentId);
@@ -104,13 +109,15 @@ export const CommentSection = ({
           content,
           post_id: postId,
           user_id: currentUserId,
-          parent_id: parentId
+          parent_id: parentId,
+          gif_url: gifUrl
         })
         .select(`
           id,
           content,
           created_at,
           parent_id,
+          gif_url,
           user:profiles (
             id,
             username,
@@ -121,7 +128,6 @@ export const CommentSection = ({
 
       if (error) throw error;
 
-      // Invalidate the comments query to refresh the thread
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
     } catch (error) {
       console.error("Failed to add reply:", error);
@@ -129,24 +135,69 @@ export const CommentSection = ({
     }
   };
 
+  const handleGifSelect = (gifUrl: string) => {
+    setSelectedGif(gifUrl);
+    setShowGifPicker(false);
+  };
+
   return (
     <div className="mt-6 space-y-6">
       <h3 className="text-lg font-medium text-gray-100">Comments</h3>
       <form onSubmit={handleCommentSubmit} className="space-y-4">
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Write a comment..."
-          className="min-h-[100px] bg-[#151515] border-[#222226] text-gray-200 placeholder:text-gray-500 focus:ring-orange-500 rounded-lg"
-        />
-        <Button 
-          type="submit" 
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          disabled={!newComment.trim() || isSubmitting}
-        >
-          {isSubmitting ? "Adding Comment..." : "Add Comment"}
-        </Button>
+        <div className="space-y-2">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Write a comment..."
+            className="min-h-[100px] bg-[#151515] border-[#222226] text-gray-200 placeholder:text-gray-500 focus:ring-orange-500 rounded-lg"
+          />
+          {selectedGif && (
+            <div className="relative">
+              <img 
+                src={selectedGif} 
+                alt="Selected GIF" 
+                className="w-32 h-32 object-cover rounded-lg"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="absolute top-1 right-1"
+                onClick={() => setSelectedGif(null)}
+              >
+                Remove
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setShowGifPicker(!showGifPicker)}
+            className="shrink-0"
+          >
+            <Image className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            type="submit" 
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            disabled={(!newComment.trim() && !selectedGif) || isSubmitting}
+          >
+            {isSubmitting ? "Adding Comment..." : "Add Comment"}
+          </Button>
+        </div>
+
+        {showGifPicker && (
+          <div className="relative z-50">
+            <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
+          </div>
+        )}
       </form>
+
       <div className="space-y-4">
         {commentList.map((comment) => (
           <CommentCard

@@ -2,34 +2,26 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Languages, Check, Reply, X, Crown } from "lucide-react";
+import { Languages, Check, Reply, X, Crown, Image } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { Comment } from "@/utils/commentUtils";
+import { GifPicker } from "../detail/GifPicker";
 
 interface CommentCardProps {
-  comment: {
-    id: string;
-    content: string;
-    created_at: string;
-    parent_id?: string | null;
-    user: {
-      id: string;
-      username: string;
-      avatar_url: string | null;
-    };
-  };
+  comment: Comment;
   userLanguage: string;
-  onReplySubmit?: (content: string, parentId: string) => Promise<void>;
+  onReplySubmit: (content: string, parentId: string, gifUrl?: string) => Promise<void>;
   level?: number;
-  replies?: any[];
+  replies?: Comment[];
 }
 
-export const CommentCard = ({ 
-  comment, 
+export const CommentCard = ({
+  comment,
   userLanguage,
   onReplySubmit,
   level = 0,
@@ -40,6 +32,9 @@ export const CommentCard = ({
   const [translatedContent, setTranslatedContent] = useState<string | null>(null);
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [selectedGif, setSelectedGif] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize subscription data as null
   const { data: subscription } = useQuery({
@@ -143,18 +138,26 @@ export const CommentCard = ({
   };
 
   const handleReplySubmit = async () => {
-    if (!replyContent.trim() || !onReplySubmit) return;
+    if ((!replyContent.trim() && !selectedGif) || isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
-      console.log('Submitting reply to comment:', comment.id);
-      await onReplySubmit(replyContent, comment.id);
+      await onReplySubmit(replyContent, comment.id, selectedGif || undefined);
       setReplyContent("");
+      setSelectedGif(null);
       setIsReplying(false);
-      toast.success("Reply posted successfully");
+      toast.success("Reply added successfully");
     } catch (error) {
-      console.error('Error posting reply:', error);
-      toast.error("Failed to post reply");
+      console.error("Failed to submit reply:", error);
+      toast.error("Failed to add reply");
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleGifSelect = (gifUrl: string) => {
+    setSelectedGif(gifUrl);
+    setShowGifPicker(false);
   };
 
   return (
@@ -175,6 +178,7 @@ export const CommentCard = ({
               {comment.user.username[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
+          
           <div className="flex-1">
             <div className="flex items-baseline gap-2">
               <div className="flex items-center gap-1">
@@ -190,9 +194,19 @@ export const CommentCard = ({
                 {new Date(comment.created_at).toLocaleDateString()}
               </span>
             </div>
+            
             <p className="mt-1 text-gray-200 leading-relaxed">
               {translatedContent || comment.content}
             </p>
+            
+            {comment.gif_url && (
+              <img 
+                src={comment.gif_url} 
+                alt="Comment GIF" 
+                className="max-w-[200px] rounded-lg"
+              />
+            )}
+
             <div className="flex items-center gap-2 mt-2">
               {!translatedContent && userLanguage && (
                 <Button
@@ -236,7 +250,36 @@ export const CommentCard = ({
                   placeholder="Write your reply..."
                   className="min-h-[100px] bg-[#151515] border-[#222226] text-gray-200 placeholder:text-gray-500 focus:ring-orange-500"
                 />
+                
+                {selectedGif && (
+                  <div className="relative">
+                    <img 
+                      src={selectedGif} 
+                      alt="Selected GIF" 
+                      className="w-32 h-32 object-cover rounded-lg"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1"
+                      onClick={() => setSelectedGif(null)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
+
                 <div className="flex justify-end gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowGifPicker(!showGifPicker)}
+                    className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
+                  >
+                    <Image className="h-4 w-4 mr-2" />
+                    GIF
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -249,13 +292,19 @@ export const CommentCard = ({
                   <Button
                     size="sm"
                     onClick={handleReplySubmit}
-                    disabled={!replyContent.trim()}
+                    disabled={(!replyContent.trim() && !selectedGif) || isSubmitting}
                     className="bg-orange-500 hover:bg-orange-600 text-white"
                   >
                     <Reply className="h-4 w-4 mr-2" />
                     Post Reply
                   </Button>
                 </div>
+
+                {showGifPicker && (
+                  <div className="relative z-50">
+                    <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
+                  </div>
+                )}
               </div>
             )}
           </div>
