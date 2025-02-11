@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { CommentCard } from "../comments/CommentCard";
 import { useQueryClient } from "@tanstack/react-query";
-import Image from "next/image";
-import GifPicker from "@/components/GifPicker";
+import { Image } from "lucide-react";
+import { GifPicker } from "./GifPicker";
 
 interface CommentSectionProps {
   postId: string;
