@@ -27,7 +27,7 @@ const PostDetail = () => {
   }, [postId, navigate]);
 
   // Optimized post query with minimal data fetching
-  const { data: post, isLoading: isLoadingPost } = useQuery({
+  const { data: post, isLoading: isLoadingPost, error: postError } = useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
       console.log('Fetching post details for:', postId);
@@ -79,7 +79,8 @@ const PostDetail = () => {
         view_count: 0
       };
     },
-    staleTime: 1000 * 30 // Cache for 30 seconds
+    staleTime: 1000 * 30, // Cache for 30 seconds
+    retry: 1 // Only retry once to avoid infinite loading
   });
 
   // Optimized comments query with prefetching
@@ -129,7 +130,8 @@ const PostDetail = () => {
       console.log('Comments fetched:', transformedComments);
       return transformedComments;
     },
-    staleTime: 1000 * 30 // Cache for 30 seconds
+    staleTime: 1000 * 30, // Cache for 30 seconds
+    enabled: !!post // Only fetch comments if post exists
   });
 
   // Simplified real-time subscription with optimistic updates
@@ -187,6 +189,13 @@ const PostDetail = () => {
       toast.error(`Failed to ${action} post`);
     }
   };
+
+  // Show error state if post fetch fails
+  if (postError) {
+    toast.error("Failed to load post");
+    navigate('/');
+    return null;
+  }
 
   if (isLoadingPost || !post) {
     return (
