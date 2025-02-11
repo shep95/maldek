@@ -1,14 +1,11 @@
+
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Languages, Check, Reply, X, Crown, Image } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
+import { Image } from "lucide-react";
+import { toast } from "sonner";
 import { Comment } from "@/utils/commentUtils";
 import { GifPicker } from "../detail/GifPicker";
 
@@ -27,115 +24,13 @@ export const CommentCard = ({
   level = 0,
   replies = []
 }: CommentCardProps) => {
-  const navigate = useNavigate();
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [translatedContent, setTranslatedContent] = useState<string | null>(null);
   const [isReplying, setIsReplying] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [selectedGif, setSelectedGif] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize subscription data as null
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', comment?.user?.id],
-    queryFn: async () => {
-      try {
-        console.log('Fetching subscription for user:', comment?.user?.id);
-        const { data, error } = await supabase
-          .from('user_subscriptions')
-          .select(`
-            *,
-            tier:subscription_tiers(*)
-          `)
-          .eq('user_id', comment?.user?.id)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching subscription:', error);
-          return null;
-        }
-
-        console.log('Subscription data:', data);
-        return data;
-      } catch (error) {
-        console.error('Error in subscription query:', error);
-        return null;
-      }
-    },
-    enabled: !!comment?.user?.id
-  });
-
-  // Early return if comment or user is invalid
-  if (!comment?.user) {
-    console.error('Invalid comment data:', comment);
-    return null;
-  }
-
-  const getVerificationBadge = () => {
-    if (!subscription?.tier?.name) return null;
-
-    const badgeConfig = {
-      'True Emperor': {
-        icon: Crown,
-        color: "text-yellow-500",
-        shadow: "shadow-[0_0_12px_rgba(234,179,8,0.6)]",
-        border: "border-yellow-500"
-      },
-      'Creator': {
-        icon: Check,
-        color: "text-orange-500",
-        shadow: "shadow-[0_0_12px_rgba(249,115,22,0.6)]",
-        border: "border-orange-500"
-      },
-      'Business': {
-        icon: Check,
-        color: "text-purple-500",
-        shadow: "shadow-[0_0_12px_rgba(168,85,247,0.6)]",
-        border: "border-purple-500"
-      }
-    };
-
-    const config = badgeConfig[subscription.tier.name as keyof typeof badgeConfig];
-    if (!config) return null;
-
-    const Icon = config.icon;
-
-    return (
-      <div className="group relative">
-        <div className={cn(
-          "h-5 w-5 rounded-full flex items-center justify-center",
-          "border-2 bg-black/50 backdrop-blur-sm",
-          config.border
-        )}>
-          <Icon className={cn("h-3 w-3", config.color, config.shadow)} />
-        </div>
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-background/90 backdrop-blur-sm text-xs rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap border border-border">
-          {subscription.tier.name}
-        </div>
-      </div>
-    );
-  };
-
-  const handleTranslate = async () => {
-    if (isTranslating || !userLanguage) return;
-    
-    try {
-      setIsTranslating(true);
-      const { data, error } = await supabase.functions.invoke('translate-text', {
-        body: { text: comment.content, targetLanguage: userLanguage }
-      });
-
-      if (error) throw error;
-      setTranslatedContent(data.translatedText);
-    } catch (error) {
-      console.error('Translation error:', error);
-      toast.error("Failed to translate comment");
-    } finally {
-      setIsTranslating(false);
-    }
-  };
+  console.log("Comment data:", comment); // Debug log to see the comment data
 
   const handleReplySubmit = async () => {
     if ((!replyContent.trim() && !selectedGif) || isSubmitting) return;
@@ -162,7 +57,7 @@ export const CommentCard = ({
 
   return (
     <div className="space-y-3">
-      <Card className={cn(
+      <div className={cn(
         "p-4 transition-all duration-200",
         "bg-[#0d0d0d] hover:bg-[#151515] border-[#222226]",
         "backdrop-blur-sm shadow-lg",
@@ -170,8 +65,7 @@ export const CommentCard = ({
       )}>
         <div className="flex items-start gap-3">
           <Avatar 
-            className="h-8 w-8 cursor-pointer ring-2 ring-[#222226] hover:ring-orange-500 transition-all" 
-            onClick={() => navigate(`/@${comment.user.username}`)}
+            className="h-8 w-8 cursor-pointer ring-2 ring-[#222226] hover:ring-orange-500 transition-all"
           >
             <AvatarImage src={comment.user.avatar_url || undefined} />
             <AvatarFallback className="bg-[#151515] text-orange-500">
@@ -181,55 +75,35 @@ export const CommentCard = ({
           
           <div className="flex-1">
             <div className="flex items-baseline gap-2">
-              <div className="flex items-center gap-1">
-                <h4 
-                  className="font-semibold cursor-pointer text-gray-100 hover:text-orange-500 transition-colors" 
-                  onClick={() => navigate(`/@${comment.user.username}`)}
-                >
-                  @{comment.user.username}
-                </h4>
-                {subscription && getVerificationBadge()}
-              </div>
+              <h4 className="font-semibold text-gray-100">
+                @{comment.user.username}
+              </h4>
               <span className="text-sm text-gray-500">
                 {new Date(comment.created_at).toLocaleDateString()}
               </span>
             </div>
             
-            <p className="mt-1 text-gray-200 leading-relaxed">
-              {translatedContent || comment.content}
-            </p>
+            {comment.content && (
+              <p className="mt-1 text-gray-200 leading-relaxed">
+                {comment.content}
+              </p>
+            )}
             
             {comment.gif_url && (
-              <img 
-                src={comment.gif_url} 
-                alt="Comment GIF" 
-                className="max-w-[200px] rounded-lg"
-              />
+              <div className="mt-2">
+                <img 
+                  src={comment.gif_url} 
+                  alt="Comment GIF" 
+                  className="max-w-[200px] h-auto rounded-lg"
+                  onError={(e) => {
+                    console.error("Failed to load GIF:", comment.gif_url);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
             )}
 
             <div className="flex items-center gap-2 mt-2">
-              {!translatedContent && userLanguage && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleTranslate}
-                  disabled={isTranslating}
-                  className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
-                >
-                  <Languages className="h-4 w-4 mr-2" />
-                  {isTranslating ? "Translating..." : "Translate"}
-                </Button>
-              )}
-              {translatedContent && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setTranslatedContent(null)}
-                  className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
-                >
-                  Show original
-                </Button>
-              )}
               {level < 3 && (
                 <Button
                   variant="ghost"
@@ -237,11 +111,11 @@ export const CommentCard = ({
                   onClick={() => setIsReplying(!isReplying)}
                   className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
                 >
-                  <Reply className="h-4 w-4 mr-2" />
-                  {isReplying ? "Cancel Reply" : "Reply"}
+                  Reply
                 </Button>
               )}
             </div>
+            
             {isReplying && (
               <div className="mt-4 space-y-2">
                 <Textarea
@@ -283,10 +157,13 @@ export const CommentCard = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setIsReplying(false)}
+                    onClick={() => {
+                      setIsReplying(false);
+                      setReplyContent("");
+                      setSelectedGif(null);
+                    }}
                     className="text-gray-400 hover:text-orange-500 hover:bg-orange-500/10"
                   >
-                    <X className="h-4 w-4 mr-2" />
                     Cancel
                   </Button>
                   <Button
@@ -295,7 +172,6 @@ export const CommentCard = ({
                     disabled={(!replyContent.trim() && !selectedGif) || isSubmitting}
                     className="bg-orange-500 hover:bg-orange-600 text-white"
                   >
-                    <Reply className="h-4 w-4 mr-2" />
                     Post Reply
                   </Button>
                 </div>
@@ -309,7 +185,7 @@ export const CommentCard = ({
             )}
           </div>
         </div>
-      </Card>
+      </div>
 
       {replies.length > 0 && (
         <div className="space-y-3 border-l-2 border-[#222226] pl-4">
