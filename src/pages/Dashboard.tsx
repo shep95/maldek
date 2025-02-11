@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -35,11 +36,17 @@ const Dashboard = () => {
           .from('profiles')
           .select('id, username, avatar_url')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           console.error('Error loading profile:', profileError);
           throw profileError;
+        }
+
+        if (!profileData) {
+          console.error('Profile not found:', session.user.id);
+          toast.error('Unable to load profile. Please try signing out and back in.');
+          return null;
         }
 
         console.log('Profile loaded successfully:', profileData);
@@ -49,7 +56,7 @@ const Dashboard = () => {
         throw error;
       }
     },
-    retry: false,
+    retry: 1,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -62,11 +69,15 @@ const Dashboard = () => {
     return <DashboardLoading />;
   }
 
+  if (!profile) {
+    return <DashboardError />;
+  }
+
   const currentUser: Author = {
     id: session?.user?.id || '',
-    username: profile?.username || '',
-    avatar_url: profile?.avatar_url || '',
-    name: profile?.username || ''
+    username: profile.username,
+    avatar_url: profile.avatar_url || '',
+    name: profile.username
   };
 
   const handlePostCreated = (newPost: any) => {
