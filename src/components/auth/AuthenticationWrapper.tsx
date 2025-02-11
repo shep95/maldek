@@ -1,3 +1,4 @@
+
 import { ReactNode, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSession } from '@supabase/auth-helpers-react';
@@ -28,13 +29,28 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       }
     });
 
-    // Handle auth errors
-    window.addEventListener('unhandledrejection', (event) => {
+    // Handle auth errors with retry mechanism
+    window.addEventListener('unhandledrejection', async (event) => {
       if (event.reason?.message === 'Failed to fetch' && 
           event.reason?.url?.includes('/auth/v1/user')) {
-        console.log('Auth error detected, redirecting to login');
-        navigate('/auth');
-        toast.error('Session expired. Please sign in again.');
+        console.log('Auth error detected, attempting to refresh session');
+        
+        try {
+          const { data: { session: currentSession }, error: refreshError } = await supabase.auth.getSession();
+          
+          if (refreshError || !currentSession) {
+            console.log('Session refresh failed, redirecting to login');
+            navigate('/auth');
+            toast.error('Session expired. Please sign in again.');
+          } else {
+            console.log('Session refreshed successfully');
+            // Session is valid, no need to redirect
+          }
+        } catch (error) {
+          console.error('Error refreshing session:', error);
+          navigate('/auth');
+          toast.error('Session expired. Please sign in again.');
+        }
       }
     });
 

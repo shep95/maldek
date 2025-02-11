@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -8,6 +9,7 @@ import { motion } from "framer-motion";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (formData: {
@@ -15,7 +17,11 @@ const Auth = () => {
     password: string;
     username?: string;
   }) => {
+    if (isSubmitting) return;
+    
     try {
+      setIsSubmitting(true);
+      
       if (isLogin) {
         console.log("Attempting to sign in user:", formData.email);
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -23,7 +29,12 @@ const Auth = () => {
           password: formData.password,
         });
 
-        if (signInError) throw signInError;
+        if (signInError) {
+          if (signInError.message.includes('Failed to fetch')) {
+            throw new Error('Network error. Please check your connection and try again.');
+          }
+          throw signInError;
+        }
         
         console.log("Sign in successful");
         toast.success("Successfully signed in!");
@@ -69,6 +80,9 @@ const Auth = () => {
         });
 
         if (signUpError) {
+          if (signUpError.message.includes('Failed to fetch')) {
+            throw new Error('Network error. Please check your connection and try again.');
+          }
           console.error("Signup error:", signUpError);
           throw signUpError;
         }
@@ -101,6 +115,8 @@ const Auth = () => {
     } catch (error: any) {
       console.error('Authentication error:', error);
       toast.error(error.message || "Authentication failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -137,6 +153,7 @@ const Auth = () => {
             <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-muted-foreground hover:text-accent transition-colors relative group"
+              disabled={isSubmitting}
             >
               <span className="relative z-10">
                 {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
