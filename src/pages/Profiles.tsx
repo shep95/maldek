@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -63,38 +62,18 @@ const Profiles = () => {
       }
 
       if (!data && session?.user?.id) {
-        // Create new profile if it's the current user
-        console.log('Creating new profile for user');
-        const username = session.user.email?.split('@')[0] || 'user';
-        const securityCode = Math.floor(1000 + Math.random() * 9000).toString();
+        // Wait a bit and retry once in case the trigger is still processing
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
-        const { data: newProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({
-            id: session.user.id,
-            username: username,
-            avatar_url: null,
-            security_code: securityCode,
-            bio: '',
-            follower_count: 0
-          })
-          .select()
-          .maybeSingle();
-
-        if (createError) {
-          console.error('Error creating profile:', createError);
-          throw createError;
+        const { data: retryData, error: retryError } = await query.maybeSingle();
+        
+        if (retryError) throw retryError;
+        if (!retryData) {
+          toast.error('Profile not found. Please refresh the page.');
+          throw new Error('Profile not found after retry');
         }
-
-        // Create user settings
-        await supabase
-          .from('user_settings')
-          .insert({
-            user_id: session.user.id,
-            preferred_language: 'en'
-          });
-
-        return newProfile;
+        
+        return retryData;
       }
 
       if (!data) {

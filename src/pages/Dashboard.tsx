@@ -44,37 +44,23 @@ const Dashboard = () => {
         }
 
         if (!profileData) {
-          console.log('No profile found, creating default profile...');
-          const username = session.user.email?.split('@')[0] || 'user';
-          const securityCode = Math.floor(1000 + Math.random() * 9000).toString();
+          console.log('No profile found, waiting for trigger to create one...');
+          // Wait a bit and try again
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
-          const { data: newProfile, error: createError } = await supabase
+          const { data: retryData, error: retryError } = await supabase
             .from('profiles')
-            .insert({
-              id: session.user.id,
-              username: username,
-              avatar_url: null,
-              security_code: securityCode,
-              bio: '',
-              follower_count: 0
-            })
-            .select()
+            .select('id, username, avatar_url')
+            .eq('id', session.user.id)
             .maybeSingle();
-
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            throw createError;
+            
+          if (retryError) throw retryError;
+          if (!retryData) {
+            toast.error('Unable to load profile. Please refresh the page.');
+            throw new Error('Profile not found after retry');
           }
-
-          // Also create user settings
-          await supabase
-            .from('user_settings')
-            .insert({
-              user_id: session.user.id,
-              preferred_language: 'en'
-            });
-
-          return newProfile;
+          
+          return retryData;
         }
 
         console.log('Profile loaded successfully:', profileData);
