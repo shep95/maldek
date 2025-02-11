@@ -53,40 +53,19 @@ const Profiles = () => {
         throw new Error('No username or user ID available');
       }
 
-      const { data, error } = await query.maybeSingle();
+      const { data, error } = await query.single();
 
       if (error) {
         console.error('Error fetching profile:', error);
-        toast.error('Failed to load profile');
-        throw error;
-      }
-
-      if (!data && session?.user?.id) {
-        // Wait a bit and retry once in case the trigger is still processing
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { data: retryData, error: retryError } = await query.maybeSingle();
-        
-        if (retryError) throw retryError;
-        if (!retryData) {
-          toast.error('Profile not found. Please refresh the page.');
-          throw new Error('Profile not found after retry');
-        }
-        
-        return retryData;
-      }
-
-      if (!data) {
         toast.error('Profile not found');
         navigate('/dashboard');
-        throw new Error('Profile not found');
+        throw error;
       }
 
       console.log('Profile fetched successfully:', data);
       return data;
     },
-    retry: 3,
-    retryDelay: 1000,
+    retry: false
   });
 
   const { data: posts, isLoading: postsLoading } = useQuery({
