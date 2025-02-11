@@ -167,6 +167,27 @@ const PostDetail = () => {
     };
   }, [postId, queryClient]);
 
+  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
+    try {
+      if (action === 'delete') {
+        const { error } = await supabase
+          .from('posts')
+          .delete()
+          .eq('id', postId);
+
+        if (error) throw error;
+        
+        toast.success('Post deleted successfully');
+        navigate('/');
+      }
+      // Handle other actions like like, bookmark, repost here
+      // For now we only have delete implemented
+    } catch (error) {
+      console.error(`Error performing ${action}:`, error);
+      toast.error(`Failed to ${action} post`);
+    }
+  };
+
   if (isLoadingPost || !post) {
     return (
       <div className="space-y-6 p-6">
