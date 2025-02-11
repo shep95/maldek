@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,7 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfilePosts } from "@/components/profile/ProfilePosts";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
 const Profiles = () => {
@@ -14,6 +15,7 @@ const Profiles = () => {
   const { username } = useParams();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   console.log('=== Profile Page Debug Logs ===');
   console.log('Current pathname:', location.pathname);
@@ -36,7 +38,7 @@ const Profiles = () => {
       
       let query = supabase
         .from('profiles')
-        .select();
+        .select('*');
 
       // If username is provided, fetch by username, otherwise fetch by user ID
       if (username) {
@@ -52,7 +54,7 @@ const Profiles = () => {
         throw new Error('No username or user ID available');
       }
 
-      const { data, error } = await query.single();
+      const { data, error } = await query.maybeSingle();
 
       if (error) {
         console.error('Error fetching profile:', error);
@@ -60,8 +62,44 @@ const Profiles = () => {
         throw error;
       }
 
+      if (!data && session?.user?.id) {
+        // Create new profile if it's the current user
+        console.log('Creating new profile for user');
+        const username = session.user.email?.split('@')[0] || 'user';
+        const securityCode = Math.floor(1000 + Math.random() * 9000).toString();
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: session.user.id,
+            username: username,
+            avatar_url: null,
+            security_code: securityCode,
+            bio: '',
+            follower_count: 0
+          })
+          .select()
+          .maybeSingle();
+
+        if (createError) {
+          console.error('Error creating profile:', createError);
+          throw createError;
+        }
+
+        // Create user settings
+        await supabase
+          .from('user_settings')
+          .insert({
+            user_id: session.user.id,
+            preferred_language: 'en'
+          });
+
+        return newProfile;
+      }
+
       if (!data) {
-        console.error('No profile found');
+        toast.error('Profile not found');
+        navigate('/dashboard');
         throw new Error('Profile not found');
       }
 
