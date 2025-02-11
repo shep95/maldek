@@ -64,9 +64,9 @@ export const CommentSection = ({
         async (payload) => {
           console.log('Comment update received:', payload);
           
-          // Fetch the complete comment data including user profile
           if (payload.eventType === 'INSERT') {
-            const { data: newComment } = await supabase
+            // Fetch the complete comment data including user profile and gif_url
+            const { data: newComment, error } = await supabase
               .from('comments')
               .select(`
                 id,
@@ -83,8 +83,42 @@ export const CommentSection = ({
               .eq('id', payload.new.id)
               .single();
 
+            if (error) {
+              console.error('Error fetching new comment:', error);
+              return;
+            }
+
+            console.log('New comment data:', newComment);
+
             if (newComment) {
-              queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+              // Transform the data to match the Comment type
+              const formattedComment: Comment = {
+                ...newComment,
+                user: {
+                  id: newComment.user.id,
+                  username: newComment.user.username,
+                  avatar_url: newComment.user.avatar_url
+                },
+                replies: []
+              };
+
+              // Update the comment list
+              setCommentList(prevComments => {
+                if (formattedComment.parent_id) {
+                  // This is a reply - find the parent and add it
+                  return prevComments.map(comment => {
+                    if (comment.id === formattedComment.parent_id) {
+                      return {
+                        ...comment,
+                        replies: [...(comment.replies || []), formattedComment]
+                      };
+                    }
+                    return comment;
+                  });
+                }
+                // This is a root comment
+                return [...prevComments, formattedComment];
+              });
             }
           }
         }
@@ -94,20 +128,20 @@ export const CommentSection = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [postId, queryClient]);
+  }, [postId]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!newComment.trim() && !selectedGif) || isSubmitting) return;
 
     setIsSubmitting(true);
-    console.log("Submitting comment...");
+    console.log("Submitting comment with GIF:", selectedGif);
 
     try {
       const { error, data } = await supabase
         .from('comments')
         .insert({
-          content: newComment,
+          content: newComment.trim(),
           post_id: postId,
           user_id: currentUserId,
           gif_url: selectedGif
@@ -130,12 +164,10 @@ export const CommentSection = ({
 
       console.log("Comment added successfully:", data);
       
-      setCommentList(prevComments => [...prevComments, data as Comment]);
+      // Reset form
       setNewComment("");
       setSelectedGif(null);
       setShowGifPicker(false);
-      
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       
       toast.success("Comment added successfully");
     } catch (error) {
@@ -150,11 +182,11 @@ export const CommentSection = ({
     if (!content.trim() && !gifUrl) return;
 
     try {
-      console.log("Submitting reply to comment:", parentId);
+      console.log("Submitting reply to comment:", { parentId, content, gifUrl });
       const { error } = await supabase
         .from('comments')
         .insert({
-          content,
+          content: content.trim(),
           post_id: postId,
           user_id: currentUserId,
           parent_id: parentId,
@@ -175,8 +207,6 @@ export const CommentSection = ({
         .single();
 
       if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
     } catch (error) {
       console.error("Failed to add reply:", error);
       throw error;
@@ -184,6 +214,7 @@ export const CommentSection = ({
   };
 
   const handleGifSelect = (gifUrl: string) => {
+    console.log("Selected GIF URL:", gifUrl);
     setSelectedGif(gifUrl);
     setShowGifPicker(false);
   };
