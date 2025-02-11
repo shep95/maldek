@@ -36,11 +36,27 @@ const Dashboard = () => {
           .from('profiles')
           .select('id, username, avatar_url')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           console.error('Error loading profile:', profileError);
           throw profileError;
+        }
+
+        if (!profileData) {
+          console.log('No profile found yet, retrying...');
+          toast.loading('Setting up your profile...');
+          // Wait a bit for the trigger to complete
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          const { data: retryData, error: retryError } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (retryError) throw retryError;
+          return retryData;
         }
 
         console.log('Profile loaded successfully:', profileData);
@@ -50,7 +66,8 @@ const Dashboard = () => {
         throw error;
       }
     },
-    retry: false,
+    retry: 2,
+    retryDelay: 2000,
     staleTime: 1000 * 60 * 5,
   });
 
