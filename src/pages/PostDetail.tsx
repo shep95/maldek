@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -95,6 +96,7 @@ const PostDetail = () => {
           content,
           created_at,
           parent_id,
+          gif_url,
           user:profiles (
             id,
             username,
@@ -109,8 +111,23 @@ const PostDetail = () => {
         throw error;
       }
 
-      console.log('Comments fetched:', data);
-      return data;
+      // Transform the data to ensure correct structure
+      const transformedComments = data.map(comment => ({
+        id: comment.id,
+        content: comment.content,
+        created_at: comment.created_at,
+        parent_id: comment.parent_id,
+        gif_url: comment.gif_url,
+        user: {
+          id: comment.user.id,
+          username: comment.user.username,
+          avatar_url: comment.user.avatar_url
+        },
+        replies: []
+      }));
+
+      console.log('Comments fetched:', transformedComments);
+      return transformedComments;
     },
     staleTime: 1000 * 30 // Cache for 30 seconds
   });
@@ -149,25 +166,6 @@ const PostDetail = () => {
       supabase.removeChannel(channel);
     };
   }, [postId, queryClient]);
-
-  const handlePostAction = async (action: 'delete') => {
-    try {
-      if (action === 'delete' && post?.id) {
-        const { error } = await supabase
-          .from('posts')
-          .delete()
-          .eq('id', post.id);
-
-        if (error) throw error;
-        
-        toast.success('Post deleted successfully');
-        navigate('/');
-      }
-    } catch (error) {
-      console.error(`Error performing ${action}:`, error);
-      toast.error(`Failed to ${action} post`);
-    }
-  };
 
   if (isLoadingPost || !post) {
     return (
