@@ -36,7 +36,7 @@ const Dashboard = () => {
           .from('profiles')
           .select('id, username, avatar_url')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           console.error('Error loading profile:', profileError);
@@ -54,15 +54,25 @@ const Dashboard = () => {
               id: session.user.id,
               username: username,
               avatar_url: null,
-              security_code: securityCode
+              security_code: securityCode,
+              bio: '',
+              follower_count: 0
             })
             .select()
-            .single();
+            .maybeSingle();
 
           if (createError) {
             console.error('Error creating profile:', createError);
             throw createError;
           }
+
+          // Also create user settings
+          await supabase
+            .from('user_settings')
+            .insert({
+              user_id: session.user.id,
+              preferred_language: 'en'
+            });
 
           return newProfile;
         }
