@@ -49,6 +49,53 @@ export const CommentSection = ({
     setCommentList(rootComments);
   }, [comments]);
 
+  // Set up real-time subscription for comments
+  useEffect(() => {
+    const channel = supabase
+      .channel(`public:comments:${postId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments',
+          filter: `post_id=eq.${postId}`
+        },
+        async (payload) => {
+          console.log('Comment update received:', payload);
+          
+          // Fetch the complete comment data including user profile
+          if (payload.eventType === 'INSERT') {
+            const { data: newComment } = await supabase
+              .from('comments')
+              .select(`
+                id,
+                content,
+                created_at,
+                parent_id,
+                gif_url,
+                user:profiles (
+                  id,
+                  username,
+                  avatar_url
+                )
+              `)
+              .eq('id', payload.new.id)
+              .single();
+
+            if (newComment) {
+              queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [postId, queryClient]);
+
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!newComment.trim() && !selectedGif) || isSubmitting) return;
