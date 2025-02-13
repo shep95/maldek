@@ -23,10 +23,15 @@ export const useMessageActions = () => {
 
   const sendMessageMutation = useMutation({
     mutationFn: async ({ recipientId, content }: SendMessageParams) => {
+      // Get the current user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('messages')
         .insert({
           recipient_id: recipientId,
+          sender_id: user.id,
           content,
           status: 'pending'
         });
