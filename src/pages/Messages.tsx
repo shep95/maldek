@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageList } from "@/components/messages/MessageList";
@@ -20,6 +19,8 @@ const Messages = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [previewMessage, setPreviewMessage] = useState("");
+  const MAX_CHARS = 120;
   const { acceptRequest, declineRequest, sendMessage } = useMessageActions();
   const messagesQuery = useMessages(currentUserId);
   const requestsQuery = useMessageRequests(currentUserId);
@@ -69,7 +70,7 @@ const Messages = () => {
     try {
       await sendMessage({
         recipientId: userId,
-        content: `Hi ${username}! I'd like to connect with you.`,
+        content: previewMessage || `Hi ${username}! I'd like to connect with you.`,
       });
       
       toast({
@@ -79,6 +80,7 @@ const Messages = () => {
       
       setSearchQuery("");
       setSearchResults([]);
+      setPreviewMessage("");
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -126,7 +128,6 @@ const Messages = () => {
 
   return (
     <div className="animate-fade-in relative">
-      {/* Decorative background elements */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/3 rounded-full blur-3xl -z-10" />
       
@@ -135,7 +136,6 @@ const Messages = () => {
           Messages
         </h1>
 
-        {/* Search Bar */}
         <div className="mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -150,29 +150,49 @@ const Messages = () => {
             />
           </div>
 
-          {/* Search Results */}
           {searchResults.length > 0 && (
             <div className="absolute z-10 mt-2 w-full bg-background/95 backdrop-blur-md rounded-lg border border-border/50 shadow-lg animate-fade-in">
               {searchResults.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between p-4 hover:bg-accent/5 transition-colors"
+                  className="flex flex-col p-4 hover:bg-accent/5 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={user.avatar_url} />
-                      <AvatarFallback>{user.username[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{user.username}</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={user.avatar_url} />
+                        <AvatarFallback>{user.username[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{user.username}</span>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleStartMessage(user.id, user.username)}
-                    className="hover:bg-accent/10"
-                  >
-                    Message
-                  </Button>
+                  <div className="space-y-2 w-full">
+                    <div className="relative">
+                      <Input
+                        placeholder={`Write a message to ${user.username}...`}
+                        value={previewMessage}
+                        onChange={(e) => {
+                          if (e.target.value.length <= MAX_CHARS) {
+                            setPreviewMessage(e.target.value);
+                          }
+                        }}
+                        className="pr-16 bg-background/50"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        {previewMessage.length}/{MAX_CHARS}
+                      </span>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleStartMessage(user.id, user.username)}
+                        className="hover:bg-accent/10"
+                      >
+                        Send Request
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
