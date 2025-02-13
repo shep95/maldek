@@ -1179,7 +1179,7 @@ export type Database = {
           id: string
           last_active: string | null
           location: string | null
-          security_code: string
+          security_code: string | null
           social_links: Json | null
           theme_preference: string | null
           total_likes_received: number | null
@@ -1200,7 +1200,7 @@ export type Database = {
           id: string
           last_active?: string | null
           location?: string | null
-          security_code: string
+          security_code?: string | null
           social_links?: Json | null
           theme_preference?: string | null
           total_likes_received?: number | null
@@ -1221,7 +1221,7 @@ export type Database = {
           id?: string
           last_active?: string | null
           location?: string | null
-          security_code?: string
+          security_code?: string | null
           social_links?: Json | null
           theme_preference?: string | null
           total_likes_received?: number | null
@@ -1918,13 +1918,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      update_profile_with_code: {
+      update_security_code: {
         Args: {
-          p_avatar_url: string
-          p_bio: string
-          p_security_code: string
+          old_code: string
+          new_code: string
         }
-        Returns: undefined
+        Returns: boolean
       }
       update_trending_scores: {
         Args: Record<PropertyKey, never>
