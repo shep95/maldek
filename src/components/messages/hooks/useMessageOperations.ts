@@ -33,7 +33,7 @@ export const useMessageOperations = (currentUserId: string | null, recipientId: 
         })
         .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle(); // Changed from single() to maybeSingle()
+        .maybeSingle();
 
       // Set status to 'pending' for new chats or 'sent' for accepted ones
       const status = existingChat?.status === 'accepted' ? 'sent' : 'pending';
