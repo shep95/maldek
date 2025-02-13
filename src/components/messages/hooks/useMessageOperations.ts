@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -12,9 +13,9 @@ export const useMessageOperations = (currentUserId: string | null, recipientId: 
       console.log('Sending message');
       const newMessage = {
         sender_id: currentUserId,
-        recipient_id: recipientId, // Add recipient_id
+        recipient_id: recipientId,
         content: content.trim(),
-        status: 'sent',
+        status: 'sent', // Changed from 'pending' to 'sent'
         reply_to_id: replyToId || null,
         reactions: {},
         is_edited: false
