@@ -1,12 +1,8 @@
 
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
-import { processImageFile, saveDraft } from "@/utils/postUploadUtils";
 import type { Author } from "@/utils/postUtils";
-import type { PostData } from "../types/postTypes";
-import { useNavigate } from "react-router-dom";
 
 export const usePostCreation = (
   currentUser: Author,
@@ -18,41 +14,56 @@ export const usePostCreation = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
-  const navigate = useNavigate();
+  const [postsRemaining, setPostsRemaining] = useState<number | null>(null);
 
-  const handleFileSelect = useCallback(async (files: FileList) => {
+  const fetchRemainingPosts = async () => {
+    try {
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, subscription_tiers(name)')
+        .eq('user_id', currentUser.id)
+        .eq('status', 'active')
+        .gt('ends_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (subscription?.subscription_tiers?.name) {
+        setPostsRemaining(null);
+        return;
+      }
+
+      const { count } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact' })
+        .eq('user_id', currentUser.id)
+        .gt('created_at', hourAgo);
+
+      setPostsRemaining(3 - (count || 0));
+    } catch (error) {
+      console.error('Error fetching remaining posts:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRemainingPosts();
+  }, [currentUser.id]);
+
+  const handleFileSelect = async (files: FileList) => {
     console.log('Files selected:', Array.from(files));
-    const processedFiles = await Promise.all(
-      Array.from(files).map(async file => {
-        if (file.type.startsWith('image/')) {
-          return await processImageFile(file);
-        }
-        return file;
-      })
-    );
-    setMediaFiles(prev => [...prev, ...processedFiles]);
-  }, []);
+    setMediaFiles(prev => [...prev, ...Array.from(files)]);
+  };
 
-  const handlePaste = useCallback(async (file: File) => {
-    const processedFile = await processImageFile(file);
-    setMediaFiles(prev => [...prev, processedFile]);
-  }, []);
+  const handlePaste = async (file: File) => {
+    setMediaFiles(prev => [...prev, file]);
+  };
 
-  const saveToDrafts = useCallback(() => {
-    saveDraft({
-      content,
-      mediaFiles,
-      scheduledFor: scheduledDate
-    });
-  }, [content, mediaFiles, scheduledDate]);
+  const saveToDrafts = () => {
+    // Implementation for saving to drafts
+    console.log('Saving to drafts:', { content, mediaFiles, scheduledDate });
+  };
 
   const createPost = async () => {
-    if (!currentUser?.id) {
-      console.error('No user ID found');
-      toast.error("Please sign in to create a post");
-      return;
-    }
-
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -60,76 +71,81 @@ export const usePostCreation = (
 
     try {
       setIsSubmitting(true);
-      console.log('Starting post creation with media files:', mediaFiles.length);
       const mediaUrls: string[] = [];
 
       if (mediaFiles.length > 0) {
         for (const [index, file] of mediaFiles.entries()) {
-          const publicUrl = await handleImageUpload(file, currentUser.id);
-          
-          if (!publicUrl) {
-            throw new Error(`Failed to upload ${file.name}`);
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `${currentUser.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('posts')
+            .upload(filePath, file);
+
+          if (uploadError) {
+            toast.error(`Failed to upload ${file.name}`);
+            throw uploadError;
           }
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('posts')
+            .getPublicUrl(filePath);
 
           mediaUrls.push(publicUrl);
           setUploadProgress(((index + 1) / mediaFiles.length) * 100);
         }
       }
 
-      const postData: PostData = {
-        content: content.trim(),
-        user_id: currentUser.id,
-        media_urls: mediaUrls,
-        scheduled_for: scheduledDate?.toISOString()
-      };
-
       const { data: newPost, error: postError } = await supabase
         .from('posts')
-        .insert(postData)
+        .insert({
+          content: content.trim(),
+          user_id: currentUser.id,
+          media_urls: mediaUrls,
+          scheduled_for: scheduledDate?.toISOString()
+        })
         .select('*, profiles(id, username, avatar_url)')
         .single();
 
-      if (postError) throw postError;
-
-      // Extract mentions from content and create mention records
-      const mentions = content.match(/@(\w+)/g) || [];
-      if (mentions.length > 0) {
-        const usernames = mentions.map(mention => mention.slice(1));
-        const { data: mentionedUsers, error: mentionError } = await supabase
-          .from('profiles')
-          .select('id, username')
-          .in('username', usernames);
-
-        if (mentionError) {
-          console.error('Error fetching mentioned users:', mentionError);
-        } else if (mentionedUsers) {
-          const mentionPromises = mentionedUsers.map(user => 
-            supabase.from('mentions').insert({
-              post_id: newPost.id,
-              user_id: currentUser.id,
-              mentioned_user_id: user.id
-            })
-          );
-          
-          await Promise.all(mentionPromises);
+      if (postError) {
+        if (postError.message.includes('can only post 3 times per hour')) {
+          toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+            duration: 5000,
+            action: {
+              label: "Upgrade",
+              onClick: () => window.location.href = '/subscription'
+            }
+          });
+          return;
         }
+        throw postError;
       }
 
-      console.log('Post created successfully:', newPost);
-      resetFormState();
+      await fetchRemainingPosts();
+      
+      setContent("");
+      setMediaFiles([]);
+      setUploadProgress(0);
+      setScheduledDate(undefined);
+      
       onPostCreated(newPost);
       onOpenChange(false);
-      
-      // Force navigation to dashboard and scroll to top
-      console.log('Navigating to dashboard after post creation');
-      navigate('/dashboard', { replace: true });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      
       toast.success(scheduledDate ? "Post scheduled successfully!" : "Post created successfully!");
 
     } catch (error: any) {
       console.error('Post creation error:', error);
-      toast.error(error.message || "Failed to create post");
+      if (error.message.includes('can only post 3 times per hour')) {
+        toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+          duration: 5000,
+          action: {
+            label: "Upgrade",
+            onClick: () => window.location.href = '/subscription'
+          }
+        });
+      } else {
+        toast.error(error.message || "Failed to create post");
+      }
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
@@ -153,6 +169,7 @@ export const usePostCreation = (
     uploadProgress,
     scheduledDate,
     setScheduledDate,
+    postsRemaining,
     handleFileSelect,
     handlePaste,
     saveToDrafts,
