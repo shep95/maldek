@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Bold, Italic, Link, Hash, AtSign, Image, Smile, Code } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { EmojiPicker } from "@/components/messages/EmojiPicker";
+import { EmojiPicker } from "@/components/emoji/EmojiPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
