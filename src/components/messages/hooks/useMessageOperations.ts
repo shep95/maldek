@@ -12,8 +12,19 @@ export const useMessageOperations = (currentUserId: string | null, recipientId: 
     try {
       console.log('Sending message');
       
+      // First verify the recipient exists in profiles
+      const { data: recipientProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', recipientId)
+        .maybeSingle();
+
+      if (profileError || !recipientProfile) {
+        throw new Error("Recipient not found");
+      }
+      
       // Check if there's an existing chat between these users
-      const { data: existingChat } = await supabase
+      const { data: existingChat, error: chatError } = await supabase
         .from('messages')
         .select('status')
         .match({ 
@@ -22,9 +33,9 @@ export const useMessageOperations = (currentUserId: string | null, recipientId: 
         })
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle(); // Changed from single() to maybeSingle()
 
-      // Set status based on existing chat
+      // Set status to 'pending' for new chats or 'sent' for accepted ones
       const status = existingChat?.status === 'accepted' ? 'sent' : 'pending';
 
       const newMessage = {
@@ -37,17 +48,21 @@ export const useMessageOperations = (currentUserId: string | null, recipientId: 
         is_edited: false
       };
 
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('messages')
         .insert(newMessage);
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       console.log('Message sent successfully');
       toast.success("Message sent");
     } catch (error) {
       console.error('Error in sendMessage:', error);
-      toast.error("Failed to send message");
+      if (error instanceof Error && error.message === "Recipient not found") {
+        toast.error("Cannot send message: recipient not found");
+      } else {
+        toast.error("Failed to send message");
+      }
       throw error;
     }
   };
