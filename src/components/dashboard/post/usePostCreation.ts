@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
@@ -14,6 +13,40 @@ export const usePostCreation = (
   const [mentionedUser, setMentionedUser] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaPreviewUrls, setMediaPreviewUrls] = useState<string[]>([]);
+  const [postsRemaining, setPostsRemaining] = useState<number | null>(null);
+
+  const fetchRemainingPosts = async () => {
+    try {
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, subscription_tiers(name)')
+        .eq('user_id', currentUser.id)
+        .eq('status', 'active')
+        .gt('ends_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (subscription?.subscription_tiers?.name) {
+        setPostsRemaining(null);
+        return;
+      }
+
+      const { count } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact' })
+        .eq('user_id', currentUser.id)
+        .gt('created_at', hourAgo);
+
+      setPostsRemaining(3 - (count || 0));
+    } catch (error) {
+      console.error('Error fetching remaining posts:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRemainingPosts();
+  }, [currentUser.id]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -68,7 +101,6 @@ export const usePostCreation = (
       setIsSubmitting(true);
       const mediaUrls: string[] = [];
 
-      // Upload media files if any
       if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
           const fileExt = file.name.split('.').pop();
@@ -92,7 +124,6 @@ export const usePostCreation = (
         }
       }
 
-      // Create the post
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert({
@@ -104,7 +135,6 @@ export const usePostCreation = (
         .single();
 
       if (postError) {
-        // Check for the specific posting limit error
         if (postError.message.includes('can only post 3 times per hour')) {
           toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
             duration: 5000,
@@ -118,13 +148,13 @@ export const usePostCreation = (
         throw postError;
       }
 
-      // Clean up state
+      await fetchRemainingPosts();
+
       setPostContent("");
       mediaPreviewUrls.forEach(url => URL.revokeObjectURL(url));
       setMediaPreviewUrls([]);
       setMediaFiles([]);
       
-      // Notify success and close dialog
       onPostCreated(newPost);
       onOpenChange(false);
       toast.success("Post created successfully!");
@@ -154,6 +184,7 @@ export const usePostCreation = (
     mentionedUser,
     isSubmitting,
     mediaPreviewUrls,
+    postsRemaining,
     handleFileUpload,
     removeMedia,
     handleMentionUser,

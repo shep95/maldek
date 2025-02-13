@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,7 @@ export const CreatePostDialog = ({
     mediaFiles,
     isSubmitting,
     uploadProgress,
+    postsRemaining,
     scheduledDate,
     setScheduledDate,
     handleFileSelect,
@@ -169,8 +169,20 @@ export const CreatePostDialog = ({
       <DialogContent className="sm:max-w-[525px] bg-card">
         <DialogHeader>
           <DialogTitle>Create a New Post</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="flex flex-col gap-1">
             Share your thoughts, media, or mention other users in your post.
+            {postsRemaining !== null && (
+              <span className="text-sm text-muted-foreground">
+                You have {postsRemaining} {postsRemaining === 1 ? 'post' : 'posts'} remaining this hour.
+                <Button 
+                  variant="link" 
+                  className="text-accent px-1 h-auto"
+                  onClick={() => window.location.href = '/subscription'}
+                >
+                  Upgrade for unlimited posts
+                </Button>
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
