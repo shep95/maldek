@@ -9,12 +9,18 @@ import { useToast } from "@/components/ui/use-toast";
 import { useMessages, useMessageRequests } from "@/components/messages/useMessages";
 import { useMessageActions } from "@/components/messages/useMessageActions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, Inbox, UserPlus } from "lucide-react";
+import { MessageCircle, Inbox, UserPlus, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Messages = () => {
   const { toast } = useToast();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const { acceptRequest, declineRequest } = useMessageActions();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const { acceptRequest, declineRequest, sendMessage } = useMessageActions();
   const messagesQuery = useMessages(currentUserId);
   const requestsQuery = useMessageRequests(currentUserId);
 
@@ -28,6 +34,60 @@ const Messages = () => {
     };
     fetchUser();
   }, []);
+
+  const searchUsers = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .ilike('username', `%${query}%`)
+        .limit(5);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to search users",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleStartMessage = async (userId: string, username: string) => {
+    if (!currentUserId) return;
+
+    try {
+      await sendMessage({
+        recipientId: userId,
+        content: `Hi ${username}! I'd like to connect with you.`,
+      });
+      
+      toast({
+        title: "Message request sent",
+        description: "They'll be notified of your request.",
+      });
+      
+      setSearchQuery("");
+      setSearchResults([]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message request",
+        variant: "destructive",
+      });
+    }
+  };
 
   const EmptyState = ({ type }: { type: 'messages' | 'requests' }) => (
     <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
@@ -74,6 +134,50 @@ const Messages = () => {
         <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-accent via-accent/80 to-accent/60 bg-clip-text text-transparent">
           Messages
         </h1>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users to message..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                searchUsers(e.target.value);
+              }}
+              className="pl-10 bg-background/50 backdrop-blur-sm"
+            />
+          </div>
+
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <div className="absolute z-10 mt-2 w-full bg-background/95 backdrop-blur-md rounded-lg border border-border/50 shadow-lg animate-fade-in">
+              {searchResults.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-4 hover:bg-accent/5 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarImage src={user.avatar_url} />
+                      <AvatarFallback>{user.username[0]}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{user.username}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleStartMessage(user.id, user.username)}
+                    className="hover:bg-accent/10"
+                  >
+                    Message
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         
         <Tabs defaultValue="inbox" className="w-full">
           <TabsList className="w-full mb-6 p-1 bg-background/50 backdrop-blur-lg border border-accent/10 rounded-2xl">
