@@ -1,3 +1,4 @@
+
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
@@ -5,6 +6,7 @@ import { isVideoFile } from "@/utils/mediaUtils";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { VideoPlayer } from "@/components/videos/VideoPlayer";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -56,17 +58,11 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
           return (
             <div key={url} className="relative overflow-hidden group">
               {isVideo ? (
-                <AspectRatio ratio={16 / 9}>
-                  <video
-                    src={publicUrl}
-                    controls
-                    playsInline
-                    loop
-                    preload="metadata"
-                    className="w-full h-full object-cover bg-muted rounded-[22px]"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </AspectRatio>
+                <VideoPlayer 
+                  videoUrl={url} 
+                  controls 
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <div onClick={() => onMediaClick?.(publicUrl)}>
                   <AspectRatio ratio={mediaUrls.length === 1 ? 16 / 9 : 1}>
