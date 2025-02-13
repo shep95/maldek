@@ -69,11 +69,19 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.rpc('update_profile_with_code', {
-        p_avatar_url: pendingChanges?.avatarUrl || null,
-        p_bio: pendingChanges?.bio || null,
-        p_security_code: securityCode
-      });
+      // Update profile directly instead of using RPC
+      const updateData: any = {};
+      if (pendingChanges?.avatarUrl) {
+        updateData.avatar_url = pendingChanges.avatarUrl;
+      }
+      if (pendingChanges?.bio) {
+        updateData.bio = pendingChanges.bio;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', profile.id);
 
       if (error) throw error;
 
