@@ -22,10 +22,18 @@ export const useBackgroundMusic = () => {
     const savedLoop = localStorage.getItem(LOOP_STORAGE_KEY);
     return savedLoop === 'true';
   });
-  const [isFading, setIsFading] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [playlist, setPlaylist] = useState<BackgroundMusic[]>([]);
   const queryClient = useQueryClient();
+
+  // Initialize audio element
+  useEffect(() => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio();
+      audioRef.current.volume = volume;
+      audioRef.current.loop = isLooping;
+    }
+  }, []);
 
   const { data: backgroundMusic } = useQuery({
     queryKey: ['background-music'],
@@ -45,71 +53,70 @@ export const useBackgroundMusic = () => {
       }
 
       console.log('Fetched playlist:', data);
-      setPlaylist(data);
-      return data[currentTrackIndex];
+      setPlaylist(data || []);
+      return data?.[currentTrackIndex] || null;
     },
     staleTime: Infinity
   });
 
+  // Handle track changes and setup
   useEffect(() => {
-    if (backgroundMusic?.music_url) {
-      console.log('Setting up audio with URL:', backgroundMusic.music_url);
-      if (!audioRef.current) {
-        audioRef.current = new Audio();
+    if (!audioRef.current || !backgroundMusic?.music_url) return;
+
+    const audio = audioRef.current;
+    console.log('Setting up audio with URL:', backgroundMusic.music_url);
+    
+    audio.src = backgroundMusic.music_url;
+    audio.volume = volume;
+    audio.loop = isLooping;
+
+    const handleEnded = () => {
+      console.log('Track ended');
+      if (!isLooping) {
+        playNext();
       }
-      
-      audioRef.current.src = backgroundMusic.music_url;
-      audioRef.current.volume = volume;
-      audioRef.current.loop = isLooping;
-      
-      // Set up event listeners
-      const audio = audioRef.current;
-      
-      const handleEnded = () => {
-        console.log('Track ended');
-        if (!isLooping) {
-          playNext();
-        }
-      };
+    };
 
-      const handlePlay = () => {
-        console.log('Audio started playing');
-        setIsPlaying(true);
-      };
+    const handlePlay = () => {
+      console.log('Audio started playing');
+      setIsPlaying(true);
+    };
 
-      const handlePause = () => {
-        console.log('Audio paused');
-        setIsPlaying(false);
-      };
+    const handlePause = () => {
+      console.log('Audio paused');
+      setIsPlaying(false);
+    };
 
-      const handleError = (e: ErrorEvent) => {
-        console.error('Audio playback error:', e);
-        toast.error('Error playing audio');
-      };
+    const handleError = (e: Event) => {
+      console.error('Audio playback error:', e);
+      toast.error('Error playing audio');
+    };
 
-      audio.addEventListener('ended', handleEnded);
-      audio.addEventListener('play', handlePlay);
-      audio.addEventListener('pause', handlePause);
-      audio.addEventListener('error', handleError);
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
 
-      // Check if autoplay is enabled
-      const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) !== 'false';
-      if (shouldAutoplay) {
-        audio.play().catch(error => {
-          console.error('Error starting autoplay:', error);
+    // Try autoplay if enabled
+    const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) !== 'false';
+    if (shouldAutoplay) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error('Autoplay error:', error);
         });
       }
-
-      // Cleanup function
-      return () => {
-        audio.removeEventListener('ended', handleEnded);
-        audio.removeEventListener('play', handlePlay);
-        audio.removeEventListener('pause', handlePause);
-        audio.removeEventListener('error', handleError);
-      };
     }
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('error', handleError);
+    };
   }, [backgroundMusic?.music_url]);
 
+  // Handle volume changes
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
@@ -117,6 +124,7 @@ export const useBackgroundMusic = () => {
     }
   }, [volume]);
 
+  // Handle loop changes
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.loop = isLooping;
@@ -124,37 +132,59 @@ export const useBackgroundMusic = () => {
     }
   }, [isLooping]);
 
-  const playNext = () => {
-    console.log('Playing next track');
-    if (playlist.length === 0) return;
-    
-    const nextIndex = (currentTrackIndex + 1) % playlist.length;
-    console.log('Next track index:', nextIndex);
-    setCurrentTrackIndex(nextIndex);
-    
-    if (audioRef.current) {
-      audioRef.current.src = playlist[nextIndex].music_url;
-      audioRef.current.play().catch(error => {
-        console.error('Error playing next track:', error);
-        toast.error('Error playing next track');
-      });
+  const togglePlay = async () => {
+    console.log('Toggling play/pause');
+    if (!audioRef.current) {
+      console.error('No audio element available');
+      return;
+    }
+
+    try {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        await audioRef.current.play();
+      }
+      localStorage.setItem(AUTOPLAY_STORAGE_KEY, (!isPlaying).toString());
+    } catch (error) {
+      console.error('Error toggling playback:', error);
+      toast.error('Error playing audio');
     }
   };
 
-  const playPrevious = () => {
-    console.log('Playing previous track');
+  const playNext = async () => {
+    if (playlist.length === 0) return;
+    
+    const nextIndex = (currentTrackIndex + 1) % playlist.length;
+    console.log('Playing next track, index:', nextIndex);
+    setCurrentTrackIndex(nextIndex);
+    
+    if (audioRef.current) {
+      try {
+        audioRef.current.src = playlist[nextIndex].music_url;
+        await audioRef.current.play();
+      } catch (error) {
+        console.error('Error playing next track:', error);
+        toast.error('Error playing next track');
+      }
+    }
+  };
+
+  const playPrevious = async () => {
     if (playlist.length === 0) return;
     
     const prevIndex = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
-    console.log('Previous track index:', prevIndex);
+    console.log('Playing previous track, index:', prevIndex);
     setCurrentTrackIndex(prevIndex);
     
     if (audioRef.current) {
-      audioRef.current.src = playlist[prevIndex].music_url;
-      audioRef.current.play().catch(error => {
+      try {
+        audioRef.current.src = playlist[prevIndex].music_url;
+        await audioRef.current.play();
+      } catch (error) {
         console.error('Error playing previous track:', error);
         toast.error('Error playing previous track');
-      });
+      }
     }
   };
 
@@ -179,33 +209,12 @@ export const useBackgroundMusic = () => {
     }
   };
 
-  const togglePlay = () => {
-    console.log('Toggling play/pause');
-    if (!audioRef.current) {
-      console.error('No audio element available');
-      return;
-    }
-    
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch(error => {
-        console.error('Error toggling play:', error);
-        toast.error('Error playing audio');
-      });
-    }
-    localStorage.setItem(AUTOPLAY_STORAGE_KEY, (!isPlaying).toString());
-  };
-
   const toggleLoop = () => {
     setIsLooping(!isLooping);
   };
 
   const setMusicVolume = (newVolume: number) => {
     setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-    }
   };
 
   const updatePlaylistOrder = (newPlaylist: BackgroundMusic[]) => {
