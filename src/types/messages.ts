@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   username: string;
@@ -14,6 +15,7 @@ export interface Message {
   sender: Profile;
   sender_id: string;
   recipient_id: string;
+  recipient?: Profile;
   reply_to_id?: string | null;
   media_urls?: string[];
   reactions: { [key: string]: string[] };

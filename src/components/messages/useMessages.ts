@@ -24,6 +24,12 @@ export const useMessages = (currentUserId: string | null) => {
             username,
             avatar_url,
             follower_count
+          ),
+          recipient:recipient_id (
+            id,
+            username,
+            avatar_url,
+            follower_count
           )
         `)
         .or(`recipient_id.eq.${currentUserId},sender_id.eq.${currentUserId}`)

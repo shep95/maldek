@@ -19,7 +19,12 @@ interface Message {
   unread?: boolean;
 }
 
-export const MessageList = ({ messages }: { messages: Message[] }) => {
+interface MessageListProps {
+  messages: Message[];
+  onSelectChat: (chat: Message) => void;
+}
+
+export const MessageList = ({ messages, onSelectChat }: MessageListProps) => {
   const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<Message[]>(messages);
   const [selectedChat, setSelectedChat] = useState<Message | null>(null);
