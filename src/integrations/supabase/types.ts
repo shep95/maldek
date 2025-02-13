@@ -2058,6 +2058,7 @@ export type Database = {
         | "africa"
         | "oceania"
         | "global"
+      notification_type: "like" | "comment" | "follow" | "mention" | "repost"
       space_role: "host" | "co_host" | "speaker" | "listener"
       space_status: "scheduled" | "live" | "ended"
     }
