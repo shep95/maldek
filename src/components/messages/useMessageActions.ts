@@ -27,13 +27,20 @@ export const useMessageActions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Insert message with correct status value
       const { error } = await supabase
         .from('messages')
         .insert({
           recipient_id: recipientId,
           sender_id: user.id,
           content,
-          status: 'pending'
+          status: 'pending',
+          read_at: null,
+          removed_by_recipient: false,
+          deleted_at: null,
+          deleted_by_recipient: false,
+          deleted_by_sender: false,
+          is_edited: false
         });
 
       if (error) throw error;
