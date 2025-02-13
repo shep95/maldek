@@ -9,10 +9,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { useMessages, useMessageRequests } from "@/components/messages/useMessages";
 import { useMessageActions } from "@/components/messages/useMessageActions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, Inbox, UserPlus, Search } from "lucide-react";
+import { MessageCircle, Inbox, UserPlus, Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChatInterface } from "@/components/messages/ChatInterface";
 
 const Messages = () => {
   const { toast } = useToast();
@@ -21,6 +22,7 @@ const Messages = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [previewMessage, setPreviewMessage] = useState("");
+  const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const MAX_CHARS = 120;
   const { acceptRequest, declineRequest, sendMessage } = useMessageActions();
   const messagesQuery = useMessages(currentUserId);
@@ -125,6 +127,30 @@ const Messages = () => {
 
   if (!currentUserId) {
     return <LoadingState />;
+  }
+
+  if (selectedChat) {
+    return (
+      <div className="animate-fade-in">
+        <div className="mb-6 flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedChat(null)}
+            className="h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-accent via-accent/80 to-accent/60 bg-clip-text text-transparent">
+            Messages
+          </h1>
+        </div>
+        <ChatInterface
+          recipientId={selectedChat.id}
+          recipientName={selectedChat.name}
+        />
+      </div>
+    );
   }
 
   return (
@@ -235,13 +261,14 @@ const Messages = () => {
                 <MessageList 
                   messages={messagesQuery.data?.map(msg => ({
                     id: msg.id,
-                    username: msg.sender.username,
-                    name: msg.sender.username,
-                    avatar: msg.sender.avatar_url,
+                    username: msg.recipient?.username || msg.sender.username,
+                    name: msg.recipient?.username || msg.sender.username,
+                    avatar: msg.recipient?.avatar_url || msg.sender.avatar_url,
                     lastMessage: msg.content,
                     timestamp: msg.created_at,
                     unread: !msg.read_at
                   })) || []}
+                  onSelectChat={setSelectedChat}
                 />
               )}
             </TabsContent>
