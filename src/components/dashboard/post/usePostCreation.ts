@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -103,6 +104,17 @@ export const usePostCreation = (
         .single();
 
       if (postError) {
+        // Check for the specific posting limit error
+        if (postError.message.includes('can only post 3 times per hour')) {
+          toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+            duration: 5000,
+            action: {
+              label: "Upgrade",
+              onClick: () => window.location.href = '/subscription'
+            }
+          });
+          return;
+        }
         throw postError;
       }
 
@@ -117,9 +129,19 @@ export const usePostCreation = (
       onOpenChange(false);
       toast.success("Post created successfully!");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating post:', error);
-      toast.error("Failed to create post. Please try again.");
+      if (error.message.includes('can only post 3 times per hour')) {
+        toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+          duration: 5000,
+          action: {
+            label: "Upgrade",
+            onClick: () => window.location.href = '/subscription'
+          }
+        });
+      } else {
+        toast.error("Failed to create post. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }

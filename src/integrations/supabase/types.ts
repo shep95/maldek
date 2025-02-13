@@ -1178,6 +1178,7 @@ export type Database = {
           follower_count: number
           id: string
           last_active: string | null
+          last_post_time: string | null
           location: string | null
           security_code: string | null
           social_links: Json | null
@@ -1199,6 +1200,7 @@ export type Database = {
           follower_count?: number
           id: string
           last_active?: string | null
+          last_post_time?: string | null
           location?: string | null
           security_code?: string | null
           social_links?: Json | null
@@ -1220,6 +1222,7 @@ export type Database = {
           follower_count?: number
           id?: string
           last_active?: string | null
+          last_post_time?: string | null
           location?: string | null
           security_code?: string | null
           social_links?: Json | null
