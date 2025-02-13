@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -17,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'adventor': ['TeX Gyre Adventor', 'system-ui', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
