@@ -19,6 +19,7 @@ import Subscription from "@/pages/Subscription";
 import EmperorChatPage from "@/pages/EmperorChat";
 import Advertisement from "@/pages/Advertisement";
 import TermsOfService from "@/pages/TermsOfService";
+import Messages from "@/pages/Messages";
 
 const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -102,6 +103,7 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
+        <Route path="/messages" element={<Messages />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
