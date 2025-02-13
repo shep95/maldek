@@ -51,8 +51,20 @@ export const usePushNotifications = () => {
   // Subscribe to push notifications
   const subscribeToNotifications = async () => {
     try {
+      if (!isPushSupported()) {
+        console.log('Push notifications not supported');
+        return;
+      }
+
       const registration = await getServiceWorkerRegistration();
       if (!registration) throw new Error('Service Worker not registered');
+
+      // Check if we already have permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.log('Notification permission not granted');
+        return;
+      }
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -119,20 +131,33 @@ export const usePushNotifications = () => {
     }
   };
 
-  // Check subscription status on mount
+  // Check subscription status and auto-subscribe on mount
   useEffect(() => {
-    const checkSubscription = async () => {
-      if (!isPushSupported()) return;
+    const autoSubscribe = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-      const registration = await getServiceWorkerRegistration();
-      if (!registration) return;
+        if (!isPushSupported()) return;
 
-      const subscription = await registration.pushManager.getSubscription();
-      setSubscription(subscription);
-      setIsSubscribed(!!subscription);
+        const registration = await getServiceWorkerRegistration();
+        if (!registration) return;
+
+        const existingSubscription = await registration.pushManager.getSubscription();
+        
+        if (existingSubscription) {
+          setSubscription(existingSubscription);
+          setIsSubscribed(true);
+        } else {
+          // Auto-subscribe if not already subscribed
+          await subscribeToNotifications();
+        }
+      } catch (error) {
+        console.error('Error in auto-subscribe:', error);
+      }
     };
 
-    checkSubscription();
+    autoSubscribe();
   }, []);
 
   return {
