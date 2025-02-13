@@ -81,11 +81,11 @@ export const VideoPlayer = ({
         // Get the average color
         const color = getAverageColor(context, canvas.width, canvas.height);
         
-        // Create a subtle glow effect
-        const glowOpacity = 0.15; // Adjust for subtlety
+        // Create a larger, subtle glow effect
+        const glowOpacity = 0.15; // Keep subtle opacity
         document.documentElement.style.setProperty(
           '--video-glow',
-          `0 0 100px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
+          `0 0 200px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
         );
 
         // Request next frame
