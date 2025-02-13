@@ -1254,6 +1254,66 @@ export type Database = {
         }
         Relationships: []
       }
+      push_notification_settings: {
+        Row: {
+          created_at: string
+          daily_reminders: boolean | null
+          featured_user_posts: boolean | null
+          follow_notifications: boolean | null
+          id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          daily_reminders?: boolean | null
+          featured_user_posts?: boolean | null
+          follow_notifications?: boolean | null
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          daily_reminders?: boolean | null
+          featured_user_posts?: boolean | null
+          follow_notifications?: boolean | null
+          id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       space_chat_messages: {
         Row: {
           content: string
