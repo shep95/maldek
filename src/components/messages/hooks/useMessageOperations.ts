@@ -11,11 +11,27 @@ export const useMessageOperations = (currentUserId: string | null, recipientId: 
 
     try {
       console.log('Sending message');
+      
+      // Check if there's an existing chat between these users
+      const { data: existingChat } = await supabase
+        .from('messages')
+        .select('status')
+        .match({ 
+          sender_id: currentUserId, 
+          recipient_id: recipientId 
+        })
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // Set status based on existing chat
+      const status = existingChat?.status === 'accepted' ? 'sent' : 'pending';
+
       const newMessage = {
         sender_id: currentUserId,
         recipient_id: recipientId,
         content: content.trim(),
-        status: 'sent', // Changed from 'pending' to 'sent'
+        status,
         reply_to_id: replyToId || null,
         reactions: {},
         is_edited: false
