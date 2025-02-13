@@ -665,6 +665,8 @@ export type Database = {
           reply_to_id: string | null
           sender_id: string
           status: string
+          telegram_chat_id: number | null
+          telegram_message_id: number | null
           translated_content: Json | null
         }
         Insert: {
@@ -685,6 +687,8 @@ export type Database = {
           reply_to_id?: string | null
           sender_id: string
           status?: string
+          telegram_chat_id?: number | null
+          telegram_message_id?: number | null
           translated_content?: Json | null
         }
         Update: {
@@ -705,6 +709,8 @@ export type Database = {
           reply_to_id?: string | null
           sender_id?: string
           status?: string
+          telegram_chat_id?: number | null
+          telegram_message_id?: number | null
           translated_content?: Json | null
         }
         Relationships: [
@@ -1649,6 +1655,36 @@ export type Database = {
           post_character_limit?: number | null
           price?: number
           schedule_days_limit?: number | null
+        }
+        Relationships: []
+      }
+      telegram_users: {
+        Row: {
+          access_hash: number | null
+          created_at: string
+          id: string
+          telegram_id: number
+          telegram_username: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_hash?: number | null
+          created_at?: string
+          id?: string
+          telegram_id: number
+          telegram_username?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_hash?: number | null
+          created_at?: string
+          id?: string
+          telegram_id?: number
+          telegram_username?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

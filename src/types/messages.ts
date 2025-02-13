@@ -21,4 +21,16 @@ export interface Message {
   reactions: { [key: string]: string[] };
   translated_content: { [key: string]: string };
   is_edited: boolean;
+  telegram_message_id?: number;
+  telegram_chat_id?: number;
+}
+
+export interface TelegramUser {
+  id: string;
+  user_id: string;
+  telegram_id: number;
+  telegram_username: string | null;
+  access_hash: number | null;
+  created_at: string;
+  updated_at: string;
 }
