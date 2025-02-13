@@ -13,7 +13,6 @@ const LOOP_STORAGE_KEY = 'background_music_loop';
 
 export const useBackgroundMusic = () => {
   const [audio] = useState(() => new Audio());
-  const audioRef = useRef(audio);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(() => {
     const savedVolume = localStorage.getItem(VOLUME_STORAGE_KEY);
@@ -50,111 +49,70 @@ export const useBackgroundMusic = () => {
     staleTime: Infinity
   });
 
-  // Initial setup
+  // Initial setup and autoplay
   useEffect(() => {
-    const audio = audioRef.current;
-    audio.volume = volume;
-    audio.loop = isLooping;
-
-    // Check for autoplay preference
-    const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) === 'true';
-    if (shouldAutoplay && backgroundMusic?.music_url) {
+    if (backgroundMusic?.music_url) {
+      audio.volume = volume;
+      audio.loop = isLooping;
       audio.src = backgroundMusic.music_url;
-      audio.play().catch(error => {
-        console.error('Autoplay failed:', error);
-      });
+      
+      const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) === 'true';
+      if (shouldAutoplay) {
+        audio.play().catch(() => {});
+      }
     }
+  }, [backgroundMusic?.music_url]);
 
-    return () => {
-      audio.pause();
-      audio.src = '';
-    };
-  }, []);
-
-  // Setup audio event listeners
+  // Handle track ended
   useEffect(() => {
-    const audio = audioRef.current;
-    
     const handleEnded = () => {
       if (!isLooping) {
         playNext();
       }
     };
 
-    const handlePlay = () => {
-      console.log('Audio playing');
-      setIsPlaying(true);
-    };
-
-    const handlePause = () => {
-      console.log('Audio paused');
-      setIsPlaying(false);
-    };
-
-    const handleError = (e: ErrorEvent) => {
-      console.error('Audio error:', e);
-      toast.error('Error playing audio');
-    };
-
     audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
-    audio.addEventListener('error', handleError);
-
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('play', handlePlay);
-      audio.removeEventListener('pause', handlePause);
-      audio.removeEventListener('error', handleError);
-    };
+    return () => audio.removeEventListener('ended', handleEnded);
   }, [isLooping]);
 
-  // Handle track source changes
+  // Handle play/pause state
   useEffect(() => {
-    if (backgroundMusic?.music_url) {
-      console.log('Setting new track:', backgroundMusic.music_url);
-      const audio = audioRef.current;
-      audio.src = backgroundMusic.music_url;
-      audio.load();
-      
-      if (isPlaying) {
-        audio.play().catch(error => {
-          console.error('Error playing new track:', error);
-          toast.error('Error playing audio');
-        });
-      }
-    }
-  }, [backgroundMusic?.music_url]);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
 
-  // Handle volume
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+    };
+  }, []);
+
+  // Handle volume changes
   useEffect(() => {
-    audioRef.current.volume = volume;
+    audio.volume = volume;
     localStorage.setItem(VOLUME_STORAGE_KEY, volume.toString());
   }, [volume]);
 
-  // Handle loop
+  // Handle loop changes
   useEffect(() => {
-    audioRef.current.loop = isLooping;
+    audio.loop = isLooping;
     localStorage.setItem(LOOP_STORAGE_KEY, isLooping.toString());
   }, [isLooping]);
 
   const togglePlay = () => {
-    const audio = audioRef.current;
-    console.log('Toggle play, current state:', isPlaying);
-    
     if (!audio.src && backgroundMusic?.music_url) {
       audio.src = backgroundMusic.music_url;
     }
 
-    if (isPlaying) {
-      audio.pause();
+    if (audio.paused) {
+      audio.play();
     } else {
-      audio.play().catch(error => {
-        console.error('Play failed:', error);
-        toast.error('Error playing audio');
-      });
+      audio.pause();
     }
-    localStorage.setItem(AUTOPLAY_STORAGE_KEY, (!isPlaying).toString());
+    
+    localStorage.setItem(AUTOPLAY_STORAGE_KEY, audio.paused ? 'false' : 'true');
   };
 
   const playNext = () => {
