@@ -650,7 +650,11 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
+          deleted_by_recipient: boolean | null
+          deleted_by_sender: boolean | null
           edited_at: string | null
+          encrypted_content: string | null
           id: string
           is_edited: boolean | null
           media_urls: string[] | null
@@ -666,7 +670,11 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by_recipient?: boolean | null
+          deleted_by_sender?: boolean | null
           edited_at?: string | null
+          encrypted_content?: string | null
           id?: string
           is_edited?: boolean | null
           media_urls?: string[] | null
@@ -682,7 +690,11 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by_recipient?: boolean | null
+          deleted_by_sender?: boolean | null
           edited_at?: string | null
+          encrypted_content?: string | null
           id?: string
           is_edited?: boolean | null
           media_urls?: string[] | null
