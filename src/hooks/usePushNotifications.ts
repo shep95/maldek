@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY'; // Will be provided by you after generating VAPID keys
+// Replace this with your actual public key that you generated
+const VAPID_PUBLIC_KEY = 'YOUR_GENERATED_PUBLIC_KEY'; 
 
 export const usePushNotifications = () => {
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
