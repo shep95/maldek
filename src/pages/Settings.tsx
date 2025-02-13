@@ -45,9 +45,7 @@ const Settings = () => {
       <ThemeToggle />
       <DownloadSection />
       <LanguageSection />
-      {profile && !profile.security_code && (
-        <SecurityCodeSection />
-      )}
+      <SecurityCodeSection />
       <AccountSection />
       <EmailSection />
       <PasswordSection />
