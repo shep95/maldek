@@ -205,7 +205,7 @@ export const VideoPlayer = ({
   }
 
   return (
-    <div className="relative w-full bg-black rounded-lg overflow-hidden shadow-[var(--video-glow)]">
+    <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-[var(--video-glow)]">
       <canvas 
         ref={canvasRef} 
         className="hidden"
