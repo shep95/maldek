@@ -41,6 +41,7 @@
     --input: 240 5.9% 90%;
     --ring: 24 95% 53%;  /* Match accent color */
     --radius: 0.75rem;
+    --video-glow: none;  /* Default video glow effect */
   }
 
   .dark {

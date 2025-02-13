@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -23,6 +24,8 @@ export const VideoPlayer = ({
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const backgroundMusic = useBackgroundMusicContext();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameRef = useRef<number>();
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
@@ -30,14 +33,80 @@ export const VideoPlayer = ({
     if (backgroundMusic.isPlaying) {
       backgroundMusic.togglePlay();
     }
+    startColorAnalysis();
   };
 
   const handlePause = () => {
     // Optional: Resume background music on video pause
+    stopColorAnalysis();
   };
 
   const handleEnded = () => {
     // Optional: Resume background music on video end
+    stopColorAnalysis();
+  };
+
+  const getAverageColor = (context: CanvasRenderingContext2D, width: number, height: number) => {
+    const imageData = context.getImageData(0, 0, width, height).data;
+    let r = 0, g = 0, b = 0, count = 0;
+
+    // Sample pixels at intervals for better performance
+    for (let i = 0; i < imageData.length; i += 16) {
+      r += imageData[i];
+      g += imageData[i + 1];
+      b += imageData[i + 2];
+      count++;
+    }
+
+    return {
+      r: Math.round(r / count),
+      g: Math.round(g / count),
+      b: Math.round(b / count)
+    };
+  };
+
+  const startColorAnalysis = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    const updateColor = () => {
+      if (!video.paused && !video.ended) {
+        // Draw the current video frame
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Get the average color
+        const color = getAverageColor(context, canvas.width, canvas.height);
+        
+        // Create a subtle glow effect
+        const glowOpacity = 0.15; // Adjust for subtlety
+        document.documentElement.style.setProperty(
+          '--video-glow',
+          `0 0 100px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
+        );
+
+        // Request next frame
+        animationFrameRef.current = requestAnimationFrame(updateColor);
+      }
+    };
+
+    // Set initial canvas size
+    canvas.width = 32; // Small size for performance
+    canvas.height = 32;
+    
+    // Start the animation
+    updateColor();
+  };
+
+  const stopColorAnalysis = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    // Fade out the glow effect
+    document.documentElement.style.setProperty('--video-glow', 'none');
   };
 
   const handleDownload = async () => {
@@ -136,7 +205,12 @@ export const VideoPlayer = ({
   }
 
   return (
-    <div className="relative w-full bg-black rounded-lg overflow-hidden">
+    <div className="relative w-full bg-black rounded-lg overflow-hidden shadow-[var(--video-glow)]">
+      <canvas 
+        ref={canvasRef} 
+        className="hidden"
+        aria-hidden="true"
+      />
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <Button
           variant="ghost"
