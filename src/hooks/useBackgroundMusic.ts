@@ -12,7 +12,8 @@ const AUTOPLAY_STORAGE_KEY = 'background_music_autoplay';
 const LOOP_STORAGE_KEY = 'background_music_loop';
 
 export const useBackgroundMusic = () => {
-  const audioRef = useRef<HTMLAudioElement>(new Audio());
+  const [audio] = useState(() => new Audio());
+  const audioRef = useRef(audio);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(() => {
     const savedVolume = localStorage.getItem(VOLUME_STORAGE_KEY);
@@ -49,6 +50,27 @@ export const useBackgroundMusic = () => {
     staleTime: Infinity
   });
 
+  // Initial setup
+  useEffect(() => {
+    const audio = audioRef.current;
+    audio.volume = volume;
+    audio.loop = isLooping;
+
+    // Check for autoplay preference
+    const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) === 'true';
+    if (shouldAutoplay && backgroundMusic?.music_url) {
+      audio.src = backgroundMusic.music_url;
+      audio.play().catch(error => {
+        console.error('Autoplay failed:', error);
+      });
+    }
+
+    return () => {
+      audio.pause();
+      audio.src = '';
+    };
+  }, []);
+
   // Setup audio event listeners
   useEffect(() => {
     const audio = audioRef.current;
@@ -59,9 +81,20 @@ export const useBackgroundMusic = () => {
       }
     };
 
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleError = () => toast.error('Error playing audio');
+    const handlePlay = () => {
+      console.log('Audio playing');
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      console.log('Audio paused');
+      setIsPlaying(false);
+    };
+
+    const handleError = (e: ErrorEvent) => {
+      console.error('Audio error:', e);
+      toast.error('Error playing audio');
+    };
 
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
@@ -76,13 +109,19 @@ export const useBackgroundMusic = () => {
     };
   }, [isLooping]);
 
-  // Handle track source
+  // Handle track source changes
   useEffect(() => {
     if (backgroundMusic?.music_url) {
-      audioRef.current.src = backgroundMusic.music_url;
-      audioRef.current.load();
+      console.log('Setting new track:', backgroundMusic.music_url);
+      const audio = audioRef.current;
+      audio.src = backgroundMusic.music_url;
+      audio.load();
+      
       if (isPlaying) {
-        audioRef.current.play().catch(() => toast.error('Error playing audio'));
+        audio.play().catch(error => {
+          console.error('Error playing new track:', error);
+          toast.error('Error playing audio');
+        });
       }
     }
   }, [backgroundMusic?.music_url]);
@@ -100,10 +139,20 @@ export const useBackgroundMusic = () => {
   }, [isLooping]);
 
   const togglePlay = () => {
+    const audio = audioRef.current;
+    console.log('Toggle play, current state:', isPlaying);
+    
+    if (!audio.src && backgroundMusic?.music_url) {
+      audio.src = backgroundMusic.music_url;
+    }
+
     if (isPlaying) {
-      audioRef.current.pause();
+      audio.pause();
     } else {
-      audioRef.current.play().catch(() => toast.error('Error playing audio'));
+      audio.play().catch(error => {
+        console.error('Play failed:', error);
+        toast.error('Error playing audio');
+      });
     }
     localStorage.setItem(AUTOPLAY_STORAGE_KEY, (!isPlaying).toString());
   };
