@@ -12,7 +12,7 @@ const AUTOPLAY_STORAGE_KEY = 'background_music_autoplay';
 const LOOP_STORAGE_KEY = 'background_music_loop';
 
 export const useBackgroundMusic = () => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(new Audio());
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(() => {
     const savedVolume = localStorage.getItem(VOLUME_STORAGE_KEY);
@@ -25,15 +25,6 @@ export const useBackgroundMusic = () => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [playlist, setPlaylist] = useState<BackgroundMusic[]>([]);
   const queryClient = useQueryClient();
-
-  // Initialize audio element
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.volume = volume;
-      audioRef.current.loop = isLooping;
-    }
-  }, []);
 
   const { data: backgroundMusic } = useQuery({
     queryKey: ['background-music'],
@@ -52,61 +43,30 @@ export const useBackgroundMusic = () => {
         return null;
       }
 
-      console.log('Fetched playlist:', data);
       setPlaylist(data || []);
       return data?.[currentTrackIndex] || null;
     },
     staleTime: Infinity
   });
 
-  // Handle track changes and setup
+  // Setup audio event listeners
   useEffect(() => {
-    if (!audioRef.current || !backgroundMusic?.music_url) return;
-
     const audio = audioRef.current;
-    console.log('Setting up audio with URL:', backgroundMusic.music_url);
     
-    audio.src = backgroundMusic.music_url;
-    audio.volume = volume;
-    audio.loop = isLooping;
-
     const handleEnded = () => {
-      console.log('Track ended');
       if (!isLooping) {
         playNext();
       }
     };
 
-    const handlePlay = () => {
-      console.log('Audio started playing');
-      setIsPlaying(true);
-    };
-
-    const handlePause = () => {
-      console.log('Audio paused');
-      setIsPlaying(false);
-    };
-
-    const handleError = (e: Event) => {
-      console.error('Audio playback error:', e);
-      toast.error('Error playing audio');
-    };
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleError = () => toast.error('Error playing audio');
 
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('error', handleError);
-
-    // Try autoplay if enabled
-    const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) !== 'false';
-    if (shouldAutoplay) {
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error('Autoplay error:', error);
-        });
-      }
-    }
 
     return () => {
       audio.removeEventListener('ended', handleEnded);
@@ -114,78 +74,50 @@ export const useBackgroundMusic = () => {
       audio.removeEventListener('pause', handlePause);
       audio.removeEventListener('error', handleError);
     };
-  }, [backgroundMusic?.music_url]);
-
-  // Handle volume changes
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-      localStorage.setItem(VOLUME_STORAGE_KEY, volume.toString());
-    }
-  }, [volume]);
-
-  // Handle loop changes
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.loop = isLooping;
-      localStorage.setItem(LOOP_STORAGE_KEY, isLooping.toString());
-    }
   }, [isLooping]);
 
-  const togglePlay = async () => {
-    console.log('Toggling play/pause');
-    if (!audioRef.current) {
-      console.error('No audio element available');
-      return;
-    }
-
-    try {
+  // Handle track source
+  useEffect(() => {
+    if (backgroundMusic?.music_url) {
+      audioRef.current.src = backgroundMusic.music_url;
+      audioRef.current.load();
       if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        await audioRef.current.play();
+        audioRef.current.play().catch(() => toast.error('Error playing audio'));
       }
-      localStorage.setItem(AUTOPLAY_STORAGE_KEY, (!isPlaying).toString());
-    } catch (error) {
-      console.error('Error toggling playback:', error);
-      toast.error('Error playing audio');
     }
+  }, [backgroundMusic?.music_url]);
+
+  // Handle volume
+  useEffect(() => {
+    audioRef.current.volume = volume;
+    localStorage.setItem(VOLUME_STORAGE_KEY, volume.toString());
+  }, [volume]);
+
+  // Handle loop
+  useEffect(() => {
+    audioRef.current.loop = isLooping;
+    localStorage.setItem(LOOP_STORAGE_KEY, isLooping.toString());
+  }, [isLooping]);
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(() => toast.error('Error playing audio'));
+    }
+    localStorage.setItem(AUTOPLAY_STORAGE_KEY, (!isPlaying).toString());
   };
 
-  const playNext = async () => {
+  const playNext = () => {
     if (playlist.length === 0) return;
-    
     const nextIndex = (currentTrackIndex + 1) % playlist.length;
-    console.log('Playing next track, index:', nextIndex);
     setCurrentTrackIndex(nextIndex);
-    
-    if (audioRef.current) {
-      try {
-        audioRef.current.src = playlist[nextIndex].music_url;
-        await audioRef.current.play();
-      } catch (error) {
-        console.error('Error playing next track:', error);
-        toast.error('Error playing next track');
-      }
-    }
   };
 
-  const playPrevious = async () => {
+  const playPrevious = () => {
     if (playlist.length === 0) return;
-    
     const prevIndex = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
-    console.log('Playing previous track, index:', prevIndex);
     setCurrentTrackIndex(prevIndex);
-    
-    if (audioRef.current) {
-      try {
-        audioRef.current.src = playlist[prevIndex].music_url;
-        await audioRef.current.play();
-      } catch (error) {
-        console.error('Error playing previous track:', error);
-        toast.error('Error playing previous track');
-      }
-    }
   };
 
   const deleteTrack = async (trackId: string) => {
@@ -209,18 +141,9 @@ export const useBackgroundMusic = () => {
     }
   };
 
-  const toggleLoop = () => {
-    setIsLooping(!isLooping);
-  };
-
-  const setMusicVolume = (newVolume: number) => {
-    setVolume(newVolume);
-  };
-
-  const updatePlaylistOrder = (newPlaylist: BackgroundMusic[]) => {
-    console.log('Updating playlist order:', newPlaylist);
-    setPlaylist(newPlaylist);
-  };
+  const toggleLoop = () => setIsLooping(!isLooping);
+  const setMusicVolume = (newVolume: number) => setVolume(newVolume);
+  const updatePlaylistOrder = (newPlaylist: BackgroundMusic[]) => setPlaylist(newPlaylist);
 
   return {
     isPlaying,
