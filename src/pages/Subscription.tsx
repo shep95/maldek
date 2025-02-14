@@ -1,3 +1,4 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +51,21 @@ const Subscription = () => {
       const { data, error } = await supabase
         .from('subscription_tiers')
         .select('*')
-        .order('price', { ascending: true });
+        .order('price', { ascending: true })
+        .then(result => {
+          if (result.data) {
+            // Move lifetime subscription to the end
+            return {
+              ...result,
+              data: result.data.sort((a, b) => {
+                if (a.name === 'True Emperor Lifetime') return 1;
+                if (b.name === 'True Emperor Lifetime') return -1;
+                return a.price - b.price;
+              })
+            };
+          }
+          return result;
+        });
 
       if (error) throw error;
       return data;
@@ -149,7 +164,7 @@ const Subscription = () => {
           </div>
         )}
 
-        {/* Subscription Tiers Stack - Changed from grid to flex column */}
+        {/* Subscription Tiers Stack */}
         <div className="flex flex-col space-y-8 max-w-2xl mx-auto">
           {tiers?.map((tier) => (
             <SubscriptionTierCard
