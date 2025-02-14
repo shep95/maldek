@@ -37,7 +37,8 @@ export const PostText = ({ content, translatedContent, onShowOriginal, truncate 
     // First truncate the content if needed
     const processedText = truncateContent(text);
 
-    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    // Enhanced URL pattern to match more domain extensions
+    const urlPattern = /(https?:\/\/[^\s]+|(?:www\.)?[^\s]+\.(?:com|app|co|io|org|net|dev|xyz|ai|tech|cloud|me)[^\s]*)(?=[.,;:!?]*(?:\s|$))/g;
     const hashtagPattern = /#(\w+)/g;
     const mentionPattern = /@(\w+)/g;
     const codeBlockPattern = /```([\s\S]*?)```/g;
@@ -103,19 +104,23 @@ export const PostText = ({ content, translatedContent, onShowOriginal, truncate 
           );
         }
         
-        // Handle URLs
-        if (urlPattern.test(word)) {
+        // Enhanced URL handling
+        const urlMatch = word.match(urlPattern);
+        if (urlMatch) {
+          const url = urlMatch[0];
+          // Ensure URL has http/https protocol
+          const fullUrl = url.startsWith('http') ? url : `https://${url}`;
           return (
             <span key={`${index}-${wordIndex}`} className="inline-flex items-center gap-1 max-w-full">
               <a
-                href={word}
+                href={fullUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-orange-500 hover:text-orange-600 hover:underline truncate"
                 onClick={(e) => e.stopPropagation()}
-                title={word}
+                title={url}
               >
-                {truncateUrl(word)}
+                {truncateUrl(url)}
                 <LinkIcon className="h-3 w-3 inline-block ml-1 flex-shrink-0" />
               </a>
               {' '}
