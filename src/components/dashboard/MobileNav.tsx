@@ -80,7 +80,7 @@ export const MobileNav = () => {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent 
           side="left" 
-          className="w-72 p-0 bg-[#0d0d0d] mt-4 mb-20 mx-2 rounded-xl border border-border/50 shadow-xl"
+          className="w-72 p-0 bg-background mt-4 mb-20 mx-2 rounded-xl border border-border/50 shadow-xl"
         >
           <div className="flex h-full w-full flex-col py-6 pb-24">
             <SidebarNav 
