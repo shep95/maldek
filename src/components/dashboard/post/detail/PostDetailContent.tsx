@@ -1,9 +1,11 @@
+
 import { Card } from "@/components/ui/card";
 import { PostHeader } from "../PostHeader";
 import { PostMedia } from "../PostMedia";
 import { PostActions } from "../PostActions";
 import { useNavigate } from "react-router-dom";
 import { Post } from "@/utils/postUtils";
+import { PostText } from "../content/PostText";
 
 interface PostDetailContentProps {
   post: Post;
@@ -32,7 +34,9 @@ export const PostDetailContent = ({
         timestamp={post.timestamp}
         onUsernameClick={handleUsernameClick}
       />
-      <p className="mt-4 text-foreground whitespace-pre-wrap">{post.content}</p>
+      <div className="mt-4">
+        <PostText content={post.content} truncate={false} />
+      </div>
       {post.media_urls && post.media_urls.length > 0 && (
         <PostMedia mediaUrls={post.media_urls} onMediaClick={() => {}} />
       )}
