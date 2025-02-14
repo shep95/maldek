@@ -40,6 +40,8 @@ serve(async (req) => {
 
     // Use the provided price IDs based on the tier
     let priceId;
+    let mode: 'subscription' | 'payment' = 'subscription';
+
     switch(tier.toLowerCase()) {
       case 'creator':
         priceId = 'price_1QqL77RIC2EosLwjbynMh9TU'; // $17/month
@@ -50,17 +52,23 @@ serve(async (req) => {
       case 'true emperor':
         priceId = 'price_1QqL8IRIC2EosLwjBF1OtArf'; // $17,000/month
         break;
+      case 'true emperor lifetime':
+        priceId = 'price_1QsXsaRIC2EosLwjUQIZ9eiu'; // $80,000 one-time
+        mode = 'payment';
+        break;
       default:
         throw new Error('Invalid subscription tier');
     }
     
-    console.log('Using price ID:', priceId, 'for tier:', tier)
+    console.log('Using price ID:', priceId, 'for tier:', tier, 'with mode:', mode)
 
     // Get the tier ID from the subscription_tiers table
     const { data: tierData, error: tierError } = await supabaseClient
       .from('subscription_tiers')
       .select('id')
-      .eq('name', tier === 'true emperor' ? 'True Emperor' : tier === 'creator' ? 'Creator' : 'Business')
+      .eq('name', tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
+           tier === 'true emperor' ? 'True Emperor' : 
+           tier === 'creator' ? 'Creator' : 'Business')
       .single()
 
     if (tierError || !tierData) {
@@ -77,13 +85,14 @@ serve(async (req) => {
             quantity: 1,
           },
         ],
-        mode: 'subscription',
+        mode: mode,
         success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get('origin')}/subscription`,
         metadata: {
           userId: userId,
           tierId: tierData.id,
           tier: tier,
+          isLifetime: mode === 'payment' ? 'true' : 'false'
         },
       })
 
