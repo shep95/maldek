@@ -1684,10 +1684,12 @@ export type Database = {
           checkmark_color: string
           created_at: string
           id: string
+          is_lifetime: boolean | null
           max_pinned_posts: number | null
           max_upload_size_mb: number
           monthly_mentions: number
           name: string
+          one_time_price: number | null
           post_character_limit: number | null
           price: number
           schedule_days_limit: number | null
@@ -1696,10 +1698,12 @@ export type Database = {
           checkmark_color: string
           created_at?: string
           id?: string
+          is_lifetime?: boolean | null
           max_pinned_posts?: number | null
           max_upload_size_mb?: number
           monthly_mentions: number
           name: string
+          one_time_price?: number | null
           post_character_limit?: number | null
           price: number
           schedule_days_limit?: number | null
@@ -1708,10 +1712,12 @@ export type Database = {
           checkmark_color?: string
           created_at?: string
           id?: string
+          is_lifetime?: boolean | null
           max_pinned_posts?: number | null
           max_upload_size_mb?: number
           monthly_mentions?: number
           name?: string
+          one_time_price?: number | null
           post_character_limit?: number | null
           price?: number
           schedule_days_limit?: number | null
@@ -1826,6 +1832,7 @@ export type Database = {
           created_at: string
           ends_at: string
           id: string
+          is_lifetime: boolean | null
           mentions_remaining: number
           mentions_used: number
           starts_at: string
@@ -1839,6 +1846,7 @@ export type Database = {
           created_at?: string
           ends_at: string
           id?: string
+          is_lifetime?: boolean | null
           mentions_remaining?: number
           mentions_used?: number
           starts_at?: string
@@ -1852,6 +1860,7 @@ export type Database = {
           created_at?: string
           ends_at?: string
           id?: string
+          is_lifetime?: boolean | null
           mentions_remaining?: number
           mentions_used?: number
           starts_at?: string

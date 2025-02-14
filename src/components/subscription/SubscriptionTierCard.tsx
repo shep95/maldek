@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Crown, DollarSign, Sparkles, Mic } from "lucide-react";
+import { Check, Crown, DollarSign, Sparkles, Mic, Infinity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SubscriptionTierProps {
@@ -13,25 +13,26 @@ interface SubscriptionTierProps {
 
 export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: SubscriptionTierProps) => {
   const isEmperor = tier.name === 'True Emperor';
+  const isEmperorLifetime = tier.name === 'True Emperor Lifetime';
   const isCreator = tier.name === 'Creator';
   const isBusiness = tier.name === 'Business';
   
   const getCrownColor = () => {
-    if (isEmperor) return "text-yellow-500";
+    if (isEmperor || isEmperorLifetime) return "text-yellow-500";
     if (isCreator) return "text-orange-500";
     if (isBusiness) return "text-purple-500";
     return "";
   };
 
   const getBorderColor = () => {
-    if (isEmperor) return "border-yellow-500/50";
+    if (isEmperor || isEmperorLifetime) return "border-yellow-500/50";
     if (isCreator) return "border-orange-500/50";
     if (isBusiness) return "border-purple-500/50";
     return "";
   };
 
   const getBadgeColor = () => {
-    if (isEmperor) return "bg-yellow-500/10 text-yellow-500";
+    if (isEmperor || isEmperorLifetime) return "bg-yellow-500/10 text-yellow-500";
     if (isCreator) return "bg-orange-500/10 text-orange-500";
     if (isBusiness) return "bg-purple-500/10 text-purple-500";
     return "";
@@ -42,13 +43,20 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
     return price % 1 === 0 ? price.toFixed(0) : price.toFixed(2);
   };
 
+  // Get the display price based on the tier
+  const getDisplayPrice = () => {
+    if (isEmperorLifetime) return '80,000';
+    if (isEmperor) return '17,000';
+    return formatPrice(tier.price);
+  };
+
   return (
     <Card className={cn(
       "relative overflow-hidden backdrop-blur-sm transition-all duration-300",
       "border-2 hover:border-opacity-75 hover:scale-[1.02]",
       "p-8 flex flex-col gap-6",
       getBorderColor(),
-      isEmperor && "bg-black/40"
+      (isEmperor || isEmperorLifetime) && "bg-black/40"
     )}>
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -58,21 +66,30 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
             getCrownColor()
           )}>
             {tier.name}
-            <Crown className={cn("h-6 w-6", getCrownColor())} />
+            {isEmperorLifetime ? (
+              <div className="flex items-center gap-1">
+                <Crown className={cn("h-6 w-6", getCrownColor())} />
+                <Infinity className={cn("h-4 w-4", getCrownColor())} />
+              </div>
+            ) : (
+              <Crown className={cn("h-6 w-6", getCrownColor())} />
+            )}
           </h2>
         </div>
         <Badge variant="secondary" className={cn(
           "uppercase tracking-wider font-medium",
           getBadgeColor()
         )}>
-          {isEmperor ? 'Exclusive' : 'Beta'}
+          {isEmperorLifetime ? 'Lifetime' : isEmperor ? 'Exclusive' : 'Beta'}
         </Badge>
       </div>
 
       {/* Price */}
       <div className="flex items-baseline gap-2">
-        <span className="text-4xl font-bold">${isEmperor ? '17,000' : formatPrice(tier.price)}</span>
-        <span className="text-sm text-muted-foreground">/month</span>
+        <span className="text-4xl font-bold">${getDisplayPrice()}</span>
+        <span className="text-sm text-muted-foreground">
+          {isEmperorLifetime ? 'one-time' : '/month'}
+        </span>
       </div>
 
       {/* Features */}
@@ -84,19 +101,21 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
         
         <li className="flex items-center gap-3">
           <Check className="h-5 w-5 text-green-500" />
-          <span>{tier.monthly_mentions} mentions per month</span>
+          <span>
+            {isEmperorLifetime ? 'Unlimited' : tier.monthly_mentions} mentions {!isEmperorLifetime && 'per month'}
+          </span>
         </li>
 
         <li className="flex items-center gap-3">
           <Check className="h-5 w-5 text-green-500" />
-          <span>Upload files up to {isEmperor ? '10TB' : `${tier.max_upload_size_mb >= 1024 ? `${(tier.max_upload_size_mb / 1024).toFixed(0)}GB` : `${tier.max_upload_size_mb}MB`}`}</span>
+          <span>Upload files up to {(isEmperor || isEmperorLifetime) ? '10TB' : `${tier.max_upload_size_mb >= 1024 ? `${(tier.max_upload_size_mb / 1024).toFixed(0)}GB` : `${tier.max_upload_size_mb}MB`}`}</span>
         </li>
 
-        {isEmperor && (
+        {(isEmperor || isEmperorLifetime) && (
           <>
             <li className="flex items-center gap-3">
               <Check className="h-5 w-5 text-green-500" />
-              <span>{tier.post_character_limit.toLocaleString()} character limit</span>
+              <span>{tier.post_character_limit?.toLocaleString()} character limit</span>
             </li>
             
             <li className="flex items-center gap-3">
@@ -119,12 +138,12 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
         <li className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 text-orange-500" />
           <div className="flex items-center gap-2">
-            <span>{isEmperor ? 'Custom Analytics Dashboard Builder' : 'Advanced Analytics Dashboard'}</span>
+            <span>{(isEmperor || isEmperorLifetime) ? 'Custom Analytics Dashboard Builder' : 'Advanced Analytics Dashboard'}</span>
             <Badge variant="secondary" className={cn(
               "text-xs",
               getBadgeColor()
             )}>
-              {isEmperor ? 'EMPEROR' : 'PRO'}
+              {(isEmperor || isEmperorLifetime) ? 'EMPEROR' : 'PRO'}
             </Badge>
           </div>
         </li>
@@ -143,6 +162,18 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
             </Badge>
           </div>
         </li>
+
+        {isEmperorLifetime && (
+          <li className="flex items-center gap-3">
+            <Infinity className="h-5 w-5 text-yellow-500" />
+            <div className="flex items-center gap-2">
+              <span>Lifetime Access</span>
+              <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-xs">
+                FOREVER
+              </Badge>
+            </div>
+          </li>
+        )}
       </ul>
 
       {/* Action Button */}
@@ -150,7 +181,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
         onClick={() => onSubscribe(tier.name)}
         className={cn(
           "w-full mt-4",
-          isEmperor && "bg-yellow-500 hover:bg-yellow-600 text-black",
+          (isEmperor || isEmperorLifetime) && "bg-yellow-500 hover:bg-yellow-600 text-black",
           isCreator && "bg-orange-500 hover:bg-orange-600",
           isBusiness && "bg-purple-500 hover:bg-purple-600"
         )}
