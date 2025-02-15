@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -46,6 +45,8 @@ export const VideoPlayer = ({
     queryFn: async () => {
       if (!session?.user?.id) return null;
       
+      console.log('Fetching subscription for user:', session.user.id);
+      
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -55,6 +56,8 @@ export const VideoPlayer = ({
         .eq('user_id', session.user.id)
         .eq('status', 'active')
         .maybeSingle();
+
+      console.log('Subscription data:', data);
 
       if (error) {
         console.error('Error fetching subscription:', error);
@@ -68,8 +71,14 @@ export const VideoPlayer = ({
 
   // Check if user has any active paid subscription
   const hasPaidSubscription = subscription?.status === 'active' && 
-                            subscription?.tier?.price && 
-                            subscription?.tier?.price > 0;
+                            subscription?.tier?.name && 
+                            ['Creator', 'True Emperor', 'Business'].includes(subscription.tier.name);
+
+  console.log('Subscription status:', {
+    status: subscription?.status,
+    tierName: subscription?.tier?.name,
+    hasPaidSubscription
+  });
 
   const handlePlay = () => {
     if (backgroundMusic.isPlaying) {
@@ -182,8 +191,12 @@ export const VideoPlayer = ({
   const handleDownload = async () => {
     if (!publicUrl) return;
     
-    // Check if user has any active paid subscription
     if (!hasPaidSubscription) {
+      console.log('Download blocked:', {
+        status: subscription?.status,
+        tierName: subscription?.tier?.name,
+        hasPaidSubscription
+      });
       toast.error('Upgrade to any paid subscription to download media');
       return;
     }
