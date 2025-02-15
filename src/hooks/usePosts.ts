@@ -30,9 +30,9 @@ export const usePosts = () => {
               id,
               username,
               avatar_url,
-              user_subscriptions (
+              user_subscriptions:user_subscriptions(
                 status,
-                subscription_tiers (
+                subscription_tiers(
                   name,
                   checkmark_color
                 )
@@ -60,7 +60,12 @@ export const usePosts = () => {
 
         // Filter out posts with missing profiles and map the data
         const validPosts = data?.filter(post => post.profiles).map(post => {
-          const activeSubscription = post.profiles.user_subscriptions?.find(
+          // Ensure user_subscriptions is treated as an array
+          const subscriptions = Array.isArray(post.profiles.user_subscriptions) 
+            ? post.profiles.user_subscriptions 
+            : [];
+            
+          const activeSubscription = subscriptions.find(
             (sub: UserSubscription) => sub?.status === 'active'
           );
 
