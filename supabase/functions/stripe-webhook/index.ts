@@ -67,12 +67,6 @@ serve(async (req) => {
           subscription: session.subscription
         })
 
-        // Verify the payment is actually completed
-        if (session.payment_status !== 'paid') {
-          console.error(`Payment not completed. Status: ${session.payment_status}`)
-          throw new Error('Payment not completed')
-        }
-
         // Validate required metadata
         if (!session.metadata?.userId || !session.metadata?.tierId) {
           console.error('Missing required metadata:', session.metadata)
@@ -118,7 +112,7 @@ serve(async (req) => {
             ? new Date(subscription.current_period_end * 1000).toISOString()
             : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 100 years for lifetime
           mentions_remaining: parseInt(session.metadata.monthlyMentions || tier.monthly_mentions.toString()),
-          is_lifetime: session.mode === 'payment'
+          is_lifetime: tier.is_lifetime
         }
 
         const { error: upsertError } = await supabaseClient
@@ -137,7 +131,7 @@ serve(async (req) => {
           userId: session.metadata.userId,
           tierId: session.metadata.tierId,
           subscriptionId: subscription?.id,
-          isLifetime: session.mode === 'payment'
+          isLifetime: tier.is_lifetime
         })
         break
       }
@@ -155,12 +149,27 @@ serve(async (req) => {
           throw new Error('Missing tierId in subscription metadata')
         }
 
+        // Get the tier details for monthly mentions
+        const { data: tier, error: tierError } = await supabaseClient
+          .from('subscription_tiers')
+          .select('*')
+          .eq('id', subscription.metadata.tierId)
+          .single()
+
+        if (tierError || !tier) {
+          console.error('Failed to fetch tier:', {
+            error: tierError,
+            tierId: subscription.metadata.tierId
+          })
+          throw new Error('Invalid tier ID')
+        }
+
         const { error } = await supabaseClient
           .from('user_subscriptions')
           .update({
             status: subscription.status,
             ends_at: new Date(subscription.current_period_end * 1000).toISOString(),
-            mentions_remaining: parseInt(subscription.metadata.monthlyMentions || '0')
+            mentions_remaining: tier.monthly_mentions
           })
           .eq('stripe_subscription_id', subscription.id)
 
