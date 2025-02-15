@@ -51,21 +51,8 @@ const Subscription = () => {
       const { data, error } = await supabase
         .from('subscription_tiers')
         .select('*')
-        .order('price', { ascending: true })
-        .then(result => {
-          if (result.data) {
-            // Move lifetime subscription to the end
-            return {
-              ...result,
-              data: result.data.sort((a, b) => {
-                if (a.name === 'True Emperor Lifetime') return 1;
-                if (b.name === 'True Emperor Lifetime') return -1;
-                return a.price - b.price;
-              })
-            };
-          }
-          return result;
-        });
+        .neq('name', 'True Emperor Lifetime') // Exclude the Lifetime tier
+        .order('price', { ascending: true });
 
       if (error) throw error;
       return data;
