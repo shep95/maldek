@@ -91,6 +91,9 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
 
   if (!profile) return null;
 
+  // Ensure follower_count has a default value
+  const followerCount = profile.follower_count ?? 0;
+
   return (
     <div className="bg-black/40 backdrop-blur-xl border-b border-white/10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -123,7 +126,7 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
             <div className="flex items-center gap-2 mt-2">
               <Users className="w-4 h-4 text-white/60" />
               <span className="text-sm text-white/60">
-                {profile.follower_count.toLocaleString()} followers
+                {followerCount.toLocaleString()} followers
               </span>
             </div>
             {profile.bio && (
