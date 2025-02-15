@@ -12,15 +12,23 @@ interface ProfileHeaderProps {
 }
 
 export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
-  // Fetch user's subscription status
+  // Fetch user's subscription status with proper joins
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return null;
       
+      console.log('Fetching subscription for profile:', profile.id);
+      
       const { data, error } = await supabase
         .from('user_subscriptions')
-        .select('*, subscription_tiers(name, checkmark_color)')
+        .select(`
+          *,
+          subscription_tiers!inner(
+            name,
+            checkmark_color
+          )
+        `)
         .eq('user_id', profile.id)
         .eq('status', 'active')
         .maybeSingle();
@@ -29,6 +37,8 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
         console.error('Error fetching subscription:', error);
         return null;
       }
+
+      console.log('Profile subscription data:', data);
       return data;
     },
     enabled: !!profile?.id,
@@ -79,11 +89,11 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
                 <h1 className="text-2xl font-bold text-gray-900 truncate">
                   @{profile.username}
                 </h1>
-                {subscription && (
+                {subscription?.subscription_tiers && (
                   <Crown 
                     className="h-5 w-5" 
                     style={{ 
-                      color: subscription.subscription_tiers?.checkmark_color || '#FFD700'
+                      color: subscription.subscription_tiers.checkmark_color || '#FFD700'
                     }} 
                   />
                 )}

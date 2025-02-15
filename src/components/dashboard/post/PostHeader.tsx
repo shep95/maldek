@@ -24,13 +24,21 @@ export const PostHeader = ({
   isEditing,
   onEditClick 
 }: PostHeaderProps) => {
-  // Fetch user's subscription status
+  // Fetch user's subscription status with proper joins
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', author.id],
     queryFn: async () => {
+      console.log('Fetching subscription for user:', author.id);
+      
       const { data, error } = await supabase
         .from('user_subscriptions')
-        .select('*, subscription_tiers(name, checkmark_color)')
+        .select(`
+          *,
+          subscription_tiers!inner(
+            name,
+            checkmark_color
+          )
+        `)
         .eq('user_id', author.id)
         .eq('status', 'active')
         .maybeSingle();
@@ -39,6 +47,8 @@ export const PostHeader = ({
         console.error('Error fetching subscription:', error);
         return null;
       }
+
+      console.log('Subscription data:', data);
       return data;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
@@ -59,11 +69,11 @@ export const PostHeader = ({
             >
               @{author.username}
             </button>
-            {subscription && (
+            {subscription?.subscription_tiers && (
               <Crown 
                 className="h-4 w-4" 
                 style={{ 
-                  color: subscription.subscription_tiers?.checkmark_color || '#FFD700'
+                  color: subscription.subscription_tiers.checkmark_color || '#FFD700'
                 }} 
               />
             )}
