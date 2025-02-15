@@ -67,6 +67,24 @@ serve(async (req) => {
           subscription: session.subscription
         })
 
+        // Double-check payment status
+        if (session.payment_status !== 'paid') {
+          console.error('Payment not completed:', {
+            sessionId: session.id,
+            status: session.payment_status
+          })
+          throw new Error(`Payment status is ${session.payment_status}, expected 'paid'`)
+        }
+
+        // Validate session status
+        if (session.status !== 'complete') {
+          console.error('Session not complete:', {
+            sessionId: session.id,
+            status: session.status
+          })
+          throw new Error(`Session status is ${session.status}, expected 'complete'`)
+        }
+
         // Validate required metadata
         if (!session.metadata?.userId || !session.metadata?.tierId) {
           console.error('Missing required metadata:', session.metadata)
