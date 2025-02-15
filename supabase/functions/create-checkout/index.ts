@@ -69,10 +69,7 @@ serve(async (req) => {
     const { data: tierData, error: tierError } = await supabaseClient
       .from('subscription_tiers')
       .select('id')
-      .eq('name', tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
-           tier === 'true emperor' ? 'True Emperor' : 
-           tier === 'creator' ? 'Creator' : 
-           tier === 'bosley' ? 'Bosley' : 'Business')
+      .eq('name', tier)
       .single()
 
     if (tierError || !tierData) {
