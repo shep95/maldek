@@ -22,10 +22,10 @@ serve(async (req) => {
     const signature = req.headers.get('stripe-signature')
     if (!signature) throw new Error('No Stripe signature found')
 
-    const body = await req.text()
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
     console.log('Webhook secret exists:', !!webhookSecret)
 
+    const body = await req.text()
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
