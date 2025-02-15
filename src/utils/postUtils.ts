@@ -4,10 +4,6 @@ export interface Author {
   username: string;
   avatar_url: string | null;
   name?: string;
-  subscription?: {
-    name: string;
-    checkmark_color: string;
-  } | null;
 }
 
 export interface Post {

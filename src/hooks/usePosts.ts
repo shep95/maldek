@@ -3,14 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface UserSubscription {
-  status: string;
-  subscription_tiers: {
-    name: string;
-    checkmark_color: string;
-  };
-}
-
 export const usePosts = () => {
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ['posts'],
@@ -29,14 +21,7 @@ export const usePosts = () => {
             profiles!posts_user_id_fkey (
               id,
               username,
-              avatar_url,
-              user_subscriptions: user_subscriptions (
-                status,
-                subscription_tiers!user_subscriptions_tier_id_fkey (
-                  name,
-                  checkmark_color
-                )
-              )
+              avatar_url
             ),
             post_likes (
               id,
@@ -60,28 +45,18 @@ export const usePosts = () => {
 
         // Filter out posts with missing profiles and map the data
         const validPosts = data?.filter(post => post.profiles).map(post => {
-          // Ensure user_subscriptions is treated as an array
-          const subscriptions = Array.isArray(post.profiles.user_subscriptions) 
-            ? post.profiles.user_subscriptions 
-            : [post.profiles.user_subscriptions].filter(Boolean);
-
-          const activeSubscription = subscriptions.find(
-            (sub): sub is UserSubscription => sub?.status === 'active'
-          );
-
           return {
             ...post,
             author: {
               id: post.profiles.id,
               username: post.profiles.username || 'Deleted User',
               avatar_url: post.profiles.avatar_url,
-              name: post.profiles.username || 'Deleted User',
-              subscription: activeSubscription?.subscription_tiers || null
+              name: post.profiles.username || 'Deleted User'
             }
           };
         });
 
-        console.log(`Successfully fetched ${validPosts?.length} posts with subscription data:`, validPosts);
+        console.log(`Successfully fetched ${validPosts?.length} posts:`, validPosts);
         return validPosts;
       } catch (error) {
         console.error('Query error:', error);

@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
-import { Edit2, Crown } from "lucide-react";
+import { Edit2 } from "lucide-react";
 import type { Author } from "@/utils/postUtils";
 
 interface PostHeaderProps {
@@ -37,14 +37,6 @@ export const PostHeader = ({
             >
               @{author.username}
             </button>
-            {author.subscription && (
-              <Crown 
-                className="h-4 w-4" 
-                style={{ 
-                  color: author.subscription.checkmark_color || '#FFD700'
-                }} 
-              />
-            )}
           </div>
           <p className="text-sm text-muted-foreground">
             {formatDistanceToNow(timestamp, { addSuffix: true })}
