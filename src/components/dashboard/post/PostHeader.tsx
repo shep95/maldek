@@ -33,7 +33,7 @@ export const PostHeader = ({
         .select('*, subscription_tiers(name, checkmark_color)')
         .eq('user_id', author.id)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching subscription:', error);

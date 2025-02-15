@@ -23,7 +23,7 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
         .select('*, subscription_tiers(name, checkmark_color)')
         .eq('user_id', profile.id)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching subscription:', error);
