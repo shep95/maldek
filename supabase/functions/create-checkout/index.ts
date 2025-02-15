@@ -5,7 +5,6 @@ import Stripe from 'https://esm.sh/stripe@13.6.0'
 
 const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
 console.log('Stripe key exists:', !!stripeKey);
-// Don't log the actual key for security reasons
 
 const stripe = new Stripe(stripeKey || '', {
   apiVersion: '2023-10-16',
@@ -38,93 +37,97 @@ serve(async (req) => {
       throw new Error('User not found')
     }
 
-    // Get the subscription tier ID first
+    // First, get the tier name based on the input
+    const tierName = tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
+                    tier === 'true emperor' ? 'True Emperor' : 
+                    tier === 'creator' ? 'Creator' : 
+                    tier === 'bosley' ? 'Bosley' : 'Business';
+
+    // Get the subscription tier details
     const { data: tierData, error: tierError } = await supabaseClient
       .from('subscription_tiers')
-      .select('id, name, price')
-      .eq('name', tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
-           tier === 'true emperor' ? 'True Emperor' : 
-           tier === 'creator' ? 'Creator' : 
-           tier === 'bosley' ? 'Bosley' : 'Business')
+      .select('*')
+      .eq('name', tierName)
       .single()
 
     if (tierError || !tierData) {
       console.error('Error fetching tier:', tierError)
-      throw new Error('Subscription tier not found')
+      throw new Error(`Subscription tier not found: ${tierName}`)
     }
 
     console.log('Found tier:', tierData)
 
-    // Use the provided price IDs based on the tier
+    // Determine price ID and mode
     let priceId;
     let mode: 'subscription' | 'payment' = 'subscription';
 
     switch(tier.toLowerCase()) {
       case 'creator':
-        priceId = 'price_1QqL77RIC2EosLwjbynMh9TU'; // $17/month
+        priceId = 'price_1QqL77RIC2EosLwjbynMh9TU';
         break;
       case 'business':
-        priceId = 'price_1QqL7NRIC2EosLwjd8FkAuzM'; // $800/month
+        priceId = 'price_1QqL7NRIC2EosLwjd8FkAuzM';
         break;
       case 'true emperor':
-        priceId = 'price_1QqL8IRIC2EosLwjBF1OtArf'; // $17,000/month
+        priceId = 'price_1QqL8IRIC2EosLwjBF1OtArf';
         break;
       case 'true emperor lifetime':
-        priceId = 'price_1QsXsaRIC2EosLwjUQIZ9eiu'; // $80,000 one-time
+        priceId = 'price_1QsXsaRIC2EosLwjUQIZ9eiu';
         mode = 'payment';
         break;
       case 'bosley':
-        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX'; // $3.50/month
+        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX';
         break;
       default:
         throw new Error('Invalid subscription tier');
     }
     
-    console.log('Using price ID:', priceId, 'for tier:', tier, 'with mode:', mode)
+    console.log('Creating checkout with:', {
+      priceId,
+      mode,
+      tierId: tierData.id,
+      tierName: tierData.name,
+      monthlyMentions: tierData.monthly_mentions
+    })
 
-    try {
-      const session = await stripe.checkout.sessions.create({
-        customer_email: user.email,
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        mode: mode,
-        success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.get('origin')}/subscription`,
-        metadata: {
-          userId: userId,
-          tierId: tierData.id,
-          tier: tier,
-          isLifetime: mode === 'payment' ? 'true' : 'false'
-        },
-        subscription_data: mode === 'subscription' ? {
-          metadata: {
-            tierId: tierData.id,
-            tier: tier
-          }
-        } : undefined
-      })
-
-      console.log('Checkout session created:', session.id)
-
-      return new Response(
-        JSON.stringify({ url: session.url }),
+    const session = await stripe.checkout.sessions.create({
+      customer_email: user.email,
+      line_items: [
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: mode,
+      success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get('origin')}/subscription`,
+      metadata: {
+        userId: userId,
+        tierId: tierData.id,
+        tier: tierData.name,
+        isLifetime: mode === 'payment' ? 'true' : 'false',
+        monthlyMentions: tierData.monthly_mentions.toString()
+      },
+      subscription_data: mode === 'subscription' ? {
+        metadata: {
+          tierId: tierData.id,
+          tier: tierData.name,
+          monthlyMentions: tierData.monthly_mentions.toString()
         }
-      )
-    } catch (stripeError) {
-      console.error('Stripe error:', {
-        error: stripeError,
-        message: stripeError.message,
-        type: stripeError.type,
-        code: stripeError.code
-      });
-      throw stripeError;
-    }
+      } : undefined
+    })
+
+    console.log('Checkout session created:', {
+      sessionId: session.id,
+      metadata: session.metadata
+    })
+
+    return new Response(
+      JSON.stringify({ url: session.url }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   } catch (error) {
     console.error('Error creating checkout session:', error)
     return new Response(
