@@ -63,7 +63,7 @@ serve(async (req) => {
 
     switch(tier.toLowerCase()) {
       case 'creator':
-        priceId = 'price_1QqL77RIC2EosLwjbynMh9TU';
+        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX'; // Updated to $3.50/month
         break;
       case 'business':
         priceId = 'price_1QqL7NRIC2EosLwjd8FkAuzM';
