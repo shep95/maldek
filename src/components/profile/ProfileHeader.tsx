@@ -24,16 +24,19 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
         .from('user_subscriptions')
         .select(`
           *,
-          subscription_tiers!inner(
+          subscription_tiers (
             name,
             checkmark_color
           )
         `)
         .eq('user_id', profile.id)
         .eq('status', 'active')
-        .maybeSingle();
+        .single();
 
       if (error) {
+        if (error.code === 'PGRST116') { // No rows returned
+          return null;
+        }
         console.error('Error fetching subscription:', error);
         return null;
       }
@@ -43,6 +46,7 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
     },
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 1, // Only retry once to avoid too many requests
   });
 
   if (isLoading) {
@@ -93,7 +97,7 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
                   <Crown 
                     className="h-5 w-5" 
                     style={{ 
-                      color: subscription.subscription_tiers.checkmark_color || '#FFD700'
+                      color: subscription.subscription_tiers?.checkmark_color || '#FFD700'
                     }} 
                   />
                 )}

@@ -34,16 +34,19 @@ export const PostHeader = ({
         .from('user_subscriptions')
         .select(`
           *,
-          subscription_tiers!inner(
+          subscription_tiers (
             name,
             checkmark_color
           )
         `)
         .eq('user_id', author.id)
         .eq('status', 'active')
-        .maybeSingle();
+        .single();
 
       if (error) {
+        if (error.code === 'PGRST116') { // No rows returned
+          return null;
+        }
         console.error('Error fetching subscription:', error);
         return null;
       }
@@ -52,6 +55,7 @@ export const PostHeader = ({
       return data;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: 1, // Only retry once to avoid too many requests
   });
 
   return (
@@ -73,7 +77,7 @@ export const PostHeader = ({
               <Crown 
                 className="h-4 w-4" 
                 style={{ 
-                  color: subscription.subscription_tiers.checkmark_color || '#FFD700'
+                  color: subscription.subscription_tiers?.checkmark_color || '#FFD700'
                 }} 
               />
             )}
