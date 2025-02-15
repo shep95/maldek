@@ -1,4 +1,3 @@
-
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2 } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -87,15 +86,6 @@ export const NavItems = ({
       active: location.pathname === "/spaces",
       description: "Join community spaces"
     },
-    {
-      icon: BrainCircuit,
-      label: "Daarp AI",
-      path: "/daarp-ai",
-      active: location.pathname === "/daarp-ai",
-      premium: true,
-      description: subscription ? "Chat with AI assistant" : "Unlock AI features",
-      className: "text-accent"
-    },
     { 
       icon: TrendingUp, 
       label: "Analytics",
@@ -119,8 +109,8 @@ export const NavItems = ({
       ) : (
         "Unlock premium features"
       ),
-      className: subscription?.tier?.name === "Creator" ? "text-orange-500" : 
-                 subscription?.tier?.name === "Business" ? "text-yellow-500" : 
+      className: subscription?.tier?.name === "True Emperor" ? "text-yellow-500" : 
+                 subscription?.tier?.name === "Creator" ? "text-white" : 
                  "text-accent relative hover:bg-accent/10"
     },
     { 

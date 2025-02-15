@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ExternalLink, Star, Sparkles } from "lucide-react";
+import { ExternalLink, Crown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,7 +15,9 @@ interface CurrentSubscriptionProps {
 export const CurrentSubscription = ({ subscription, onManageSubscription }: CurrentSubscriptionProps) => {
   if (!subscription) return null;
 
+  const isEmperor = subscription.tier.name === 'True Emperor';
   const isCreator = subscription.tier.name === 'Creator';
+  const isPremium = isEmperor || isCreator;
 
   return (
     <Card className="relative overflow-hidden backdrop-blur-sm">
@@ -27,13 +29,13 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h2 className="text-3xl font-bold">Current Plan</h2>
-            {isCreator && <Star className="h-8 w-8 text-white" />}
+            {isPremium && <Crown className={cn("h-8 w-8", isEmperor ? "text-yellow-500" : "text-white")} />}
           </div>
           <Badge 
             variant="secondary" 
             className={cn(
               "text-sm px-3 py-1",
-              isCreator ? "bg-white/10 text-white" : "bg-accent/10 text-accent"
+              isPremium ? "bg-white/10 text-white" : "bg-accent/10 text-accent"
             )}
           >
             {subscription.status}
@@ -46,7 +48,7 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
               <span className="font-bold">{subscription.tier.name}</span> Plan
             </h3>
             <p className="text-muted-foreground">
-              Unlock premium features and enhance your experience
+              {isEmperor ? 'Lifetime access to all premium features' : 'Premium features and downloads'}
             </p>
           </div>
 
@@ -57,7 +59,9 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
             </div>
             <div className="flex items-center gap-2">
               <ExternalLink className="h-5 w-5 text-accent" />
-              <span>Renewal: {new Date(subscription.ends_at).toLocaleDateString()}</span>
+              <span>
+                {isEmperor ? 'Lifetime access' : `Renewal: ${new Date(subscription.ends_at).toLocaleDateString()}`}
+              </span>
             </div>
           </div>
 
@@ -65,7 +69,7 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
             onClick={onManageSubscription}
             className={cn(
               "mt-4",
-              isCreator ? "bg-white hover:bg-white/90 text-black" : ""
+              isPremium ? "bg-white hover:bg-white/90 text-black" : ""
             )}
           >
             Manage Subscription
