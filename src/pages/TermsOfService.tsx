@@ -17,6 +17,11 @@ const TermsOfService = () => {
 
       <Card className="p-6 space-y-6">
         <section className="space-y-4">
+          <h2 className="text-2xl font-semibold">Our Mission</h2>
+          <p>Our mission since September 5th 2024 is to protect human rights of speech and privacy. We do not collect any data besides email and passwords and any public posts you make including profile pictures, posts, images and videos.</p>
+        </section>
+
+        <section className="space-y-4">
           <h2 className="text-2xl font-semibold">1. Acceptance of Terms</h2>
           <p>By accessing and using Bosley, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this platform.</p>
         </section>
