@@ -99,12 +99,12 @@ export const usePostCreation = (
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
-        .insert({
+        .insert([{
           content: content.trim(),
           user_id: currentUser.id,
           media_urls: mediaUrls,
           scheduled_for: scheduledDate?.toISOString()
-        })
+        }])
         .select('*, profiles(id, username, avatar_url)')
         .single();
 
