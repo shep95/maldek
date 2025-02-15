@@ -56,7 +56,7 @@ serve(async (req) => {
         priceId = 'price_1QsXsaRIC2EosLwjUQIZ9eiu'; // $80,000 one-time
         mode = 'payment';
         break;
-      case 'bosley blue':
+      case 'bosley':
         priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX'; // $3.50/month
         break;
       default:
@@ -72,7 +72,7 @@ serve(async (req) => {
       .eq('name', tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
            tier === 'true emperor' ? 'True Emperor' : 
            tier === 'creator' ? 'Creator' : 
-           tier === 'bosley blue' ? 'Bosley Blue' : 'Business')
+           tier === 'bosley' ? 'Bosley' : 'Business')
       .single()
 
     if (tierError || !tierData) {
