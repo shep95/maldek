@@ -44,14 +44,14 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           isEmperor ? "bg-yellow-500/10 text-yellow-500" : 
           isCreator ? "bg-white/10 text-white" : "bg-accent/10 text-accent"
         )}>
-          Premium
+          {isEmperor ? 'One-Time' : 'Premium'}
         </Badge>
       </div>
 
       {/* Price */}
       <div className="flex items-baseline gap-2">
         <span className="text-4xl font-bold">${formatPrice(tier.price)}</span>
-        <span className="text-sm text-muted-foreground">/month</span>
+        {!isEmperor && <span className="text-sm text-muted-foreground">/month</span>}
       </div>
 
       {/* Features */}
