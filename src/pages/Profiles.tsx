@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,10 @@ import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoadin
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
+import { AdvertisementTab } from "@/components/profile/tabs/AdvertisementTab";
+import { Card } from "@/components/ui/card";
 
 const Profiles = () => {
   const session = useSession();
@@ -182,12 +187,45 @@ const Profiles = () => {
   return (
     <div className="min-h-screen">
       <ProfileHeader profile={profile} isLoading={profileLoading} />
-      <div className="max-w-4xl mx-auto px-4">
-        <ProfilePosts 
-          posts={posts || []} 
-          isLoading={postsLoading} 
-          onPostAction={handlePostAction} 
-        />
+      <div className="max-w-4xl mx-auto px-4 mt-8">
+        <Tabs defaultValue="posts" className="w-full">
+          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0 mb-8">
+            <TabsTrigger 
+              value="posts" 
+              className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none h-12 px-4"
+            >
+              Posts
+            </TabsTrigger>
+            <TabsTrigger 
+              value="music" 
+              className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none h-12 px-4"
+            >
+              Music
+            </TabsTrigger>
+            <TabsTrigger 
+              value="ads" 
+              className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none h-12 px-4"
+            >
+              Advertisements
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="posts" className="mt-0">
+            <ProfilePosts 
+              posts={posts || []} 
+              isLoading={postsLoading} 
+              onPostAction={handlePostAction} 
+            />
+          </TabsContent>
+
+          <TabsContent value="music" className="mt-0">
+            <ProfileMusicTab />
+          </TabsContent>
+
+          <TabsContent value="ads" className="mt-0">
+            <AdvertisementTab userId={profile.id} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
