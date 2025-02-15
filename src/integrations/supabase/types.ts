@@ -1683,6 +1683,7 @@ export type Database = {
         Row: {
           checkmark_color: string
           created_at: string
+          features: Json | null
           id: string
           is_lifetime: boolean | null
           max_pinned_posts: number | null
@@ -1697,6 +1698,7 @@ export type Database = {
         Insert: {
           checkmark_color: string
           created_at?: string
+          features?: Json | null
           id?: string
           is_lifetime?: boolean | null
           max_pinned_posts?: number | null
@@ -1711,6 +1713,7 @@ export type Database = {
         Update: {
           checkmark_color?: string
           created_at?: string
+          features?: Json | null
           id?: string
           is_lifetime?: boolean | null
           max_pinned_posts?: number | null

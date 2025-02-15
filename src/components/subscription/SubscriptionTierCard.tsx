@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Crown, DollarSign, Sparkles, Mic, Infinity } from "lucide-react";
+import { Check, Crown, DollarSign, Sparkles, Mic, Infinity, BrainCircuit, BarChart2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SubscriptionTierProps {
@@ -16,11 +16,13 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
   const isEmperorLifetime = tier.name === 'True Emperor Lifetime';
   const isCreator = tier.name === 'Creator';
   const isBusiness = tier.name === 'Business';
+  const isBosley = tier.name === 'Bosley';
   
   const getCrownColor = () => {
     if (isEmperor || isEmperorLifetime) return "text-yellow-500";
     if (isCreator) return "text-orange-500";
     if (isBusiness) return "text-purple-500";
+    if (isBosley) return "text-white";
     return "";
   };
 
@@ -28,6 +30,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
     if (isEmperor || isEmperorLifetime) return "border-yellow-500/50";
     if (isCreator) return "border-orange-500/50";
     if (isBusiness) return "border-purple-500/50";
+    if (isBosley) return "border-white/50";
     return "";
   };
 
@@ -35,6 +38,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
     if (isEmperor || isEmperorLifetime) return "bg-yellow-500/10 text-yellow-500";
     if (isCreator) return "bg-orange-500/10 text-orange-500";
     if (isBusiness) return "bg-purple-500/10 text-purple-500";
+    if (isBosley) return "bg-white/10 text-white";
     return "";
   };
 
@@ -49,6 +53,10 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
     if (isEmperor) return '17,000';
     return formatPrice(tier.price);
   };
+
+  const hasDaarpAI = tier.features?.daarp_ai;
+  const hasAdvancedAnalytics = tier.features?.advanced_analytics;
+  const hasUnlimitedPosts = tier.features?.unlimited_posts;
 
   return (
     <Card className={cn(
@@ -102,7 +110,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
         <li className="flex items-center gap-3">
           <Check className="h-5 w-5 text-green-500" />
           <span>
-            {isEmperorLifetime ? 'Unlimited' : tier.monthly_mentions} mentions {!isEmperorLifetime && 'per month'}
+            {isEmperorLifetime || hasUnlimitedPosts ? 'Unlimited' : tier.monthly_mentions} mentions {!isEmperorLifetime && !hasUnlimitedPosts && 'per month'}
           </span>
         </li>
 
@@ -135,33 +143,42 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           </>
         )}
 
+        {/* Advanced Analytics Feature */}
         <li className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-orange-500" />
+          <BarChart2 className="h-5 w-5 text-orange-500" />
           <div className="flex items-center gap-2">
-            <span>{(isEmperor || isEmperorLifetime) ? 'Custom Analytics Dashboard Builder' : 'Advanced Analytics Dashboard'}</span>
-            <Badge variant="secondary" className={cn(
-              "text-xs",
-              getBadgeColor()
-            )}>
-              {(isEmperor || isEmperorLifetime) ? 'EMPEROR' : 'PRO'}
-            </Badge>
+            <span>{(isEmperor || isEmperorLifetime || hasAdvancedAnalytics) ? 'Advanced Analytics Dashboard' : 'Basic Analytics'}</span>
+            {(isEmperor || isEmperorLifetime || hasAdvancedAnalytics) && (
+              <Badge variant="secondary" className={cn(
+                "text-xs",
+                getBadgeColor()
+              )}>
+                PRO
+              </Badge>
+            )}
           </div>
         </li>
 
-        <li className="flex items-center gap-3">
-          <DollarSign className="h-5 w-5 text-orange-500" />
-          <span>Payouts (Beta Testing)</span>
-        </li>
+        {/* DAARP AI Feature */}
+        {hasDaarpAI && (
+          <li className="flex items-center gap-3">
+            <BrainCircuit className="h-5 w-5 text-orange-500" />
+            <div className="flex items-center gap-2">
+              <span>DAARP AI Access</span>
+              <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 text-xs">
+                BETA
+              </Badge>
+            </div>
+          </li>
+        )}
 
-        <li className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-orange-500" />
-          <div className="flex items-center gap-2">
-            <span>DAARP AI (BETA)</span>
-            <Badge variant="secondary" className="bg-orange-500/10 text-orange-500 text-xs">
-              NEW
-            </Badge>
-          </div>
-        </li>
+        {/* Only show payouts for non-Bosley tiers */}
+        {!isBosley && (
+          <li className="flex items-center gap-3">
+            <DollarSign className="h-5 w-5 text-orange-500" />
+            <span>Payouts (Beta Testing)</span>
+          </li>
+        )}
 
         {isEmperorLifetime && (
           <li className="flex items-center gap-3">
@@ -183,7 +200,8 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           "w-full mt-4",
           (isEmperor || isEmperorLifetime) && "bg-yellow-500 hover:bg-yellow-600 text-black",
           isCreator && "bg-orange-500 hover:bg-orange-600",
-          isBusiness && "bg-purple-500 hover:bg-purple-600"
+          isBusiness && "bg-purple-500 hover:bg-purple-600",
+          isBosley && "bg-white hover:bg-white/90 text-black"
         )}
         variant={currentTierId === tier.id ? "secondary" : "default"}
         disabled={currentTierId === tier.id}
