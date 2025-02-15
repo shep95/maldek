@@ -12,34 +12,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     detectSessionInUrl: true,
     storageKey: 'supabase.auth.token',
     storage: window.localStorage
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
-    headers: {
-      'x-client-info': 'daarp-web'
-    }
-  },
-  retryAfter: 3
+  }
 });
-
-// Add connection health monitoring
-let connectionHealthCheck: number;
-
-supabase.channel('system')
-  .on('system', { event: '*' }, (payload) => {
-    if (payload.event === 'disconnected') {
-      // Attempt to reconnect after a delay
-      clearTimeout(connectionHealthCheck);
-      connectionHealthCheck = window.setTimeout(() => {
-        supabase.realtime.connect();
-      }, 5000);
-    }
-  })
-  .subscribe();
