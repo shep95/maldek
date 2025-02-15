@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ExternalLink, Crown, Star, Sparkles } from "lucide-react";
+import { ExternalLink, Star, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,7 +15,6 @@ interface CurrentSubscriptionProps {
 export const CurrentSubscription = ({ subscription, onManageSubscription }: CurrentSubscriptionProps) => {
   if (!subscription) return null;
 
-  const isEmperor = subscription.tier.name === 'True Emperor';
   const isCreator = subscription.tier.name === 'Creator';
 
   return (
@@ -28,16 +27,13 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h2 className="text-3xl font-bold">Current Plan</h2>
-            {isEmperor && <Crown className="h-8 w-8 text-yellow-500" />}
-            {isCreator && <Star className="h-8 w-8 text-orange-500" />}
+            {isCreator && <Star className="h-8 w-8 text-white" />}
           </div>
           <Badge 
             variant="secondary" 
             className={cn(
               "text-sm px-3 py-1",
-              isEmperor ? "bg-yellow-500/10 text-yellow-500" : 
-              isCreator ? "bg-orange-500/10 text-orange-500" : 
-              "bg-accent/10 text-accent"
+              isCreator ? "bg-white/10 text-white" : "bg-accent/10 text-accent"
             )}
           >
             {subscription.status}
@@ -69,9 +65,7 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
             onClick={onManageSubscription}
             className={cn(
               "mt-4",
-              isEmperor ? "bg-yellow-500 hover:bg-yellow-600 text-black" :
-              isCreator ? "bg-orange-500 hover:bg-orange-600" :
-              ""
+              isCreator ? "bg-white hover:bg-white/90 text-black" : ""
             )}
           >
             Manage Subscription
