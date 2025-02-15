@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from 'https://esm.sh/stripe@13.6.0'
@@ -32,7 +31,7 @@ serve(async (req) => {
     }
 
     const body = await req.text()
-    console.log('Raw webhook body:', body) // Log raw webhook data for debugging
+    console.log('Raw webhook body:', body)
 
     const event = stripe.webhooks.constructEvent(
       body,
@@ -56,7 +55,6 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
         
-        // Log detailed session information
         console.log('Processing checkout session:', {
           id: session.id,
           customerId: session.customer,
@@ -67,7 +65,6 @@ serve(async (req) => {
           subscription: session.subscription
         })
 
-        // Double-check payment status
         if (session.payment_status !== 'paid') {
           console.error('Payment not completed:', {
             sessionId: session.id,
@@ -76,7 +73,6 @@ serve(async (req) => {
           throw new Error(`Payment status is ${session.payment_status}, expected 'paid'`)
         }
 
-        // Validate session status
         if (session.status !== 'complete') {
           console.error('Session not complete:', {
             sessionId: session.id,
@@ -85,13 +81,14 @@ serve(async (req) => {
           throw new Error(`Session status is ${session.status}, expected 'complete'`)
         }
 
-        // Validate required metadata
-        if (!session.metadata?.userId || !session.metadata?.tierId) {
-          console.error('Missing required metadata:', session.metadata)
-          throw new Error(`Missing required metadata. Found: ${JSON.stringify(session.metadata)}`)
+        if (!session.metadata?.userId || !session.metadata?.tierId || !session.customer) {
+          console.error('Missing required metadata or customer:', session.metadata)
+          throw new Error(`Missing required data. Found: ${JSON.stringify({
+            metadata: session.metadata,
+            customer: session.customer
+          })}`)
         }
 
-        // For subscription mode, fetch the subscription details
         let subscription = null
         if (session.mode === 'subscription' && session.subscription) {
           subscription = await stripe.subscriptions.retrieve(session.subscription as string)
@@ -103,7 +100,6 @@ serve(async (req) => {
           })
         }
 
-        // Get the tier details from the database
         const { data: tier, error: tierError } = await supabaseClient
           .from('subscription_tiers')
           .select('*')
@@ -118,17 +114,17 @@ serve(async (req) => {
           throw new Error('Invalid tier ID')
         }
 
-        // Create or update the user subscription
+        // Create or update the user subscription with customer ID
         const subscriptionData = {
           user_id: session.metadata.userId,
           tier_id: session.metadata.tierId,
           stripe_subscription_id: subscription?.id,
-          stripe_customer_id: session.customer as string,
+          stripe_customer_id: session.customer,
           status: subscription ? subscription.status : 'active',
           starts_at: new Date().toISOString(),
           ends_at: subscription 
             ? new Date(subscription.current_period_end * 1000).toISOString()
-            : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 100 years for lifetime
+            : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
           mentions_remaining: parseInt(session.metadata.monthlyMentions || tier.monthly_mentions.toString()),
           is_lifetime: tier.is_lifetime
         }
@@ -149,6 +145,7 @@ serve(async (req) => {
           userId: session.metadata.userId,
           tierId: session.metadata.tierId,
           subscriptionId: subscription?.id,
+          customerId: session.customer,
           isLifetime: tier.is_lifetime
         })
         break
@@ -167,7 +164,6 @@ serve(async (req) => {
           throw new Error('Missing tierId in subscription metadata')
         }
 
-        // Get the tier details for monthly mentions
         const { data: tier, error: tierError } = await supabaseClient
           .from('subscription_tiers')
           .select('*')
