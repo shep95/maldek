@@ -2,9 +2,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StoryRing } from "@/components/profile/StoryRing";
-import { Crown } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Crown, Users } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -12,6 +13,8 @@ interface ProfileHeaderProps {
 }
 
 export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
+  const queryClient = useQueryClient();
+
   // Fetch user's subscription status with proper joins
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', profile?.id],
@@ -46,8 +49,33 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
     },
     enabled: !!profile?.id,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 1, // Only retry once to avoid too many requests
+    retry: 1,
   });
+
+  // Set up real-time subscription for follower count updates
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase.channel('profile-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${profile.id}`
+        },
+        (payload) => {
+          console.log('Profile updated:', payload);
+          queryClient.invalidateQueries({ queryKey: ['profile', profile.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, queryClient]);
 
   if (isLoading) {
     return (
@@ -91,6 +119,12 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
                   }} 
                 />
               )}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Users className="w-4 h-4 text-white/60" />
+              <span className="text-sm text-white/60">
+                {profile.follower_count.toLocaleString()} followers
+              </span>
             </div>
             {profile.bio && (
               <p className="text-sm text-white/60 mt-1 max-w-lg">{profile.bio}</p>
