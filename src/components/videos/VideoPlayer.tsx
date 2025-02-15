@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -65,8 +66,10 @@ export const VideoPlayer = ({
     enabled: !!session?.user?.id
   });
 
-  const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
-                            subscription?.tier?.name === 'True Emperor';
+  // Check if user has any active paid subscription
+  const hasPaidSubscription = subscription?.status === 'active' && 
+                            subscription?.tier?.price && 
+                            subscription?.tier?.price > 0;
 
   const handlePlay = () => {
     if (backgroundMusic.isPlaying) {
@@ -179,9 +182,9 @@ export const VideoPlayer = ({
   const handleDownload = async () => {
     if (!publicUrl) return;
     
-    // Check if user has a paid subscription
+    // Check if user has any active paid subscription
     if (!hasPaidSubscription) {
-      toast.error('Upgrade your subscription to download media');
+      toast.error('Upgrade to any paid subscription to download media');
       return;
     }
     
@@ -208,7 +211,7 @@ export const VideoPlayer = ({
 
   const handleOpenOriginal = () => {
     if (!hasPaidSubscription) {
-      toast.error('Upgrade your subscription to view original media');
+      toast.error('Upgrade to any paid subscription to view original media');
       return;
     }
     
@@ -295,7 +298,7 @@ export const VideoPlayer = ({
           size="icon"
           className="bg-black/50 hover:bg-black/70 text-white"
           onClick={handleDownload}
-          title={hasPaidSubscription ? "Download video" : "Upgrade to download"}
+          title={hasPaidSubscription ? "Download video" : "Upgrade to any paid subscription to download"}
         >
           <Download className="h-4 w-4" />
         </Button>
@@ -304,7 +307,7 @@ export const VideoPlayer = ({
           size="icon"
           className="bg-black/50 hover:bg-black/70 text-white"
           onClick={handleOpenOriginal}
-          title={hasPaidSubscription ? "Open in new tab" : "Upgrade to view original"}
+          title={hasPaidSubscription ? "Open in new tab" : "Upgrade to any paid subscription to view original"}
         >
           <ExternalLink className="h-4 w-4" />
         </Button>
