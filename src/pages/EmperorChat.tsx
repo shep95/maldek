@@ -1,3 +1,4 @@
+
 import { EmperorChat } from "@/components/emperor/EmperorChat";
 
 const EmperorChatPage = () => {
