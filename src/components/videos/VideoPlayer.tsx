@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -10,6 +9,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Database } from "@/integrations/supabase/types";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -18,22 +18,10 @@ interface VideoPlayerProps {
   autoPlay?: boolean;
 }
 
-type SubscriptionTier = {
-  id: string;
-  name: string;
-  price: number;
-  checkmark_color: string;
-  features: any;
-  can_download_media: boolean;
-}
-
-type UserSubscription = {
-  id: string;
-  user_id: string;
-  tier_id: string;
-  status: string;
-  tier: SubscriptionTier;
-}
+type DbSubscriptionTier = Database['public']['Tables']['subscription_tiers']['Row'];
+type DbUserSubscription = Database['public']['Tables']['user_subscriptions']['Row'] & {
+  tier: DbSubscriptionTier;
+};
 
 export const VideoPlayer = ({ 
   videoUrl, 
@@ -52,7 +40,7 @@ export const VideoPlayer = ({
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
-  const { data: subscription } = useQuery<UserSubscription | null>({
+  const { data: subscription } = useQuery<DbUserSubscription | null>({
     queryKey: ['user-subscription', session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) return null;
@@ -72,7 +60,7 @@ export const VideoPlayer = ({
         return null;
       }
 
-      return data;
+      return data as DbUserSubscription;
     },
     enabled: !!session?.user?.id
   });
@@ -191,8 +179,8 @@ export const VideoPlayer = ({
   const handleDownload = async () => {
     if (!publicUrl) return;
     
-    // Check if user can download media
-    if (!subscription?.tier?.can_download_media) {
+    // Check if user has a paid subscription
+    if (!hasPaidSubscription) {
       toast.error('Upgrade your subscription to download media');
       return;
     }
@@ -219,7 +207,7 @@ export const VideoPlayer = ({
   };
 
   const handleOpenOriginal = () => {
-    if (!subscription?.tier?.can_download_media) {
+    if (!hasPaidSubscription) {
       toast.error('Upgrade your subscription to view original media');
       return;
     }
@@ -307,7 +295,7 @@ export const VideoPlayer = ({
           size="icon"
           className="bg-black/50 hover:bg-black/70 text-white"
           onClick={handleDownload}
-          title={subscription?.tier?.can_download_media ? "Download video" : "Upgrade to download"}
+          title={hasPaidSubscription ? "Download video" : "Upgrade to download"}
         >
           <Download className="h-4 w-4" />
         </Button>
@@ -316,7 +304,7 @@ export const VideoPlayer = ({
           size="icon"
           className="bg-black/50 hover:bg-black/70 text-white"
           onClick={handleOpenOriginal}
-          title={subscription?.tier?.can_download_media ? "Open in new tab" : "Upgrade to view original"}
+          title={hasPaidSubscription ? "Open in new tab" : "Upgrade to view original"}
         >
           <ExternalLink className="h-4 w-4" />
         </Button>
