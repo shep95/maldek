@@ -1,11 +1,13 @@
-
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink } from "lucide-react";
 import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusicProvider";
+import { useSession } from "@supabase/auth-helpers-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -27,15 +29,39 @@ export const VideoPlayer = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
   const [showWatermark, setShowWatermark] = useState(false);
+  const session = useSession();
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
+
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*, tier:subscription_tiers(*)')
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
+
+  const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
+                            subscription?.tier?.name === 'True Emperor';
 
   const handlePlay = () => {
     if (backgroundMusic.isPlaying) {
       backgroundMusic.togglePlay();
     }
     startColorAnalysis();
-    checkScreenRecording();
+    if (!hasPaidSubscription) {
+      checkScreenRecording();
+    }
   };
 
   const handlePause = () => {
@@ -52,6 +78,26 @@ export const VideoPlayer = ({
       setShowWatermark(true);
     }
   };
+
+  useEffect(() => {
+    if (hasPaidSubscription) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Detect common screenshot shortcuts
+      const isPrintScreen = e.key === 'PrintScreen';
+      const isMacScreenshot = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '4';
+      const isWindowsSnippingTool = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's';
+      
+      if (isPrintScreen || isMacScreenshot || isWindowsSnippingTool) {
+        setShowWatermark(true);
+        // Keep watermark visible for a short duration after screenshot
+        setTimeout(() => setShowWatermark(false), 2000);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasPaidSubscription]);
 
   const getAverageColor = (context: CanvasRenderingContext2D, width: number, height: number) => {
     const imageData = context.getImageData(0, 0, width, height).data;
@@ -257,7 +303,7 @@ export const VideoPlayer = ({
             crossOrigin="anonymous"
             autoPlay={autoPlay}
           />
-          {showWatermark && (
+          {showWatermark && !hasPaidSubscription && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
                 Bosley

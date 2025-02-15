@@ -1,9 +1,8 @@
-
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
@@ -16,6 +15,30 @@ interface PostMediaProps {
 }
 
 export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaProps) => {
+  const [showWatermark, setShowWatermark] = useState(false);
+  const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
+                             subscription?.tier?.name === 'True Emperor';
+
+  useEffect(() => {
+    if (hasPaidSubscription) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Detect common screenshot shortcuts
+      const isPrintScreen = e.key === 'PrintScreen';
+      const isMacScreenshot = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '4';
+      const isWindowsSnippingTool = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's';
+      
+      if (isPrintScreen || isMacScreenshot || isWindowsSnippingTool) {
+        setShowWatermark(true);
+        // Keep watermark visible for a short duration after screenshot
+        setTimeout(() => setShowWatermark(false), 2000);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasPaidSubscription]);
+
   if (!mediaUrls || mediaUrls.length === 0) {
     return null;
   }
@@ -81,12 +104,21 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
               ) : (
                 <div onClick={() => onMediaClick?.(publicUrl)}>
                   <AspectRatio ratio={mediaUrls.length === 1 ? 16 / 9 : 1}>
-                    <img
-                      src={publicUrl}
-                      alt={`Media content ${i + 1}`}
-                      className="w-full h-full object-cover bg-muted/10 rounded-[22px] cursor-pointer transition-all duration-200 hover:scale-[1.02]"
-                      loading="lazy"
-                    />
+                    <div className="relative">
+                      <img
+                        src={publicUrl}
+                        alt={`Media content ${i + 1}`}
+                        className="w-full h-full object-cover bg-muted/10 rounded-[22px] cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                        loading="lazy"
+                      />
+                      {showWatermark && !hasPaidSubscription && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
+                            Bosley
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
