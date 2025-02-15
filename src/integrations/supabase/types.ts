@@ -1694,6 +1694,7 @@ export type Database = {
           post_character_limit: number | null
           price: number
           schedule_days_limit: number | null
+          watermark_disabled: boolean | null
         }
         Insert: {
           checkmark_color: string
@@ -1709,6 +1710,7 @@ export type Database = {
           post_character_limit?: number | null
           price: number
           schedule_days_limit?: number | null
+          watermark_disabled?: boolean | null
         }
         Update: {
           checkmark_color?: string
@@ -1724,6 +1726,7 @@ export type Database = {
           post_character_limit?: number | null
           price?: number
           schedule_days_limit?: number | null
+          watermark_disabled?: boolean | null
         }
         Relationships: []
       }

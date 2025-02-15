@@ -36,7 +36,12 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     e.stopPropagation();
     
     if (!canDownload) {
-      toast.error('Please upgrade to Creator or Emperor subscription to download media');
+      toast.error('Please upgrade to Creator or Emperor subscription to download media', {
+        action: {
+          label: "Upgrade",
+          onClick: () => window.location.href = '/subscription'
+        }
+      });
       return;
     }
 

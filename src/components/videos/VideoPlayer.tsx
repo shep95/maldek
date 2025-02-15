@@ -26,6 +26,7 @@ export const VideoPlayer = ({
   const backgroundMusic = useBackgroundMusicContext();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
+  const [showWatermark, setShowWatermark] = useState(false);
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
@@ -34,16 +35,22 @@ export const VideoPlayer = ({
       backgroundMusic.togglePlay();
     }
     startColorAnalysis();
+    checkScreenRecording();
   };
 
   const handlePause = () => {
-    // Optional: Resume background music on video pause
     stopColorAnalysis();
   };
 
   const handleEnded = () => {
-    // Optional: Resume background music on video end
     stopColorAnalysis();
+  };
+
+  const checkScreenRecording = () => {
+    // @ts-ignore - mediaDevices.getDisplayMedia is not in the TypeScript types yet
+    if (navigator.mediaDevices?.getDisplayMedia) {
+      setShowWatermark(true);
+    }
   };
 
   const getAverageColor = (context: CanvasRenderingContext2D, width: number, height: number) => {
@@ -233,22 +240,31 @@ export const VideoPlayer = ({
       </div>
 
       <AspectRatio ratio={16 / 9}>
-        <video
-          ref={videoRef}
-          src={publicUrl}
-          className={`w-full h-full object-contain ${className}`}
-          controls={controls}
-          onError={handleVideoError}
-          onLoadedData={handleVideoLoaded}
-          onPlay={handlePlay}
-          onPause={handlePause}
-          onEnded={handleEnded}
-          playsInline
-          loop
-          preload="auto"
-          crossOrigin="anonymous"
-          autoPlay={autoPlay}
-        />
+        <div className="relative w-full h-full">
+          <video
+            ref={videoRef}
+            src={publicUrl}
+            className={`w-full h-full object-contain ${className}`}
+            controls={controls}
+            onError={handleVideoError}
+            onLoadedData={handleVideoLoaded}
+            onPlay={handlePlay}
+            onPause={handlePause}
+            onEnded={handleEnded}
+            playsInline
+            loop
+            preload="auto"
+            crossOrigin="anonymous"
+            autoPlay={autoPlay}
+          />
+          {showWatermark && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
+                Bosley
+              </div>
+            </div>
+          )}
+        </div>
       </AspectRatio>
 
       {isLoading && !error && (
