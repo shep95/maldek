@@ -3,6 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+interface UserSubscription {
+  status: string;
+  subscription_tiers: {
+    name: string;
+    checkmark_color: string;
+  };
+}
+
 export const usePosts = () => {
   const { data: posts, isLoading, error } = useQuery({
     queryKey: ['posts'],
@@ -22,9 +30,9 @@ export const usePosts = () => {
               id,
               username,
               avatar_url,
-              user_subscriptions (
+              user_subscriptions: user_subscriptions (
                 status,
-                subscription_tiers (
+                subscription_tiers!user_subscriptions_tier_id_fkey (
                   name,
                   checkmark_color
                 )
@@ -52,8 +60,13 @@ export const usePosts = () => {
 
         // Filter out posts with missing profiles and map the data
         const validPosts = data?.filter(post => post.profiles).map(post => {
-          const activeSubscription = post.profiles.user_subscriptions?.find(
-            sub => sub.status === 'active'
+          // Ensure user_subscriptions is treated as an array
+          const subscriptions = Array.isArray(post.profiles.user_subscriptions) 
+            ? post.profiles.user_subscriptions 
+            : [post.profiles.user_subscriptions].filter(Boolean);
+
+          const activeSubscription = subscriptions.find(
+            (sub): sub is UserSubscription => sub?.status === 'active'
           );
 
           return {
