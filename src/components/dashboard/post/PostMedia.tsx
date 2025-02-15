@@ -11,12 +11,15 @@ import { VideoPlayer } from "@/components/videos/VideoPlayer";
 interface PostMediaProps {
   mediaUrls: string[];
   onMediaClick?: (url: string) => void;
+  subscription?: any;
 }
 
-export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
+export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaProps) => {
   if (!mediaUrls || mediaUrls.length === 0) {
     return null;
   }
+
+  const canDownload = subscription?.tier?.name === 'Creator' || subscription?.tier?.name === 'True Emperor';
 
   const getPublicUrl = (url: string) => {
     if (url.startsWith('http')) {
@@ -30,6 +33,12 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
 
   const handleDownload = async (url: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (!canDownload) {
+      toast.error('Please upgrade to Creator or Emperor subscription to download media');
+      return;
+    }
+
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -76,9 +85,12 @@ export const PostMedia = ({ mediaUrls, onMediaClick }: PostMediaProps) => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="bg-black/50 hover:bg-black/70"
+                        className={cn(
+                          "bg-black/50 hover:bg-black/70",
+                          !canDownload && "opacity-50 cursor-not-allowed"
+                        )}
                         onClick={(e) => handleDownload(publicUrl, e)}
-                        title="Download media"
+                        title={canDownload ? "Download media" : "Upgrade to download"}
                       >
                         <Download className="h-4 w-4 text-white" />
                       </Button>

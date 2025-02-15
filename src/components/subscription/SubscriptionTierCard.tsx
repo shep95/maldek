@@ -18,7 +18,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
   
   // Format the price to ensure it shows as a whole number when there are no decimals
   const formatPrice = (price: number) => {
-    return price % 1 === 0 ? price.toFixed(0) : price.toFixed(2);
+    return price % 1 === 0 ? price.toLocaleString() : price.toFixed(2);
   };
 
   return (
@@ -99,7 +99,6 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           </div>
         </li>
 
-        {/* Advanced Analytics Feature */}
         <li className="flex items-center gap-3">
           <BarChart2 className="h-5 w-5 text-white" />
           <div className="flex items-center gap-2">
