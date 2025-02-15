@@ -52,9 +52,8 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   if (isLoading) {
     return (
       <div className="animate-pulse">
-        <div className="h-32 bg-muted"></div>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="-mt-16 sm:-mt-20 sm:flex sm:items-end sm:space-x-5">
+          <div className="flex items-center space-x-5">
             <div className="h-24 w-24 rounded-full bg-muted"></div>
           </div>
         </div>
@@ -65,21 +64,13 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   if (!profile) return null;
 
   return (
-    <div>
-      <div className="h-32 bg-gradient-to-r from-orange-400 to-orange-600">
-        {profile.banner_url && (
-          <img
-            src={profile.banner_url}
-            alt=""
-            className="h-32 w-full object-cover"
-          />
-        )}
-      </div>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="-mt-16 sm:-mt-20 sm:flex sm:items-end sm:space-x-5">
+    <div className="bg-black/40 backdrop-blur-xl border-b border-white/10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center space-x-5">
           <div className="relative flex">
+            <div className="absolute inset-0 bg-accent/20 rounded-full blur-xl"></div>
             <StoryRing userId={profile.id}>
-              <Avatar className="h-24 w-24 ring-4 ring-background">
+              <Avatar className="h-24 w-24 ring-4 ring-background relative z-10 shadow-xl">
                 <AvatarImage src={profile.avatar_url || undefined} />
                 <AvatarFallback>
                   {profile.username?.[0]?.toUpperCase()}
@@ -87,35 +78,32 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
               </Avatar>
             </StoryRing>
           </div>
-          <div className="mt-6 sm:flex-1 sm:min-w-0 sm:flex sm:items-center sm:justify-end sm:space-x-6 sm:pb-1">
-            <div className="sm:hidden md:block mt-6 min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-gray-900 truncate">
-                  @{profile.username}
-                </h1>
-                {subscription?.subscription_tiers && (
-                  <Crown 
-                    className="h-5 w-5" 
-                    style={{ 
-                      color: subscription.subscription_tiers?.checkmark_color || '#FFD700'
-                    }} 
-                  />
-                )}
-              </div>
-              {profile.bio && (
-                <p className="text-sm text-muted-foreground mt-1">{profile.bio}</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+                @{profile.username}
+              </h1>
+              {subscription?.subscription_tiers && (
+                <Crown 
+                  className="h-5 w-5" 
+                  style={{ 
+                    color: subscription.subscription_tiers?.checkmark_color || '#FFD700'
+                  }} 
+                />
               )}
             </div>
-            <div className="mt-6 flex flex-col justify-stretch space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
-              <Button variant="secondary">Follow</Button>
-              <Button variant="outline">Share Profile</Button>
+            {profile.bio && (
+              <p className="text-sm text-white/60 mt-1 max-w-lg">{profile.bio}</p>
+            )}
+            <div className="mt-4">
+              <Button 
+                variant="secondary" 
+                className="bg-accent/10 hover:bg-accent/20 text-white border border-accent/20"
+              >
+                Follow
+              </Button>
             </div>
           </div>
-        </div>
-        <div className="hidden sm:block md:hidden mt-6 min-w-0 flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 truncate">
-            @{profile.username}
-          </h1>
         </div>
       </div>
     </div>
