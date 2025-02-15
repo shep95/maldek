@@ -38,6 +38,23 @@ serve(async (req) => {
       throw new Error('User not found')
     }
 
+    // Get the subscription tier ID first
+    const { data: tierData, error: tierError } = await supabaseClient
+      .from('subscription_tiers')
+      .select('id, name, price')
+      .eq('name', tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
+           tier === 'true emperor' ? 'True Emperor' : 
+           tier === 'creator' ? 'Creator' : 
+           tier === 'bosley' ? 'Bosley' : 'Business')
+      .single()
+
+    if (tierError || !tierData) {
+      console.error('Error fetching tier:', tierError)
+      throw new Error('Subscription tier not found')
+    }
+
+    console.log('Found tier:', tierData)
+
     // Use the provided price IDs based on the tier
     let priceId;
     let mode: 'subscription' | 'payment' = 'subscription';
@@ -65,21 +82,6 @@ serve(async (req) => {
     
     console.log('Using price ID:', priceId, 'for tier:', tier, 'with mode:', mode)
 
-    // Get the tier ID from the subscription_tiers table
-    const { data: tierData, error: tierError } = await supabaseClient
-      .from('subscription_tiers')
-      .select('id')
-      .eq('name', tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
-           tier === 'true emperor' ? 'True Emperor' : 
-           tier === 'creator' ? 'Creator' : 
-           tier === 'bosley' ? 'Bosley' : 'Business')
-      .single()
-
-    if (tierError || !tierData) {
-      console.error('Error fetching tier:', tierError)
-      throw new Error('Subscription tier not found')
-    }
-
     try {
       const session = await stripe.checkout.sessions.create({
         customer_email: user.email,
@@ -98,6 +100,12 @@ serve(async (req) => {
           tier: tier,
           isLifetime: mode === 'payment' ? 'true' : 'false'
         },
+        subscription_data: mode === 'subscription' ? {
+          metadata: {
+            tierId: tierData.id,
+            tier: tier
+          }
+        } : undefined
       })
 
       console.log('Checkout session created:', session.id)
