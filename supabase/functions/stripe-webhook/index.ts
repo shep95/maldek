@@ -23,10 +23,13 @@ serve(async (req) => {
     if (!signature) throw new Error('No Stripe signature found')
 
     const body = await req.text()
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+    console.log('Webhook secret exists:', !!webhookSecret)
+
     const event = stripe.webhooks.constructEvent(
       body,
       signature,
-      Deno.env.get('STRIPE_WEBHOOK_SECRET') || ''
+      webhookSecret || ''
     )
 
     console.log('Processing Stripe webhook event:', event.type)
@@ -39,33 +42,32 @@ serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        console.log('Checkout session completed:', session)
+        console.log('Checkout session completed:', {
+          id: session.id,
+          metadata: session.metadata,
+          customer: session.customer,
+          mode: session.mode
+        })
         
+        if (!session.metadata?.userId || !session.metadata?.tierId) {
+          throw new Error('Missing required metadata in session')
+        }
+
         let subscription = null;
-        
-        // Handle both subscription and one-time payments
         if (session.mode === 'subscription' && session.subscription) {
           subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+          console.log('Retrieved subscription:', {
+            id: subscription.id,
+            status: subscription.status,
+            metadata: subscription.metadata
+          })
         }
 
-        // Get the subscription tier details
-        const { data: tierData, error: tierError } = await supabaseClient
-          .from('subscription_tiers')
-          .select('monthly_mentions')
-          .eq('id', session.metadata?.tierId)
-          .single()
-
-        if (tierError) {
-          console.error('Error fetching tier data:', tierError)
-          throw tierError
-        }
-
-        // For both subscription and one-time payments
-        const { error } = await supabaseClient
+        const { error: upsertError } = await supabaseClient
           .from('user_subscriptions')
           .upsert({
-            user_id: session.metadata?.userId,
-            tier_id: session.metadata?.tierId,
+            user_id: session.metadata.userId,
+            tier_id: session.metadata.tierId,
             stripe_subscription_id: subscription?.id,
             stripe_customer_id: session.customer as string,
             status: subscription ? subscription.status : 'active',
@@ -73,40 +75,37 @@ serve(async (req) => {
             ends_at: subscription 
               ? new Date(subscription.current_period_end * 1000).toISOString()
               : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 100 years for lifetime
-            mentions_remaining: tierData.monthly_mentions || 0,
-            is_lifetime: session.metadata?.isLifetime === 'true'
+            mentions_remaining: parseInt(session.metadata.monthlyMentions || '0'),
+            is_lifetime: session.metadata.isLifetime === 'true'
           })
 
-        if (error) {
-          console.error('Error updating user_subscriptions:', error)
-          throw error
+        if (upsertError) {
+          console.error('Error upserting user_subscription:', upsertError)
+          throw upsertError
         }
+
+        console.log('Successfully created/updated subscription for user:', session.metadata.userId)
         break
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        
-        console.log('Subscription updated:', subscription)
+        console.log('Subscription updated:', {
+          id: subscription.id,
+          status: subscription.status,
+          metadata: subscription.metadata
+        })
 
-        // Get the subscription tier details
-        const { data: tierData, error: tierError } = await supabaseClient
-          .from('subscription_tiers')
-          .select('monthly_mentions')
-          .eq('id', subscription.metadata?.tierId)
-          .single()
-
-        if (tierError) {
-          console.error('Error fetching tier data:', tierError)
-          throw tierError
+        if (!subscription.metadata?.tierId) {
+          throw new Error('Missing tierId in subscription metadata')
         }
-        
+
         const { error } = await supabaseClient
           .from('user_subscriptions')
           .update({
             status: subscription.status,
             ends_at: new Date(subscription.current_period_end * 1000).toISOString(),
-            mentions_remaining: tierData.monthly_mentions || 0 // Reset mentions on renewal
+            mentions_remaining: parseInt(subscription.metadata.monthlyMentions || '0')
           })
           .eq('stripe_subscription_id', subscription.id)
 
@@ -119,8 +118,10 @@ serve(async (req) => {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
-        
-        console.log('Subscription cancelled:', subscription)
+        console.log('Subscription cancelled:', {
+          id: subscription.id,
+          status: subscription.status
+        })
         
         const { error } = await supabaseClient
           .from('user_subscriptions')
