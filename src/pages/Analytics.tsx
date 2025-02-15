@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Eye, ThumbsUp, MessageSquare, Clock } from "lucide-react";
@@ -45,8 +46,13 @@ const Analytics = () => {
     );
   }
 
-  // Show premium notice if user doesn't have an active subscription
-  if (!subscription) {
+  // Updated to allow Creator tier ($3.50) to access analytics
+  const hasAnalyticsAccess = subscription?.tier?.name === 'Creator' || 
+                            subscription?.tier?.name === 'Business' || 
+                            subscription?.tier?.name === 'True Emperor';
+
+  // Show premium notice if user doesn't have an active subscription or proper tier
+  if (!hasAnalyticsAccess) {
     return <PremiumFeatureNotice />;
   }
 
