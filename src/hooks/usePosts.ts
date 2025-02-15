@@ -21,7 +21,14 @@ export const usePosts = () => {
             profiles!posts_user_id_fkey (
               id,
               username,
-              avatar_url
+              avatar_url,
+              user_subscriptions (
+                status,
+                subscription_tiers (
+                  name,
+                  checkmark_color
+                )
+              )
             ),
             post_likes (
               id,
@@ -44,17 +51,24 @@ export const usePosts = () => {
         }
 
         // Filter out posts with missing profiles and map the data
-        const validPosts = data?.filter(post => post.profiles).map(post => ({
-          ...post,
-          author: {
-            id: post.profiles.id,
-            username: post.profiles.username || 'Deleted User',
-            avatar_url: post.profiles.avatar_url,
-            name: post.profiles.username || 'Deleted User'
-          }
-        }));
+        const validPosts = data?.filter(post => post.profiles).map(post => {
+          const activeSubscription = post.profiles.user_subscriptions?.find(
+            sub => sub.status === 'active'
+          );
 
-        console.log(`Successfully fetched ${validPosts?.length} posts`);
+          return {
+            ...post,
+            author: {
+              id: post.profiles.id,
+              username: post.profiles.username || 'Deleted User',
+              avatar_url: post.profiles.avatar_url,
+              name: post.profiles.username || 'Deleted User',
+              subscription: activeSubscription?.subscription_tiers || null
+            }
+          };
+        });
+
+        console.log(`Successfully fetched ${validPosts?.length} posts with subscription data:`, validPosts);
         return validPosts;
       } catch (error) {
         console.error('Query error:', error);
