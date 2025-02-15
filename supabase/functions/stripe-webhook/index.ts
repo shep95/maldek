@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from 'https://esm.sh/stripe@13.6.0'
@@ -38,25 +39,36 @@ serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
-        
         console.log('Checkout session completed:', session)
         
-        // Update user_subscriptions table
+        let subscription = null;
+        
+        // Handle both subscription and one-time payments
+        if (session.mode === 'subscription' && session.subscription) {
+          subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+        }
+
+        // For both subscription and one-time payments
         const { error } = await supabaseClient
           .from('user_subscriptions')
           .upsert({
             user_id: session.metadata?.userId,
             tier_id: session.metadata?.tierId,
-            stripe_subscription_id: subscription.id,
+            stripe_subscription_id: subscription?.id,
             stripe_customer_id: session.customer as string,
-            status: subscription.status,
-            starts_at: new Date(subscription.current_period_start * 1000).toISOString(),
-            ends_at: new Date(subscription.current_period_end * 1000).toISOString(),
-            mentions_remaining: subscription.items.data[0].price.metadata.monthly_mentions || 0
+            status: subscription ? subscription.status : 'active',
+            starts_at: new Date().toISOString(),
+            ends_at: subscription 
+              ? new Date(subscription.current_period_end * 1000).toISOString()
+              : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 100 years for lifetime
+            mentions_remaining: 1000, // Default value
+            is_lifetime: session.metadata?.isLifetime === 'true'
           })
 
-        if (error) throw error
+        if (error) {
+          console.error('Error updating user_subscriptions:', error)
+          throw error
+        }
         break
       }
 
@@ -73,7 +85,10 @@ serve(async (req) => {
           })
           .eq('stripe_subscription_id', subscription.id)
 
-        if (error) throw error
+        if (error) {
+          console.error('Error updating subscription:', error)
+          throw error
+        }
         break
       }
 
@@ -90,7 +105,10 @@ serve(async (req) => {
           })
           .eq('stripe_subscription_id', subscription.id)
 
-        if (error) throw error
+        if (error) {
+          console.error('Error cancelling subscription:', error)
+          throw error
+        }
         break
       }
     }
@@ -100,9 +118,11 @@ serve(async (req) => {
     })
   } catch (error) {
     console.error('Error processing webhook:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: error.message }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
 })
