@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
 import { AdvertisementTab } from "@/components/profile/tabs/AdvertisementTab";
 import { Card } from "@/components/ui/card";
+import { CircuitBoard, Signal, Binary } from "lucide-react";
 
 const Profiles = () => {
   const session = useSession();
@@ -35,7 +35,6 @@ const Profiles = () => {
     };
   }, [username]);
 
-  // Fetch profile by username if provided, otherwise fetch current user's profile
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['profile', username || session?.user?.id],
     queryFn: async () => {
@@ -45,9 +44,7 @@ const Profiles = () => {
         .from('profiles')
         .select('*');
 
-      // If username is provided, fetch by username, otherwise fetch by user ID
       if (username) {
-        // Remove @ from username if present
         const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
         console.log('Fetching profile by username:', cleanUsername);
         query = query.eq('username', cleanUsername);
@@ -119,7 +116,6 @@ const Profiles = () => {
     enabled: !!profile?.id,
   });
 
-  // Subscribe to real-time updates for profile changes
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -134,7 +130,6 @@ const Profiles = () => {
         },
         (payload) => {
           console.log('Profile updated:', payload);
-          // Invalidate the profile query to trigger a refresh
           queryClient.invalidateQueries({ queryKey: ['profile', username || session?.user?.id] });
         }
       )
@@ -189,28 +184,31 @@ const Profiles = () => {
       <ProfileHeader profile={profile} isLoading={profileLoading} />
       <div className="max-w-4xl mx-auto px-4 mt-8">
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none h-12 bg-transparent p-0 mb-8">
+          <TabsList className="w-full justify-start h-14 bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 p-1 mb-8 overflow-hidden">
             <TabsTrigger 
               value="posts" 
-              className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none h-12 px-4"
+              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
             >
-              Posts
+              <CircuitBoard className="w-4 h-4" />
+              <span className="relative z-10">Posts</span>
             </TabsTrigger>
             <TabsTrigger 
               value="music" 
-              className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none h-12 px-4"
+              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
             >
-              Music
+              <Signal className="w-4 h-4" />
+              <span className="relative z-10">Music</span>
             </TabsTrigger>
             <TabsTrigger 
               value="ads" 
-              className="data-[state=active]:border-b-2 data-[state=active]:border-accent rounded-none h-12 px-4"
+              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
             >
-              Advertisements
+              <Binary className="w-4 h-4" />
+              <span className="relative z-10">Advertisements</span>
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="posts" className="mt-0">
+          <TabsContent value="posts" className="mt-0 animate-fade-in">
             <ProfilePosts 
               posts={posts || []} 
               isLoading={postsLoading} 
@@ -218,11 +216,11 @@ const Profiles = () => {
             />
           </TabsContent>
 
-          <TabsContent value="music" className="mt-0">
+          <TabsContent value="music" className="mt-0 animate-fade-in">
             <ProfileMusicTab />
           </TabsContent>
 
-          <TabsContent value="ads" className="mt-0">
+          <TabsContent value="ads" className="mt-0 animate-fade-in">
             <AdvertisementTab userId={profile.id} />
           </TabsContent>
         </Tabs>
