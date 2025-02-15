@@ -56,6 +56,9 @@ serve(async (req) => {
         priceId = 'price_1QsXsaRIC2EosLwjUQIZ9eiu'; // $80,000 one-time
         mode = 'payment';
         break;
+      case 'bosley blue':
+        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX'; // $3.50/month
+        break;
       default:
         throw new Error('Invalid subscription tier');
     }
@@ -68,7 +71,8 @@ serve(async (req) => {
       .select('id')
       .eq('name', tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
            tier === 'true emperor' ? 'True Emperor' : 
-           tier === 'creator' ? 'Creator' : 'Business')
+           tier === 'creator' ? 'Creator' : 
+           tier === 'bosley blue' ? 'Bosley Blue' : 'Business')
       .single()
 
     if (tierError || !tierData) {
