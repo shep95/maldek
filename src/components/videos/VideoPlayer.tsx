@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -8,13 +9,30 @@ import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusi
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 interface VideoPlayerProps {
   videoUrl: string;
   className?: string;
   controls?: boolean;
   autoPlay?: boolean;
+}
+
+type SubscriptionTier = {
+  id: string;
+  name: string;
+  price: number;
+  checkmark_color: string;
+  features: any;
+  can_download_media: boolean;
+}
+
+type UserSubscription = {
+  id: string;
+  user_id: string;
+  tier_id: string;
+  status: string;
+  tier: SubscriptionTier;
 }
 
 export const VideoPlayer = ({ 
@@ -34,7 +52,7 @@ export const VideoPlayer = ({
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
-  const { data: subscription } = useQuery({
+  const { data: subscription } = useQuery<UserSubscription | null>({
     queryKey: ['user-subscription', session?.user?.id],
     queryFn: async () => {
       if (!session?.user?.id) return null;
@@ -43,8 +61,8 @@ export const VideoPlayer = ({
         .from('user_subscriptions')
         .select(`
           *,
-          tier:subscription_tiers(*)`
-        )
+          tier:subscription_tiers(*)
+        `)
         .eq('user_id', session.user.id)
         .eq('status', 'active')
         .maybeSingle();
