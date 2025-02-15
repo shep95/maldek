@@ -48,6 +48,18 @@ serve(async (req) => {
           subscription = await stripe.subscriptions.retrieve(session.subscription as string)
         }
 
+        // Get the subscription tier details
+        const { data: tierData, error: tierError } = await supabaseClient
+          .from('subscription_tiers')
+          .select('monthly_mentions')
+          .eq('id', session.metadata?.tierId)
+          .single()
+
+        if (tierError) {
+          console.error('Error fetching tier data:', tierError)
+          throw tierError
+        }
+
         // For both subscription and one-time payments
         const { error } = await supabaseClient
           .from('user_subscriptions')
@@ -61,7 +73,7 @@ serve(async (req) => {
             ends_at: subscription 
               ? new Date(subscription.current_period_end * 1000).toISOString()
               : new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(), // 100 years for lifetime
-            mentions_remaining: 1000, // Default value
+            mentions_remaining: tierData.monthly_mentions || 0,
             is_lifetime: session.metadata?.isLifetime === 'true'
           })
 
@@ -76,12 +88,25 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription
         
         console.log('Subscription updated:', subscription)
+
+        // Get the subscription tier details
+        const { data: tierData, error: tierError } = await supabaseClient
+          .from('subscription_tiers')
+          .select('monthly_mentions')
+          .eq('id', subscription.metadata?.tierId)
+          .single()
+
+        if (tierError) {
+          console.error('Error fetching tier data:', tierError)
+          throw tierError
+        }
         
         const { error } = await supabaseClient
           .from('user_subscriptions')
           .update({
             status: subscription.status,
             ends_at: new Date(subscription.current_period_end * 1000).toISOString(),
+            mentions_remaining: tierData.monthly_mentions || 0 // Reset mentions on renewal
           })
           .eq('stripe_subscription_id', subscription.id)
 
@@ -102,6 +127,7 @@ serve(async (req) => {
           .update({
             status: 'cancelled',
             ends_at: new Date().toISOString(),
+            mentions_remaining: 0
           })
           .eq('stripe_subscription_id', subscription.id)
 
