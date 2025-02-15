@@ -8,6 +8,7 @@ import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusi
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "react-toastify";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -40,12 +41,19 @@ export const VideoPlayer = ({
       
       const { data, error } = await supabase
         .from('user_subscriptions')
-        .select('*, tier:subscription_tiers(*)')
+        .select(`
+          *,
+          tier:subscription_tiers(*)`
+        )
         .eq('user_id', session.user.id)
         .eq('status', 'active')
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        return null;
+      }
+
       return data;
     },
     enabled: !!session?.user?.id
@@ -165,6 +173,12 @@ export const VideoPlayer = ({
   const handleDownload = async () => {
     if (!publicUrl) return;
     
+    // Check if user can download media
+    if (!subscription?.tier?.can_download_media) {
+      toast.error('Upgrade your subscription to download media');
+      return;
+    }
+    
     try {
       const response = await fetch(publicUrl);
       const blob = await response.blob();
@@ -187,6 +201,11 @@ export const VideoPlayer = ({
   };
 
   const handleOpenOriginal = () => {
+    if (!subscription?.tier?.can_download_media) {
+      toast.error('Upgrade your subscription to view original media');
+      return;
+    }
+    
     if (publicUrl) {
       window.open(publicUrl, '_blank');
     }
@@ -270,7 +289,7 @@ export const VideoPlayer = ({
           size="icon"
           className="bg-black/50 hover:bg-black/70 text-white"
           onClick={handleDownload}
-          title="Download video"
+          title={subscription?.tier?.can_download_media ? "Download video" : "Upgrade to download"}
         >
           <Download className="h-4 w-4" />
         </Button>
@@ -279,7 +298,7 @@ export const VideoPlayer = ({
           size="icon"
           className="bg-black/50 hover:bg-black/70 text-white"
           onClick={handleOpenOriginal}
-          title="Open in new tab"
+          title={subscription?.tier?.can_download_media ? "Open in new tab" : "Upgrade to view original"}
         >
           <ExternalLink className="h-4 w-4" />
         </Button>
