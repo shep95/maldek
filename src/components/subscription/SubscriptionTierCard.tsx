@@ -21,6 +21,111 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
     return price % 1 === 0 ? price.toLocaleString() : price.toFixed(2);
   };
 
+  // Define the order of features
+  const renderFeatures = () => {
+    const features = [];
+
+    // Premium Badge
+    features.push(
+      <li key="badge" className="flex items-center gap-3">
+        <Crown className={cn(
+          "h-5 w-5",
+          isEmperor ? "text-yellow-500" : isCreator ? "text-white" : ""
+        )} />
+        <span>{isEmperor ? 'Gold Crown Badge' : 'Premium Badge'}</span>
+      </li>
+    );
+
+    // Premium Features (for both Creator and Emperor)
+    if (isPremium) {
+      features.push(
+        <li key="gif" className="flex items-center gap-3">
+          <Image className="h-5 w-5 text-accent" />
+          <span>GIF Upload Support</span>
+        </li>,
+        <li key="animated" className="flex items-center gap-3">
+          <Sparkles className="h-5 w-5 text-accent" />
+          <span>Animated Avatar Support</span>
+        </li>,
+        <li key="nft" className="flex items-center gap-3">
+          <Image className="h-5 w-5 text-accent" />
+          <span>NFT Avatar Support</span>
+        </li>,
+        <li key="watermark" className="flex items-center gap-3">
+          <Image className="h-5 w-5 text-accent" />
+          <span>No Watermark on Media</span>
+        </li>
+      );
+    }
+
+    // Standard Features
+    features.push(
+      <li key="mentions" className="flex items-center gap-3">
+        <Check className="h-5 w-5 text-green-500" />
+        <span>{tier.monthly_mentions.toLocaleString()} mentions per month</span>
+      </li>,
+      <li key="upload" className="flex items-center gap-3">
+        <FileVideo className="h-5 w-5 text-accent" />
+        <span>Upload files up to {tier.max_upload_size_mb}MB</span>
+      </li>,
+      <li key="char-limit" className="flex items-center gap-3">
+        <MessageSquare className="h-5 w-5 text-accent" />
+        <span>{tier.post_character_limit?.toLocaleString()} character limit</span>
+      </li>,
+      <li key="schedule" className="flex items-center gap-3">
+        <Clock className="h-5 w-5 text-accent" />
+        <span>Schedule posts up to {tier.schedule_days_limit} days ahead</span>
+      </li>,
+      <li key="pin" className="flex items-center gap-3">
+        <Trophy className="h-5 w-5 text-accent" />
+        <span>Pin up to {tier.max_pinned_posts} {tier.max_pinned_posts === 1 ? 'post' : 'posts'}</span>
+      </li>
+    );
+
+    // Base Features
+    features.push(
+      <li key="download" className="flex items-center gap-3">
+        <Download className="h-5 w-5 text-white" />
+        <span>Download videos and images</span>
+      </li>,
+      <li key="spaces" className="flex items-center gap-3">
+        <Mic className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-2">
+          <span>Access to Spaces</span>
+          <Badge variant="secondary" className="bg-white/10 text-white text-xs">
+            BETA
+          </Badge>
+        </div>
+      </li>,
+      <li key="analytics" className="flex items-center gap-3">
+        <BarChart2 className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-2">
+          <span>Advanced Analytics Dashboard</span>
+          <Badge variant="secondary" className="bg-white/10 text-white text-xs">
+            PRO
+          </Badge>
+        </div>
+      </li>
+    );
+
+    // Emperor-only features
+    if (isEmperor) {
+      features.push(
+        <li key="emperor-chat" className="flex items-center gap-3">
+          <Crown className="h-5 w-5 text-yellow-500" />
+          <div className="flex items-center gap-2">
+            <span>Emperor Chatroom Access</span>
+            <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-xs">
+              VIP
+            </Badge>
+          </div>
+        </li>
+      );
+    }
+
+    return features;
+  };
+
   return (
     <Card className={cn(
       "relative overflow-hidden backdrop-blur-sm transition-all duration-300",
@@ -56,112 +161,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
       {/* Features */}
       <ul className="flex-1 space-y-4">
-        {/* Badge Feature */}
-        <li className="flex items-center gap-3">
-          <Crown className={cn(
-            "h-5 w-5",
-            isEmperor ? "text-yellow-500" : isCreator ? "text-white" : ""
-          )} />
-          <span>{isEmperor ? 'Gold Crown Badge' : 'Premium Badge'}</span>
-        </li>
-        
-        {/* Mentions */}
-        <li className="flex items-center gap-3">
-          <Check className="h-5 w-5 text-green-500" />
-          <span>{tier.monthly_mentions.toLocaleString()} mentions per month</span>
-        </li>
-
-        {/* Upload Size */}
-        <li className="flex items-center gap-3">
-          <FileVideo className="h-5 w-5 text-accent" />
-          <span>Upload files up to {tier.max_upload_size_mb}MB</span>
-        </li>
-
-        {/* Character Limit */}
-        <li className="flex items-center gap-3">
-          <MessageSquare className="h-5 w-5 text-accent" />
-          <span>{tier.post_character_limit?.toLocaleString()} character limit</span>
-        </li>
-        
-        {/* Scheduling */}
-        <li className="flex items-center gap-3">
-          <Clock className="h-5 w-5 text-accent" />
-          <span>Schedule posts up to {tier.schedule_days_limit} days ahead</span>
-        </li>
-
-        {/* Pinned Posts */}
-        <li className="flex items-center gap-3">
-          <Trophy className="h-5 w-5 text-accent" />
-          <span>Pin up to {tier.max_pinned_posts} {tier.max_pinned_posts === 1 ? 'post' : 'posts'}</span>
-        </li>
-
-        {/* Media Features */}
-        {tier.supports_gif_uploads && (
-          <li className="flex items-center gap-3">
-            <Image className="h-5 w-5 text-accent" />
-            <span>GIF Upload Support</span>
-          </li>
-        )}
-
-        {tier.supports_animated_avatars && (
-          <li className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-accent" />
-            <span>Animated Avatar Support</span>
-          </li>
-        )}
-
-        {tier.supports_nft_avatars && (
-          <li className="flex items-center gap-3">
-            <Image className="h-5 w-5 text-accent" />
-            <span>NFT Avatar Support</span>
-          </li>
-        )}
-
-        {/* No Watermark */}
-        {tier.watermark_disabled && (
-          <li className="flex items-center gap-3">
-            <Image className="h-5 w-5 text-accent" />
-            <span>No Watermark on Media</span>
-          </li>
-        )}
-
-        {/* Standard Features for All Tiers */}
-        <li className="flex items-center gap-3">
-          <Download className="h-5 w-5 text-white" />
-          <span>Download videos and images</span>
-        </li>
-
-        <li className="flex items-center gap-3">
-          <Mic className="h-5 w-5 text-white" />
-          <div className="flex items-center gap-2">
-            <span>Access to Spaces</span>
-            <Badge variant="secondary" className="bg-white/10 text-white text-xs">
-              BETA
-            </Badge>
-          </div>
-        </li>
-
-        <li className="flex items-center gap-3">
-          <BarChart2 className="h-5 w-5 text-white" />
-          <div className="flex items-center gap-2">
-            <span>Advanced Analytics Dashboard</span>
-            <Badge variant="secondary" className="bg-white/10 text-white text-xs">
-              PRO
-            </Badge>
-          </div>
-        </li>
-
-        {isEmperor && (
-          <li className="flex items-center gap-3">
-            <Crown className="h-5 w-5 text-yellow-500" />
-            <div className="flex items-center gap-2">
-              <span>Emperor Chatroom Access</span>
-              <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-500 text-xs">
-                VIP
-              </Badge>
-            </div>
-          </li>
-        )}
+        {renderFeatures()}
       </ul>
 
       {/* Action Button */}
