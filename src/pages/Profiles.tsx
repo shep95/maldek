@@ -12,8 +12,9 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
+import { ProfilePrivacyTab } from "@/components/profile/ProfilePrivacyTab";
 import { Card } from "@/components/ui/card";
-import { CircuitBoard, Signal } from "lucide-react";
+import { CircuitBoard, Signal, Lock } from "lucide-react";
 
 const Profiles = () => {
   const session = useSession();
@@ -179,6 +180,9 @@ const Profiles = () => {
     );
   }
 
+  // Only show privacy tab for the user's own profile
+  const isOwnProfile = session?.user?.id === profile.id;
+
   return (
     <div className="min-h-screen">
       <ProfileHeader profile={profile} isLoading={profileLoading} />
@@ -199,6 +203,15 @@ const Profiles = () => {
               <Signal className="w-4 h-4" />
               <span className="relative z-10">Music</span>
             </TabsTrigger>
+            {isOwnProfile && (
+              <TabsTrigger 
+                value="privacy" 
+                className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
+              >
+                <Lock className="w-4 h-4" />
+                <span className="relative z-10">Privacy</span>
+              </TabsTrigger>
+            )}
           </TabsList>
           
           <TabsContent value="posts" className="mt-0 animate-fade-in">
@@ -212,6 +225,12 @@ const Profiles = () => {
           <TabsContent value="music" className="mt-0 animate-fade-in">
             <ProfileMusicTab />
           </TabsContent>
+
+          {isOwnProfile && (
+            <TabsContent value="privacy" className="mt-0 animate-fade-in">
+              <ProfilePrivacyTab userId={profile.id} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
