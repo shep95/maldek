@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { validateMediaFile } from "@/utils/mediaUtils";
 
 export const CreatePostDialog = ({
@@ -38,6 +39,7 @@ export const CreatePostDialog = ({
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
 
   const [isStory, setIsStory] = useState(false);
+  const [showDateInput, setShowDateInput] = useState(false);
 
   const handleFileSelectWithValidation = async (files: FileList) => {
     try {
@@ -164,6 +166,17 @@ export const CreatePostDialog = ({
     }
   };
 
+  const handleManualDateInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputDate = new Date(e.target.value);
+    if (!isNaN(inputDate.getTime())) {
+      setScheduledDate(inputDate);
+    }
+  };
+
+  const toggleDateInput = () => {
+    setShowDateInput(!showDateInput);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px] bg-card">
@@ -213,28 +226,56 @@ export const CreatePostDialog = ({
           />
 
           {!isStory && (
-            <Popover>
-              <PopoverTrigger asChild>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  className={`w-full justify-start text-left font-normal ${
-                    !scheduledDate && "text-muted-foreground"
-                  }`}
+                  size="sm"
+                  onClick={toggleDateInput}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
+                  {showDateInput ? "Use Calendar" : "Type Date"}
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={scheduledDate}
-                  onSelect={setScheduledDate}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+                
+                {showDateInput ? (
+                  <Input
+                    type="datetime-local"
+                    value={scheduledDate ? format(scheduledDate, "yyyy-MM-dd'T'HH:mm") : ""}
+                    onChange={handleManualDateInput}
+                    className="flex-1"
+                    min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
+                  />
+                ) : (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal ${
+                          !scheduledDate && "text-muted-foreground"
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {scheduledDate ? format(scheduledDate, "PPP") : "Schedule post"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={scheduledDate}
+                        onSelect={setScheduledDate}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+              
+              {scheduledDate && (
+                <p className="text-sm text-muted-foreground">
+                  Post will be published on {format(scheduledDate, "PPP 'at' h:mm a")}
+                </p>
+              )}
+            </div>
           )}
           
           <div className="flex gap-2">
