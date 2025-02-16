@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,19 +43,43 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
         </div>
         <p className="text-sm text-muted-foreground mb-6">
           {!userProfile?.security_code 
-            ? "Set up your security code to protect your private data. This code will be required to access sensitive information. If you don't have a security code yet, you can create one in the settings tab."
+            ? "Set up your security code to protect your private data. This code will be required to access sensitive information. Choose a 4-digit code that you'll remember - if you lose it, you won't be able to access your private data."
             : "Manage your security code and private data. Your security code is required to access sensitive information and make important changes to your account. Keep this code safe - if you lose it, you won't be able to access your private data."
           }
         </p>
 
         {!userProfile?.security_code ? (
-          <Button 
-            className="w-full"
-            onClick={() => navigate('/settings')}
-          >
-            <Key className="w-4 h-4 mr-2" />
-            Create Private Key in Settings
-          </Button>
+          <form onSubmit={handleSetInitialCode} className="space-y-4">
+            <div>
+              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
+                Create Security Code
+              </label>
+              <Input
+                id="newCode"
+                type="password"
+                placeholder="Enter 4-digit code"
+                value={newCode}
+                onChange={(e) => setNewCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
+            </div>
+
+            <Button 
+              type="submit"
+              className="w-full"
+              disabled={setInitialSecurityCode.isPending}
+            >
+              {setInitialSecurityCode.isPending ? (
+                <>Setting code...</>
+              ) : (
+                <>
+                  <Key className="w-4 h-4 mr-2" />
+                  Set Security Code
+                </>
+              )}
+            </Button>
+          </form>
         ) : (
           <form onSubmit={handleUpdateCode} className="space-y-4">
             <div>
