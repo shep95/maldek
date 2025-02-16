@@ -1185,6 +1185,45 @@ export type Database = {
           },
         ]
       }
+      private_data: {
+        Row: {
+          created_at: string | null
+          encrypted_data: string
+          id: string
+          last_modified: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          encrypted_data: string
+          id?: string
+          last_modified?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          encrypted_data?: string
+          id?: string
+          last_modified?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "private_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           achievements: Json | null
