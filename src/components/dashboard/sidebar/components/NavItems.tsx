@@ -93,13 +93,6 @@ export const NavItems = ({
       path: "/analytics",
       active: location.pathname === "/analytics"
     },
-    {
-      icon: BarChart2,
-      label: "Advertisement",
-      path: "/advertisement",
-      active: location.pathname === "/advertisement",
-      description: "Manage your ads"
-    },
     { 
       icon: DollarSign, 
       label: subscription?.tier?.name || "Premium", 
