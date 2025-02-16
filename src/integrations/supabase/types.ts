@@ -1694,6 +1694,9 @@ export type Database = {
           post_character_limit: number | null
           price: number
           schedule_days_limit: number | null
+          supports_animated_avatars: boolean | null
+          supports_gif_uploads: boolean | null
+          supports_nft_avatars: boolean | null
           watermark_disabled: boolean | null
         }
         Insert: {
@@ -1710,6 +1713,9 @@ export type Database = {
           post_character_limit?: number | null
           price: number
           schedule_days_limit?: number | null
+          supports_animated_avatars?: boolean | null
+          supports_gif_uploads?: boolean | null
+          supports_nft_avatars?: boolean | null
           watermark_disabled?: boolean | null
         }
         Update: {
@@ -1726,6 +1732,9 @@ export type Database = {
           post_character_limit?: number | null
           price?: number
           schedule_days_limit?: number | null
+          supports_animated_avatars?: boolean | null
+          supports_gif_uploads?: boolean | null
+          supports_nft_avatars?: boolean | null
           watermark_disabled?: boolean | null
         }
         Relationships: []
