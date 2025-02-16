@@ -1188,6 +1188,7 @@ export type Database = {
       profiles: {
         Row: {
           achievements: Json | null
+          avatar_nft_data: Json | null
           avatar_url: string | null
           badges: Json | null
           banner_url: string | null
@@ -1195,6 +1196,7 @@ export type Database = {
           created_at: string
           follower_count: number
           id: string
+          is_avatar_animated: boolean | null
           last_active: string | null
           last_post_time: string | null
           location: string | null
@@ -1210,6 +1212,7 @@ export type Database = {
         }
         Insert: {
           achievements?: Json | null
+          avatar_nft_data?: Json | null
           avatar_url?: string | null
           badges?: Json | null
           banner_url?: string | null
@@ -1217,6 +1220,7 @@ export type Database = {
           created_at?: string
           follower_count?: number
           id: string
+          is_avatar_animated?: boolean | null
           last_active?: string | null
           last_post_time?: string | null
           location?: string | null
@@ -1232,6 +1236,7 @@ export type Database = {
         }
         Update: {
           achievements?: Json | null
+          avatar_nft_data?: Json | null
           avatar_url?: string | null
           badges?: Json | null
           banner_url?: string | null
@@ -1239,6 +1244,7 @@ export type Database = {
           created_at?: string
           follower_count?: number
           id?: string
+          is_avatar_animated?: boolean | null
           last_active?: string | null
           last_post_time?: string | null
           location?: string | null
