@@ -23,7 +23,7 @@ export const usePostCreation = (
       
       const { data: subscription } = await supabase
         .from('user_subscriptions')
-        .select('tier_id, subscription_tiers(name)')
+        .select('tier_id, subscription_tiers(name, post_character_limit, max_upload_size_mb)')
         .eq('user_id', currentUser.id)
         .eq('status', 'active')
         .gt('ends_at', new Date().toISOString())
@@ -52,10 +52,71 @@ export const usePostCreation = (
 
   const handleFileSelect = async (files: FileList) => {
     console.log('Files selected:', Array.from(files));
-    setMediaFiles(prev => [...prev, ...Array.from(files)]);
+    
+    try {
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, subscription_tiers(max_upload_size_mb, supports_gif_uploads)')
+        .eq('user_id', currentUser.id)
+        .eq('status', 'active')
+        .gt('ends_at', new Date().toISOString())
+        .single();
+
+      const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024; // Convert MB to bytes
+      const supportsGif = subscription?.subscription_tiers?.supports_gif_uploads || false;
+
+      const validFiles = Array.from(files).filter(file => {
+        const isValidSize = file.size <= maxSize;
+        const isGif = file.type === 'image/gif';
+        const isValidType = file.type.startsWith('image/') || file.type.startsWith('video/');
+
+        if (!isValidSize) {
+          toast.error(`File too large: ${file.name}. Maximum size is ${maxSize / (1024 * 1024)}MB`);
+          return false;
+        }
+
+        if (isGif && !supportsGif) {
+          toast.error("Your subscription tier doesn't support GIF uploads");
+          return false;
+        }
+
+        if (!isValidType) {
+          toast.error(`Invalid file type: ${file.name}`);
+          return false;
+        }
+
+        return true;
+      });
+
+      setMediaFiles(prev => [...prev, ...validFiles]);
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      toast.error("Failed to validate file upload permissions");
+    }
   };
 
   const handlePaste = async (file: File) => {
+    const { data: subscription } = await supabase
+      .from('user_subscriptions')
+      .select('tier_id, subscription_tiers(max_upload_size_mb, supports_gif_uploads)')
+      .eq('user_id', currentUser.id)
+      .eq('status', 'active')
+      .gt('ends_at', new Date().toISOString())
+      .single();
+
+    const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024;
+    const supportsGif = subscription?.subscription_tiers?.supports_gif_uploads || false;
+
+    if (file.size > maxSize) {
+      toast.error(`File too large. Maximum size is ${maxSize / (1024 * 1024)}MB`);
+      return;
+    }
+
+    if (file.type === 'image/gif' && !supportsGif) {
+      toast.error("Your subscription tier doesn't support GIF uploads");
+      return;
+    }
+
     setMediaFiles(prev => [...prev, file]);
   };
 
@@ -158,6 +219,14 @@ export const usePostCreation = (
       console.error('Post creation error:', error);
       if (error.message.includes('can only post 3 times per hour')) {
         toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+          duration: 5000,
+          action: {
+            label: "Upgrade",
+            onClick: () => window.location.href = '/subscription'
+          }
+        });
+      } else if (error.message.includes('exceeds character limit')) {
+        toast.error("Post exceeds character limit for your subscription tier", {
           duration: 5000,
           action: {
             label: "Upgrade",
