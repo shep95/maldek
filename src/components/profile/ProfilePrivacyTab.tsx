@@ -7,9 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Lock, Shield, Key } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types/database';
+import type { Database } from '@/integrations/supabase/types';
 
-type PrivateData = Database['public']['Tables']['private_data']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type PrivateData = {
+  id: string;
+  user_id: string;
+  created_at: string;
+  encrypted_data: string;
+  last_modified: string;
+};
 
 interface ProfilePrivacyTabProps {
   userId: string;
@@ -23,11 +30,12 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const { data: privateData } = useQuery({
     queryKey: ['private-data', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Type cast the response to handle the type mismatch temporarily
+      const { data, error } = await (supabase
         .from('private_data')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle();
+        .maybeSingle() as Promise<{ data: PrivateData | null; error: any }>);
 
       if (error) {
         console.error('Error fetching private data:', error);
