@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
+import { formatInTimeZone } from 'date-fns-tz';
 
 export const usePostCreation = (
   currentUser: Author,
@@ -97,16 +98,25 @@ export const usePostCreation = (
         }
       }
 
-      // Convert scheduledDate to ISO string if it exists
-      const scheduledForDate = scheduledDate ? new Date(scheduledDate) : undefined;
+      let scheduledForDate: string | undefined;
+      
+      if (scheduledDate) {
+        // Convert the date to EST and format it as ISO string
+        scheduledForDate = formatInTimeZone(
+          scheduledDate,
+          'America/New_York',
+          "yyyy-MM-dd'T'HH:mm:ssXXX"
+        );
 
-      // Ensure the date is valid and in the future
-      if (scheduledForDate && scheduledForDate <= new Date()) {
-        toast.error("Scheduled date must be in the future");
-        return;
+        // Validate the scheduled date is in the future
+        const now = new Date();
+        if (scheduledDate <= now) {
+          toast.error("Scheduled date must be in the future");
+          return;
+        }
+
+        console.log('Scheduling post for:', scheduledForDate);
       }
-
-      console.log('Creating post with scheduled date:', scheduledForDate?.toISOString());
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
@@ -114,7 +124,7 @@ export const usePostCreation = (
           content: content.trim(),
           user_id: currentUser.id,
           media_urls: mediaUrls,
-          scheduled_for: scheduledForDate?.toISOString()
+          scheduled_for: scheduledForDate
         }])
         .select('*, profiles(id, username, avatar_url)')
         .single();
