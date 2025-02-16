@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Crown, Mic, BarChart2, Download } from "lucide-react";
+import { Check, Crown, Mic, BarChart2, Download, Image, Lock, Clock, MessageSquare, Trophy, Sparkles, FileVideo } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SubscriptionTierProps {
@@ -56,6 +56,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
       {/* Features */}
       <ul className="flex-1 space-y-4">
+        {/* Badge Feature */}
         <li className="flex items-center gap-3">
           <Crown className={cn(
             "h-5 w-5",
@@ -64,26 +65,67 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           <span>{isEmperor ? 'Gold Crown Badge' : 'Premium Badge'}</span>
         </li>
         
+        {/* Mentions */}
         <li className="flex items-center gap-3">
           <Check className="h-5 w-5 text-green-500" />
-          <span>{tier.monthly_mentions} mentions per month</span>
+          <span>{tier.monthly_mentions.toLocaleString()} mentions per month</span>
         </li>
 
+        {/* Upload Size */}
         <li className="flex items-center gap-3">
-          <Check className="h-5 w-5 text-green-500" />
-          <span>Upload files up to {isEmperor ? '5GB' : '3GB'}</span>
+          <FileVideo className="h-5 w-5 text-accent" />
+          <span>Upload files up to {tier.max_upload_size_mb}MB</span>
         </li>
 
+        {/* Character Limit */}
         <li className="flex items-center gap-3">
-          <Check className="h-5 w-5 text-green-500" />
+          <MessageSquare className="h-5 w-5 text-accent" />
           <span>{tier.post_character_limit?.toLocaleString()} character limit</span>
         </li>
         
+        {/* Scheduling */}
         <li className="flex items-center gap-3">
-          <Check className="h-5 w-5 text-green-500" />
+          <Clock className="h-5 w-5 text-accent" />
           <span>Schedule posts up to {tier.schedule_days_limit} days ahead</span>
         </li>
 
+        {/* Pinned Posts */}
+        <li className="flex items-center gap-3">
+          <Trophy className="h-5 w-5 text-accent" />
+          <span>Pin up to {tier.max_pinned_posts} {tier.max_pinned_posts === 1 ? 'post' : 'posts'}</span>
+        </li>
+
+        {/* Media Features */}
+        {tier.supports_gif_uploads && (
+          <li className="flex items-center gap-3">
+            <Image className="h-5 w-5 text-accent" />
+            <span>GIF Upload Support</span>
+          </li>
+        )}
+
+        {tier.supports_animated_avatars && (
+          <li className="flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-accent" />
+            <span>Animated Avatar Support</span>
+          </li>
+        )}
+
+        {tier.supports_nft_avatars && (
+          <li className="flex items-center gap-3">
+            <Image className="h-5 w-5 text-accent" />
+            <span>NFT Avatar Support</span>
+          </li>
+        )}
+
+        {/* No Watermark */}
+        {tier.watermark_disabled && (
+          <li className="flex items-center gap-3">
+            <Image className="h-5 w-5 text-accent" />
+            <span>No Watermark on Media</span>
+          </li>
+        )}
+
+        {/* Standard Features for All Tiers */}
         <li className="flex items-center gap-3">
           <Download className="h-5 w-5 text-white" />
           <span>Download videos and images</span>
