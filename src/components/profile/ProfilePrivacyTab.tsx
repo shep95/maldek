@@ -193,11 +193,14 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
           const fileExt = file.name.split('.').pop();
           const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
           
-          const { error: uploadError } = await supabase.storage
+          const { error: uploadError, data } = await supabase.storage
             .from('private-files')
             .upload(filePath, file);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            throw new Error(`Failed to upload file: ${uploadError.message}`);
+          }
 
           const { data: { publicUrl } } = supabase.storage
             .from('private-files')
