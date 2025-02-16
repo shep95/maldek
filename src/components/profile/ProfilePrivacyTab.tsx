@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Lock, Shield, Key, Upload, File, Eye, SortDesc, SortAsc, Image as ImageIcon } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MediaPreviewDialog } from '@/components/dashboard/MediaPreviewDialog';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PrivateData = Database['public']['Tables']['private_data']['Row'];
@@ -27,6 +28,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [accessCode, setAccessCode] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const SecurityCodeSection = () => {
@@ -466,12 +468,21 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                     {post.media_urls && post.media_urls.length > 0 && (
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         {post.media_urls.map((url, index) => (
-                          <div key={index} className="relative aspect-video">
+                          <div 
+                            key={index} 
+                            className="relative aspect-video cursor-pointer group"
+                            onClick={() => setSelectedMedia(url)}
+                          >
                             <img
                               src={url}
                               alt={`Attachment ${index + 1}`}
-                              className="rounded-lg object-cover w-full h-full"
+                              className="rounded-lg object-cover w-full h-full transition-transform duration-200 group-hover:scale-[1.02]"
+                              onContextMenu={(e) => e.preventDefault()}
+                              style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
                             />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                              <Eye className="w-6 h-6 text-white" />
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -487,6 +498,11 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
           )}
         </Card>
       )}
+
+      <MediaPreviewDialog
+        selectedMedia={selectedMedia}
+        onClose={() => setSelectedMedia(null)}
+      />
     </div>
   );
 };
