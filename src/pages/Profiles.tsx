@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -11,9 +12,8 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
-import { AdvertisementTab } from "@/components/profile/tabs/AdvertisementTab";
 import { Card } from "@/components/ui/card";
-import { CircuitBoard, Signal, Binary } from "lucide-react";
+import { CircuitBoard, Signal } from "lucide-react";
 
 const Profiles = () => {
   const session = useSession();
@@ -199,13 +199,6 @@ const Profiles = () => {
               <Signal className="w-4 h-4" />
               <span className="relative z-10">Music</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="ads" 
-              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
-            >
-              <Binary className="w-4 h-4" />
-              <span className="relative z-10">Advertisements</span>
-            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="posts" className="mt-0 animate-fade-in">
@@ -218,10 +211,6 @@ const Profiles = () => {
 
           <TabsContent value="music" className="mt-0 animate-fade-in">
             <ProfileMusicTab />
-          </TabsContent>
-
-          <TabsContent value="ads" className="mt-0 animate-fade-in">
-            <AdvertisementTab userId={profile.id} />
           </TabsContent>
         </Tabs>
       </div>
