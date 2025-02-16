@@ -10,6 +10,7 @@ import { Lock, Shield, Key, Upload, File, Eye, SortDesc, SortAsc, Image as Image
 import type { Database } from '@/integrations/supabase/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MediaPreviewDialog } from '@/components/dashboard/MediaPreviewDialog';
+import { useNavigate } from 'react-router-dom';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PrivateData = Database['public']['Tables']['private_data']['Row'];
@@ -20,6 +21,7 @@ interface ProfilePrivacyTabProps {
 }
 
 export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
+  const navigate = useNavigate();
   const [currentCode, setCurrentCode] = useState('');
   const [newCode, setNewCode] = useState('');
   const [title, setTitle] = useState('');
@@ -46,30 +48,13 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
         </p>
 
         {!userProfile?.security_code ? (
-          <form onSubmit={handleSetInitialCode} className="space-y-4">
-            <div>
-              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
-                Create Security Code
-              </label>
-              <Input
-                id="newCode"
-                type="password"
-                placeholder="Enter 4-digit code"
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value)}
-                maxLength={4}
-                className="bg-background/10"
-              />
-            </div>
-
-            <Button 
-              type="submit"
-              className="w-full"
-              disabled={setInitialSecurityCode.isPending}
-            >
-              {setInitialSecurityCode.isPending ? 'Setting code...' : 'Set Security Code'}
-            </Button>
-          </form>
+          <Button 
+            className="w-full"
+            onClick={() => navigate('/settings')}
+          >
+            <Key className="w-4 h-4 mr-2" />
+            Create Private Key in Settings
+          </Button>
         ) : (
           <form onSubmit={handleUpdateCode} className="space-y-4">
             <div>
