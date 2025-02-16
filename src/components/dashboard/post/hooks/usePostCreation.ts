@@ -97,13 +97,24 @@ export const usePostCreation = (
         }
       }
 
+      // Convert scheduledDate to ISO string if it exists
+      const scheduledForDate = scheduledDate ? new Date(scheduledDate) : undefined;
+
+      // Ensure the date is valid and in the future
+      if (scheduledForDate && scheduledForDate <= new Date()) {
+        toast.error("Scheduled date must be in the future");
+        return;
+      }
+
+      console.log('Creating post with scheduled date:', scheduledForDate?.toISOString());
+
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert([{
           content: content.trim(),
           user_id: currentUser.id,
           media_urls: mediaUrls,
-          scheduled_for: scheduledDate?.toISOString()
+          scheduled_for: scheduledForDate?.toISOString()
         }])
         .select('*, profiles(id, username, avatar_url)')
         .single();
@@ -137,6 +148,14 @@ export const usePostCreation = (
       console.error('Post creation error:', error);
       if (error.message.includes('can only post 3 times per hour')) {
         toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+          duration: 5000,
+          action: {
+            label: "Upgrade",
+            onClick: () => window.location.href = '/subscription'
+          }
+        });
+      } else if (error.message.includes('Cannot schedule posts')) {
+        toast.error(error.message, {
           duration: 5000,
           action: {
             label: "Upgrade",
