@@ -1,9 +1,11 @@
 
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2 } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
+import { FeaturesDialog } from "@/components/features/FeaturesDialog";
 
 interface NavItemsProps {
   subscription: any;
@@ -27,6 +29,7 @@ export const NavItems = ({
   const location = useLocation();
   const unreadCount = useNotificationCount(userId);
   const isMobile = useIsMobile();
+  const [showFeatures, setShowFeatures] = useState(false);
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
@@ -93,6 +96,13 @@ export const NavItems = ({
       path: "/analytics",
       active: location.pathname === "/analytics"
     },
+    {
+      icon: Layers,
+      label: "Our Features",
+      onClick: () => setShowFeatures(true),
+      description: "Learn about our platform features",
+      className: "text-accent hover:bg-accent/10"
+    },
     { 
       icon: DollarSign, 
       label: subscription?.tier?.name || "Premium", 
@@ -131,16 +141,23 @@ export const NavItems = ({
   ];
 
   return (
-    <nav className="space-y-2">
-      {navItems.map((item) => (
-        <NavItem
-          key={item.label}
-          {...item}
-          subscription={subscription}
-          onNavigate={handleNavigation}
-          collapsed={collapsed}
-        />
-      ))}
-    </nav>
+    <>
+      <nav className="space-y-2">
+        {navItems.map((item) => (
+          <NavItem
+            key={item.label}
+            {...item}
+            subscription={subscription}
+            onNavigate={handleNavigation}
+            collapsed={collapsed}
+          />
+        ))}
+      </nav>
+
+      <FeaturesDialog 
+        isOpen={showFeatures} 
+        onClose={() => setShowFeatures(false)} 
+      />
+    </>
   );
 };
