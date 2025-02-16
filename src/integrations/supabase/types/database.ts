@@ -706,6 +706,38 @@ export interface Database {
         }
         Relationships: []
       }
+      private_data: {
+        Row: {
+          id: string
+          user_id: string
+          created_at: string
+          encrypted_data: string
+          last_modified: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          created_at?: string
+          encrypted_data: string
+          last_modified?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          created_at?: string
+          encrypted_data?: string
+          last_modified?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "private_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Lock, Shield, Key } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types/database';
+
+type PrivateData = Database['public']['Tables']['private_data']['Row'];
 
 interface ProfilePrivacyTabProps {
   userId: string;
