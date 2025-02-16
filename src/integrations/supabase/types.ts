@@ -1224,6 +1224,47 @@ export type Database = {
           },
         ]
       }
+      private_posts: {
+        Row: {
+          content: string
+          created_at: string | null
+          encrypted_content: string | null
+          encrypted_title: string | null
+          id: string
+          media_urls: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          encrypted_content?: string | null
+          encrypted_title?: string | null
+          id?: string
+          media_urls?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          encrypted_content?: string | null
+          encrypted_title?: string | null
+          id?: string
+          media_urls?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_private_posts_user"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           achievements: Json | null
