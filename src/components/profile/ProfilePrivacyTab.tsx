@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Lock, Shield, Key, Upload, File, Eye } from 'lucide-react';
+import { Lock, Shield, Key, Upload, File, Eye, SortDesc, SortAsc, Image as ImageIcon } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type PrivateData = Database['public']['Tables']['private_data']['Row'];
@@ -25,6 +26,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [files, setFiles] = useState<File[]>([]);
   const [accessCode, setAccessCode] = useState('');
   const [isVerified, setIsVerified] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const queryClient = useQueryClient();
 
   const SecurityCodeSection = () => {
@@ -36,8 +38,8 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
         </div>
         <p className="text-sm text-muted-foreground mb-6">
           {!userProfile?.security_code 
-            ? "Set up your security code to protect your private data. This code will be required to access sensitive information."
-            : "Manage your security code and private data. Your security code is required to access sensitive information and make important changes to your account."
+            ? "Set up your security code to protect your private data. This code will be required to access sensitive information. If you don't have a security code yet, you can create one in the settings tab."
+            : "Manage your security code and private data. Your security code is required to access sensitive information and make important changes to your account. Keep this code safe - if you lose it, you won't be able to access your private data."
           }
         </p>
 
@@ -126,12 +128,15 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   });
 
   const { data: privatePosts, refetch: refetchPrivatePosts } = useQuery({
-    queryKey: ['private-posts', userId, isVerified],
+    queryKey: ['private-posts', userId, isVerified, sortOrder],
     queryFn: async () => {
       if (!isVerified) return [];
       
       const { data, error } = await supabase
-        .rpc('get_private_data_with_code', { code: accessCode });
+        .from('private_posts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: sortOrder === 'asc' });
 
       if (error) {
         console.error('Error fetching private posts:', error);
@@ -310,9 +315,35 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       
       {userProfile?.security_code && (
         <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
-          <div className="flex items-center gap-3 mb-4">
-            <Lock className="w-5 h-5 text-accent" />
-            <h2 className="text-xl font-semibold">Private Posts</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-accent" />
+              <h2 className="text-xl font-semibold">Private Posts</h2>
+            </div>
+            {isVerified && (
+              <Select 
+                value={sortOrder} 
+                onValueChange={(value: 'desc' | 'asc') => setSortOrder(value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Sort order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">
+                    <div className="flex items-center gap-2">
+                      <SortDesc className="h-4 w-4" />
+                      Newest first
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="asc">
+                    <div className="flex items-center gap-2">
+                      <SortAsc className="h-4 w-4" />
+                      Oldest first
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {!isVerified ? (
@@ -384,13 +415,14 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                     type="file"
                     onChange={handleFileSelect}
                     multiple
+                    accept="image/*"
                     className="bg-background/10"
                   />
                   {files.length > 0 && (
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-2 space-y-2">
                       {files.map((file, index) => (
                         <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <File className="w-4 h-4" />
+                          <ImageIcon className="w-4 h-4" />
                           {file.name}
                         </div>
                       ))}
@@ -426,29 +458,27 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                   </Button>
                 </div>
                 {privatePosts?.map((post) => (
-                  <div key={post.id} className="p-4 rounded-lg bg-background/5">
+                  <div key={post.id} className="p-4 rounded-lg bg-background/5 space-y-4">
                     {post.encrypted_title && (
                       <h4 className="font-medium mb-2">{post.encrypted_title}</h4>
                     )}
                     <p className="text-sm text-muted-foreground">{post.content}</p>
                     {post.media_urls && post.media_urls.length > 0 && (
-                      <div className="mt-3 space-y-2">
+                      <div className="mt-3 grid grid-cols-2 gap-2">
                         {post.media_urls.map((url, index) => (
-                          <a
-                            key={index}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-accent hover:underline"
-                          >
-                            <File className="w-4 h-4" />
-                            Attached File {index + 1}
-                          </a>
+                          <div key={index} className="relative aspect-video">
+                            <img
+                              src={url}
+                              alt={`Attachment ${index + 1}`}
+                              className="rounded-lg object-cover w-full h-full"
+                            />
+                          </div>
                         ))}
                       </div>
                     )}
                     <div className="mt-2 text-xs text-muted-foreground">
-                      {new Date(post.created_at).toLocaleDateString()}
+                      {new Date(post.created_at).toLocaleDateString()} at{' '}
+                      {new Date(post.created_at).toLocaleTimeString()}
                     </div>
                   </div>
                 ))}
