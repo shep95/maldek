@@ -23,7 +23,6 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
   useEffect(() => {
     console.log('Setting up real-time like subscription for post:', postId);
     
-    // Subscribe to real-time like updates
     const channel = supabase
       .channel(`post-likes-${postId}`)
       .on(
@@ -59,20 +58,9 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
       )
       .subscribe();
 
-    // Set up 1-second interval for refreshing like count
-    const interval = setInterval(async () => {
-      const { count } = await supabase
-        .from('post_likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId);
-        
-      setLikeCount(count || 0);
-    }, 1000);
-
     return () => {
       console.log('Cleaning up like subscription');
       supabase.removeChannel(channel);
-      clearInterval(interval);
     };
   }, [postId, currentUserId]);
 
@@ -84,35 +72,13 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
         return;
       }
 
-      if (isLiked) {
-        const { data: existingLike } = await supabase
-          .from('post_likes')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .eq('post_id', postId)
-          .single();
+      // Optimistically update the UI
+      const newLikeState = !isLiked;
+      const newLikeCount = isLiked ? likeCount - 1 : likeCount + 1;
+      setIsLiked(newLikeState);
+      setLikeCount(newLikeCount);
 
-        if (existingLike) {
-          toast.error("You've already liked this post");
-          return;
-        }
-      }
-
-      if (isLiked) {
-        const { error: unlikeError } = await supabase
-          .from('post_likes')
-          .delete()
-          .eq('user_id', currentUserId)
-          .eq('post_id', postId);
-        
-        if (unlikeError) throw unlikeError;
-
-        await supabase
-          .from('posts')
-          .update({ likes: likeCount - 1 })
-          .eq('id', postId);
-
-      } else {
+      if (newLikeState) {
         const { error: likeError } = await supabase
           .from('post_likes')
           .insert({ 
@@ -120,14 +86,39 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
             post_id: postId
           });
         
-        if (likeError) throw likeError;
+        if (likeError) {
+          // Revert optimistic update on error
+          setIsLiked(!newLikeState);
+          setLikeCount(likeCount);
+          throw likeError;
+        }
 
         await supabase
           .from('posts')
-          .update({ likes: likeCount + 1 })
+          .update({ likes: newLikeCount })
+          .eq('id', postId);
+
+      } else {
+        const { error: unlikeError } = await supabase
+          .from('post_likes')
+          .delete()
+          .eq('user_id', currentUserId)
+          .eq('post_id', postId);
+        
+        if (unlikeError) {
+          // Revert optimistic update on error
+          setIsLiked(!newLikeState);
+          setLikeCount(likeCount);
+          throw unlikeError;
+        }
+
+        await supabase
+          .from('posts')
+          .update({ likes: newLikeCount })
           .eq('id', postId);
       }
 
+      // Notify parent component and invalidate queries
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       onAction(postId, 'like');
     } catch (error) {
