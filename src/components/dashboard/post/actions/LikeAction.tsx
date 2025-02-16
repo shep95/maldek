@@ -79,25 +79,35 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
       setLikeCount(newLikeCount);
 
       if (newLikeState) {
-        const { error: likeError } = await supabase
+        // Check if like already exists before inserting
+        const { data: existingLike } = await supabase
           .from('post_likes')
-          .insert({ 
-            user_id: currentUserId,
-            post_id: postId
-          });
-        
-        if (likeError) {
-          // Revert optimistic update on error
-          setIsLiked(!newLikeState);
-          setLikeCount(likeCount);
-          throw likeError;
+          .select('id')
+          .eq('user_id', currentUserId)
+          .eq('post_id', postId)
+          .maybeSingle();
+
+        // Only insert if no existing like found
+        if (!existingLike) {
+          const { error: likeError } = await supabase
+            .from('post_likes')
+            .insert({ 
+              user_id: currentUserId,
+              post_id: postId
+            });
+          
+          if (likeError) {
+            // Revert optimistic update on error
+            setIsLiked(!newLikeState);
+            setLikeCount(likeCount);
+            throw likeError;
+          }
+
+          await supabase
+            .from('posts')
+            .update({ likes: newLikeCount })
+            .eq('id', postId);
         }
-
-        await supabase
-          .from('posts')
-          .update({ likes: newLikeCount })
-          .eq('id', postId);
-
       } else {
         const { error: unlikeError } = await supabase
           .from('post_likes')
