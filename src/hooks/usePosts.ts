@@ -69,6 +69,9 @@ export const usePosts = () => {
             (sub: UserSubscription) => sub?.status === 'active'
           );
 
+          // Calculate the actual number of likes
+          const likeCount = post.post_likes ? post.post_likes.length : 0;
+
           return {
             ...post,
             author: {
@@ -77,7 +80,8 @@ export const usePosts = () => {
               avatar_url: post.profiles.avatar_url,
               name: post.profiles.username || 'Deleted User',
               subscription: activeSubscription?.subscription_tiers || null
-            }
+            },
+            likes: likeCount // Use the actual like count instead of 0
           };
         });
 
