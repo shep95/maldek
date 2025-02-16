@@ -27,6 +27,90 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [isVerified, setIsVerified] = useState(false);
   const queryClient = useQueryClient();
 
+  const SecurityCodeSection = () => {
+    return (
+      <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
+        <div className="flex items-center gap-3 mb-4">
+          <Shield className="w-5 h-5 text-accent" />
+          <h2 className="text-xl font-semibold">Privacy Settings</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-6">
+          {!userProfile?.security_code 
+            ? "Set up your security code to protect your private data. This code will be required to access sensitive information."
+            : "Manage your security code and private data. Your security code is required to access sensitive information and make important changes to your account."
+          }
+        </p>
+
+        {!userProfile?.security_code ? (
+          <form onSubmit={handleSetInitialCode} className="space-y-4">
+            <div>
+              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
+                Create Security Code
+              </label>
+              <Input
+                id="newCode"
+                type="password"
+                placeholder="Enter 4-digit code"
+                value={newCode}
+                onChange={(e) => setNewCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
+            </div>
+
+            <Button 
+              type="submit"
+              className="w-full"
+              disabled={setInitialSecurityCode.isPending}
+            >
+              {setInitialSecurityCode.isPending ? 'Setting code...' : 'Set Security Code'}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleUpdateCode} className="space-y-4">
+            <div>
+              <label htmlFor="currentCode" className="block text-sm font-medium mb-2">
+                Current Security Code
+              </label>
+              <Input
+                id="currentCode"
+                type="password"
+                placeholder="Enter current code"
+                value={currentCode}
+                onChange={(e) => setCurrentCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
+                New Security Code
+              </label>
+              <Input
+                id="newCode"
+                type="password"
+                placeholder="Enter new code"
+                value={newCode}
+                onChange={(e) => setNewCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
+            </div>
+
+            <Button 
+              type="submit"
+              className="w-full"
+              disabled={updateSecurityCode.isPending}
+            >
+              {updateSecurityCode.isPending ? 'Updating...' : 'Update Security Code'}
+            </Button>
+          </form>
+        )}
+      </Card>
+    );
+  };
+
   const { data: userProfile } = useQuery({
     queryKey: ['user-security-code', userId],
     queryFn: async () => {
@@ -219,86 +303,8 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
-        <div className="flex items-center gap-3 mb-4">
-          <Shield className="w-5 h-5 text-accent" />
-          <h2 className="text-xl font-semibold">Privacy Settings</h2>
-        </div>
-        <p className="text-sm text-muted-foreground mb-6">
-          {!userProfile?.security_code 
-            ? "Set up your security code to protect your private data. This code will be required to access sensitive information."
-            : "Manage your security code and private data. Your security code is required to access sensitive information and make important changes to your account."
-          }
-        </p>
-
-        {!userProfile?.security_code ? (
-          <form onSubmit={handleSetInitialCode} className="space-y-4">
-            <div>
-              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
-                Create Security Code
-              </label>
-              <Input
-                id="newCode"
-                type="password"
-                placeholder="Enter 4-digit code"
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value)}
-                maxLength={4}
-                className="bg-background/10"
-              />
-            </div>
-
-            <Button 
-              type="submit"
-              className="w-full"
-              disabled={setInitialSecurityCode.isPending}
-            >
-              {setInitialSecurityCode.isPending ? 'Setting code...' : 'Set Security Code'}
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={handleUpdateCode} className="space-y-4">
-            <div>
-              <label htmlFor="currentCode" className="block text-sm font-medium mb-2">
-                Current Security Code
-              </label>
-              <Input
-                id="currentCode"
-                type="password"
-                placeholder="Enter current code"
-                value={currentCode}
-                onChange={(e) => setCurrentCode(e.target.value)}
-                maxLength={4}
-                className="bg-background/10"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
-                New Security Code
-              </label>
-              <Input
-                id="newCode"
-                type="password"
-                placeholder="Enter new code"
-                value={newCode}
-                onChange={(e) => setNewCode(e.target.value)}
-                maxLength={4}
-                className="bg-background/10"
-              />
-            </div>
-
-            <Button 
-              type="submit"
-              className="w-full"
-              disabled={updateSecurityCode.isPending}
-            >
-              {updateSecurityCode.isPending ? 'Updating...' : 'Update Security Code'}
-            </Button>
-          </form>
-        )}
-      </Card>
-
+      <SecurityCodeSection />
+      
       {userProfile?.security_code && (
         <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
           <div className="flex items-center gap-3 mb-4">
