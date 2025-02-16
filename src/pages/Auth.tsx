@@ -92,21 +92,6 @@ const Auth = () => {
           throw new Error('Failed to create user');
         }
 
-        // Create initial user settings
-        const { error: settingsError } = await supabase
-          .from('user_settings')
-          .insert({
-            user_id: signUpData.user.id,
-            preferred_language: 'en',
-            theme: 'system'
-          });
-
-        if (settingsError) {
-          console.error("Error creating user settings:", settingsError);
-          // Don't throw here as the user is already created
-          toast.error("Account created but settings setup failed. You can update them later.");
-        }
-
         // Wait a moment for the trigger to create the profile
         await new Promise(resolve => setTimeout(resolve, 1000));
 
