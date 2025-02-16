@@ -20,6 +20,12 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
   const [likeCount, setLikeCount] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
 
+  // Update local state when props change
+  useEffect(() => {
+    setLikeCount(initialLikes);
+    setIsLiked(initialIsLiked);
+  }, [initialLikes, initialIsLiked]);
+
   useEffect(() => {
     console.log('Setting up real-time like subscription for post:', postId);
     
@@ -79,7 +85,7 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
       setLikeCount(newLikeCount);
 
       if (newLikeState) {
-        // Check if like already exists before inserting
+        // Check if like already exists
         const { data: existingLike } = await supabase
           .from('post_likes')
           .select('id')
@@ -87,7 +93,6 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
           .eq('post_id', postId)
           .maybeSingle();
 
-        // Only insert if no existing like found
         if (!existingLike) {
           const { error: likeError } = await supabase
             .from('post_likes')
@@ -96,17 +101,7 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
               post_id: postId
             });
           
-          if (likeError) {
-            // Revert optimistic update on error
-            setIsLiked(!newLikeState);
-            setLikeCount(likeCount);
-            throw likeError;
-          }
-
-          await supabase
-            .from('posts')
-            .update({ likes: newLikeCount })
-            .eq('id', postId);
+          if (likeError) throw likeError;
         }
       } else {
         const { error: unlikeError } = await supabase
@@ -115,24 +110,25 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
           .eq('user_id', currentUserId)
           .eq('post_id', postId);
         
-        if (unlikeError) {
-          // Revert optimistic update on error
-          setIsLiked(!newLikeState);
-          setLikeCount(likeCount);
-          throw unlikeError;
-        }
-
-        await supabase
-          .from('posts')
-          .update({ likes: newLikeCount })
-          .eq('id', postId);
+        if (unlikeError) throw unlikeError;
       }
 
-      // Notify parent component and invalidate queries
+      // Update the posts table with the new like count
+      const { error: updateError } = await supabase
+        .from('posts')
+        .update({ likes: newLikeCount })
+        .eq('id', postId);
+
+      if (updateError) throw updateError;
+
+      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       onAction(postId, 'like');
     } catch (error) {
       console.error('Error handling like:', error);
+      // Revert optimistic updates on error
+      setIsLiked(!isLiked);
+      setLikeCount(isLiked ? likeCount + 1 : likeCount - 1);
       toast.error('Failed to update like status');
     }
   };
