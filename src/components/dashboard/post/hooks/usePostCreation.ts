@@ -130,8 +130,8 @@ export const usePostCreation = (
         .single();
 
       if (postError) {
-        if (postError.message.includes('can only post 3 times per hour')) {
-          toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+        if (postError.message.includes('Cannot schedule posts')) {
+          toast.error("You need an active subscription to schedule posts", {
             duration: 5000,
             action: {
               label: "Upgrade",
@@ -158,14 +158,6 @@ export const usePostCreation = (
       console.error('Post creation error:', error);
       if (error.message.includes('can only post 3 times per hour')) {
         toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
-          duration: 5000,
-          action: {
-            label: "Upgrade",
-            onClick: () => window.location.href = '/subscription'
-          }
-        });
-      } else if (error.message.includes('Cannot schedule posts')) {
-        toast.error(error.message, {
           duration: 5000,
           action: {
             label: "Upgrade",
