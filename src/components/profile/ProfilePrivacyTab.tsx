@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Lock, Shield, Key, Upload, File } from 'lucide-react';
+import { Lock, Shield, Key, Upload, File, Eye } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -24,39 +24,45 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [accessCode, setAccessCode] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: privateData } = useQuery({
-    queryKey: ['private-data', userId],
+  const { data: privatePosts, refetch: refetchPrivatePosts } = useQuery({
+    queryKey: ['private-posts', userId, isVerified],
     queryFn: async () => {
+      if (!isVerified) return [];
+      
       const { data, error } = await supabase
-        .from('private_data')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching private data:', error);
-        return null;
-      }
-      return data;
-    }
-  });
-
-  const { data: privatePosts } = useQuery({
-    queryKey: ['private-posts', userId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('private_posts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .rpc('get_private_data_with_code', { code: accessCode });
 
       if (error) {
         console.error('Error fetching private posts:', error);
+        setIsVerified(false);
         return [];
       }
+      return data || [];
+    },
+    enabled: isVerified
+  });
+
+  const verifySecurityCode = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .rpc('get_private_data_with_code', { code: accessCode });
+      
+      if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      setIsVerified(true);
+      refetchPrivatePosts();
+      toast.success('Security code verified successfully');
+    },
+    onError: (error) => {
+      console.error('Error verifying security code:', error);
+      toast.error('Invalid security code');
+      setIsVerified(false);
     }
   });
 
@@ -85,7 +91,6 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
     mutationFn: async () => {
       const mediaUrls: string[] = [];
 
-      // Upload files if any
       if (files.length > 0) {
         for (const file of files) {
           const fileExt = file.name.split('.').pop();
@@ -121,7 +126,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       setTitle('');
       setContent('');
       setFiles([]);
-      queryClient.invalidateQueries({ queryKey: ['private-posts'] });
+      refetchPrivatePosts();
     },
     onError: (error) => {
       console.error('Error creating private post:', error);
@@ -138,6 +143,15 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
     updateSecurityCode.mutate();
   };
 
+  const handleVerifyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (accessCode.length !== 4 || !/^\d{4}$/.test(accessCode)) {
+      toast.error('Please enter a valid 4-digit security code');
+      return;
+    }
+    verifySecurityCode.mutate();
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
@@ -146,6 +160,10 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isVerified) {
+      toast.error('Please verify your security code first');
+      return;
+    }
     if (!content.trim()) {
       toast.error('Please enter some content');
       return;
@@ -210,103 +228,147 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
           <Lock className="w-5 h-5 text-accent" />
           <h2 className="text-xl font-semibold">Private Posts</h2>
         </div>
-        
-        <form onSubmit={handleCreatePost} className="space-y-4 mb-6">
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium mb-2">
-              Title (Optional)
-            </label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter post title"
-              className="bg-background/10"
-            />
-          </div>
 
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium mb-2">
-              Content
-            </label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your private post..."
-              className="bg-background/10 min-h-[100px]"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="files" className="block text-sm font-medium mb-2">
-              Attach Files
-            </label>
-            <Input
-              id="files"
-              type="file"
-              onChange={handleFileSelect}
-              multiple
-              className="bg-background/10"
-            />
-            {files.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {files.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <File className="w-4 h-4" />
-                    {file.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <Button 
-            type="submit"
-            className="w-full"
-            disabled={createPrivatePost.isPending}
-          >
-            {createPrivatePost.isPending ? (
-              <>Creating post...</>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Create Private Post
-              </>
-            )}
-          </Button>
-        </form>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Your Private Posts</h3>
-          {privatePosts?.map((post) => (
-            <div key={post.id} className="p-4 rounded-lg bg-background/5">
-              {post.encrypted_title && (
-                <h4 className="font-medium mb-2">{post.encrypted_title}</h4>
-              )}
-              <p className="text-sm text-muted-foreground">{post.content}</p>
-              {post.media_urls && post.media_urls.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {post.media_urls.map((url, index) => (
-                    <a
-                      key={index}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-accent hover:underline"
-                    >
-                      <File className="w-4 h-4" />
-                      Attached File {index + 1}
-                    </a>
-                  ))}
-                </div>
-              )}
-              <div className="mt-2 text-xs text-muted-foreground">
-                {new Date(post.created_at).toLocaleDateString()}
-              </div>
+        {!isVerified ? (
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <div>
+              <label htmlFor="accessCode" className="block text-sm font-medium mb-2">
+                Enter Security Code to Access Private Posts
+              </label>
+              <Input
+                id="accessCode"
+                type="password"
+                placeholder="Enter 4-digit code"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
             </div>
-          ))}
-        </div>
+            <Button 
+              type="submit"
+              className="w-full"
+              disabled={verifySecurityCode.isPending}
+            >
+              {verifySecurityCode.isPending ? (
+                <>Verifying...</>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Access Private Posts
+                </>
+              )}
+            </Button>
+          </form>
+        ) : (
+          <>
+            <form onSubmit={handleCreatePost} className="space-y-4 mb-6">
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium mb-2">
+                  Title (Optional)
+                </label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter post title"
+                  className="bg-background/10"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="content" className="block text-sm font-medium mb-2">
+                  Content
+                </label>
+                <Textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Write your private post..."
+                  className="bg-background/10 min-h-[100px]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="files" className="block text-sm font-medium mb-2">
+                  Attach Files
+                </label>
+                <Input
+                  id="files"
+                  type="file"
+                  onChange={handleFileSelect}
+                  multiple
+                  className="bg-background/10"
+                />
+                {files.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {files.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <File className="w-4 h-4" />
+                        {file.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Button 
+                type="submit"
+                className="w-full"
+                disabled={createPrivatePost.isPending}
+              >
+                {createPrivatePost.isPending ? (
+                  <>Creating post...</>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Create Private Post
+                  </>
+                )}
+              </Button>
+            </form>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Your Private Posts</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsVerified(false)}
+                >
+                  Lock
+                </Button>
+              </div>
+              {privatePosts?.map((post) => (
+                <div key={post.id} className="p-4 rounded-lg bg-background/5">
+                  {post.encrypted_title && (
+                    <h4 className="font-medium mb-2">{post.encrypted_title}</h4>
+                  )}
+                  <p className="text-sm text-muted-foreground">{post.content}</p>
+                  {post.media_urls && post.media_urls.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {post.media_urls.map((url, index) => (
+                        <a
+                          key={index}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-accent hover:underline"
+                        >
+                          <File className="w-4 h-4" />
+                          Attached File {index + 1}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {new Date(post.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );

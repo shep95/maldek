@@ -2091,6 +2091,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_private_data_with_code: {
+        Args: {
+          code: string
+        }
+        Returns: {
+          id: string
+          user_id: string
+          content: string
+          media_urls: string[]
+          created_at: string
+          encrypted_title: string
+        }[]
+      }
       increment_ad_click: {
         Args: {
           ad_id: string
