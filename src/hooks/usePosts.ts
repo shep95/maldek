@@ -56,15 +56,20 @@ export const usePosts = (followingOnly: boolean = false) => {
           .gt('created_at', threeDaysAgo.toISOString())
           .order('created_at', { ascending: false });
 
-        // If followingOnly is true and user is logged in, filter by following
+        // If followingOnly is true and user is logged in, first get following IDs
         if (followingOnly && session?.user?.id) {
-          query = query.in('user_id', 
-            supabase
-              .from('followers')
-              .select('following_id')
-              .eq('follower_id', session.user.id)
-              .then(({ data }) => data?.map(f => f.following_id) || [])
-          );
+          const { data: followingData, error: followingError } = await supabase
+            .from('followers')
+            .select('following_id')
+            .eq('follower_id', session.user.id);
+
+          if (followingError) {
+            console.error('Error fetching following:', followingError);
+            throw followingError;
+          }
+
+          const followingIds = followingData?.map(f => f.following_id) || [];
+          query = query.in('user_id', followingIds);
         }
 
         const { data, error } = await query;
