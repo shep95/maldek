@@ -16,7 +16,6 @@ import DaarpAI from "@/pages/DaarpAI";
 import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
-import Subscription from "@/pages/Subscription";
 import EmperorChatPage from "@/pages/EmperorChat";
 import TermsOfService from "@/pages/TermsOfService";
 
@@ -42,7 +41,7 @@ const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   });
 
   if (!subscription) {
-    return <Navigate to="/subscription" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -70,7 +69,7 @@ const ProtectedEmperorRoute = ({ children }: { children: React.ReactNode }) => {
   });
 
   if (!subscription || subscription.tier.name !== 'True Emperor') {
-    return <Navigate to="/subscription" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -122,7 +121,6 @@ export const AppRoutes = () => {
             </ProtectedEmperorRoute>
           } 
         />
-        <Route path="/subscription" element={<Subscription />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
