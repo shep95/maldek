@@ -8,38 +8,14 @@ const corsHeaders = {
 }
 
 const MERCURY_API_KEY = Deno.env.get('MERCURY_API_KEY')
-const MERCURY_API_URL = 'https://api.mercury.com'
-
-// Cache for product IDs
-let productCache: Record<string, string> = {};
+const MERCURY_API_URL = 'https://api.mercury.com/v1'  // Updated API URL
 
 async function getOrCreateProduct(tierData: any) {
-  // Check cache first
-  if (productCache[tierData.name]) {
-    return productCache[tierData.name];
-  }
-
   try {
-    // First, try to fetch existing products
-    const productsResponse = await fetch(`${MERCURY_API_URL}/api/v1/products`, {
-      headers: {
-        'Authorization': `Bearer ${MERCURY_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (productsResponse.ok) {
-      const products = await productsResponse.json();
-      const existingProduct = products.find((p: any) => p.name === tierData.name);
-      
-      if (existingProduct) {
-        productCache[tierData.name] = existingProduct.id;
-        return existingProduct.id;
-      }
-    }
-
-    // If product doesn't exist, create it
-    const createResponse = await fetch(`${MERCURY_API_URL}/api/v1/products`, {
+    console.log('Attempting to create/get product for tier:', tierData.name);
+    
+    // Create the product directly (simplified approach)
+    const createResponse = await fetch(`${MERCURY_API_URL}/products`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${MERCURY_API_KEY}`,
@@ -47,23 +23,32 @@ async function getOrCreateProduct(tierData: any) {
       },
       body: JSON.stringify({
         name: tierData.name,
-        description: `${tierData.name} subscription tier`,
-        default_price_data: {
-          currency: 'USD',
-          unit_amount: Math.round(tierData.price * 100)
-        }
+        price: Math.round(tierData.price * 100), // Convert to cents
+        currency: 'USD',
+        description: `${tierData.name} subscription tier`
       })
     });
 
+    const responseText = await createResponse.text();
+    console.log('Mercury API Response:', {
+      status: createResponse.status,
+      headers: Object.fromEntries(createResponse.headers.entries()),
+      body: responseText
+    });
+
     if (!createResponse.ok) {
-      throw new Error('Failed to create product in Mercury');
+      throw new Error(`Mercury API Error: ${responseText}`);
     }
 
-    const newProduct = await createResponse.json();
-    productCache[tierData.name] = newProduct.id;
-    return newProduct.id;
+    const product = JSON.parse(responseText);
+    console.log('Successfully created product:', product);
+    return product.id;
   } catch (error) {
-    console.error('Error managing Mercury product:', error);
+    console.error('Detailed error creating Mercury product:', {
+      error: error.message,
+      stack: error.stack,
+      tierData
+    });
     throw error;
   }
 }
@@ -75,7 +60,7 @@ serve(async (req) => {
 
   try {
     const { userId, tier, paymentDetails } = await req.json();
-    console.log('Creating payment for:', { userId, tier });
+    console.log('Processing payment request:', { userId, tier });
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -90,79 +75,78 @@ serve(async (req) => {
       .single();
 
     if (tierError || !tierData) {
-      console.error('Tier error:', tierError);
+      console.error('Tier fetch error:', tierError);
       throw new Error('Subscription tier not found');
     }
 
-    console.log('Found tier:', tierData);
+    console.log('Found tier data:', tierData);
 
-    // Get or create the Mercury product
+    // Create or get product
     const productId = await getOrCreateProduct(tierData);
-    console.log('Using Mercury product ID:', productId);
+    console.log('Product ID obtained:', productId);
 
-    // Generate unique idempotency key
-    const idempotencyKey = crypto.randomUUID();
-
-    // Create Mercury payment with product ID
-    const mercuryResponse = await fetch(`${MERCURY_API_URL}/api/v1/checkout-sessions`, {
+    // Create payment session
+    const checkoutResponse = await fetch(`${MERCURY_API_URL}/checkout/sessions`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${MERCURY_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': idempotencyKey
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        product: productId,
-        payment_method_types: ['card'],
-        card: {
-          number: paymentDetails.cardNumber,
-          exp_month: parseInt(paymentDetails.expiry.split('/')[0]),
-          exp_year: parseInt('20' + paymentDetails.expiry.split('/')[1]),
-          cvc: paymentDetails.cvc,
-          name: paymentDetails.name
+        product_id: productId,
+        payment_method: {
+          type: 'card',
+          card: {
+            number: paymentDetails.cardNumber,
+            exp_month: parseInt(paymentDetails.expiry.split('/')[0]),
+            exp_year: parseInt('20' + paymentDetails.expiry.split('/')[1]),
+            cvc: paymentDetails.cvc,
+            holder_name: paymentDetails.name
+          }
         },
         metadata: {
           user_id: userId,
-          tier: tier,
-          tier_id: tierData.id
+          tier: tier
         }
       })
     });
 
-    if (!mercuryResponse.ok) {
-      const errorText = await mercuryResponse.text();
-      console.error('Mercury API error:', errorText);
-      throw new Error('Failed to create Mercury payment session');
+    const checkoutResponseText = await checkoutResponse.text();
+    console.log('Checkout Response:', {
+      status: checkoutResponse.status,
+      body: checkoutResponseText
+    });
+
+    if (!checkoutResponse.ok) {
+      throw new Error(`Checkout Error: ${checkoutResponseText}`);
     }
 
-    const mercuryData = await mercuryResponse.json();
-    console.log('Mercury session created:', mercuryData);
+    const checkoutData = JSON.parse(checkoutResponseText);
 
-    // Store Mercury transaction data
+    // Store transaction
     const { error: transactionError } = await supabaseClient
       .from('mercury_transactions')
       .insert({
         user_id: userId,
         amount: tierData.price,
         status: 'pending',
-        mercury_transaction_id: mercuryData.id,
+        mercury_transaction_id: checkoutData.id,
         payment_type: 'subscription',
         metadata: {
           tier: tier,
-          tier_id: tierData.id,
-          payment_intent: mercuryData.id
+          tier_id: tierData.id
         }
       });
 
     if (transactionError) {
-      console.error('Error storing transaction:', transactionError);
+      console.error('Transaction storage error:', transactionError);
       throw new Error('Failed to store transaction data');
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        transactionId: mercuryData.id
+        sessionId: checkoutData.id
       }),
       { 
         headers: {
@@ -172,7 +156,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Mercury checkout error:', error);
+    console.error('Checkout process error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
