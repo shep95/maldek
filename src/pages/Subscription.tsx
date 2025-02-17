@@ -142,14 +142,42 @@ const Subscription = () => {
     }
   };
 
-  const handleSubscribe = async (tier: string) => {
+  const handleSubscribe = async (tierId: string) => {
     if (!session?.user?.id) {
       toast.error("Please sign in to subscribe");
       return;
     }
 
-    setSelectedTier(tier);
-    setShowPaymentDialog(true);
+    const selectedTierData = tiers?.find(t => t.id === tierId);
+    if (selectedTierData?.name === 'True Emperor') {
+      setSelectedTier(tierId);
+      setShowPaymentDialog(true);
+      return;
+    }
+
+    try {
+      toast.loading("Preparing checkout...");
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          tier: tierId,
+          userId: session.user.id,
+          promoCode: validPromoCode?.code,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+
+      toast.error("Could not create checkout session");
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error("Failed to start checkout process");
+    }
   };
 
   const handleManageSubscription = async () => {
