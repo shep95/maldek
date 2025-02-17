@@ -171,8 +171,8 @@ export const PostList = () => {
       <div className="space-y-6">
         {/* Desktop filter bar */}
         <div className="hidden md:block sticky top-0 z-50 rounded-xl pt-6 mb-6">
-          <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-1.5">
-            <div className="grid grid-cols-2 gap-3 w-full">
+          <div className="bg-background/60 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg">
+            <div className="grid grid-cols-2 gap-3 w-full p-1.5 bg-white/5 backdrop-blur-lg border-white/10 rounded-xl">
               <button
                 onClick={() => setFollowingOnly(false)}
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg transition-colors border-2 ${
