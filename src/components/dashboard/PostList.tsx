@@ -173,72 +173,79 @@ export const PostList = () => {
       />
 
       <div className="space-y-6">
-        <div className="sticky top-20 z-10 flex items-center gap-4 p-4 mb-4 bg-background/80 backdrop-blur-lg border border-border/50 rounded-lg">
-          <button
-            onClick={() => setFollowingOnly(false)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${!followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>All Posts</span>
-          </button>
-          <button
-            onClick={() => setFollowingOnly(true)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Following</span>
-          </button>
+        <div className="fixed left-0 right-0 top-0 md:top-20 z-50 px-4 md:px-0">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex justify-center items-center gap-2 p-3 mb-4 md:mb-8 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
+              <button
+                onClick={() => setFollowingOnly(false)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${!followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>All Posts</span>
+              </button>
+              <button
+                onClick={() => setFollowingOnly(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Following</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {posts && posts.length > 0 ? (
-          <>
-            {posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={{
-                  ...post,
-                  user_id: post.profiles.id,
-                  author: {
-                    id: post.profiles.id,
-                    username: post.profiles.username,
-                    avatar_url: post.profiles.avatar_url,
-                    name: post.profiles.username
-                  },
-                  timestamp: new Date(post.created_at),
-                  likes: postStats[post.id]?.likes || 0,
-                  comments: postStats[post.id]?.comments || 0,
-                  reposts: 0,
-                  isLiked: postStats[post.id]?.isLiked || false,
-                  isBookmarked: false
-                }}
-                currentUserId={session?.user?.id || ''}
-                onPostAction={handlePostAction}
-                onMediaClick={setSelectedMedia}
-              />
-            ))}
-            
-            {/* End of feed message */}
-            <div className="text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50 py-8">
-              <div className="flex flex-col items-center gap-2 p-4">
-                <CheckCircle2 className="h-6 w-6 text-accent" />
-                <p className="text-foreground font-medium">You're all caught up!</p>
-                <p className="text-muted-foreground text-sm">
-                  You've seen all {followingOnly ? "following" : ""} posts from the last three days
-                </p>
+        {/* Add padding to account for fixed header */}
+        <div className="pt-24 md:pt-32">
+          {posts && posts.length > 0 ? (
+            <>
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={{
+                    ...post,
+                    user_id: post.profiles.id,
+                    author: {
+                      id: post.profiles.id,
+                      username: post.profiles.username,
+                      avatar_url: post.profiles.avatar_url,
+                      name: post.profiles.username
+                    },
+                    timestamp: new Date(post.created_at),
+                    likes: postStats[post.id]?.likes || 0,
+                    comments: postStats[post.id]?.comments || 0,
+                    reposts: 0,
+                    isLiked: postStats[post.id]?.isLiked || false,
+                    isBookmarked: false
+                  }}
+                  currentUserId={session?.user?.id || ''}
+                  onPostAction={handlePostAction}
+                  onMediaClick={setSelectedMedia}
+                />
+              ))}
+              
+              {/* End of feed message */}
+              <div className="text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50 py-8">
+                <div className="flex flex-col items-center gap-2 p-4">
+                  <CheckCircle2 className="h-6 w-6 text-accent" />
+                  <p className="text-foreground font-medium">You're all caught up!</p>
+                  <p className="text-muted-foreground text-sm">
+                    You've seen all {followingOnly ? "following" : ""} posts from the last three days
+                  </p>
+                </div>
               </div>
+            </>
+          ) : !isLoading ? (
+            <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
+              <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
+              <p className="text-muted-foreground">
+                {followingOnly 
+                  ? "Follow some users to see their posts here!"
+                  : "Be the first to share something with your network!"
+                }
+              </p>
             </div>
-          </>
-        ) : !isLoading ? (
-          <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
-            <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
-            <p className="text-muted-foreground">
-              {followingOnly 
-                ? "Follow some users to see their posts here!"
-                : "Be the first to share something with your network!"
-              }
-            </p>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </>
   );
