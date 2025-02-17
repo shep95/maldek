@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Link as LinkIcon, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,13 @@ export const PostText = ({
 }: PostTextProps) => {
   const navigate = useNavigate();
   const [showingOriginal, setShowingOriginal] = useState(false);
+
+  console.log("PostText props:", {
+    content,
+    isEdited,
+    originalContent,
+    showingOriginal
+  });
 
   const truncateUrl = (url: string) => {
     try {
@@ -170,18 +176,18 @@ export const PostText = ({
         </Button>
       )}
       {isEdited && originalContent && (
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-muted-foreground">Edited</span>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-xs text-muted-foreground font-medium">Edited</span>
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-xs"
+            className="h-6 px-2 text-xs flex items-center gap-1 hover:bg-muted"
             onClick={(e) => {
               e.stopPropagation();
               setShowingOriginal(!showingOriginal);
             }}
           >
-            <Eye className="h-3 w-3 mr-1" />
+            <Eye className="h-3 w-3" />
             {showingOriginal ? "Show edited" : "Show original"}
           </Button>
         </div>
