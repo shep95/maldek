@@ -372,6 +372,33 @@ export type Database = {
           },
         ]
       }
+      content_moderation: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_safe: boolean
+          media_url: string
+          moderation_result: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_safe?: boolean
+          media_url: string
+          moderation_result: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_safe?: boolean
+          media_url?: string
+          moderation_result?: Json
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       emperor_chat_messages: {
         Row: {
           content: string

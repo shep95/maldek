@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -125,7 +124,25 @@ export const usePostCreation = (
     console.log('Saving to drafts:', { content, mediaFiles, scheduledDate });
   };
 
-  const createPost = async () => {
+  const moderateContent = async (mediaUrl: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('moderate-content', {
+        body: {
+          mediaUrl,
+          userId: currentUser.id
+        }
+      })
+
+      if (error) throw error
+
+      return data.is_safe
+    } catch (error) {
+      console.error('Content moderation failed:', error)
+      throw new Error('Content moderation failed')
+    }
+  }
+
+  const handleCreatePost = async () => {
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
       return;
@@ -136,7 +153,7 @@ export const usePostCreation = (
       const mediaUrls: string[] = [];
 
       if (mediaFiles.length > 0) {
-        for (const [index, file] of mediaFiles.entries()) {
+        for (const file of mediaFiles) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${currentUser.id}/${fileName}`;
@@ -154,8 +171,19 @@ export const usePostCreation = (
             .from('posts')
             .getPublicUrl(filePath);
 
+          // Check content moderation before allowing the URL
+          const isSafe = await moderateContent(publicUrl);
+          if (!isSafe) {
+            // Delete the uploaded file
+            await supabase.storage
+              .from('posts')
+              .remove([filePath]);
+            
+            toast.error("Your content was flagged as inappropriate and cannot be posted");
+            return;
+          }
+
           mediaUrls.push(publicUrl);
-          setUploadProgress(((index + 1) / mediaFiles.length) * 100);
         }
       }
 
@@ -263,7 +291,7 @@ export const usePostCreation = (
     handleFileSelect,
     handlePaste,
     saveToDrafts,
-    createPost,
+    createPost: handleCreatePost,
     resetFormState
   };
 };
