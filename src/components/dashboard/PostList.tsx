@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +20,6 @@ export const PostList = () => {
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 2000;
 
-  // Fetch stats for all posts
   React.useEffect(() => {
     const fetchPostStats = async () => {
       if (!posts?.length) return;
@@ -31,7 +29,6 @@ export const PostList = () => {
       try {
         const postIds = posts.map(p => p.id);
         
-        // Get likes in a single query with retry logic
         let likesData = null;
         let likesError = null;
         let attempts = 0;
@@ -57,7 +54,6 @@ export const PostList = () => {
 
         if (likesError && !likesData) throw likesError;
 
-        // Get comments count with retry logic
         let commentsData = null;
         let commentsError = null;
         attempts = 0;
@@ -83,7 +79,6 @@ export const PostList = () => {
 
         if (commentsError && !commentsData) throw commentsError;
 
-        // Process the results
         const stats: Record<string, { likes: number, isLiked: boolean, comments: number }> = {};
         postIds.forEach(postId => {
           const postLikes = likesData?.filter(l => l.post_id === postId) || [];
@@ -173,16 +168,13 @@ export const PostList = () => {
       />
 
       <div className="space-y-6">
-        {/* Desktop filter bar */}
-        <div className="hidden md:block fixed z-50 w-[calc(100%-32rem)] ml-64 top-[5.5rem]">
-          <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg p-1.5">
+        <div className="hidden md:block fixed z-50 w-full max-w-3xl mx-auto left-1/2 -translate-x-1/2 top-[5.5rem] pl-64 pr-80">
+          <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-1.5">
             <div className="flex justify-center items-center gap-1.5">
               <button
                 onClick={() => setFollowingOnly(false)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-200 ${
-                  !followingOnly 
-                    ? 'bg-[#8B5CF6] text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/30 hover:bg-[#7C3AED]' 
-                    : 'hover:bg-muted/80 text-muted-foreground'
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-colors ${
+                  !followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/80 text-muted-foreground'
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
@@ -190,10 +182,8 @@ export const PostList = () => {
               </button>
               <button
                 onClick={() => setFollowingOnly(true)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-200 ${
-                  followingOnly 
-                    ? 'bg-[#8B5CF6] text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/30 hover:bg-[#7C3AED]' 
-                    : 'hover:bg-muted/80 text-muted-foreground'
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-colors ${
+                  followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/80 text-muted-foreground'
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -203,7 +193,6 @@ export const PostList = () => {
           </div>
         </div>
 
-        {/* Mobile filter options */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-50 px-4">
           <div className="flex justify-center items-center gap-2 p-3 mb-4 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
             <button
@@ -223,7 +212,6 @@ export const PostList = () => {
           </div>
         </div>
 
-        {/* Add padding to account for fixed header */}
         <div className="pt-24 md:pt-32">
           {posts && posts.length > 0 ? (
             <>
@@ -252,7 +240,6 @@ export const PostList = () => {
                 />
               ))}
               
-              {/* End of feed message */}
               <div className="text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50 py-8">
                 <div className="flex flex-col items-center gap-2 p-4">
                   <CheckCircle2 className="h-6 w-6 text-accent" />
