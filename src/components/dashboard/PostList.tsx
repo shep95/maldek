@@ -172,11 +172,13 @@ export const PostList = () => {
         {/* Desktop filter bar */}
         <div className="hidden md:block sticky top-0 z-50 rounded-xl pt-6 mb-6">
           <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-1.5">
-            <div className="flex justify-center items-center gap-1.5">
+            <div className="grid grid-cols-2 gap-3 w-full">
               <button
                 onClick={() => setFollowingOnly(false)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-colors ${
-                  !followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/80 text-muted-foreground'
+                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg transition-colors border-2 ${
+                  !followingOnly 
+                    ? 'bg-accent text-accent-foreground border-transparent' 
+                    : 'hover:bg-muted/80 text-muted-foreground border-orange-500/50 hover:border-orange-500'
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
@@ -184,8 +186,10 @@ export const PostList = () => {
               </button>
               <button
                 onClick={() => setFollowingOnly(true)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg transition-colors ${
-                  followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/80 text-muted-foreground'
+                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg transition-colors border-2 ${
+                  followingOnly 
+                    ? 'bg-accent text-accent-foreground border-transparent' 
+                    : 'hover:bg-muted/80 text-muted-foreground border-orange-500/50 hover:border-orange-500'
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -200,14 +204,22 @@ export const PostList = () => {
           <div className="flex justify-center items-center gap-2 p-3 mb-4 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
             <button
               onClick={() => setFollowingOnly(false)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${!followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
+                !followingOnly 
+                  ? 'bg-accent text-accent-foreground border-transparent' 
+                  : 'hover:bg-muted/80 text-muted-foreground border-orange-500/50 hover:border-orange-500'
+              }`}
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>All Posts</span>
             </button>
             <button
               onClick={() => setFollowingOnly(true)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
+                followingOnly 
+                  ? 'bg-accent text-accent-foreground border-transparent' 
+                  : 'hover:bg-muted/80 text-muted-foreground border-orange-500/50 hover:border-orange-500'
+              }`}
             >
               <Users className="w-4 h-4" />
               <span>Following</span>
