@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -168,7 +169,8 @@ export const PostList = () => {
       />
 
       <div className="space-y-6">
-        <div className="hidden md:block sticky top-[5.5rem] z-50 rounded-xl mb-6">
+        {/* Desktop filter bar */}
+        <div className="hidden md:block sticky top-0 z-50 rounded-xl pt-6 mb-6">
           <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-1.5">
             <div className="flex justify-center items-center gap-1.5">
               <button
@@ -193,6 +195,7 @@ export const PostList = () => {
           </div>
         </div>
 
+        {/* Mobile filter options */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-50 px-4">
           <div className="flex justify-center items-center gap-2 p-3 mb-4 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
             <button
