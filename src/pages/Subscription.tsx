@@ -71,7 +71,7 @@ const Subscription = () => {
         id: "checkout-toast"
       });
 
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      const { data, error } = await supabase.functions.invoke('mercury-checkout', {
         body: {
           tier: tier.toLowerCase(),
           userId: session.user.id,

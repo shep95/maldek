@@ -13,35 +13,73 @@ serve(async (req) => {
   }
 
   try {
-    const webhookSecret = Deno.env.get('MERCURY_WEBHOOK_SECRET')
+    const WEBHOOK_SECRET = Deno.env.get('MERCURY_WEBHOOK_SECRET')
     const signature = req.headers.get('Mercury-Signature')
 
-    if (!signature) {
-      throw new Error('No signature found')
+    if (!signature || !WEBHOOK_SECRET) {
+      throw new Error('Missing signature or webhook secret')
     }
 
     const body = await req.json()
-    console.log('Received Mercury webhook:', body.type)
+    console.log('Received webhook:', body)
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Handle different webhook events
-    switch (body.type) {
-      case 'payment_intent.succeeded':
-        await handleSuccessfulPayment(body.data, supabaseClient)
-        break
-      case 'payment_intent.failed':
-        await handleFailedPayment(body.data, supabaseClient)
-        break
-      default:
-        console.log('Unhandled webhook type:', body.type)
+    const paymentIntent = body.data
+    const { metadata } = paymentIntent
+
+    if (!metadata?.user_id || !metadata?.tier_id) {
+      throw new Error('Missing required metadata')
+    }
+
+    // Update transaction status
+    await supabaseClient
+      .from('mercury_transactions')
+      .update({ status: paymentIntent.status })
+      .eq('mercury_transaction_id', paymentIntent.id)
+
+    if (paymentIntent.status === 'succeeded') {
+      // Get subscription tier details
+      const { data: tierData } = await supabaseClient
+        .from('subscription_tiers')
+        .select('*')
+        .eq('id', metadata.tier_id)
+        .single()
+
+      if (!tierData) {
+        throw new Error('Subscription tier not found')
+      }
+
+      // Create or update subscription
+      const subscriptionData = {
+        user_id: metadata.user_id,
+        tier_id: metadata.tier_id,
+        status: 'active',
+        starts_at: new Date().toISOString(),
+        ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+        mentions_remaining: tierData.monthly_mentions || 0,
+        mentions_used: 0,
+        is_lifetime: false
+      }
+
+      const { error: subscriptionError } = await supabaseClient
+        .from('user_subscriptions')
+        .upsert(subscriptionData, {
+          onConflict: 'user_id',
+          ignoreDuplicates: false
+        })
+
+      if (subscriptionError) {
+        console.error('Error updating subscription:', subscriptionError)
+        throw subscriptionError
+      }
     }
 
     return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   } catch (error) {
     console.error('Webhook error:', error)
@@ -54,51 +92,3 @@ serve(async (req) => {
     )
   }
 })
-
-async function handleSuccessfulPayment(data: any, supabaseClient: any) {
-  const { metadata } = data
-  if (!metadata?.user_id || !metadata?.tier) {
-    throw new Error('Missing required metadata')
-  }
-
-  // Update transaction status
-  await supabaseClient
-    .from('mercury_transactions')
-    .update({ status: 'completed' })
-    .eq('mercury_transaction_id', data.id)
-
-  // Get subscription tier details
-  const { data: tierData } = await supabaseClient
-    .from('subscription_tiers')
-    .select('*')
-    .eq('name', metadata.tier)
-    .single()
-
-  if (!tierData) {
-    throw new Error('Subscription tier not found')
-  }
-
-  // Create or update subscription
-  const subscriptionData = {
-    user_id: metadata.user_id,
-    tier_id: tierData.id,
-    status: 'active',
-    starts_at: new Date().toISOString(),
-    ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-    mentions_remaining: tierData.monthly_mentions
-  }
-
-  await supabaseClient
-    .from('user_subscriptions')
-    .upsert(subscriptionData)
-}
-
-async function handleFailedPayment(data: any, supabaseClient: any) {
-  await supabaseClient
-    .from('mercury_transactions')
-    .update({ 
-      status: 'failed',
-      metadata: { ...data.metadata, error: data.last_payment_error }
-    })
-    .eq('mercury_transaction_id', data.id)
-}

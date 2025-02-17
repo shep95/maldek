@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 const MERCURY_API_KEY = Deno.env.get('MERCURY_API_KEY')
-const MERCURY_API_URL = 'https://api.mercury.com/api/v1'
+const MERCURY_API_URL = 'https://backend.mercury.com/api/v1'
 
 serve(async (req) => {
   // Handle CORS
@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, amount, tier } = await req.json()
+    const { userId, tier } = await req.json()
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -25,36 +25,43 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Validate user exists
-    const { data: user, error: userError } = await supabaseClient
-      .from('profiles')
+    // Get subscription tier details
+    const { data: tierData, error: tierError } = await supabaseClient
+      .from('subscription_tiers')
       .select('*')
-      .eq('id', userId)
+      .eq('name', tier)
       .single()
 
-    if (userError || !user) {
-      throw new Error('User not found')
+    if (tierError || !tierData) {
+      throw new Error('Subscription tier not found')
     }
+
+    // Generate unique idempotency key
+    const idempotencyKey = crypto.randomUUID()
 
     // Initialize Mercury payment
     const mercuryResponse = await fetch(`${MERCURY_API_URL}/payment-intents`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${MERCURY_API_KEY}`,
-        'Content-Type': 'application/json'
+        'Authorization': MERCURY_API_KEY,
+        'Content-Type': 'application/json',
+        'Mercury-API-Version': '2023-09-15',
+        'Idempotency-Key': idempotencyKey
       },
       body: JSON.stringify({
-        amount: amount * 100, // Convert to cents
+        amount: Math.round(tierData.price * 100), // Convert to cents
         currency: 'USD',
         payment_method_types: ['ach_debit'],
         metadata: {
           user_id: userId,
-          tier: tier
+          tier: tier,
+          tier_id: tierData.id
         }
       })
     })
 
     if (!mercuryResponse.ok) {
+      console.error('Mercury API error:', await mercuryResponse.text())
       throw new Error('Failed to create Mercury payment intent')
     }
 
@@ -65,12 +72,13 @@ serve(async (req) => {
       .from('mercury_transactions')
       .insert({
         user_id: userId,
-        amount: amount,
+        amount: tierData.price,
         status: 'pending',
         mercury_transaction_id: mercuryData.id,
         payment_type: 'subscription',
         metadata: {
           tier: tier,
+          tier_id: tierData.id,
           payment_intent: mercuryData.id
         }
       })
@@ -82,7 +90,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        paymentIntent: mercuryData,
+        url: mercuryData.hosted_url,
         clientSecret: mercuryData.client_secret
       }),
       { 
