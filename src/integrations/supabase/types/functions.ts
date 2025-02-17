@@ -1,3 +1,4 @@
+
 export interface DbFunctions {
   delete_user_account: {
     Args: Record<PropertyKey, never>
@@ -19,7 +20,7 @@ export interface DbFunctions {
     }
     Returns: undefined
   }
-  increment_post_view: {
+  process_content: {
     Args: {
       post_id: string
     }
