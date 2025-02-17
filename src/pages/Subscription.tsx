@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CurrentSubscription } from "@/components/subscription/CurrentSubscription";
 import { SubscriptionTierCard } from "@/components/subscription/SubscriptionTierCard";
-import { LiveSubscriptionCounts } from "@/components/subscription/LiveSubscriptionCounts";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
@@ -204,8 +203,17 @@ const Subscription = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Unlock premium features and enhance your experience with our subscription tiers
           </p>
-          <div className="mt-6">
-            <LiveSubscriptionCounts />
+          <div className="mt-4 space-y-2">
+            {creatorSubscriptionCount !== null && (
+              <p className="text-sm text-muted-foreground">
+                Join our community of <span className="font-semibold text-accent">{creatorSubscriptionCount}</span> active Creator tier subscribers!
+              </p>
+            )}
+            {emperorSubscriptionCount !== null && emperorSubscriptionCount > 0 && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-yellow-500">{emperorSubscriptionCount}</span> True Emperors have achieved lifetime status
+              </p>
+            )}
           </div>
         </div>
 
