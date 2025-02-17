@@ -602,69 +602,6 @@ export type Database = {
           },
         ]
       }
-      mercury_payment_data: {
-        Row: {
-          created_at: string | null
-          id: string
-          mercury_account_id: string | null
-          mercury_customer_id: string | null
-          mercury_payment_method_id: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          mercury_account_id?: string | null
-          mercury_customer_id?: string | null
-          mercury_payment_method_id?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          mercury_account_id?: string | null
-          mercury_customer_id?: string | null
-          mercury_payment_method_id?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      mercury_transactions: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          mercury_transaction_id: string | null
-          metadata: Json | null
-          payment_type: string
-          status: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          mercury_transaction_id?: string | null
-          metadata?: Json | null
-          payment_type: string
-          status: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          mercury_transaction_id?: string | null
-          metadata?: Json | null
-          payment_type?: string
-          status?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       message_group_members: {
         Row: {
           group_id: string
@@ -1430,42 +1367,6 @@ export type Database = {
         }
         Relationships: []
       }
-      promo_codes: {
-        Row: {
-          code: string
-          created_at: string | null
-          current_uses: number | null
-          description: string | null
-          discount_percentage: number
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          max_uses: number | null
-        }
-        Insert: {
-          code: string
-          created_at?: string | null
-          current_uses?: number | null
-          description?: string | null
-          discount_percentage: number
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_uses?: number | null
-        }
-        Update: {
-          code?: string
-          created_at?: string | null
-          current_uses?: number | null
-          description?: string | null
-          discount_percentage?: number
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_uses?: number | null
-        }
-        Relationships: []
-      }
       push_notification_settings: {
         Row: {
           created_at: string
@@ -1906,7 +1807,6 @@ export type Database = {
           post_character_limit: number | null
           price: number
           schedule_days_limit: number | null
-          stripe_price_id: string | null
           supports_animated_avatars: boolean | null
           supports_gif_uploads: boolean | null
           supports_nft_avatars: boolean | null
@@ -1926,7 +1826,6 @@ export type Database = {
           post_character_limit?: number | null
           price: number
           schedule_days_limit?: number | null
-          stripe_price_id?: string | null
           supports_animated_avatars?: boolean | null
           supports_gif_uploads?: boolean | null
           supports_nft_avatars?: boolean | null
@@ -1946,7 +1845,6 @@ export type Database = {
           post_character_limit?: number | null
           price?: number
           schedule_days_limit?: number | null
-          stripe_price_id?: string | null
           supports_animated_avatars?: boolean | null
           supports_gif_uploads?: boolean | null
           supports_nft_avatars?: boolean | null

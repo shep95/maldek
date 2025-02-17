@@ -1,113 +1,30 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ExternalLink, Crown, Sparkles, AlertCircle, Download, Receipt } from "lucide-react";
+import { ExternalLink, Crown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 
 interface CurrentSubscriptionProps {
   subscription: any;
   onManageSubscription: () => void;
 }
 
-export const CurrentSubscription = ({ subscription }: CurrentSubscriptionProps) => {
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [showManageDialog, setShowManageDialog] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
-
-  const { data: transactions } = useQuery({
-    queryKey: ['subscription-transactions', subscription?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('mercury_transactions')
-        .select('*')
-        .eq('user_id', subscription.user_id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!subscription?.id
-  });
-
+export const CurrentSubscription = ({ subscription, onManageSubscription }: CurrentSubscriptionProps) => {
   if (!subscription) return null;
 
   const isEmperor = subscription.tier.name === 'True Emperor';
   const isCreator = subscription.tier.name === 'Creator';
   const isPremium = isEmperor || isCreator;
-  const isLifetime = subscription.is_lifetime;
-
-  const handleCancelSubscription = async () => {
-    setIsCancelling(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('mercury-webhook', {
-        body: {
-          action: 'cancel',
-          subscriptionId: subscription.id,
-        },
-      });
-
-      if (error) throw error;
-
-      toast.success("Subscription cancelled successfully");
-      window.location.reload();
-    } catch (error) {
-      console.error('Error cancelling subscription:', error);
-      toast.error("Failed to cancel subscription. Please try again.");
-    } finally {
-      setIsCancelling(false);
-      setShowCancelDialog(false);
-    }
-  };
-
-  const handleDownloadInvoice = async (transactionId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('mercury-webhook', {
-        body: {
-          action: 'getInvoice',
-          transactionId,
-        },
-      });
-
-      if (error) throw error;
-
-      const link = document.createElement('a');
-      link.href = data.invoiceUrl;
-      link.download = `invoice-${transactionId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success("Invoice downloaded successfully");
-    } catch (error) {
-      console.error('Error downloading invoice:', error);
-      toast.error("Failed to download invoice. Please try again.");
-    }
-  };
 
   return (
     <Card className="relative overflow-hidden backdrop-blur-sm">
+      {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-r from-background/50 to-background/10 z-0" />
 
+      {/* Content */}
       <div className="relative z-10 p-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
@@ -143,98 +60,23 @@ export const CurrentSubscription = ({ subscription }: CurrentSubscriptionProps) 
             <div className="flex items-center gap-2">
               <ExternalLink className="h-5 w-5 text-accent" />
               <span>
-                {isLifetime ? 'Lifetime access' : `Renewal: ${new Date(subscription.ends_at).toLocaleDateString()}`}
+                {isEmperor ? 'Lifetime access' : `Renewal: ${new Date(subscription.ends_at).toLocaleDateString()}`}
               </span>
             </div>
           </div>
 
-          <div className="flex gap-4 mt-4">
-            <Button 
-              onClick={() => setShowManageDialog(true)}
-              className={cn(
-                isPremium ? "bg-white hover:bg-white/90 text-black" : ""
-              )}
-            >
-              Manage Subscription
-              <Receipt className="ml-2 h-4 w-4" />
-            </Button>
-
-            {!isLifetime && subscription.status === 'active' && (
-              <Button 
-                variant="destructive"
-                onClick={() => setShowCancelDialog(true)}
-                className="gap-2"
-              >
-                <AlertCircle className="h-4 w-4" />
-                Cancel Subscription
-              </Button>
+          <Button 
+            onClick={onManageSubscription}
+            className={cn(
+              "mt-4",
+              isPremium ? "bg-white hover:bg-white/90 text-black" : ""
             )}
-          </div>
+          >
+            Manage Subscription
+            <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
         </div>
       </div>
-
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your current billing period.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleCancelSubscription}
-              className="bg-destructive hover:bg-destructive/90"
-              disabled={isCancelling}
-            >
-              {isCancelling ? "Cancelling..." : "Yes, Cancel Subscription"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={showManageDialog} onOpenChange={setShowManageDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Subscription History</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4 space-y-4">
-            {transactions?.length === 0 ? (
-              <p className="text-center text-muted-foreground">No payment history available</p>
-            ) : (
-              <div className="space-y-4">
-                {transactions?.map((transaction) => (
-                  <div 
-                    key={transaction.id} 
-                    className="flex items-center justify-between p-4 rounded-lg border bg-card"
-                  >
-                    <div className="space-y-1">
-                      <p className="font-medium">
-                        ${transaction.amount} - {transaction.payment_type}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(transaction.created_at).toLocaleDateString()}
-                      </p>
-                      <Badge variant="outline">
-                        {transaction.status}
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownloadInvoice(transaction.id)}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Invoice
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 };

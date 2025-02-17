@@ -1,99 +1,141 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import Stripe from "https://esm.sh/stripe@12.7.0?target=deno";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'https://esm.sh/stripe@13.6.0'
+
+const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+console.log('Stripe key exists:', !!stripeKey);
+
+const stripe = new Stripe(stripeKey || '', {
+  apiVersion: '2023-10-16',
+  httpClient: Stripe.createFetchHttpClient(),
+})
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    const { tier, userId } = await req.json()
+    console.log('Creating checkout session for:', { tier, userId })
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    )
 
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-      apiVersion: '2023-10-16',
-    });
+    const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
 
-    const { tier: tierId, userId, promoCode } = await req.json();
+    if (userError || !user?.email) {
+      console.error('Error fetching user:', userError)
+      throw new Error('User not found')
+    }
 
-    console.log('Creating checkout session for:', { tierId, userId });
+    // First, get the tier name based on the input
+    const tierName = tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
+                    tier === 'true emperor' ? 'True Emperor' : 
+                    tier === 'creator' ? 'Creator' : 
+                    tier === 'bosley' ? 'Bosley' : 'Business';
 
     // Get the subscription tier details
     const { data: tierData, error: tierError } = await supabaseClient
       .from('subscription_tiers')
       .select('*')
-      .eq('id', tierId)
-      .single();
+      .eq('name', tierName)
+      .single()
 
     if (tierError || !tierData) {
-      throw new Error('Subscription tier not found');
+      console.error('Error fetching tier:', tierError)
+      throw new Error(`Subscription tier not found: ${tierName}`)
     }
 
-    console.log('Tier data:', tierData);
+    console.log('Found tier:', tierData)
 
-    if (!tierData.stripe_price_id) {
-      throw new Error('No Stripe price ID configured for this tier');
+    // Determine price ID and mode
+    let priceId;
+    let mode: 'subscription' | 'payment' = 'subscription';
+
+    switch(tier.toLowerCase()) {
+      case 'creator':
+        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX'; // Updated to $3.50/month
+        break;
+      case 'business':
+        priceId = 'price_1QqL7NRIC2EosLwjd8FkAuzM';
+        break;
+      case 'true emperor':
+        priceId = 'price_1QqL8IRIC2EosLwjBF1OtArf';
+        break;
+      case 'true emperor lifetime':
+        priceId = 'price_1QsXsaRIC2EosLwjUQIZ9eiu';
+        mode = 'payment';
+        break;
+      case 'bosley':
+        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX';
+        break;
+      default:
+        throw new Error('Invalid subscription tier');
     }
-
-    // Get user email safely
-    const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
     
-    if (userError || !userData?.user?.email) {
-      throw new Error('User not found or email not available');
-    }
+    console.log('Creating checkout with:', {
+      priceId,
+      mode,
+      tierId: tierData.id,
+      tierName: tierData.name,
+      monthlyMentions: tierData.monthly_mentions
+    })
 
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      customer_email: user.email,
       line_items: [
         {
-          price: tierData.stripe_price_id,
+          price: priceId,
           quantity: 1,
         },
       ],
-      mode: tierData.is_lifetime ? 'payment' : 'subscription',
-      success_url: `${req.headers.get('origin')}/subscription?success=true`,
-      cancel_url: `${req.headers.get('origin')}/subscription?canceled=true`,
-      customer_email: userData.user.email,
+      mode: mode,
+      success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get('origin')}/subscription`,
       metadata: {
-        user_id: userId,
-        tier_id: tierId,
-        promo_code: promoCode || '',
+        userId: userId,
+        tierId: tierData.id,
+        tier: tierData.name,
+        isLifetime: mode === 'payment' ? 'true' : 'false',
+        monthlyMentions: tierData.monthly_mentions.toString()
       },
-    });
+      subscription_data: mode === 'subscription' ? {
+        metadata: {
+          tierId: tierData.id,
+          tier: tierData.name,
+          monthlyMentions: tierData.monthly_mentions.toString()
+        }
+      } : undefined
+    })
 
-    console.log('Created checkout session:', session.id);
+    console.log('Checkout session created:', {
+      sessionId: session.id,
+      metadata: session.metadata
+    })
 
     return new Response(
       JSON.stringify({ url: session.url }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('Error creating checkout session:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         status: 400,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
   }
-});
+})
