@@ -168,7 +168,7 @@ export const PostList = () => {
       />
 
       <div className="space-y-6">
-        <div className="hidden md:block fixed z-50 w-full max-w-3xl mx-auto left-1/2 -translate-x-1/2 top-[5.5rem] pl-64 pr-80">
+        <div className="hidden md:block sticky top-[5.5rem] z-50 rounded-xl mb-6">
           <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-1.5">
             <div className="flex justify-center items-center gap-1.5">
               <button
@@ -212,7 +212,7 @@ export const PostList = () => {
           </div>
         </div>
 
-        <div className="pt-24 md:pt-32">
+        <div className="md:pt-6">
           {posts && posts.length > 0 ? (
             <>
               {posts.map((post) => (
