@@ -58,8 +58,8 @@ export const FeaturesDialog = ({ isOpen, onClose }: FeaturesDialogProps) => {
     },
     {
       icon: Shield,
-      title: "User-Centric Design",
-      description: "Built for users who value privacy and freedom of expression"
+      title: "Modern UI Design",
+      description: "Built with the latest design trends for a sleek and intuitive experience"
     },
     {
       icon: Lock,
