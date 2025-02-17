@@ -9,12 +9,13 @@ import { PostList } from "@/components/dashboard/PostList";
 import { Author } from "@/utils/postUtils";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
-import { Grid, TrendingUp } from "lucide-react";
+import { Grid, Users, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [followingOnly, setFollowingOnly] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -100,9 +101,27 @@ const Dashboard = () => {
             <Grid className="h-6 w-6 text-accent" />
             <span className="text-lg font-bold">Home</span>
           </button>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <TrendingUp className="h-4 w-4" />
-            <span>Latest posts</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFollowingOnly(false)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors",
+                !followingOnly ? "text-accent bg-accent/10" : "text-muted-foreground"
+              )}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="text-sm font-medium">All</span>
+            </button>
+            <button
+              onClick={() => setFollowingOnly(true)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors",
+                followingOnly ? "text-accent bg-accent/10" : "text-muted-foreground"
+              )}
+            >
+              <Users className="h-4 w-4" />
+              <span className="text-sm font-medium">Following</span>
+            </button>
           </div>
         </div>
       </div>
@@ -115,7 +134,7 @@ const Dashboard = () => {
           "mt-20 md:mt-0", // Add top margin to account for floating nav on mobile
           "min-h-[100dvh]"
         )}>
-          <PostList />
+          <PostList followingOnly={followingOnly} />
         </main>
       </div>
 

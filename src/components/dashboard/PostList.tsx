@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +9,13 @@ import { usePosts } from "@/hooks/usePosts";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
 import { CheckCircle2, Users } from "lucide-react";
 
-export const PostList = () => {
+interface PostListProps {
+  followingOnly: boolean;
+}
+
+export const PostList = ({ followingOnly }: PostListProps) => {
   const session = useSession();
   const queryClient = useQueryClient();
-  const [followingOnly, setFollowingOnly] = useState(false);
   const { posts, isLoading } = usePosts(followingOnly);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
@@ -169,7 +171,7 @@ export const PostList = () => {
       />
 
       <div className="space-y-6">
-        {/* Desktop filter bar */}
+        {/* Desktop filter bar - only visible on desktop */}
         <div className="hidden md:block sticky top-0 z-50 rounded-xl pt-6 mb-6">
           <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-1.5">
             <div className="grid grid-cols-2 gap-3 w-full">
@@ -196,34 +198,6 @@ export const PostList = () => {
                 <span className="font-medium">Following</span>
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* Mobile filter options */}
-        <div className="md:hidden mb-6">
-          <div className="flex justify-center items-center gap-2 p-3 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
-            <button
-              onClick={() => setFollowingOnly(false)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
-                !followingOnly 
-                  ? 'border-orange-500 text-orange-500' 
-                  : 'text-muted-foreground border-border hover:border-foreground'
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>All Posts</span>
-            </button>
-            <button
-              onClick={() => setFollowingOnly(true)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
-                followingOnly 
-                  ? 'border-orange-500 text-orange-500' 
-                  : 'text-muted-foreground border-border hover:border-foreground'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Following</span>
-            </button>
           </div>
         </div>
 
