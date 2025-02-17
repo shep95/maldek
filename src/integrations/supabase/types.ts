@@ -602,6 +602,69 @@ export type Database = {
           },
         ]
       }
+      mercury_payment_data: {
+        Row: {
+          created_at: string | null
+          id: string
+          mercury_account_id: string | null
+          mercury_customer_id: string | null
+          mercury_payment_method_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          mercury_account_id?: string | null
+          mercury_customer_id?: string | null
+          mercury_payment_method_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          mercury_account_id?: string | null
+          mercury_customer_id?: string | null
+          mercury_payment_method_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mercury_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          mercury_transaction_id: string | null
+          metadata: Json | null
+          payment_type: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          mercury_transaction_id?: string | null
+          metadata?: Json | null
+          payment_type: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          mercury_transaction_id?: string | null
+          metadata?: Json | null
+          payment_type?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       message_group_members: {
         Row: {
           group_id: string
