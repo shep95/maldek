@@ -177,7 +177,7 @@ export const PostList = () => {
                 onClick={() => setFollowingOnly(false)}
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg transition-colors border-2 ${
                   !followingOnly 
-                    ? 'bg-accent text-accent-foreground border-transparent' 
+                    ? 'border-orange-500 text-orange-500' 
                     : 'text-muted-foreground border-border hover:border-foreground'
                 }`}
               >
@@ -188,7 +188,7 @@ export const PostList = () => {
                 onClick={() => setFollowingOnly(true)}
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg transition-colors border-2 ${
                   followingOnly 
-                    ? 'bg-accent text-accent-foreground border-transparent' 
+                    ? 'border-orange-500 text-orange-500' 
                     : 'text-muted-foreground border-border hover:border-foreground'
                 }`}
               >
@@ -206,7 +206,7 @@ export const PostList = () => {
               onClick={() => setFollowingOnly(false)}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
                 !followingOnly 
-                  ? 'bg-accent text-accent-foreground border-transparent' 
+                  ? 'border-orange-500 text-orange-500' 
                   : 'text-muted-foreground border-border hover:border-foreground'
               }`}
             >
@@ -217,7 +217,7 @@ export const PostList = () => {
               onClick={() => setFollowingOnly(true)}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
                 followingOnly 
-                  ? 'bg-accent text-accent-foreground border-transparent' 
+                  ? 'border-orange-500 text-orange-500' 
                   : 'text-muted-foreground border-border hover:border-foreground'
               }`}
             >
