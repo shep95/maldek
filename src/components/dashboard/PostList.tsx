@@ -200,8 +200,8 @@ export const PostList = () => {
         </div>
 
         {/* Mobile filter options */}
-        <div className="md:hidden fixed top-0 left-0 right-0 z-50 px-4">
-          <div className="flex justify-center items-center gap-2 p-3 mb-4 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
+        <div className="md:hidden mb-6">
+          <div className="flex justify-center items-center gap-2 p-3 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
             <button
               onClick={() => setFollowingOnly(false)}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
