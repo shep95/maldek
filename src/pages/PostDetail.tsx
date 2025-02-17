@@ -41,6 +41,8 @@ const PostDetail = () => {
           user_id,
           media_urls,
           created_at,
+          is_edited,
+          original_content,
           author:profiles (
             id,
             username,
