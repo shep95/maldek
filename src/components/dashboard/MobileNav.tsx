@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Home, User, Bell, Menu, Upload, CheckCircle2, Users } from "lucide-react";
+import { Home, User, Bell, Menu, Upload } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
@@ -69,6 +68,7 @@ export const MobileNav = () => {
   };
 
   const navItems: NavItem[] = [
+    { icon: Menu, label: "Menu" },
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: User, label: "User Info", path: "/followers" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
@@ -105,21 +105,12 @@ export const MobileNav = () => {
 
       <nav className="fixed bottom-6 left-4 right-4 md:hidden z-50 pb-safe">
         <div className="flex justify-around items-center bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-2 shadow-lg">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsOpen(true)}
-            className="text-muted-foreground active:scale-95 transition-transform"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-
-          {navItems.map((item) => (
+          {navItems.map((item, index) => (
             <Button
               key={item.label}
               variant="ghost"
               size="icon"
-              onClick={() => handleNavigation(item.path, item.action)}
+              onClick={() => index === 0 ? setIsOpen(true) : handleNavigation(item.path, item.action)}
               className={cn(
                 "text-muted-foreground",
                 "active:scale-95 transition-transform",
