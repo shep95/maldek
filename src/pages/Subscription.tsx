@@ -18,6 +18,11 @@ const Subscription = () => {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [promoCode, setPromoCode] = useState('');
+  const [validPromoCode, setValidPromoCode] = useState<{
+    code: string;
+    discount_percentage: number;
+  } | null>(null);
+  const [isCheckingPromo, setIsCheckingPromo] = useState(false);
   const [cardDetails, setCardDetails] = useState({
     number: '',
     expiry: '',
@@ -88,6 +93,11 @@ const Subscription = () => {
     },
     enabled: !!session?.user?.id
   });
+
+  const selectedTierData = tiers?.find(t => t.id === selectedTier);
+  const originalPrice = selectedTierData?.price || 0;
+  const discountAmount = validPromoCode ? (originalPrice * validPromoCode.discount_percentage / 100) : 0;
+  const finalPrice = originalPrice - discountAmount;
 
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +173,51 @@ const Subscription = () => {
     } catch (error) {
       console.error('Error creating portal session:', error);
       toast.error("Failed to open subscription management");
+    }
+  };
+
+  const handleCheckPromoCode = async () => {
+    if (!promoCode) return;
+
+    setIsCheckingPromo(true);
+    try {
+      const { data, error } = await supabase
+        .from('promo_codes')
+        .select('code, discount_percentage, is_active, expires_at, max_uses, current_uses')
+        .eq('code', promoCode.toUpperCase())
+        .single();
+
+      if (error) throw error;
+
+      if (!data || !data.is_active) {
+        toast.error("Invalid or inactive promo code");
+        setValidPromoCode(null);
+        return;
+      }
+
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        toast.error("This promo code has expired");
+        setValidPromoCode(null);
+        return;
+      }
+
+      if (data.max_uses && data.current_uses >= data.max_uses) {
+        toast.error("This promo code has reached its usage limit");
+        setValidPromoCode(null);
+        return;
+      }
+
+      setValidPromoCode({
+        code: data.code,
+        discount_percentage: data.discount_percentage
+      });
+      toast.success(`Promo code applied! ${data.discount_percentage}% discount`);
+    } catch (error) {
+      console.error('Error checking promo code:', error);
+      toast.error("Failed to validate promo code");
+      setValidPromoCode(null);
+    } finally {
+      setIsCheckingPromo(false);
     }
   };
 
@@ -287,20 +342,53 @@ const Subscription = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="promoCode">Promo Code (Optional)</Label>
-                <Input
-                  id="promoCode"
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                />
+                <Label htmlFor="promoCode">Promo Code</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="promoCode"
+                    placeholder="Enter promo code"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                  />
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    onClick={handleCheckPromoCode}
+                    disabled={isCheckingPromo || !promoCode}
+                  >
+                    {isCheckingPromo ? "Checking..." : "Apply"}
+                  </Button>
+                </div>
+                {validPromoCode && (
+                  <p className="text-sm text-green-600">
+                    {validPromoCode.discount_percentage}% discount applied!
+                  </p>
+                )}
               </div>
+
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span>Subscription Price:</span>
+                  <span>${originalPrice.toFixed(2)}/month</span>
+                </div>
+                {validPromoCode && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount ({validPromoCode.discount_percentage}%):</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold border-t border-border pt-2">
+                  <span>Total:</span>
+                  <span>${finalPrice.toFixed(2)}/month</span>
+                </div>
+              </div>
+
               <Button 
                 type="submit" 
                 className="w-full" 
                 disabled={isProcessing}
               >
-                {isProcessing ? "Processing..." : "Pay Now"}
+                {isProcessing ? "Processing..." : `Pay $${finalPrice.toFixed(2)}`}
               </Button>
             </form>
           </DialogContent>
