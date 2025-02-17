@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,8 +5,10 @@ import { toast } from "sonner";
 import { CurrentSubscription } from "@/components/subscription/CurrentSubscription";
 import { SubscriptionTierCard } from "@/components/subscription/SubscriptionTierCard";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const Subscription = () => {
+  const [discountCode, setDiscountCode] = useState<string>('');
   const session = useSession();
 
   const { data: subscription } = useQuery({
@@ -99,6 +100,7 @@ const Subscription = () => {
         body: {
           tier: tier.toLowerCase(),
           userId: session.user.id,
+          discountCode: discountCode.trim() || undefined,
         },
       });
 

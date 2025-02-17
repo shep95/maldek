@@ -22,8 +22,8 @@ serve(async (req) => {
   }
 
   try {
-    const { tier, userId } = await req.json()
-    console.log('Creating checkout session for:', { tier, userId })
+    const { tier, userId, discountCode } = await req.json()
+    console.log('Creating checkout session for:', { tier, userId, discountCode })
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -87,10 +87,12 @@ serve(async (req) => {
       mode,
       tierId: tierData.id,
       tierName: tierData.name,
-      monthlyMentions: tierData.monthly_mentions
+      monthlyMentions: tierData.monthly_mentions,
+      discountCode
     })
 
-    const session = await stripe.checkout.sessions.create({
+    // Create the session configuration
+    const sessionConfig: any = {
       customer_email: user.email,
       line_items: [
         {
@@ -108,14 +110,25 @@ serve(async (req) => {
         isLifetime: mode === 'payment' ? 'true' : 'false',
         monthlyMentions: tierData.monthly_mentions.toString()
       },
-      subscription_data: mode === 'subscription' ? {
-        metadata: {
-          tierId: tierData.id,
-          tier: tierData.name,
-          monthlyMentions: tierData.monthly_mentions.toString()
+      allow_promotion_codes: true, // Enable discount code input
+    }
+
+    // If a specific discount code is provided, validate and apply it
+    if (discountCode) {
+      try {
+        const coupon = await stripe.coupons.retrieve(discountCode);
+        if (coupon) {
+          sessionConfig.discounts = [{
+            coupon: discountCode,
+          }];
         }
-      } : undefined
-    })
+      } catch (error) {
+        console.log('Invalid or expired discount code:', error);
+        // We'll continue without the discount if it's invalid
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log('Checkout session created:', {
       sessionId: session.id,
