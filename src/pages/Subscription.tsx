@@ -1,3 +1,4 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -185,7 +186,7 @@ const Subscription = () => {
         .from('promo_codes')
         .select('code, discount_percentage, is_active, expires_at, max_uses, current_uses')
         .eq('code', promoCode.toUpperCase())
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
