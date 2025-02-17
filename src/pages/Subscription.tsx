@@ -6,7 +6,7 @@ import { CurrentSubscription } from "@/components/subscription/CurrentSubscripti
 import { SubscriptionTierCard } from "@/components/subscription/SubscriptionTierCard";
 import { LiveSubscriptionCounts } from "@/components/subscription/LiveSubscriptionCounts";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Subscription = () => {
   const [discountCode, setDiscountCode] = useState<string>('');
