@@ -1,5 +1,5 @@
 
-import { Moon, Sun, MonitorSmartphone } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ export const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
   const session = useSession();
 
-  const handleThemeChange = async (newTheme: 'light' | 'dark' | 'dim') => {
+  const handleThemeChange = async (newTheme: 'light' | 'dark') => {
     setTheme(newTheme);
 
     if (session?.user?.id) {
@@ -36,7 +36,7 @@ export const ThemeToggle = () => {
     <Card>
       <CardHeader>
         <CardTitle>Theme Settings</CardTitle>
-        <CardDescription>Choose between light, dark, and dim modes</CardDescription>
+        <CardDescription>Choose between light and dark modes</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-4">
         <Button
@@ -54,14 +54,6 @@ export const ThemeToggle = () => {
         >
           <Moon className="h-4 w-4 mr-2" />
           Dark
-        </Button>
-        <Button
-          variant={theme === 'dim' ? 'default' : 'outline'}
-          onClick={() => handleThemeChange('dim')}
-          className="flex-1"
-        >
-          <MonitorSmartphone className="h-4 w-4 mr-2" />
-          Dim
         </Button>
       </CardContent>
     </Card>
