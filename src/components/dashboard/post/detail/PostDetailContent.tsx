@@ -27,6 +27,11 @@ export const PostDetailContent = ({
     navigate(`/@${username}`);
   };
 
+  console.log("Post data in PostDetailContent:", {
+    is_edited: post.is_edited,
+    original_content: post.original_content
+  });
+
   return (
     <Card className="mb-6 p-6">
       <PostHeader 
@@ -38,8 +43,8 @@ export const PostDetailContent = ({
         <PostText 
           content={post.content} 
           truncate={false} 
-          isEdited={post.is_edited}
-          originalContent={post.original_content}
+          isEdited={post.is_edited || false}
+          originalContent={post.original_content || null}
         />
       </div>
       {post.media_urls && post.media_urls.length > 0 && (
