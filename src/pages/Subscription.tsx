@@ -1,3 +1,4 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,7 @@ const Subscription = () => {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
   const [cardDetails, setCardDetails] = useState({
     number: '',
     expiry: '',
@@ -23,7 +25,7 @@ const Subscription = () => {
     name: ''
   });
 
-  const { data: subscription } = useQuery({
+  const { data: subscription, refetch: refetchSubscription } = useQuery({
     queryKey: ['user-subscription'],
     queryFn: async () => {
       try {
@@ -72,6 +74,21 @@ const Subscription = () => {
     }
   });
 
+  const { data: transactions } = useQuery({
+    queryKey: ['subscription-transactions', subscription?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mercury_transactions')
+        .select('*')
+        .eq('user_id', session?.user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
+
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTier || !session?.user?.id) return;
@@ -84,6 +101,7 @@ const Subscription = () => {
         body: {
           tier: selectedTier,
           userId: session.user.id,
+          promoCode,
           paymentDetails: {
             cardNumber: cardDetails.number.replace(/\s/g, ''),
             expiry: cardDetails.expiry,
@@ -99,8 +117,7 @@ const Subscription = () => {
       toast.dismiss("payment-toast");
       toast.success("Payment successful!");
       setShowPaymentDialog(false);
-      
-      window.location.reload();
+      refetchSubscription();
     } catch (error) {
       console.error('Payment error:', error);
       toast.dismiss("payment-toast");
@@ -165,6 +182,31 @@ const Subscription = () => {
               subscription={subscription}
               onManageSubscription={handleManageSubscription}
             />
+          </div>
+        )}
+
+        {/* Recent Transactions */}
+        {transactions && transactions.length > 0 && (
+          <div className="mb-16">
+            <h2 className="text-2xl font-bold mb-6">Recent Transactions</h2>
+            <div className="space-y-4">
+              {transactions.map((transaction) => (
+                <div 
+                  key={transaction.id}
+                  className="bg-card p-4 rounded-lg shadow-sm flex justify-between items-center"
+                >
+                  <div>
+                    <p className="font-semibold">${transaction.amount} - {transaction.payment_type}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(transaction.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant="outline">
+                    {transaction.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -243,6 +285,15 @@ const Subscription = () => {
                     required
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="promoCode">Promo Code (Optional)</Label>
+                <Input
+                  id="promoCode"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                />
               </div>
               <Button 
                 type="submit" 

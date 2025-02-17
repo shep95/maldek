@@ -19,8 +19,8 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, tier, paymentDetails } = await req.json();
-    console.log('Processing payment request:', { userId, tier });
+    const { userId, tier, paymentDetails, promoCode } = await req.json();
+    console.log('Processing payment request:', { userId, tier, promoCode });
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -59,6 +59,23 @@ serve(async (req) => {
 
     console.log('Created Stripe customer:', customer.id);
 
+    // Calculate final price after promo code (if applicable)
+    let finalPrice = tierData.price;
+    let appliedPromoCode = null;
+    
+    if (promoCode) {
+      const { data: promoData } = await supabaseClient
+        .from('promo_codes')
+        .select('*')
+        .eq('code', promoCode.toUpperCase())
+        .single();
+
+      if (promoData && promoData.is_active) {
+        finalPrice = finalPrice * (1 - (promoData.discount_percentage / 100));
+        appliedPromoCode = promoData.id;
+      }
+    }
+
     // Create the subscription
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
@@ -71,7 +88,7 @@ serve(async (req) => {
               tier_id: tierData.id
             }
           },
-          unit_amount: Math.round(tierData.price * 100),
+          unit_amount: Math.round(finalPrice * 100),
           recurring: {
             interval: 'month'
           }
@@ -80,7 +97,8 @@ serve(async (req) => {
       metadata: {
         user_id: userId,
         tier: tier,
-        tier_id: tierData.id
+        tier_id: tierData.id,
+        promo_code: appliedPromoCode
       }
     });
 
