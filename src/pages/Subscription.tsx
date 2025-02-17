@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,7 +102,7 @@ const Subscription = () => {
 
   const handleManageSubscription = async () => {
     try {
-      if (!session?.user?.id || !subscription?.mercury_customer_id) {
+      if (!session?.user?.id || !subscription?.stripe_customer_id) {
         toast.error("No active subscription found");
         return;
       }
@@ -112,7 +111,7 @@ const Subscription = () => {
 
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
         body: {
-          customerId: subscription.mercury_customer_id,
+          customerId: subscription.stripe_customer_id,
         },
       });
 

@@ -42,7 +42,7 @@ serve(async (req) => {
     // Generate unique idempotency key
     const idempotencyKey = crypto.randomUUID()
 
-    // Create Mercury payment
+    // Create Mercury payment (test mode)
     const mercuryResponse = await fetch(`${MERCURY_API_URL}/api/v1/checkout-sessions`, {
       method: 'POST',
       headers: {
