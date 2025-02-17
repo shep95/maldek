@@ -8,12 +8,13 @@ import { PostCard } from "./PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePosts } from "@/hooks/usePosts";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Users } from "lucide-react";
 
 export const PostList = () => {
   const session = useSession();
   const queryClient = useQueryClient();
-  const { posts, isLoading } = usePosts();
+  const [followingOnly, setFollowingOnly] = useState(false);
+  const { posts, isLoading } = usePosts(followingOnly);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
   const [retryCount, setRetryCount] = useState(0);
@@ -172,6 +173,23 @@ export const PostList = () => {
       />
 
       <div className="space-y-6">
+        <div className="sticky top-20 z-10 flex items-center gap-4 p-4 mb-4 bg-background/80 backdrop-blur-lg border border-border/50 rounded-lg">
+          <button
+            onClick={() => setFollowingOnly(false)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${!followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>All Posts</span>
+          </button>
+          <button
+            onClick={() => setFollowingOnly(true)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Following</span>
+          </button>
+        </div>
+
         {posts && posts.length > 0 ? (
           <>
             {posts.map((post) => (
@@ -205,7 +223,7 @@ export const PostList = () => {
                 <CheckCircle2 className="h-6 w-6 text-accent" />
                 <p className="text-foreground font-medium">You're all caught up!</p>
                 <p className="text-muted-foreground text-sm">
-                  You've seen all posts from the last three days
+                  You've seen all {followingOnly ? "following" : ""} posts from the last three days
                 </p>
               </div>
             </div>
@@ -214,7 +232,10 @@ export const PostList = () => {
           <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
             <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
             <p className="text-muted-foreground">
-              Be the first to share something with your network!
+              {followingOnly 
+                ? "Follow some users to see their posts here!"
+                : "Be the first to share something with your network!"
+              }
             </p>
           </div>
         ) : null}

@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface UserSubscription {
   status: string;
@@ -11,18 +12,20 @@ interface UserSubscription {
   };
 }
 
-export const usePosts = () => {
+export const usePosts = (followingOnly: boolean = false) => {
+  const session = useSession();
+
   const { data: posts, isLoading, error } = useQuery({
-    queryKey: ['posts'],
+    queryKey: ['posts', followingOnly],
     queryFn: async () => {
-      console.log('Fetching all posts from last 3 days...');
+      console.log('Fetching posts with followingOnly:', followingOnly);
       
       try {
         // Calculate the date 3 days ago
         const threeDaysAgo = new Date();
         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
         
-        const { data, error } = await supabase
+        let query = supabase
           .from('posts')
           .select(`
             *,
@@ -53,6 +56,19 @@ export const usePosts = () => {
           .gt('created_at', threeDaysAgo.toISOString())
           .order('created_at', { ascending: false });
 
+        // If followingOnly is true and user is logged in, filter by following
+        if (followingOnly && session?.user?.id) {
+          query = query.in('user_id', 
+            supabase
+              .from('followers')
+              .select('following_id')
+              .eq('follower_id', session.user.id)
+              .then(({ data }) => data?.map(f => f.following_id) || [])
+          );
+        }
+
+        const { data, error } = await query;
+
         if (error) {
           console.error('Error fetching posts:', error);
           throw error;
@@ -81,7 +97,7 @@ export const usePosts = () => {
               name: post.profiles.username || 'Deleted User',
               subscription: activeSubscription?.subscription_tiers || null
             },
-            likes: likeCount // Use the actual like count instead of 0
+            likes: likeCount
           };
         });
 
