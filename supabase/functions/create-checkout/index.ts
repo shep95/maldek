@@ -45,6 +45,13 @@ serve(async (req) => {
       throw new Error('No Stripe price ID configured for this tier');
     }
 
+    // Get user email safely
+    const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
+    
+    if (userError || !userData?.user?.email) {
+      throw new Error('User not found or email not available');
+    }
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -57,7 +64,7 @@ serve(async (req) => {
       mode: tierData.is_lifetime ? 'payment' : 'subscription',
       success_url: `${req.headers.get('origin')}/subscription?success=true`,
       cancel_url: `${req.headers.get('origin')}/subscription?canceled=true`,
-      customer_email: (await supabaseClient.auth.admin.getUserById(userId)).data.user?.email,
+      customer_email: userData.user.email,
       metadata: {
         user_id: userId,
         tier_id: tierId,
@@ -77,7 +84,7 @@ serve(async (req) => {
       },
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
