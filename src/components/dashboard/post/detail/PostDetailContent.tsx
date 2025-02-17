@@ -35,7 +35,12 @@ export const PostDetailContent = ({
         onUsernameClick={handleUsernameClick}
       />
       <div className="mt-4">
-        <PostText content={post.content} truncate={false} />
+        <PostText 
+          content={post.content} 
+          truncate={false} 
+          isEdited={post.is_edited}
+          originalContent={post.original_content}
+        />
       </div>
       {post.media_urls && post.media_urls.length > 0 && (
         <PostMedia mediaUrls={post.media_urls} onMediaClick={() => {}} />

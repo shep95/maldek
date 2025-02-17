@@ -1,20 +1,31 @@
 
 import { useNavigate } from "react-router-dom";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useState } from "react";
 
 interface PostTextProps {
   content: string;
   translatedContent?: string | null;
   onShowOriginal?: () => void;
   truncate?: boolean;
+  isEdited?: boolean;
+  originalContent?: string | null;
 }
 
-export const PostText = ({ content, translatedContent, onShowOriginal, truncate = true }: PostTextProps) => {
+export const PostText = ({ 
+  content, 
+  translatedContent, 
+  onShowOriginal, 
+  truncate = true,
+  isEdited = false,
+  originalContent = null
+}: PostTextProps) => {
   const navigate = useNavigate();
+  const [showingOriginal, setShowingOriginal] = useState(false);
 
   const truncateUrl = (url: string) => {
     try {
@@ -133,6 +144,8 @@ export const PostText = ({ content, translatedContent, onShowOriginal, truncate 
     });
   };
 
+  const displayContent = showingOriginal && originalContent ? originalContent : content;
+
   return (
     <div>
       <p className={cn(
@@ -141,7 +154,7 @@ export const PostText = ({ content, translatedContent, onShowOriginal, truncate 
         "prose-a:text-orange-500 prose-a:no-underline hover:prose-a:underline",
         "prose-code:bg-muted prose-code:rounded prose-code:px-1"
       )}>
-        {renderContent(translatedContent || content)}
+        {renderContent(displayContent)}
       </p>
       {translatedContent && (
         <Button
@@ -155,6 +168,23 @@ export const PostText = ({ content, translatedContent, onShowOriginal, truncate 
         >
           Show original
         </Button>
+      )}
+      {isEdited && originalContent && (
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs text-muted-foreground">Edited</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowingOriginal(!showingOriginal);
+            }}
+          >
+            <Eye className="h-3 w-3 mr-1" />
+            {showingOriginal ? "Show edited" : "Show original"}
+          </Button>
+        </div>
       )}
     </div>
   );
