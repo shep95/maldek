@@ -28,7 +28,7 @@ export const FeaturesDialog = ({ isOpen, onClose }: FeaturesDialogProps) => {
     {
       icon: FolderLock,
       title: "Free Safety Folder",
-      description: "Protect your files and messages from anyone with our secure storage system"
+      description: "Protect your files and messages from anyone with our secure storage system in profile tab"
     },
     {
       icon: DollarSign,
