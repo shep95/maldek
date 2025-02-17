@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { CurrentSubscription } from "@/components/subscription/CurrentSubscription";
 import { SubscriptionTierCard } from "@/components/subscription/SubscriptionTierCard";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Subscription = () => {
   const [discountCode, setDiscountCode] = useState<string>('');
@@ -60,8 +60,7 @@ const Subscription = () => {
     }
   });
 
-  // Query to get the count of active Creator tier subscriptions
-  const { data: creatorSubscriptionCount } = useQuery({
+  const { data: creatorSubscriptionCount, refetch: refetchCreatorCount } = useQuery({
     queryKey: ['creator-subscription-count'],
     queryFn: async () => {
       const creatorTier = tiers?.find(t => t.price === 3.50);
@@ -75,7 +74,7 @@ const Subscription = () => {
         .gte('ends_at', new Date().toISOString());
 
       if (error) {
-        console.error("Error fetching subscription count:", error);
+        console.error("Error fetching creator subscription count:", error);
         return null;
       }
 
@@ -83,6 +82,46 @@ const Subscription = () => {
     },
     enabled: !!tiers
   });
+
+  const { data: emperorSubscriptionCount, refetch: refetchEmperorCount } = useQuery({
+    queryKey: ['emperor-subscription-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_lifetime', true)
+        .eq('status', 'active');
+
+      if (error) {
+        console.error("Error fetching emperor subscription count:", error);
+        return null;
+      }
+
+      return count;
+    }
+  });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('subscription-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_subscriptions'
+        },
+        () => {
+          refetchCreatorCount();
+          refetchEmperorCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchCreatorCount, refetchEmperorCount]);
 
   const handleSubscribe = async (tier: string) => {
     try {
@@ -159,20 +198,25 @@ const Subscription = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">Premium Subscriptions</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Unlock premium features and enhance your experience with our subscription tiers
           </p>
-          {creatorSubscriptionCount !== null && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Join our community of <span className="font-semibold text-accent">{creatorSubscriptionCount}</span> active Creator tier subscribers!
-            </p>
-          )}
+          <div className="mt-4 space-y-2">
+            {creatorSubscriptionCount !== null && (
+              <p className="text-sm text-muted-foreground">
+                Join our community of <span className="font-semibold text-accent">{creatorSubscriptionCount}</span> active Creator tier subscribers!
+              </p>
+            )}
+            {emperorSubscriptionCount !== null && emperorSubscriptionCount > 0 && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-yellow-500">{emperorSubscriptionCount}</span> True Emperors have achieved lifetime status
+              </p>
+            )}
+          </div>
         </div>
 
-        {/* Current Subscription Section */}
         {subscription && (
           <div className="mb-16">
             <CurrentSubscription 
@@ -182,7 +226,6 @@ const Subscription = () => {
           </div>
         )}
 
-        {/* Subscription Tiers Stack */}
         <div className="flex flex-col space-y-8 max-w-2xl mx-auto">
           {tiers?.map((tier) => (
             <SubscriptionTierCard
@@ -194,7 +237,6 @@ const Subscription = () => {
           ))}
         </div>
 
-        {/* Features Comparison Section */}
         <div className="mt-20 text-center">
           <h2 className="text-2xl font-bold mb-4">All Premium Features</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
