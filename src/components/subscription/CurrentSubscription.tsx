@@ -1,8 +1,7 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ExternalLink, Crown, Sparkles, AlertCircle } from "lucide-react";
+import { ExternalLink, Crown, Sparkles, AlertCircle, Download, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,16 +15,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 interface CurrentSubscriptionProps {
   subscription: any;
   onManageSubscription: () => void;
 }
 
-export const CurrentSubscription = ({ subscription, onManageSubscription }: CurrentSubscriptionProps) => {
+export const CurrentSubscription = ({ subscription }: CurrentSubscriptionProps) => {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showManageDialog, setShowManageDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const { data: transactions } = useQuery({
+    queryKey: ['subscription-transactions', subscription?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('mercury_transactions')
+        .select('*')
+        .eq('user_id', subscription.user_id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!subscription?.id
+  });
 
   if (!subscription) return null;
 
@@ -54,6 +76,31 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
     } finally {
       setIsCancelling(false);
       setShowCancelDialog(false);
+    }
+  };
+
+  const handleDownloadInvoice = async (transactionId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('mercury-webhook', {
+        body: {
+          action: 'getInvoice',
+          transactionId,
+        },
+      });
+
+      if (error) throw error;
+
+      const link = document.createElement('a');
+      link.href = data.invoiceUrl;
+      link.download = `invoice-${transactionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Invoice downloaded successfully");
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error("Failed to download invoice. Please try again.");
     }
   };
 
@@ -103,13 +150,13 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
 
           <div className="flex gap-4 mt-4">
             <Button 
-              onClick={onManageSubscription}
+              onClick={() => setShowManageDialog(true)}
               className={cn(
                 isPremium ? "bg-white hover:bg-white/90 text-black" : ""
               )}
             >
               Manage Subscription
-              <ExternalLink className="ml-2 h-4 w-4" />
+              <Receipt className="ml-2 h-4 w-4" />
             </Button>
 
             {!isLifetime && subscription.status === 'active' && (
@@ -146,6 +193,48 @@ export const CurrentSubscription = ({ subscription, onManageSubscription }: Curr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showManageDialog} onOpenChange={setShowManageDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Subscription History</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 space-y-4">
+            {transactions?.length === 0 ? (
+              <p className="text-center text-muted-foreground">No payment history available</p>
+            ) : (
+              <div className="space-y-4">
+                {transactions?.map((transaction) => (
+                  <div 
+                    key={transaction.id} 
+                    className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                  >
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        ${transaction.amount} - {transaction.payment_type}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(transaction.created_at).toLocaleDateString()}
+                      </p>
+                      <Badge variant="outline">
+                        {transaction.status}
+                      </Badge>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDownloadInvoice(transaction.id)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Invoice
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
