@@ -173,26 +173,37 @@ export const PostList = () => {
       />
 
       <div className="space-y-6">
-        <div className="hidden md:block fixed z-50 w-[calc(100%-32rem)] ml-64">
-          <div className="flex justify-center items-center gap-2 p-3 mb-4 md:mb-8 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
-            <button
-              onClick={() => setFollowingOnly(false)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${!followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>All Posts</span>
-            </button>
-            <button
-              onClick={() => setFollowingOnly(true)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${followingOnly ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'}`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Following</span>
-            </button>
+        {/* Desktop filter bar */}
+        <div className="hidden md:block fixed z-50 w-[calc(100%-32rem)] ml-64 top-[5.5rem]">
+          <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-lg p-1.5">
+            <div className="flex justify-center items-center gap-1.5">
+              <button
+                onClick={() => setFollowingOnly(false)}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-200 ${
+                  !followingOnly 
+                    ? 'bg-[#8B5CF6] text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/30 hover:bg-[#7C3AED]' 
+                    : 'hover:bg-muted/80 text-muted-foreground'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="font-medium">All Posts</span>
+              </button>
+              <button
+                onClick={() => setFollowingOnly(true)}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all duration-200 ${
+                  followingOnly 
+                    ? 'bg-[#8B5CF6] text-white shadow-md shadow-purple-500/20 hover:shadow-purple-500/30 hover:bg-[#7C3AED]' 
+                    : 'hover:bg-muted/80 text-muted-foreground'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span className="font-medium">Following</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Mobile filter options at the top */}
+        {/* Mobile filter options */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-50 px-4">
           <div className="flex justify-center items-center gap-2 p-3 mb-4 bg-background/60 backdrop-blur-xl border border-border/50 rounded-lg shadow-lg">
             <button
