@@ -131,10 +131,13 @@ const Dashboard = () => {
           "w-full max-w-3xl px-4 sm:px-6",
           "py-6 md:py-8 md:pl-28 lg:pl-32",
           "animate-fade-in",
-          "mt-20 md:mt-0", // Add top margin to account for floating nav on mobile
+          "mt-20 md:mt-0",
           "min-h-[100dvh]"
         )}>
-          <PostList followingOnly={followingOnly} />
+          <PostList 
+            followingOnly={followingOnly} 
+            setFollowingOnly={setFollowingOnly}
+          />
         </main>
       </div>
 

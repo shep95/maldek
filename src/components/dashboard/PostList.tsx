@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -11,9 +12,10 @@ import { CheckCircle2, Users } from "lucide-react";
 
 interface PostListProps {
   followingOnly: boolean;
+  setFollowingOnly: (value: boolean) => void;
 }
 
-export const PostList = ({ followingOnly }: PostListProps) => {
+export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => {
   const session = useSession();
   const queryClient = useQueryClient();
   const { posts, isLoading } = usePosts(followingOnly);
