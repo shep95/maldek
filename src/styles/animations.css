@@ -1,4 +1,5 @@
 
+
 /* Message Animations */
 @keyframes fadeIn {
   from {
@@ -35,6 +36,29 @@
   100% { background-color: rgba(249, 115, 22, 0); }
 }
 
+/* Picture in Picture Animation */
+@keyframes enterPiP {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(50vw - 180px), calc(50vh - 100px)) scale(0.3);
+    opacity: 0.95;
+  }
+}
+
+@keyframes exitPiP {
+  0% {
+    transform: translate(calc(50vw - 180px), calc(50vh - 100px)) scale(0.3);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
 /* Message Animations Classes */
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
@@ -55,3 +79,45 @@
 .animate-message-highlight {
   animation: messageHighlight 1s ease-out forwards;
 }
+
+/* Picture in Picture Classes */
+.pip-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 360px;
+  height: 200px;
+  z-index: 50;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  display: none;
+}
+
+.pip-container.active {
+  display: block;
+  animation: enterPiP 0.3s ease-out forwards;
+}
+
+.pip-container.exit {
+  animation: exitPiP 0.3s ease-out forwards;
+}
+
+.pip-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pip-container:hover .pip-controls {
+  opacity: 1;
+}
+

@@ -3,7 +3,7 @@ import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, SkipBack, SkipForward, Play, Pause } from "lucide-react";
 import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusicProvider";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
@@ -31,6 +31,8 @@ export const VideoPlayer = ({
 }: VideoPlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPiPActive, setIsPiPActive] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const backgroundMusic = useBackgroundMusicContext();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -69,16 +71,48 @@ export const VideoPlayer = ({
     enabled: !!session?.user?.id
   });
 
-  // Check if user has any active paid subscription
   const hasPaidSubscription = subscription?.status === 'active' && 
                             subscription?.tier?.name && 
                             ['Creator', 'True Emperor', 'Business'].includes(subscription.tier.name);
 
-  console.log('Subscription status:', {
-    status: subscription?.status,
-    tierName: subscription?.tier?.name,
-    hasPaidSubscription
-  });
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!videoRef.current) return;
+
+      if (document.hidden && isPlaying && window.innerWidth >= 1024) {
+        setIsPiPActive(true);
+      } else {
+        setIsPiPActive(false);
+      }
+    };
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    videoRef.current?.addEventListener('play', handlePlay);
+    videoRef.current?.addEventListener('pause', handlePause);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      videoRef.current?.removeEventListener('play', handlePlay);
+      videoRef.current?.removeEventListener('pause', handlePause);
+    };
+  }, [isPlaying]);
+
+  const handleSkip = (seconds: number) => {
+    if (!videoRef.current) return;
+    videoRef.current.currentTime += seconds;
+  };
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+    } else {
+      videoRef.current.pause();
+    }
+  };
 
   const handlePlay = () => {
     if (backgroundMusic.isPlaying) {
@@ -188,51 +222,6 @@ export const VideoPlayer = ({
     document.documentElement.style.setProperty('--video-glow', 'none');
   };
 
-  const handleDownload = async () => {
-    if (!publicUrl) return;
-    
-    if (!hasPaidSubscription) {
-      console.log('Download blocked:', {
-        status: subscription?.status,
-        tierName: subscription?.tier?.name,
-        hasPaidSubscription
-      });
-      toast.error('Upgrade to any paid subscription to download media');
-      return;
-    }
-    
-    try {
-      const response = await fetch(publicUrl);
-      const blob = await response.blob();
-      console.log('Download blob:', {
-        type: blob.type,
-        size: blob.size
-      });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = videoUrl.split('/').pop() || 'download';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error('Download error:', err);
-      setError('Failed to download video');
-    }
-  };
-
-  const handleOpenOriginal = () => {
-    if (!hasPaidSubscription) {
-      toast.error('Upgrade to any paid subscription to view original media');
-      return;
-    }
-    
-    if (publicUrl) {
-      window.open(publicUrl, '_blank');
-    }
-  };
-
   const handleVideoError = (e: any) => {
     const videoElement = e.target as HTMLVideoElement;
     console.error('Video playback error:', {
@@ -299,72 +288,103 @@ export const VideoPlayer = ({
   }
 
   return (
-    <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-[var(--video-glow)]">
-      <canvas 
-        ref={canvasRef} 
-        className="hidden"
-        aria-hidden="true"
-      />
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="bg-black/50 hover:bg-black/70 text-white"
-          onClick={handleDownload}
-          title={hasPaidSubscription ? "Download video" : "Upgrade to any paid subscription to download"}
-        >
-          <Download className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="bg-black/50 hover:bg-black/70 text-white"
-          onClick={handleOpenOriginal}
-          title={hasPaidSubscription ? "Open in new tab" : "Upgrade to any paid subscription to view original"}
-        >
-          <ExternalLink className="h-4 w-4" />
-        </Button>
+    <>
+      <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-[var(--video-glow)]">
+        <canvas 
+          ref={canvasRef} 
+          className="hidden"
+          aria-hidden="true"
+        />
+        <AspectRatio ratio={16 / 9}>
+          <div className="relative w-full h-full">
+            <video
+              ref={videoRef}
+              src={publicUrl}
+              className={`w-full h-full object-contain ${className}`}
+              controls={controls}
+              onError={handleVideoError}
+              onLoadedData={handleVideoLoaded}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onEnded={handleEnded}
+              playsInline
+              loop
+              preload="auto"
+              crossOrigin="anonymous"
+              autoPlay={autoPlay}
+            />
+            {showWatermark && !hasPaidSubscription && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
+                  Bosley
+                </div>
+              </div>
+            )}
+          </div>
+        </AspectRatio>
+
+        {isLoading && !error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
+          </div>
+        )}
+
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-center p-4">
+            <p>{error}</p>
+          </div>
+        )}
       </div>
 
-      <AspectRatio ratio={16 / 9}>
-        <div className="relative w-full h-full">
-          <video
-            ref={videoRef}
-            src={publicUrl}
-            className={`w-full h-full object-contain ${className}`}
-            controls={controls}
-            onError={handleVideoError}
-            onLoadedData={handleVideoLoaded}
-            onPlay={handlePlay}
-            onPause={handlePause}
-            onEnded={handleEnded}
-            playsInline
-            loop
-            preload="auto"
-            crossOrigin="anonymous"
-            autoPlay={autoPlay}
-          />
-          {showWatermark && !hasPaidSubscription && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
-                Bosley
-              </div>
-            </div>
-          )}
+      {/* Picture in Picture */}
+      <div className={`pip-container ${isPiPActive ? 'active' : ''}`}>
+        <video
+          ref={videoRef}
+          src={publicUrl}
+          className="w-full h-full object-contain"
+          controls={controls}
+          onError={handleVideoError}
+          onLoadedData={handleVideoLoaded}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onEnded={handleEnded}
+          playsInline
+          loop
+          preload="auto"
+          crossOrigin="anonymous"
+          autoPlay={autoPlay}
+        />
+        <div className="pip-controls">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white"
+            onClick={() => handleSkip(-5)}
+          >
+            <SkipBack className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white"
+            onClick={togglePlay}
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white"
+            onClick={() => handleSkip(5)}
+          >
+            <SkipForward className="h-4 w-4" />
+          </Button>
         </div>
-      </AspectRatio>
-
-      {isLoading && !error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
-        </div>
-      )}
-
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-white text-center p-4">
-          <p>{error}</p>
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
