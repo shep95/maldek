@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -81,15 +80,16 @@ const Subscription = () => {
     toast.loading("Processing payment...", { id: "payment-toast" });
 
     try {
-      const { data, error } = await supabase.functions.invoke('mercury-checkout', {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          tier: selectedTier, // Remove toLowerCase() to preserve case
+          tier: selectedTier,
           userId: session.user.id,
           paymentDetails: {
             cardNumber: cardDetails.number.replace(/\s/g, ''),
             expiry: cardDetails.expiry,
             cvc: cardDetails.cvc,
-            name: cardDetails.name
+            name: cardDetails.name,
+            email: session.user.email
           }
         },
       });
