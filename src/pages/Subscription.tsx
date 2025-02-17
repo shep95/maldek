@@ -59,6 +59,30 @@ const Subscription = () => {
     }
   });
 
+  // Query to get the count of active Creator tier subscriptions
+  const { data: creatorSubscriptionCount } = useQuery({
+    queryKey: ['creator-subscription-count'],
+    queryFn: async () => {
+      const creatorTier = tiers?.find(t => t.price === 3.50);
+      if (!creatorTier) return null;
+
+      const { count, error } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('tier_id', creatorTier.id)
+        .eq('status', 'active')
+        .gte('ends_at', new Date().toISOString());
+
+      if (error) {
+        console.error("Error fetching subscription count:", error);
+        return null;
+      }
+
+      return count;
+    },
+    enabled: !!tiers
+  });
+
   const handleSubscribe = async (tier: string) => {
     try {
       if (!session?.user?.id) {
@@ -139,6 +163,11 @@ const Subscription = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Unlock premium features and enhance your experience with our subscription tiers
           </p>
+          {creatorSubscriptionCount !== null && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Join our community of <span className="font-semibold text-accent">{creatorSubscriptionCount}</span> active Creator tier subscribers!
+            </p>
+          )}
         </div>
 
         {/* Current Subscription Section */}
