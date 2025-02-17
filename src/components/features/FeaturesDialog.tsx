@@ -1,6 +1,7 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface FeaturesDialogProps {
   isOpen: boolean;
@@ -61,9 +62,20 @@ export const FeaturesDialog = ({ isOpen, onClose }: FeaturesDialogProps) => {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border border-border/50 hover:bg-background/50 transition-colors"
+                className="group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border border-border/50 hover:bg-background/50 transition-colors"
               >
-                <feature.icon className="w-5 h-5 text-accent shrink-0 mt-1" />
+                <div className="relative">
+                  <feature.icon className={cn(
+                    "w-5 h-5 text-accent shrink-0 mt-1",
+                    "transition-all duration-300 ease-out",
+                    "group-hover:scale-110 group-hover:rotate-[360deg]",
+                    "after:content-[''] after:absolute after:inset-0",
+                    "after:bg-accent/20 after:rounded-full after:scale-0",
+                    "group-hover:after:scale-150 after:transition-transform",
+                    "group-hover:text-accent-foreground"
+                  )} />
+                  <div className="absolute inset-0 bg-accent/10 rounded-full scale-0 group-hover:scale-150 transition-transform" />
+                </div>
                 <div>
                   <h3 className="font-semibold mb-1">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground">{feature.description}</p>
