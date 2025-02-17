@@ -51,7 +51,7 @@ const Subscription = () => {
       const { data, error } = await supabase
         .from('subscription_tiers')
         .select('*')
-        .neq('name', 'True Emperor Lifetime') // Exclude the Lifetime tier
+        .neq('name', 'True Emperor Lifetime')
         .order('price', { ascending: true });
 
       if (error) throw error;
@@ -103,7 +103,7 @@ const Subscription = () => {
 
   const handleManageSubscription = async () => {
     try {
-      if (!session?.user?.id || !subscription?.stripe_customer_id) {
+      if (!session?.user?.id || !subscription?.mercury_customer_id) {
         toast.error("No active subscription found");
         return;
       }
@@ -112,7 +112,7 @@ const Subscription = () => {
 
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
         body: {
-          customerId: subscription.stripe_customer_id,
+          customerId: subscription.mercury_customer_id,
         },
       });
 

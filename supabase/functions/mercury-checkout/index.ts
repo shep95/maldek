@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 const MERCURY_API_KEY = Deno.env.get('MERCURY_API_KEY')
-const MERCURY_API_URL = 'https://backend.mercury.com/api/v1'
+const MERCURY_API_URL = 'https://api.mercury.com'
 
 serve(async (req) => {
   // Handle CORS
@@ -18,6 +18,7 @@ serve(async (req) => {
 
   try {
     const { userId, tier } = await req.json()
+    console.log('Creating payment for:', { userId, tier })
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -36,22 +37,25 @@ serve(async (req) => {
       throw new Error('Subscription tier not found')
     }
 
+    console.log('Found tier:', tierData)
+
     // Generate unique idempotency key
     const idempotencyKey = crypto.randomUUID()
 
-    // Initialize Mercury payment
-    const mercuryResponse = await fetch(`${MERCURY_API_URL}/payment-intents`, {
+    // Create Mercury payment
+    const mercuryResponse = await fetch(`${MERCURY_API_URL}/api/v1/checkout-sessions`, {
       method: 'POST',
       headers: {
-        'Authorization': MERCURY_API_KEY,
+        'Authorization': `Bearer ${MERCURY_API_KEY}`,
         'Content-Type': 'application/json',
-        'Mercury-API-Version': '2023-09-15',
         'Idempotency-Key': idempotencyKey
       },
       body: JSON.stringify({
         amount: Math.round(tierData.price * 100), // Convert to cents
         currency: 'USD',
-        payment_method_types: ['ach_debit'],
+        payment_method_types: ['card'],
+        success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get('origin')}/subscription`,
         metadata: {
           user_id: userId,
           tier: tier,
@@ -62,10 +66,11 @@ serve(async (req) => {
 
     if (!mercuryResponse.ok) {
       console.error('Mercury API error:', await mercuryResponse.text())
-      throw new Error('Failed to create Mercury payment intent')
+      throw new Error('Failed to create Mercury payment session')
     }
 
     const mercuryData = await mercuryResponse.json()
+    console.log('Mercury session created:', mercuryData)
 
     // Store Mercury transaction data
     const { error: transactionError } = await supabaseClient
