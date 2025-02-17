@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,7 +111,7 @@ const Subscription = () => {
         body: {
           tier: selectedTier,
           userId: session.user.id,
-          promoCode,
+          promoCode: validPromoCode?.code,
           paymentDetails: {
             cardNumber: cardDetails.number.replace(/\s/g, ''),
             expiry: cardDetails.expiry,
@@ -124,6 +123,11 @@ const Subscription = () => {
       });
 
       if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
 
       toast.dismiss("payment-toast");
       toast.success("Payment successful!");
@@ -241,7 +245,6 @@ const Subscription = () => {
           </div>
         )}
 
-        {/* Recent Transactions */}
         {transactions && transactions.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-bold mb-6">Recent Transactions</h2>
