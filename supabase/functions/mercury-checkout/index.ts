@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, tier } = await req.json()
+    const { userId, tier, paymentDetails } = await req.json()
     console.log('Creating payment for:', { userId, tier })
 
     // Create Supabase client
@@ -34,6 +34,7 @@ serve(async (req) => {
       .single()
 
     if (tierError || !tierData) {
+      console.error('Tier error:', tierError)
       throw new Error('Subscription tier not found')
     }
 
@@ -54,8 +55,13 @@ serve(async (req) => {
         amount: Math.round(tierData.price * 100), // Convert to cents
         currency: 'USD',
         payment_method_types: ['card'],
-        success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.get('origin')}/subscription`,
+        card: {
+          number: paymentDetails.cardNumber,
+          exp_month: parseInt(paymentDetails.expiry.split('/')[0]),
+          exp_year: parseInt('20' + paymentDetails.expiry.split('/')[1]),
+          cvc: paymentDetails.cvc,
+          name: paymentDetails.name
+        },
         metadata: {
           user_id: userId,
           tier: tier,
@@ -95,8 +101,8 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        url: mercuryData.hosted_url,
-        clientSecret: mercuryData.client_secret
+        success: true,
+        transactionId: mercuryData.id
       }),
       { 
         headers: {
