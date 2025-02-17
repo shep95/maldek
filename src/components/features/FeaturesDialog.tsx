@@ -1,6 +1,6 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Shield, Lock, MessageSquare, Info } from "lucide-react";
+import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign } from "lucide-react";
 
 interface FeaturesDialogProps {
   isOpen: boolean;
@@ -23,6 +23,16 @@ export const FeaturesDialog = ({ isOpen, onClose }: FeaturesDialogProps) => {
       icon: Lock,
       title: "Privacy First",
       description: "We never collect your data or ask for device permissions to gather information"
+    },
+    {
+      icon: FolderLock,
+      title: "Free Safety Folder",
+      description: "Protect your files and messages from anyone with our secure storage system"
+    },
+    {
+      icon: DollarSign,
+      title: "Affordable Premium Features",
+      description: "Free to use app with affordable subscription options - check them out!"
     },
     {
       icon: Info,
