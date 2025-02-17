@@ -227,7 +227,7 @@ export const PostList = () => {
           </div>
         </div>
 
-        <div className="md:pt-6">
+        <div className="md:pt-6 space-y-8">
           {posts && posts.length > 0 ? (
             <>
               {posts.map((post) => (
