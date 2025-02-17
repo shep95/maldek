@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CurrentSubscription } from "@/components/subscription/CurrentSubscription";
 import { SubscriptionTierCard } from "@/components/subscription/SubscriptionTierCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Subscription = () => {
   const [discountCode, setDiscountCode] = useState<string>('');
@@ -15,8 +15,12 @@ const Subscription = () => {
     queryKey: ['user-subscription'],
     queryFn: async () => {
       try {
+        console.log("Fetching user subscription data...");
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
+        if (!user) {
+          console.log("No user found");
+          return null;
+        }
 
         const { data: subscription, error } = await supabase
           .from('user_subscriptions')
@@ -27,7 +31,12 @@ const Subscription = () => {
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching subscription:", error);
+          return null;
+        }
+
+        console.log("Subscription data:", subscription);
         return subscription;
       } catch (error) {
         console.error("Error in subscription query:", error);
@@ -50,6 +59,91 @@ const Subscription = () => {
       return data;
     }
   });
+
+  const { data: creatorSubscriptionCount, refetch: refetchCreatorCount } = useQuery({
+    queryKey: ['creator-subscription-count'],
+    queryFn: async () => {
+      try {
+        // Get the Creator tier ID
+        const creatorTier = tiers?.find(t => Math.abs(t.price - 3.50) < 0.01);
+        if (!creatorTier) {
+          console.log("Creator tier not found");
+          return null;
+        }
+
+        console.log("Fetching count for Creator tier ID:", creatorTier.id);
+
+        const { count, error } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('tier_id', creatorTier.id)
+          .eq('status', 'active')
+          .gte('ends_at', new Date().toISOString());
+
+        if (error) {
+          console.error("Error fetching creator subscription count:", error);
+          return null;
+        }
+
+        console.log("Creator subscription count:", count);
+        return count;
+      } catch (error) {
+        console.error("Error in creator count query:", error);
+        return null;
+      }
+    },
+    enabled: !!tiers
+  });
+
+  const { data: emperorSubscriptionCount, refetch: refetchEmperorCount } = useQuery({
+    queryKey: ['emperor-subscription-count'],
+    queryFn: async () => {
+      try {
+        console.log("Fetching emperor subscription count...");
+        const { count, error } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_lifetime', true)
+          .eq('status', 'active');
+
+        if (error) {
+          console.error("Error fetching emperor subscription count:", error);
+          return null;
+        }
+
+        console.log("Emperor subscription count:", count);
+        return count;
+      } catch (error) {
+        console.error("Error in emperor count query:", error);
+        return null;
+      }
+    }
+  });
+
+  useEffect(() => {
+    console.log("Setting up subscription change listener...");
+    const channel = supabase
+      .channel('subscription-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_subscriptions'
+        },
+        (payload) => {
+          console.log("Subscription change detected:", payload);
+          refetchCreatorCount();
+          refetchEmperorCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Cleaning up subscription listener...");
+      supabase.removeChannel(channel);
+    };
+  }, [refetchCreatorCount, refetchEmperorCount]);
 
   const handleSubscribe = async (tier: string) => {
     try {
@@ -85,6 +179,7 @@ const Subscription = () => {
         return;
       }
 
+      console.log("Redirecting to checkout:", data.url);
       window.location.href = data.url;
     } catch (error) {
       console.error('Error creating checkout session:', error);
@@ -114,6 +209,7 @@ const Subscription = () => {
         throw new Error("No portal URL returned");
       }
 
+      console.log("Redirecting to portal:", data.url);
       window.location.href = data.url;
     } catch (error) {
       console.error('Error creating portal session:', error);
@@ -129,6 +225,18 @@ const Subscription = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Unlock premium features and enhance your experience with our subscription tiers
           </p>
+          <div className="mt-4 space-y-2">
+            {creatorSubscriptionCount !== null && (
+              <p className="text-sm text-muted-foreground">
+                Join our community of <span className="font-semibold text-accent">{creatorSubscriptionCount}</span> active Creator tier subscribers!
+              </p>
+            )}
+            {emperorSubscriptionCount !== null && emperorSubscriptionCount > 0 && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-semibold text-yellow-500">{emperorSubscriptionCount}</span> True Emperors have achieved lifetime status
+              </p>
+            )}
+          </div>
         </div>
 
         {subscription && (
