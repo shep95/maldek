@@ -1,10 +1,10 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CurrentSubscription } from "@/components/subscription/CurrentSubscription";
 import { SubscriptionTierCard } from "@/components/subscription/SubscriptionTierCard";
-import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
 const Subscription = () => {
@@ -52,7 +52,7 @@ const Subscription = () => {
       const { data, error } = await supabase
         .from('subscription_tiers')
         .select('*')
-        .neq('name', 'True Emperor Lifetime') // Exclude the Lifetime tier
+        .neq('name', 'True Emperor Lifetime')
         .order('price', { ascending: true });
 
       if (error) throw error;
@@ -63,22 +63,34 @@ const Subscription = () => {
   const { data: creatorSubscriptionCount, refetch: refetchCreatorCount } = useQuery({
     queryKey: ['creator-subscription-count'],
     queryFn: async () => {
-      const creatorTier = tiers?.find(t => t.price === 3.50);
-      if (!creatorTier) return null;
+      try {
+        // Get the Creator tier ID
+        const creatorTier = tiers?.find(t => Math.abs(t.price - 3.50) < 0.01);
+        if (!creatorTier) {
+          console.log("Creator tier not found");
+          return null;
+        }
 
-      const { count, error } = await supabase
-        .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('tier_id', creatorTier.id)
-        .eq('status', 'active')
-        .gte('ends_at', new Date().toISOString());
+        console.log("Fetching count for Creator tier ID:", creatorTier.id);
 
-      if (error) {
-        console.error("Error fetching creator subscription count:", error);
+        const { count, error } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('tier_id', creatorTier.id)
+          .eq('status', 'active')
+          .gte('ends_at', new Date().toISOString());
+
+        if (error) {
+          console.error("Error fetching creator subscription count:", error);
+          return null;
+        }
+
+        console.log("Creator subscription count:", count);
+        return count;
+      } catch (error) {
+        console.error("Error in creator count query:", error);
         return null;
       }
-
-      return count;
     },
     enabled: !!tiers
   });
@@ -86,22 +98,30 @@ const Subscription = () => {
   const { data: emperorSubscriptionCount, refetch: refetchEmperorCount } = useQuery({
     queryKey: ['emperor-subscription-count'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_lifetime', true)
-        .eq('status', 'active');
+      try {
+        console.log("Fetching emperor subscription count...");
+        const { count, error } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_lifetime', true)
+          .eq('status', 'active');
 
-      if (error) {
-        console.error("Error fetching emperor subscription count:", error);
+        if (error) {
+          console.error("Error fetching emperor subscription count:", error);
+          return null;
+        }
+
+        console.log("Emperor subscription count:", count);
+        return count;
+      } catch (error) {
+        console.error("Error in emperor count query:", error);
         return null;
       }
-
-      return count;
     }
   });
 
   useEffect(() => {
+    console.log("Setting up subscription change listener...");
     const channel = supabase
       .channel('subscription-changes')
       .on(
@@ -111,7 +131,8 @@ const Subscription = () => {
           schema: 'public',
           table: 'user_subscriptions'
         },
-        () => {
+        (payload) => {
+          console.log("Subscription change detected:", payload);
           refetchCreatorCount();
           refetchEmperorCount();
         }
@@ -119,6 +140,7 @@ const Subscription = () => {
       .subscribe();
 
     return () => {
+      console.log("Cleaning up subscription listener...");
       supabase.removeChannel(channel);
     };
   }, [refetchCreatorCount, refetchEmperorCount]);
