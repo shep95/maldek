@@ -23,7 +23,7 @@ export const useUserSettings = () => {
         .from('user_settings')
         .select('*')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching user settings:', error);
