@@ -1,6 +1,6 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign } from "lucide-react";
+import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign, Music, Languages, Binary } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FeaturesDialogProps {
@@ -34,6 +34,21 @@ export const FeaturesDialog = ({ isOpen, onClose }: FeaturesDialogProps) => {
       icon: DollarSign,
       title: "Affordable Premium Features",
       description: "Free to use app with affordable subscription options - check them out!"
+    },
+    {
+      icon: Binary,
+      title: "Unbiased Algorithm",
+      description: "Our platform uses a neutral algorithm without any hidden biases or preferences"
+    },
+    {
+      icon: Music,
+      title: "Custom Background Music",
+      description: "Play your own playlist in the background while scrolling through posts"
+    },
+    {
+      icon: Languages,
+      title: "Free Post Translation",
+      description: "Auto translate any user's post to your preferred language at no cost"
     },
     {
       icon: Info,
