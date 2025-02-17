@@ -178,7 +178,7 @@ export const PostList = () => {
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg transition-colors border-2 ${
                   !followingOnly 
                     ? 'bg-accent text-accent-foreground border-transparent' 
-                    : 'text-muted-foreground border-orange-500/50 hover:border-orange-500'
+                    : 'text-muted-foreground border-border hover:border-foreground'
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
@@ -189,7 +189,7 @@ export const PostList = () => {
                 className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg transition-colors border-2 ${
                   followingOnly 
                     ? 'bg-accent text-accent-foreground border-transparent' 
-                    : 'text-muted-foreground border-orange-500/50 hover:border-orange-500'
+                    : 'text-muted-foreground border-border hover:border-foreground'
                 }`}
               >
                 <Users className="w-4 h-4" />
@@ -207,7 +207,7 @@ export const PostList = () => {
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
                 !followingOnly 
                   ? 'bg-accent text-accent-foreground border-transparent' 
-                  : 'text-muted-foreground border-orange-500/50 hover:border-orange-500'
+                  : 'text-muted-foreground border-border hover:border-foreground'
               }`}
             >
               <CheckCircle2 className="w-4 h-4" />
@@ -218,7 +218,7 @@ export const PostList = () => {
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors border-2 ${
                 followingOnly 
                   ? 'bg-accent text-accent-foreground border-transparent' 
-                  : 'text-muted-foreground border-orange-500/50 hover:border-orange-500'
+                  : 'text-muted-foreground border-border hover:border-foreground'
               }`}
             >
               <Users className="w-4 h-4" />
