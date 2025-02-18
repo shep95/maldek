@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, ShieldAlert, Lock, Folder } from "lucide-react";
+import { User, ShieldAlert, Lock, Folder, Upload, Plus } from "lucide-react";
 import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
 
 interface ProfilePrivacyTabProps {
@@ -23,6 +23,10 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const [privateData, setPrivateData] = useState<any[]>([]);
   const [isPrivateDataVisible, setIsPrivateDataVisible] = useState(false);
+  const [newPrivateTitle, setNewPrivateTitle] = useState("");
+  const [newPrivateContent, setNewPrivateContent] = useState("");
+  const [newPrivateFiles, setNewPrivateFiles] = useState<File[]>([]);
+  const [isCreatingPrivatePost, setIsCreatingPrivatePost] = useState(false);
 
   const handleSecurityCodeChange = async () => {
     if (newSecurityCode.length !== 4 || !/^\d{4}$/.test(newSecurityCode)) {
@@ -153,6 +157,76 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
     } catch (error) {
       console.error("Error updating bio:", error);
       toast.error("Failed to update bio");
+    }
+  };
+
+  const handlePrivateFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setNewPrivateFiles(prevFiles => [...prevFiles, ...files]);
+  };
+
+  const handleCreatePrivatePost = async () => {
+    if (!newPrivateTitle.trim() && !newPrivateContent.trim()) {
+      toast.error("Please add a title or content");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const mediaUrls: string[] = [];
+
+      if (newPrivateFiles.length > 0) {
+        for (const file of newPrivateFiles) {
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `private-files/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('private-files')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrl } = supabase.storage
+            .from('private-files')
+            .getPublicUrl(filePath);
+
+          mediaUrls.push(publicUrl.publicUrl);
+        }
+      }
+
+      const { error } = await supabase
+        .from('private_posts')
+        .insert({
+          user_id: userId,
+          encrypted_title: newPrivateTitle,
+          content: newPrivateContent,
+          media_urls: mediaUrls
+        });
+
+      if (error) throw error;
+
+      toast.success("Private post created successfully");
+      setNewPrivateTitle("");
+      setNewPrivateContent("");
+      setNewPrivateFiles([]);
+      setIsCreatingPrivatePost(false);
+
+      if (isPrivateDataVisible) {
+        const { data, error: refreshError } = await supabase
+          .from('private_posts')
+          .select('*')
+          .eq('user_id', userId);
+
+        if (!refreshError && data) {
+          setPrivateData(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating private post:', error);
+      toast.error("Failed to create private post");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -293,15 +367,82 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
               <Folder className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold">Private Folder</h2>
             </div>
-            <Button
-              onClick={() => setIsSecurityDialogOpen(true)}
-              className="gap-2"
-              variant="outline"
-            >
-              <Lock className="h-4 w-4" />
-              Access Private Data
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsCreatingPrivatePost(true)}
+                className="gap-2"
+                variant="outline"
+              >
+                <Plus className="h-4 w-4" />
+                New Private Post
+              </Button>
+              <Button
+                onClick={() => setIsSecurityDialogOpen(true)}
+                className="gap-2"
+                variant="outline"
+              >
+                <Lock className="h-4 w-4" />
+                Access Private Data
+              </Button>
+            </div>
           </div>
+
+          {isCreatingPrivatePost && (
+            <div className="space-y-4 rounded-lg border p-4">
+              <Input
+                placeholder="Title (optional)"
+                value={newPrivateTitle}
+                onChange={(e) => setNewPrivateTitle(e.target.value)}
+              />
+              <Textarea
+                placeholder="Content"
+                value={newPrivateContent}
+                onChange={(e) => setNewPrivateContent(e.target.value)}
+                className="min-h-[100px]"
+              />
+              <div className="space-y-2">
+                <Label>Attach Files (Optional)</Label>
+                <Input
+                  type="file"
+                  onChange={handlePrivateFileUpload}
+                  multiple
+                  className="cursor-pointer"
+                />
+                {newPrivateFiles.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    {newPrivateFiles.length} file(s) selected
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setIsCreatingPrivatePost(false);
+                    setNewPrivateTitle("");
+                    setNewPrivateContent("");
+                    setNewPrivateFiles([]);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreatePrivatePost}
+                  disabled={isUploading}
+                  className="gap-2"
+                >
+                  {isUploading ? (
+                    <>Uploading...</>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      Create Private Post
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {isPrivateDataVisible && privateData.length > 0 && (
             <div className="space-y-4 rounded-lg border p-4">
