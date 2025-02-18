@@ -1,3 +1,4 @@
+
 import Stripe from 'stripe';
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -75,31 +76,6 @@ serve(async (req) => {
             });
 
           if (subsError) throw subsError;
-
-          // Send receipt email
-          const { data: userData, error: userError } = await supabaseAdmin
-            .auth.admin.getUserById(userId);
-
-          if (userError) throw userError;
-
-          await fetch(
-            `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-subscription-receipt`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-              },
-              body: JSON.stringify({
-                customerEmail: userData.user.email,
-                tierName: tier.name,
-                price: tier.price,
-                purchaseDate: new Date().toISOString(),
-                orderId: session.id
-              }),
-            }
-          );
-
           break;
         }
         case 'customer.subscription.updated': {
