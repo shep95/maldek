@@ -226,11 +226,6 @@ const Subscription = () => {
             Unlock premium features and enhance your experience with our subscription tiers
           </p>
           <div className="mt-4 space-y-2">
-            {creatorSubscriptionCount !== null && (
-              <p className="text-sm text-muted-foreground">
-                Join our community of <span className="font-semibold text-accent">{creatorSubscriptionCount}</span> active Creator tier subscribers!
-              </p>
-            )}
             {emperorSubscriptionCount !== null && emperorSubscriptionCount > 0 && (
               <p className="text-sm text-muted-foreground">
                 <span className="font-semibold text-yellow-500">{emperorSubscriptionCount}</span> True Emperors have achieved lifetime status
@@ -294,3 +289,4 @@ const Subscription = () => {
 };
 
 export default Subscription;
+
