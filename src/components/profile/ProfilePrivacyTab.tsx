@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,28 +86,27 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   };
 
   // Fetch current profile data
-  const fetchProfileData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("bio, avatar_url")
-        .eq("id", userId)
-        .single();
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("bio, avatar_url")
+          .eq("id", userId)
+          .single();
 
-      if (error) throw error;
-      if (data) {
-        setBio(data.bio || "");
-        setAvatarUrl(data.avatar_url);
+        if (error) throw error;
+        if (data) {
+          setBio(data.bio || "");
+          setAvatarUrl(data.avatar_url);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
       }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  };
+    };
 
-  // Fetch profile data on component mount
-  useState(() => {
     fetchProfileData();
-  });
+  }, [userId]);
 
   return (
     <div className="space-y-6">
