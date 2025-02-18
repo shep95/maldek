@@ -931,6 +931,53 @@ export type Database = {
           },
         ]
       }
+      payment_history: {
+        Row: {
+          amount: number
+          currency: string
+          id: string
+          metadata: Json | null
+          payment_date: string | null
+          payment_method_type: string | null
+          status: string
+          stripe_payment_id: string | null
+          subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_date?: string | null
+          payment_method_type?: string | null
+          status: string
+          stripe_payment_id?: string | null
+          subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_date?: string | null
+          payment_method_type?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "user_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       poll_votes: {
         Row: {
           created_at: string
