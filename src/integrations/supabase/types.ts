@@ -2225,6 +2225,14 @@ export type Database = {
           encrypted_title: string
         }[]
       }
+      grant_manual_subscription: {
+        Args: {
+          target_user_id: string
+          tier_name: string
+          duration_months?: number
+        }
+        Returns: undefined
+      }
       increment_ad_click: {
         Args: {
           ad_id: string
