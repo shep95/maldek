@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -64,6 +63,45 @@ const Dashboard = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: posts, isLoading: isPostsLoading } = useQuery({
+    queryKey: ['user-posts', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            username,
+            avatar_url
+          ),
+          post_likes (
+            id,
+            user_id
+          ),
+          bookmarks (
+            id,
+            user_id
+          ),
+          comments (
+            id
+          )
+        `)
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user posts:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!session?.user?.id,
+  });
+
   if (error) {
     console.error('Profile loading error:', error);
     return <DashboardError />;
@@ -94,7 +132,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-[100dvh] bg-background">
-      {/* Floating Top Navigation */}
       <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
         <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 shadow-lg">
           <button 
@@ -164,6 +201,8 @@ const Dashboard = () => {
         onClose={() => setIsProfileOpen(false)}
         profile={profile}
         isOwnProfile={true}
+        posts={posts || []}
+        isLoading={isPostsLoading}
       />
     </div>
   );
