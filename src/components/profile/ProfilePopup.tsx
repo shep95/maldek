@@ -41,7 +41,7 @@ export const ProfilePopup = ({ isOpen, onClose, profile, isOwnProfile, posts, is
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0 gap-0 bg-background/60 backdrop-blur-xl border-border/50">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0 gap-0 bg-background/60 backdrop-blur-xl border-border/50 sm:mt-0 sm:mb-0 mt-4 mb-4 mx-4 sm:mx-0 rounded-xl">
         <div className="overflow-y-auto max-h-[90vh] scrollbar-none">
           <ProfileHeader profile={profile} isLoading={false} />
           
