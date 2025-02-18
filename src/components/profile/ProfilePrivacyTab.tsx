@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, ShieldAlert } from "lucide-react";
+import { User, ShieldAlert, Lock, Folder } from "lucide-react";
+import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
 
 interface ProfilePrivacyTabProps {
   userId: string;
@@ -20,6 +20,9 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [isChangingCode, setIsChangingCode] = useState(false);
   const [newSecurityCode, setNewSecurityCode] = useState("");
   const [oldSecurityCode, setOldSecurityCode] = useState("");
+  const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
+  const [privateData, setPrivateData] = useState<any[]>([]);
+  const [isPrivateDataVisible, setIsPrivateDataVisible] = useState(false);
 
   const handleSecurityCodeChange = async () => {
     if (newSecurityCode.length !== 4 || !/^\d{4}$/.test(newSecurityCode)) {
@@ -71,6 +74,23 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
     } catch (error) {
       console.error('Error setting security code:', error);
       toast.error("Failed to set security code");
+    }
+  };
+
+  const handleSecurityCodeVerification = async (code: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_private_data_with_code', { code });
+
+      if (error) throw error;
+
+      setPrivateData(data || []);
+      setIsPrivateDataVisible(true);
+      setIsSecurityDialogOpen(false);
+      toast.success("Private data accessed successfully");
+    } catch (error) {
+      console.error('Error accessing private data:', error);
+      toast.error("Failed to access private data");
     }
   };
 
@@ -242,7 +262,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
 
           <div className="space-y-2">
             <Button 
-              onClick={isChangingCode ? handleChangeSecurityCode : handleSetSecurityCode} 
+              onClick={isChangingCode ? handleSecurityCodeChange : handleSetSecurityCode} 
               className="w-full"
               disabled={
                 newSecurityCode.length !== 4 || 
@@ -266,7 +286,54 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
             </Button>
           </div>
         </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Folder className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">Private Folder</h2>
+            </div>
+            <Button
+              onClick={() => setIsSecurityDialogOpen(true)}
+              className="gap-2"
+              variant="outline"
+            >
+              <Lock className="h-4 w-4" />
+              Access Private Data
+            </Button>
+          </div>
+
+          {isPrivateDataVisible && privateData.length > 0 && (
+            <div className="space-y-4 rounded-lg border p-4">
+              {privateData.map((item) => (
+                <div key={item.id} className="space-y-2">
+                  <h3 className="font-medium">{item.encrypted_title || 'Untitled'}</h3>
+                  <p className="text-sm text-muted-foreground">{item.content}</p>
+                  {item.media_urls?.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {item.media_urls.map((url: string, index: number) => (
+                        <img
+                          key={index}
+                          src={url}
+                          alt={`Private media ${index + 1}`}
+                          className="h-20 w-20 object-cover rounded-md"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      <SecurityCodeDialog
+        isOpen={isSecurityDialogOpen}
+        onOpenChange={setIsSecurityDialogOpen}
+        action="verify"
+        onSuccess={handleSecurityCodeVerification}
+      />
     </div>
   );
 };
