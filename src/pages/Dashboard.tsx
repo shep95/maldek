@@ -90,7 +90,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background gradient-background">
+    <div className="min-h-[100dvh] bg-background">
       {/* Floating Top Navigation */}
       <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
         <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 shadow-lg">
