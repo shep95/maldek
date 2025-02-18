@@ -9,13 +9,16 @@ import { PostList } from "@/components/dashboard/PostList";
 import { Author } from "@/utils/postUtils";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
-import { Grid, Users, CheckCircle2 } from "lucide-react";
+import { Grid, Users, CheckCircle2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { ProfilePopup } from "@/components/profile/ProfilePopup";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [followingOnly, setFollowingOnly] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -122,6 +125,14 @@ const Dashboard = () => {
               <Users className="h-4 w-4" />
               <span className="text-sm font-medium">Following</span>
             </button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsProfileOpen(true)}
+              className="ml-2"
+            >
+              <User className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>
@@ -146,6 +157,13 @@ const Dashboard = () => {
         onOpenChange={setIsCreatingPost}
         currentUser={currentUser}
         onPostCreated={handlePostCreated}
+      />
+
+      <ProfilePopup
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        profile={profile}
+        isOwnProfile={true}
       />
     </div>
   );
