@@ -1,12 +1,11 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CircuitBoard, Signal, Lock, User } from "lucide-react";
+import { CircuitBoard, Signal, Lock } from "lucide-react";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfilePosts } from "@/components/profile/ProfilePosts";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
 import { ProfilePrivacyTab } from "@/components/profile/ProfilePrivacyTab";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
