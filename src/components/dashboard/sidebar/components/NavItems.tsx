@@ -6,10 +6,6 @@ import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { FeaturesDialog } from "@/components/features/FeaturesDialog";
-import { ProfilePopup } from "@/components/profile/ProfilePopup";
-import { useQuery } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface NavItemsProps {
   subscription: any;
@@ -34,48 +30,6 @@ export const NavItems = ({
   const unreadCount = useNotificationCount(userId);
   const isMobile = useIsMobile();
   const [showFeatures, setShowFeatures] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const session = useSession();
-
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!session?.user?.id
-  });
-
-  const { data: posts, isLoading: isPostsLoading } = useQuery({
-    queryKey: ['user-posts', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return [];
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            username,
-            avatar_url
-          ),
-          post_likes (id, user_id),
-          bookmarks (id, user_id),
-          comments (id)
-        `)
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!session?.user?.id
-  });
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
@@ -104,10 +58,10 @@ export const NavItems = ({
     },
     { 
       icon: User, 
-      label: "Profile", 
-      onClick: () => setIsProfileOpen(true),
-      description: "View your profile",
-      active: isProfileOpen
+      label: "User Info", 
+      path: "/followers", 
+      active: location.pathname === "/followers",
+      description: "View user profiles"
     },
     { 
       icon: Bell, 
@@ -124,10 +78,10 @@ export const NavItems = ({
     },
     {
       icon: Users,
-      label: "Followers",
-      path: "/followers",
-      active: location.pathname === "/followers",
-      description: "Manage followers"
+      label: "Profiles",
+      path: "/profiles",
+      active: location.pathname === "/profiles",
+      description: "Browse user profiles"
     },
     {
       icon: LayoutGrid,
@@ -203,15 +157,6 @@ export const NavItems = ({
       <FeaturesDialog 
         isOpen={showFeatures} 
         onClose={() => setShowFeatures(false)} 
-      />
-
-      <ProfilePopup
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        profile={profile}
-        isOwnProfile={true}
-        posts={posts || []}
-        isLoading={isPostsLoading || isProfileLoading}
       />
     </>
   );
