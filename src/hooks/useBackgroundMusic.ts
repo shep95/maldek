@@ -25,6 +25,7 @@ export const useBackgroundMusic = () => {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [playlist, setPlaylist] = useState<BackgroundMusic[]>([]);
   const queryClient = useQueryClient();
+  const didInitialize = useRef(false);
 
   const { data: backgroundMusic } = useQuery({
     queryKey: ['background-music'],
@@ -51,15 +52,16 @@ export const useBackgroundMusic = () => {
 
   // Initial setup and autoplay
   useEffect(() => {
-    if (backgroundMusic?.music_url) {
+    if (backgroundMusic?.music_url && !didInitialize.current) {
+      didInitialize.current = true;
       audio.volume = volume;
       audio.loop = isLooping;
       audio.src = backgroundMusic.music_url;
       
-      const shouldAutoplay = localStorage.getItem(AUTOPLAY_STORAGE_KEY) === 'true';
-      if (shouldAutoplay) {
-        audio.play().catch(() => {});
-      }
+      // Always try to autoplay when music is first loaded after sign in
+      audio.play().catch(() => {
+        console.log('Autoplay prevented by browser. User interaction required.');
+      });
     }
   }, [backgroundMusic?.music_url]);
 
@@ -67,13 +69,23 @@ export const useBackgroundMusic = () => {
   useEffect(() => {
     const handleEnded = () => {
       if (!isLooping) {
-        playNext();
+        // If it's the last track and we're not looping the current track,
+        // restart from the beginning of the playlist
+        if (currentTrackIndex === playlist.length - 1) {
+          setCurrentTrackIndex(0);
+          if (playlist[0]?.music_url) {
+            audio.src = playlist[0].music_url;
+            audio.play().catch(console.error);
+          }
+        } else {
+          playNext();
+        }
       }
     };
 
     audio.addEventListener('ended', handleEnded);
     return () => audio.removeEventListener('ended', handleEnded);
-  }, [isLooping]);
+  }, [isLooping, currentTrackIndex, playlist]);
 
   // Handle play/pause state
   useEffect(() => {
@@ -119,12 +131,22 @@ export const useBackgroundMusic = () => {
     if (playlist.length === 0) return;
     const nextIndex = (currentTrackIndex + 1) % playlist.length;
     setCurrentTrackIndex(nextIndex);
+    
+    if (playlist[nextIndex]?.music_url) {
+      audio.src = playlist[nextIndex].music_url;
+      audio.play().catch(console.error);
+    }
   };
 
   const playPrevious = () => {
     if (playlist.length === 0) return;
     const prevIndex = currentTrackIndex === 0 ? playlist.length - 1 : currentTrackIndex - 1;
     setCurrentTrackIndex(prevIndex);
+    
+    if (playlist[prevIndex]?.music_url) {
+      audio.src = playlist[prevIndex].music_url;
+      audio.play().catch(console.error);
+    }
   };
 
   const deleteTrack = async (trackId: string) => {
