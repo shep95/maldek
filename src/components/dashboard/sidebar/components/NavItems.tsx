@@ -1,4 +1,3 @@
-
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -105,9 +104,10 @@ export const NavItems = ({
     { 
       icon: User, 
       label: "Profile", 
-      onClick: () => setIsProfileOpen(true),
+      path: isMobile ? "/profile" : undefined,
+      onClick: !isMobile ? () => setIsProfileOpen(true) : undefined,
       description: "View your profile",
-      active: isProfileOpen
+      active: isMobile ? location.pathname === "/profile" : isProfileOpen
     },
     { 
       icon: Bell, 
@@ -205,14 +205,16 @@ export const NavItems = ({
         onClose={() => setShowFeatures(false)} 
       />
 
-      <ProfilePopup
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
-        profile={profile}
-        isOwnProfile={true}
-        posts={posts || []}
-        isLoading={isPostsLoading || isProfileLoading}
-      />
+      {!isMobile && (
+        <ProfilePopup
+          isOpen={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          profile={profile}
+          isOwnProfile={true}
+          posts={posts || []}
+          isLoading={isPostsLoading || isProfileLoading}
+        />
+      )}
     </>
   );
 };

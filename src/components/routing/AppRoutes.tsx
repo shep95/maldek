@@ -101,6 +101,7 @@ export const AppRoutes = () => {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
+        <Route path="/profile" element={<Profiles />} />  {/* Added this route for mobile */}
         <Route path="/spaces" element={<Spaces />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
