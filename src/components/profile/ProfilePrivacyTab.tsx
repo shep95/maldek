@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, ShieldAlert, Lock, Folder, Upload, Plus } from "lucide-react";
+import { User, ShieldAlert, Lock, Folder, Upload, Plus, Eye, Download } from "lucide-react";
 import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
+import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
 
 interface ProfilePrivacyTabProps {
   userId: string;
@@ -27,6 +28,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [newPrivateContent, setNewPrivateContent] = useState("");
   const [newPrivateFiles, setNewPrivateFiles] = useState<File[]>([]);
   const [isCreatingPrivatePost, setIsCreatingPrivatePost] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
   const handleSecurityCodeChange = async () => {
     if (newSecurityCode.length !== 4 || !/^\d{4}$/.test(newSecurityCode)) {
@@ -227,6 +229,29 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       toast.error("Failed to create private post");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleMediaClick = (url: string) => {
+    setSelectedMedia(url);
+  };
+
+  const handleDownload = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = url.split('/').pop() || 'download';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(a);
+      toast.success('Download started');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download file');
     }
   };
 
@@ -451,14 +476,34 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                   <h3 className="font-medium">{item.encrypted_title || 'Untitled'}</h3>
                   <p className="text-sm text-muted-foreground">{item.content}</p>
                   {item.media_urls?.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-4">
                       {item.media_urls.map((url: string, index: number) => (
-                        <img
-                          key={index}
-                          src={url}
-                          alt={`Private media ${index + 1}`}
-                          className="h-20 w-20 object-cover rounded-md"
-                        />
+                        <div key={index} className="relative group">
+                          <img
+                            src={url}
+                            alt={`Private media ${index + 1}`}
+                            className="h-20 w-20 object-cover rounded-md cursor-pointer transition-transform hover:scale-105"
+                            onClick={() => handleMediaClick(url)}
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
+                              onClick={() => handleMediaClick(url)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
+                              onClick={() => handleDownload(url)}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -474,6 +519,11 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
         onOpenChange={setIsSecurityDialogOpen}
         action="verify"
         onSuccess={handleSecurityCodeVerification}
+      />
+
+      <MediaPreviewDialog
+        selectedMedia={selectedMedia}
+        onClose={() => setSelectedMedia(null)}
       />
     </div>
   );
