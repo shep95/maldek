@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -15,6 +16,7 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   const queryClient = useQueryClient();
+  const session = useSession();
 
   // Fetch user's subscription status with proper joins
   const { data: subscription } = useQuery({
@@ -140,7 +142,7 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
               >
                 Follow
               </Button>
-              {profile?.id === (supabase.auth.getUser())?.data?.user?.id && (
+              {profile?.id === session?.user?.id && (
                 <EditProfileDialog 
                   profile={profile}
                   onProfileUpdate={() => {
