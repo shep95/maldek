@@ -184,58 +184,53 @@ const Profiles = () => {
   const isOwnProfile = session?.user?.id === profile.id;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
+    <div className="min-h-screen">
       <ProfileHeader profile={profile} isLoading={profileLoading} />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-8 sm:mt-12">
+      <div className="max-w-4xl mx-auto px-4 mt-8">
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-start h-auto min-h-[3.5rem] bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 p-1.5 mb-8 sm:mb-10 overflow-x-auto flex-wrap gap-1.5">
+          <TabsList className="w-full justify-start h-14 bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 p-1 mb-8 overflow-hidden">
             <TabsTrigger 
               value="posts" 
-              className="relative h-12 px-5 sm:px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2.5 flex-shrink-0 group"
+              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
             >
-              <CircuitBoard className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span className="relative z-10 whitespace-nowrap font-medium">Posts</span>
+              <CircuitBoard className="w-4 h-4" />
+              <span className="relative z-10">Posts</span>
             </TabsTrigger>
-            
             <TabsTrigger 
               value="music" 
-              className="relative h-12 px-5 sm:px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2.5 flex-shrink-0 group"
+              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
             >
-              <Signal className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span className="relative z-10 whitespace-nowrap font-medium">Music</span>
+              <Signal className="w-4 h-4" />
+              <span className="relative z-10">Music</span>
             </TabsTrigger>
-            
             {isOwnProfile && (
               <TabsTrigger 
                 value="privacy" 
-                className="relative h-12 px-5 sm:px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2.5 flex-shrink-0 group"
+                className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
               >
-                <Lock className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                <span className="relative z-10 whitespace-nowrap font-medium">Privacy</span>
+                <Lock className="w-4 h-4" />
+                <span className="relative z-10">Privacy</span>
               </TabsTrigger>
             )}
           </TabsList>
           
-          <div className="space-y-6">
-            <TabsContent value="posts" className="mt-0 animate-fade-in">
-              <ProfilePosts 
-                posts={posts || []} 
-                isLoading={postsLoading} 
-                onPostAction={handlePostAction} 
-              />
-            </TabsContent>
+          <TabsContent value="posts" className="mt-0 animate-fade-in">
+            <ProfilePosts 
+              posts={posts || []} 
+              isLoading={postsLoading} 
+              onPostAction={handlePostAction} 
+            />
+          </TabsContent>
 
-            <TabsContent value="music" className="mt-0 animate-fade-in">
-              <ProfileMusicTab />
-            </TabsContent>
+          <TabsContent value="music" className="mt-0 animate-fade-in">
+            <ProfileMusicTab />
+          </TabsContent>
 
-            {isOwnProfile && (
-              <TabsContent value="privacy" className="mt-0 animate-fade-in">
-                <ProfilePrivacyTab userId={profile.id} />
-              </TabsContent>
-            )}
-          </div>
+          {isOwnProfile && (
+            <TabsContent value="privacy" className="mt-0 animate-fade-in">
+              <ProfilePrivacyTab userId={profile.id} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

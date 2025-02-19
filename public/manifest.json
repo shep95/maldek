@@ -47,7 +47,20 @@
       "description": "View your messages"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/lovable-uploads/a4f5f2d6-ab4d-4196-9295-1f9c2bc6965e.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Bosley Homepage"
+    }
+  ],
   "related_applications": [],
+  "launch_handler": {
+    "route_to": "existing-client",
+    "navigate_existing_client": "always"
+  },
   "share_target": {
     "action": "/share-target",
     "method": "POST",

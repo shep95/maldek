@@ -1,533 +1,513 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, ShieldAlert, Lock, Folder, Upload, Plus, Eye, Download } from "lucide-react";
-import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
-import { MediaPreviewDialog } from "@/components/dashboard/MediaPreviewDialog";
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { Lock, Shield, Key, Upload, File, Eye, SortDesc, SortAsc, Image as ImageIcon } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MediaPreviewDialog } from '@/components/dashboard/MediaPreviewDialog';
+import { useNavigate } from 'react-router-dom';
+
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type PrivateData = Database['public']['Tables']['private_data']['Row'];
+type PrivatePost = Database['public']['Tables']['private_posts']['Row'];
 
 interface ProfilePrivacyTabProps {
   userId: string;
 }
 
 export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [bio, setBio] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [isChangingCode, setIsChangingCode] = useState(false);
-  const [newSecurityCode, setNewSecurityCode] = useState("");
-  const [oldSecurityCode, setOldSecurityCode] = useState("");
-  const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
-  const [privateData, setPrivateData] = useState<any[]>([]);
-  const [isPrivateDataVisible, setIsPrivateDataVisible] = useState(false);
-  const [newPrivateTitle, setNewPrivateTitle] = useState("");
-  const [newPrivateContent, setNewPrivateContent] = useState("");
-  const [newPrivateFiles, setNewPrivateFiles] = useState<File[]>([]);
-  const [isCreatingPrivatePost, setIsCreatingPrivatePost] = useState(false);
+  const navigate = useNavigate();
+  const [currentCode, setCurrentCode] = useState('');
+  const [newCode, setNewCode] = useState('');
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const [accessCode, setAccessCode] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const handleSecurityCodeChange = async () => {
-    if (newSecurityCode.length !== 4 || !/^\d{4}$/.test(newSecurityCode)) {
-      toast.error("Please enter a valid 4-digit code");
-      return;
-    }
+  const SecurityCodeSection = () => {
+    return (
+      <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
+        <div className="flex items-center gap-3 mb-4">
+          <Shield className="w-5 h-5 text-accent" />
+          <h2 className="text-xl font-semibold">Privacy Settings</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-6">
+          {!userProfile?.security_code 
+            ? "Set up your security code to protect your private data. This code will be required to access sensitive information. Choose a 4-digit code that you'll remember - if you lose it, you won't be able to access your private data."
+            : "Manage your security code and private data. Your security code is required to access sensitive information and make important changes to your account. Keep this code safe - if you lose it, you won't be able to access your private data."
+          }
+        </p>
 
-    try {
-      const { data, error } = await supabase
-        .rpc('update_security_code', {
-          old_code: oldSecurityCode,
-          new_code: newSecurityCode
-        });
+        {!userProfile?.security_code ? (
+          <form onSubmit={handleSetInitialCode} className="space-y-4">
+            <div>
+              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
+                Create Security Code
+              </label>
+              <Input
+                id="newCode"
+                type="password"
+                placeholder="Enter 4-digit code"
+                value={newCode}
+                onChange={(e) => setNewCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
+            </div>
 
-      if (error) throw error;
+            <Button 
+              type="submit"
+              className="w-full"
+              disabled={setInitialSecurityCode.isPending}
+            >
+              {setInitialSecurityCode.isPending ? (
+                <>Setting code...</>
+              ) : (
+                <>
+                  <Key className="w-4 h-4 mr-2" />
+                  Set Security Code
+                </>
+              )}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleUpdateCode} className="space-y-4">
+            <div>
+              <label htmlFor="currentCode" className="block text-sm font-medium mb-2">
+                Current Security Code
+              </label>
+              <Input
+                id="currentCode"
+                type="password"
+                placeholder="Enter current code"
+                value={currentCode}
+                onChange={(e) => setCurrentCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
+            </div>
 
-      if (!data) {
-        toast.error("Invalid old security code");
-        return;
-      }
-      
-      toast.success("Security code updated successfully");
-      setNewSecurityCode("");
-      setOldSecurityCode("");
-      setIsChangingCode(false);
-    } catch (error) {
-      console.error('Error changing security code:', error);
-      toast.error("Failed to change security code");
-    }
+            <div>
+              <label htmlFor="newCode" className="block text-sm font-medium mb-2">
+                New Security Code
+              </label>
+              <Input
+                id="newCode"
+                type="password"
+                placeholder="Enter new code"
+                value={newCode}
+                onChange={(e) => setNewCode(e.target.value)}
+                maxLength={4}
+                className="bg-background/10"
+              />
+            </div>
+
+            <Button 
+              type="submit"
+              className="w-full"
+              disabled={updateSecurityCode.isPending}
+            >
+              {updateSecurityCode.isPending ? 'Updating...' : 'Update Security Code'}
+            </Button>
+          </form>
+        )}
+      </Card>
+    );
   };
 
-  const handleSetSecurityCode = async () => {
-    if (newSecurityCode.length !== 4 || !/^\d{4}$/.test(newSecurityCode)) {
-      toast.error("Please enter a valid 4-digit code");
-      return;
-    }
-
-    try {
-      const { error } = await supabase
+  const { data: userProfile } = useQuery({
+    queryKey: ['user-security-code', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('profiles')
-        .update({ security_code: newSecurityCode })
-        .eq('id', userId);
+        .select('security_code')
+        .eq('id', userId)
+        .single();
 
       if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: privatePosts, refetch: refetchPrivatePosts } = useQuery({
+    queryKey: ['private-posts', userId, isVerified, sortOrder],
+    queryFn: async () => {
+      if (!isVerified) return [];
       
-      toast.success("Security code set successfully");
-      setNewSecurityCode("");
-      setIsChangingCode(false);
-    } catch (error) {
-      console.error('Error setting security code:', error);
-      toast.error("Failed to set security code");
-    }
-  };
-
-  const handleSecurityCodeVerification = async (code: string) => {
-    try {
       const { data, error } = await supabase
-        .rpc('get_private_data_with_code', { code });
+        .from('private_posts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: sortOrder === 'asc' });
 
-      if (error) throw error;
-
-      setPrivateData(data || []);
-      setIsPrivateDataVisible(true);
-      setIsSecurityDialogOpen(false);
-      toast.success("Private data accessed successfully");
-    } catch (error) {
-      console.error('Error accessing private data:', error);
-      toast.error("Failed to access private data");
-    }
-  };
-
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      setIsUploading(true);
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size should be less than 5MB");
-        return;
+      if (error) {
+        console.error('Error fetching private posts:', error);
+        setIsVerified(false);
+        return [];
       }
+      return data || [];
+    },
+    enabled: isVerified
+  });
 
-      if (!file.type.startsWith("image/")) {
-        toast.error("Only image files are allowed");
-        return;
-      }
-
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}-${Math.random()}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrl } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(filePath);
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: publicUrl.publicUrl })
-        .eq("id", userId);
-
-      if (updateError) throw updateError;
-
-      setAvatarUrl(publicUrl.publicUrl);
-      toast.success("Profile picture updated successfully");
-    } catch (error) {
-      console.error("Error uploading avatar:", error);
-      toast.error("Failed to update profile picture");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleBioUpdate = async () => {
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ bio })
-        .eq("id", userId);
-
+  const verifySecurityCode = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .rpc('get_private_data_with_code', { code: accessCode });
+      
       if (error) throw error;
-      toast.success("Bio updated successfully");
-    } catch (error) {
-      console.error("Error updating bio:", error);
-      toast.error("Failed to update bio");
+      return data;
+    },
+    onSuccess: () => {
+      setIsVerified(true);
+      refetchPrivatePosts();
+      toast.success('Security code verified successfully');
+    },
+    onError: (error) => {
+      console.error('Error verifying security code:', error);
+      toast.error('Invalid security code');
+      setIsVerified(false);
     }
-  };
+  });
 
-  const handlePrivateFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    setNewPrivateFiles(prevFiles => [...prevFiles, ...files]);
-  };
-
-  const handleCreatePrivatePost = async () => {
-    if (!newPrivateTitle.trim() && !newPrivateContent.trim()) {
-      toast.error("Please add a title or content");
-      return;
+  const updateSecurityCode = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc(
+        'update_security_code',
+        { old_code: currentCode, new_code: newCode }
+      );
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Security code updated successfully');
+      setCurrentCode('');
+      setNewCode('');
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+    onError: (error) => {
+      console.error('Error updating security code:', error);
+      toast.error('Failed to update security code. Please check your current code.');
     }
+  });
 
-    try {
-      setIsUploading(true);
+  const createPrivatePost = useMutation({
+    mutationFn: async () => {
       const mediaUrls: string[] = [];
 
-      if (newPrivateFiles.length > 0) {
-        for (const file of newPrivateFiles) {
-          const fileExt = file.name.split(".").pop();
-          const fileName = `${userId}/${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `private-files/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
+      if (files.length > 0) {
+        for (const file of files) {
+          const fileExt = file.name.split('.').pop();
+          const filePath = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+          
+          const { error: uploadError, data } = await supabase.storage
             .from('private-files')
             .upload(filePath, file);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            throw new Error(`Failed to upload file: ${uploadError.message}`);
+          }
 
-          const { data: publicUrl } = supabase.storage
+          const { data: { publicUrl } } = supabase.storage
             .from('private-files')
             .getPublicUrl(filePath);
 
-          mediaUrls.push(publicUrl.publicUrl);
+          mediaUrls.push(publicUrl);
         }
       }
 
       const { error } = await supabase
         .from('private_posts')
         .insert({
-          user_id: userId, // Explicitly set the user_id to match RLS policy
-          encrypted_title: newPrivateTitle,
-          content: newPrivateContent,
-          media_urls: mediaUrls,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          user_id: userId,
+          content,
+          encrypted_title: title,
+          media_urls: mediaUrls
         });
 
-      if (error) {
-        console.error('Error creating private post:', error);
-        throw error;
-      }
-
-      toast.success("Private post created successfully");
-      setNewPrivateTitle("");
-      setNewPrivateContent("");
-      setNewPrivateFiles([]);
-      setIsCreatingPrivatePost(false);
-
-      // Refresh private data if it's visible
-      if (isPrivateDataVisible) {
-        const { data, error: refreshError } = await supabase
-          .from('private_posts')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (!refreshError && data) {
-          setPrivateData(data);
-        }
-      }
-    } catch (error) {
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Private post created successfully');
+      setTitle('');
+      setContent('');
+      setFiles([]);
+      refetchPrivatePosts();
+    },
+    onError: (error) => {
       console.error('Error creating private post:', error);
-      toast.error("Failed to create private post");
-    } finally {
-      setIsUploading(false);
+      toast.error('Failed to create private post');
     }
-  };
+  });
 
-  const handleMediaClick = (url: string) => {
-    setSelectedMedia(url);
-  };
-
-  const handleDownload = async (url: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = url.split('/').pop() || 'download';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(downloadUrl);
-      document.body.removeChild(a);
-      toast.success('Download started');
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download file');
-    }
-  };
-
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("bio, avatar_url")
-          .eq("id", userId)
-          .single();
-
-        if (error) throw error;
-        if (data) {
-          setBio(data.bio || "");
-          setAvatarUrl(data.avatar_url);
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
+  const setInitialSecurityCode = useMutation({
+    mutationFn: async () => {
+      if (newCode.length !== 4 || !/^\d{4}$/.test(newCode)) {
+        throw new Error('Security code must be exactly 4 digits');
       }
-    };
 
-    fetchProfileData();
-  }, [userId]);
+      const { error } = await supabase
+        .from('profiles')
+        .update({ security_code: newCode })
+        .eq('id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Security code set successfully');
+      setNewCode('');
+      queryClient.invalidateQueries({ queryKey: ['user-security-code'] });
+    },
+    onError: (error) => {
+      console.error('Error setting security code:', error);
+      toast.error('Failed to set security code');
+    }
+  });
+
+  const handleUpdateCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newCode.length !== 4 || !/^\d{4}$/.test(newCode)) {
+      toast.error('New security code must be exactly 4 digits');
+      return;
+    }
+    updateSecurityCode.mutate();
+  };
+
+  const handleVerifyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (accessCode.length !== 4 || !/^\d{4}$/.test(accessCode)) {
+      toast.error('Please enter a valid 4-digit security code');
+      return;
+    }
+    verifySecurityCode.mutate();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleCreatePost = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isVerified) {
+      toast.error('Please verify your security code first');
+      return;
+    }
+    if (!content.trim()) {
+      toast.error('Please enter some content');
+      return;
+    }
+    createPrivatePost.mutate();
+  };
+
+  const handleSetInitialCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newCode.length !== 4 || !/^\d{4}$/.test(newCode)) {
+      toast.error('Security code must be exactly 4 digits');
+      return;
+    }
+    setInitialSecurityCode.mutate();
+  };
 
   return (
-    <div className="space-y-6 w-full max-w-3xl mx-auto px-4 sm:px-6">
-      <div className="space-y-4">
-        <Label>Profile Picture</Label>
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Avatar className="w-20 h-20">
-            <AvatarImage src={avatarUrl || undefined} />
-            <AvatarFallback>
-              <User className="w-8 h-8" />
-            </AvatarFallback>
-          </Avatar>
-          <Input
-            type="file"
-            accept="image/*"
-            onChange={handleAvatarUpload}
-            className="w-full sm:max-w-[250px]"
-            disabled={isUploading}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Label htmlFor="bio">Bio</Label>
-        <Textarea
-          id="bio"
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          placeholder="Tell us about yourself..."
-          className="min-h-[100px]"
-          maxLength={500}
-        />
-        <p className="text-sm text-muted-foreground">
-          {bio.length}/500 characters
-        </p>
-        <Button onClick={handleBioUpdate}>
-          Save Bio
-        </Button>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-destructive" />
-          <h2 className="text-xl font-semibold">Security Code</h2>
-        </div>
-        
-        <div className="space-y-4 rounded-lg border p-4">
-          <p className="text-sm text-muted-foreground">
-            {isChangingCode ? (
-              "Enter your old security code and set a new one. You can only use 4 digits."
-            ) : (
-              "Create or change your security code. You can only use 4 digits and they must be numbers."
+    <div className="space-y-6">
+      <SecurityCodeSection />
+      
+      {userProfile?.security_code && (
+        <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-accent" />
+              <h2 className="text-xl font-semibold">Private Posts</h2>
+            </div>
+            {isVerified && (
+              <Select 
+                value={sortOrder} 
+                onValueChange={(value: 'desc' | 'asc') => setSortOrder(value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Sort order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">
+                    <div className="flex items-center gap-2">
+                      <SortDesc className="h-4 w-4" />
+                      Newest first
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="asc">
+                    <div className="flex items-center gap-2">
+                      <SortAsc className="h-4 w-4" />
+                      Oldest first
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             )}
-            <br /><br />
-            <span className="font-bold text-destructive">
-              Warning: If you lose your code, you will lose access to your account.
-            </span>
-          </p>
-
-          {isChangingCode && (
-            <Input
-              type="password"
-              placeholder="Enter old 4-digit code"
-              value={oldSecurityCode}
-              onChange={(e) => setOldSecurityCode(e.target.value)}
-              maxLength={4}
-              pattern="\d{4}"
-              required
-              className="text-center text-2xl tracking-widest"
-            />
-          )}
-
-          <Input
-            type="password"
-            placeholder="Enter new 4-digit code"
-            value={newSecurityCode}
-            onChange={(e) => setNewSecurityCode(e.target.value)}
-            maxLength={4}
-            pattern="\d{4}"
-            required
-            className="text-center text-2xl tracking-widest"
-          />
-
-          <div className="space-y-2">
-            <Button 
-              onClick={isChangingCode ? handleSecurityCodeChange : handleSetSecurityCode} 
-              className="w-full"
-              disabled={
-                newSecurityCode.length !== 4 || 
-                !/^\d{4}$/.test(newSecurityCode) ||
-                (isChangingCode && (oldSecurityCode.length !== 4 || !/^\d{4}$/.test(oldSecurityCode)))
-              }
-            >
-              {isChangingCode ? "Change Security Code" : "Set Security Code"}
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsChangingCode(!isChangingCode);
-                setNewSecurityCode("");
-                setOldSecurityCode("");
-              }}
-              className="w-full"
-            >
-              {isChangingCode ? "Cancel" : "Change Existing Code"}
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Folder className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Private Folder</h2>
-            </div>
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <Button
-                onClick={() => setIsCreatingPrivatePost(true)}
-                className="gap-2 flex-1 sm:flex-none"
-                variant="outline"
-              >
-                <Plus className="h-4 w-4" />
-                New Private Post
-              </Button>
-              <Button
-                onClick={() => setIsSecurityDialogOpen(true)}
-                className="gap-2 flex-1 sm:flex-none"
-                variant="outline"
-              >
-                <Lock className="h-4 w-4" />
-                Access Private Data
-              </Button>
-            </div>
           </div>
 
-          {isCreatingPrivatePost && (
-            <div className="space-y-4 rounded-lg border p-4">
-              <Input
-                placeholder="Title (optional)"
-                value={newPrivateTitle}
-                onChange={(e) => setNewPrivateTitle(e.target.value)}
-              />
-              <Textarea
-                placeholder="Content"
-                value={newPrivateContent}
-                onChange={(e) => setNewPrivateContent(e.target.value)}
-                className="min-h-[100px]"
-              />
-              <div className="space-y-2">
-                <Label>Attach Files (Optional)</Label>
+          {!isVerified ? (
+            <form onSubmit={handleVerifyCode} className="space-y-4">
+              <div>
+                <label htmlFor="accessCode" className="block text-sm font-medium mb-2">
+                  Enter Security Code to Access Private Posts
+                </label>
                 <Input
-                  type="file"
-                  onChange={handlePrivateFileUpload}
-                  multiple
-                  className="cursor-pointer"
+                  id="accessCode"
+                  type="password"
+                  placeholder="Enter 4-digit code"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value)}
+                  maxLength={4}
+                  className="bg-background/10"
                 />
-                {newPrivateFiles.length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    {newPrivateFiles.length} file(s) selected
-                  </div>
+              </div>
+              <Button 
+                type="submit"
+                className="w-full"
+                disabled={verifySecurityCode.isPending}
+              >
+                {verifySecurityCode.isPending ? (
+                  <>Verifying...</>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Access Private Posts
+                  </>
                 )}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setIsCreatingPrivatePost(false);
-                    setNewPrivateTitle("");
-                    setNewPrivateContent("");
-                    setNewPrivateFiles([]);
-                  }}
-                  className="w-full sm:w-auto"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreatePrivatePost}
-                  disabled={isUploading}
-                  className="gap-2 w-full sm:w-auto"
-                >
-                  {isUploading ? (
-                    <>Uploading...</>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4" />
-                      Create Private Post
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
+              </Button>
+            </form>
+          ) : (
+            <>
+              <form onSubmit={handleCreatePost} className="space-y-4 mb-6">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium mb-2">
+                    Title (Optional)
+                  </label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter post title"
+                    className="bg-background/10"
+                  />
+                </div>
 
-          {isPrivateDataVisible && privateData.length > 0 && (
-            <div className="space-y-4 rounded-lg border p-4">
-              {privateData.map((item) => (
-                <div key={item.id} className="space-y-2">
-                  <h3 className="font-medium">{item.encrypted_title || 'Untitled'}</h3>
-                  <p className="text-sm text-muted-foreground">{item.content}</p>
-                  {item.media_urls?.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {item.media_urls.map((url: string, index: number) => (
-                        <div key={index} className="relative group aspect-square">
-                          <img
-                            src={url}
-                            alt={`Private media ${index + 1}`}
-                            className="w-full h-full object-cover rounded-md cursor-pointer transition-transform hover:scale-105"
-                            onClick={() => handleMediaClick(url)}
-                          />
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
-                              onClick={() => handleMediaClick(url)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
-                              onClick={() => handleDownload(url)}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
+                <div>
+                  <label htmlFor="content" className="block text-sm font-medium mb-2">
+                    Content
+                  </label>
+                  <Textarea
+                    id="content"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Write your private post..."
+                    className="bg-background/10 min-h-[100px]"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="files" className="block text-sm font-medium mb-2">
+                    Attach Files
+                  </label>
+                  <Input
+                    id="files"
+                    type="file"
+                    onChange={handleFileSelect}
+                    multiple
+                    accept="image/*"
+                    className="bg-background/10"
+                  />
+                  {files.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {files.map((file, index) => (
+                        <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <ImageIcon className="w-4 h-4" />
+                          {file.name}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
-      <SecurityCodeDialog
-        isOpen={isSecurityDialogOpen}
-        onOpenChange={setIsSecurityDialogOpen}
-        action="verify"
-        onSuccess={handleSecurityCodeVerification}
-      />
+                <Button 
+                  type="submit"
+                  className="w-full"
+                  disabled={createPrivatePost.isPending}
+                >
+                  {createPrivatePost.isPending ? (
+                    <>Creating post...</>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Create Private Post
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium">Your Private Posts</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsVerified(false)}
+                  >
+                    Lock
+                  </Button>
+                </div>
+                {privatePosts?.map((post) => (
+                  <div key={post.id} className="p-4 rounded-lg bg-background/5 space-y-4">
+                    {post.encrypted_title && (
+                      <h4 className="font-medium mb-2">{post.encrypted_title}</h4>
+                    )}
+                    <p className="text-sm text-muted-foreground">{post.content}</p>
+                    {post.media_urls && post.media_urls.length > 0 && (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {post.media_urls.map((url, index) => (
+                          <div 
+                            key={index} 
+                            className="relative aspect-video cursor-pointer group"
+                            onClick={() => setSelectedMedia(url)}
+                          >
+                            <img
+                              src={url}
+                              alt={`Attachment ${index + 1}`}
+                              className="rounded-lg object-cover w-full h-full transition-transform duration-200 group-hover:scale-[1.02]"
+                              onContextMenu={(e) => e.preventDefault()}
+                              style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                              <Eye className="w-6 h-6 text-white" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      {new Date(post.created_at).toLocaleDateString()} at{' '}
+                      {new Date(post.created_at).toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+      )}
 
       <MediaPreviewDialog
         selectedMedia={selectedMedia}
