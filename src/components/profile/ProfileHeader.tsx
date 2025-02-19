@@ -6,8 +6,6 @@ import { Crown, Users } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
-import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
-import { useSession } from "@supabase/auth-helpers-react";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -16,7 +14,6 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   const queryClient = useQueryClient();
-  const session = useSession();
 
   // Fetch user's subscription status with proper joins
   const { data: subscription } = useQuery({
@@ -135,21 +132,13 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
             {profile.bio && (
               <p className="text-sm text-white/60 mt-1 max-w-lg">{profile.bio}</p>
             )}
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4">
               <Button 
                 variant="secondary" 
                 className="bg-accent/10 hover:bg-accent/20 text-white border border-accent/20"
               >
                 Follow
               </Button>
-              {profile?.id === session?.user?.id && (
-                <EditProfileDialog 
-                  profile={profile}
-                  onProfileUpdate={() => {
-                    queryClient.invalidateQueries({ queryKey: ['profile', profile.id] });
-                  }}
-                />
-              )}
             </div>
           </div>
         </div>

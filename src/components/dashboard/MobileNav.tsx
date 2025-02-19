@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Home, User, Bell, Menu, Upload } from "lucide-react";
@@ -7,9 +6,6 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
 import { SidebarNav } from "./sidebar/SidebarNav";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { useSession } from "@supabase/auth-helpers-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface NavItem {
   icon: any;
@@ -24,47 +20,6 @@ export const MobileNav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const SWIPE_THRESHOLD = 50;
-  const session = useSession();
-
-  const { data: profile } = useQuery({
-    queryKey: ['profile', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!session?.user?.id
-  });
-
-  const { data: posts, isLoading: isPostsLoading } = useQuery({
-    queryKey: ['user-posts', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return [];
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles:user_id (
-            id,
-            username,
-            avatar_url
-          ),
-          post_likes (id, user_id),
-          bookmarks (id, user_id),
-          comments (id)
-        `)
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!session?.user?.id
-  });
 
   const handleTouchStart = (e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -115,7 +70,7 @@ export const MobileNav = () => {
   const navItems: NavItem[] = [
     { icon: Menu, label: "Menu" },
     { icon: Home, label: "Home", path: "/dashboard" },
-    { icon: User, label: "Profile", path: "/profile" },
+    { icon: User, label: "User Info", path: "/followers" },
     { icon: Bell, label: "Notifications", path: "/notifications" },
     { icon: Upload, label: "Create Post", action: handleCreatePost },
   ];
