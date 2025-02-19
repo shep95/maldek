@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,95 +30,6 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [newPrivateFiles, setNewPrivateFiles] = useState<File[]>([]);
   const [isCreatingPrivatePost, setIsCreatingPrivatePost] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
-  const [currentSecurityCode, setCurrentSecurityCode] = useState<string>("");
-
-  const handleSecurityCodeVerification = async (code: string) => {
-    try {
-      const { data, error } = await supabase
-        .rpc('get_private_data_with_code', { code });
-
-      if (error) throw error;
-
-      if (data && data.length >= 0) {
-        setPrivateData(data);
-        setIsPrivateDataVisible(true);
-        setCurrentSecurityCode(code);
-        setIsSecurityDialogOpen(false);
-        toast.success("Private data accessed successfully");
-      } else {
-        toast.error("No private data found");
-      }
-    } catch (error: any) {
-      console.error('Error accessing private data:', error);
-      toast.error(error.message || "Failed to access private data");
-      setIsSecurityDialogOpen(false);
-    }
-  };
-
-  const handleCreatePrivatePost = async () => {
-    if (!newPrivateTitle.trim() && !newPrivateContent.trim() && newPrivateFiles.length === 0) {
-      toast.error("Please add a title, content, or files");
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      const mediaUrls: string[] = [];
-
-      if (newPrivateFiles.length > 0) {
-        for (const file of newPrivateFiles) {
-          const fileExt = file.name.split(".").pop();
-          const fileName = `${userId}/${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `private-files/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('private-files')
-            .upload(filePath, file);
-
-          if (uploadError) throw uploadError;
-
-          const { data: publicUrl } = supabase.storage
-            .from('private-files')
-            .getPublicUrl(filePath);
-
-          mediaUrls.push(publicUrl.publicUrl);
-        }
-      }
-
-      const { error } = await supabase
-        .from('private_posts')
-        .insert({
-          user_id: userId,
-          encrypted_title: newPrivateTitle,
-          content: newPrivateContent,
-          media_urls: mediaUrls,
-        });
-
-      if (error) throw error;
-
-      if (currentSecurityCode) {
-        const { data: refreshedData, error: refreshError } = await supabase
-          .rpc('get_private_data_with_code', { 
-            code: currentSecurityCode 
-          });
-
-        if (!refreshError && refreshedData) {
-          setPrivateData(refreshedData);
-        }
-      }
-
-      toast.success("Private post created successfully");
-      setNewPrivateTitle("");
-      setNewPrivateContent("");
-      setNewPrivateFiles([]);
-      setIsCreatingPrivatePost(false);
-    } catch (error: any) {
-      console.error('Error creating private post:', error);
-      toast.error(error.message || "Failed to create private post");
-    } finally {
-      setIsUploading(false);
-    }
-  };
 
   const handleSecurityCodeChange = async () => {
     if (newSecurityCode.length !== 4 || !/^\d{4}$/.test(newSecurityCode)) {
@@ -169,6 +81,23 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
     } catch (error) {
       console.error('Error setting security code:', error);
       toast.error("Failed to set security code");
+    }
+  };
+
+  const handleSecurityCodeVerification = async (code: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_private_data_with_code', { code });
+
+      if (error) throw error;
+
+      setPrivateData(data || []);
+      setIsPrivateDataVisible(true);
+      setIsSecurityDialogOpen(false);
+      toast.success("Private data accessed successfully");
+    } catch (error) {
+      console.error('Error accessing private data:', error);
+      toast.error("Failed to access private data");
     }
   };
 
@@ -237,6 +166,77 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const handlePrivateFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     setNewPrivateFiles(prevFiles => [...prevFiles, ...files]);
+  };
+
+  const handleCreatePrivatePost = async () => {
+    if (!newPrivateTitle.trim() && !newPrivateContent.trim()) {
+      toast.error("Please add a title or content");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const mediaUrls: string[] = [];
+
+      if (newPrivateFiles.length > 0) {
+        for (const file of newPrivateFiles) {
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${userId}/${crypto.randomUUID()}.${fileExt}`;
+          const filePath = `private-files/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('private-files')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrl } = supabase.storage
+            .from('private-files')
+            .getPublicUrl(filePath);
+
+          mediaUrls.push(publicUrl.publicUrl);
+        }
+      }
+
+      const { error } = await supabase
+        .from('private_posts')
+        .insert({
+          user_id: userId, // Explicitly set the user_id to match RLS policy
+          encrypted_title: newPrivateTitle,
+          content: newPrivateContent,
+          media_urls: mediaUrls,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error creating private post:', error);
+        throw error;
+      }
+
+      toast.success("Private post created successfully");
+      setNewPrivateTitle("");
+      setNewPrivateContent("");
+      setNewPrivateFiles([]);
+      setIsCreatingPrivatePost(false);
+
+      // Refresh private data if it's visible
+      if (isPrivateDataVisible) {
+        const { data, error: refreshError } = await supabase
+          .from('private_posts')
+          .select('*')
+          .eq('user_id', userId);
+
+        if (!refreshError && data) {
+          setPrivateData(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating private post:', error);
+      toast.error("Failed to create private post");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleMediaClick = (url: string) => {
