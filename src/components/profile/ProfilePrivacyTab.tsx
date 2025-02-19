@@ -201,13 +201,18 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       const { error } = await supabase
         .from('private_posts')
         .insert({
-          user_id: userId,
+          user_id: userId, // Explicitly set the user_id to match RLS policy
           encrypted_title: newPrivateTitle,
           content: newPrivateContent,
-          media_urls: mediaUrls
+          media_urls: mediaUrls,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating private post:', error);
+        throw error;
+      }
 
       toast.success("Private post created successfully");
       setNewPrivateTitle("");
@@ -215,6 +220,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       setNewPrivateFiles([]);
       setIsCreatingPrivatePost(false);
 
+      // Refresh private data if it's visible
       if (isPrivateDataVisible) {
         const { data, error: refreshError } = await supabase
           .from('private_posts')
