@@ -188,28 +188,28 @@ const Profiles = () => {
       <ProfileHeader profile={profile} isLoading={profileLoading} />
       <div className="max-w-4xl mx-auto px-4 mt-8">
         <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full justify-start h-14 bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 p-1 mb-8 overflow-hidden">
+          <TabsList className="w-full justify-start h-auto min-h-[3.5rem] bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 p-1 mb-8 overflow-x-auto flex-wrap gap-1">
             <TabsTrigger 
               value="posts" 
-              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
+              className="relative h-12 px-4 sm:px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2 flex-shrink-0"
             >
               <CircuitBoard className="w-4 h-4" />
-              <span className="relative z-10">Posts</span>
+              <span className="relative z-10 whitespace-nowrap">Posts</span>
             </TabsTrigger>
             <TabsTrigger 
               value="music" 
-              className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
+              className="relative h-12 px-4 sm:px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2 flex-shrink-0"
             >
               <Signal className="w-4 h-4" />
-              <span className="relative z-10">Music</span>
+              <span className="relative z-10 whitespace-nowrap">Music</span>
             </TabsTrigger>
             {isOwnProfile && (
               <TabsTrigger 
                 value="privacy" 
-                className="relative h-12 px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2"
+                className="relative h-12 px-4 sm:px-6 rounded-xl data-[state=active]:bg-gradient-to-r from-accent to-accent/80 data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-300 hover:text-accent gap-2 flex-shrink-0"
               >
                 <Lock className="w-4 h-4" />
-                <span className="relative z-10">Privacy</span>
+                <span className="relative z-10 whitespace-nowrap">Privacy</span>
               </TabsTrigger>
             )}
           </TabsList>
