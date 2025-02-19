@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,18 +85,30 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
 
   const handleSecurityCodeVerification = async (code: string) => {
     try {
+      console.log('Verifying security code:', code);
       const { data, error } = await supabase
-        .rpc('get_private_data_with_code', { code });
+        .rpc('get_private_data_with_code', { 
+          code: code 
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error in get_private_data_with_code:', error);
+        throw error;
+      }
 
-      setPrivateData(data || []);
-      setIsPrivateDataVisible(true);
-      setIsSecurityDialogOpen(false);
-      toast.success("Private data accessed successfully");
-    } catch (error) {
+      console.log('Private data retrieved:', data);
+      if (data) {
+        setPrivateData(data);
+        setIsPrivateDataVisible(true);
+        setIsSecurityDialogOpen(false);
+        toast.success("Private data accessed successfully");
+      } else {
+        toast.error("No private data found");
+      }
+    } catch (error: any) {
       console.error('Error accessing private data:', error);
-      toast.error("Failed to access private data");
+      toast.error(error.message || "Failed to access private data");
+      setIsSecurityDialogOpen(false);
     }
   };
 
@@ -169,8 +180,8 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   };
 
   const handleCreatePrivatePost = async () => {
-    if (!newPrivateTitle.trim() && !newPrivateContent.trim()) {
-      toast.error("Please add a title or content");
+    if (!newPrivateTitle.trim() && !newPrivateContent.trim() && newPrivateFiles.length === 0) {
+      toast.error("Please add a title, content, or files");
       return;
     }
 
@@ -201,18 +212,13 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       const { error } = await supabase
         .from('private_posts')
         .insert({
-          user_id: userId, // Explicitly set the user_id to match RLS policy
+          user_id: userId,
           encrypted_title: newPrivateTitle,
           content: newPrivateContent,
           media_urls: mediaUrls,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
         });
 
-      if (error) {
-        console.error('Error creating private post:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast.success("Private post created successfully");
       setNewPrivateTitle("");
@@ -223,17 +229,17 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       // Refresh private data if it's visible
       if (isPrivateDataVisible) {
         const { data, error: refreshError } = await supabase
-          .from('private_posts')
-          .select('*')
-          .eq('user_id', userId);
+          .rpc('get_private_data_with_code', { 
+            code: oldSecurityCode // Use the last successful code
+          });
 
         if (!refreshError && data) {
           setPrivateData(data);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating private post:', error);
-      toast.error("Failed to create private post");
+      toast.error(error.message || "Failed to create private post");
     } finally {
       setIsUploading(false);
     }
