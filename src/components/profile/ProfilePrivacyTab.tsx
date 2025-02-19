@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -278,10 +279,10 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   }, [userId]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-3xl mx-auto px-4 sm:px-6">
       <div className="space-y-4">
         <Label>Profile Picture</Label>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4">
           <Avatar className="w-20 h-20">
             <AvatarImage src={avatarUrl || undefined} />
             <AvatarFallback>
@@ -292,7 +293,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
             type="file"
             accept="image/*"
             onChange={handleAvatarUpload}
-            className="max-w-[250px]"
+            className="w-full sm:max-w-[250px]"
             disabled={isUploading}
           />
         </div>
@@ -387,15 +388,15 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Folder className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-semibold">Private Folder</h2>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <Button
                 onClick={() => setIsCreatingPrivatePost(true)}
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-none"
                 variant="outline"
               >
                 <Plus className="h-4 w-4" />
@@ -403,7 +404,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
               </Button>
               <Button
                 onClick={() => setIsSecurityDialogOpen(true)}
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-none"
                 variant="outline"
               >
                 <Lock className="h-4 w-4" />
@@ -439,7 +440,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 justify-end">
+              <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                 <Button
                   variant="ghost"
                   onClick={() => {
@@ -448,13 +449,14 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                     setNewPrivateContent("");
                     setNewPrivateFiles([]);
                   }}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleCreatePrivatePost}
                   disabled={isUploading}
-                  className="gap-2"
+                  className="gap-2 w-full sm:w-auto"
                 >
                   {isUploading ? (
                     <>Uploading...</>
@@ -476,13 +478,13 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                   <h3 className="font-medium">{item.encrypted_title || 'Untitled'}</h3>
                   <p className="text-sm text-muted-foreground">{item.content}</p>
                   {item.media_urls?.length > 0 && (
-                    <div className="flex flex-wrap gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {item.media_urls.map((url: string, index: number) => (
-                        <div key={index} className="relative group">
+                        <div key={index} className="relative group aspect-square">
                           <img
                             src={url}
                             alt={`Private media ${index + 1}`}
-                            className="h-20 w-20 object-cover rounded-md cursor-pointer transition-transform hover:scale-105"
+                            className="w-full h-full object-cover rounded-md cursor-pointer transition-transform hover:scale-105"
                             onClick={() => handleMediaClick(url)}
                           />
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
