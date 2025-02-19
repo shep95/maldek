@@ -4,7 +4,8 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <base href="/" />
     
     <!-- Primary Meta Tags -->
@@ -16,6 +17,15 @@
     <meta name="language" content="English" />
     <meta name="author" content="Bosley" />
     <meta name="canonical" content="https://www.bosley.app/" />
+
+    <!-- Cross-browser compatibility meta tags -->
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="HandheldFriendly" content="true" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -45,6 +55,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="format-detection" content="telephone=no" />
+
+    <!-- Cross-browser polyfill for Safari and older browsers -->
+    <script>
+      if (!window.globalThis) {
+        window.globalThis = window;
+      }
+      if (!window.CrossOriginIsolated) {
+        window.CrossOriginIsolated = false;
+      }
+    </script>
 
     <!-- Structured Data -->
     <script type="application/ld+json">
@@ -89,4 +109,3 @@
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
