@@ -6,6 +6,7 @@ import { Crown, Users } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 
 interface ProfileHeaderProps {
   profile: any;
@@ -132,13 +133,21 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
             {profile.bio && (
               <p className="text-sm text-white/60 mt-1 max-w-lg">{profile.bio}</p>
             )}
-            <div className="mt-4">
+            <div className="mt-4 flex gap-2">
               <Button 
                 variant="secondary" 
                 className="bg-accent/10 hover:bg-accent/20 text-white border border-accent/20"
               >
                 Follow
               </Button>
+              {profile?.id === (supabase.auth.getUser())?.data?.user?.id && (
+                <EditProfileDialog 
+                  profile={profile}
+                  onProfileUpdate={() => {
+                    queryClient.invalidateQueries({ queryKey: ['profile', profile.id] });
+                  }}
+                />
+              )}
             </div>
           </div>
         </div>
