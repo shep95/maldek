@@ -2,10 +2,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StoryRing } from "@/components/profile/StoryRing";
-import { Crown, Users } from "lucide-react";
+import { Crown, Users, PencilIcon } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
+import { useSession } from '@supabase/auth-helpers-react';
 
 interface ProfileHeaderProps {
   profile: any;
@@ -14,6 +16,9 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   const queryClient = useQueryClient();
+  const session = useSession();
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const isOwnProfile = session?.user?.id === profile?.id;
 
   // Fetch user's subscription status with proper joins
   const { data: subscription } = useQuery({
@@ -101,12 +106,22 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
           <div className="relative flex">
             <div className="absolute inset-0 bg-accent/20 rounded-full blur-xl"></div>
             <StoryRing userId={profile.id}>
-              <Avatar className="h-24 w-24 ring-4 ring-background relative z-10 shadow-xl">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback>
-                  {profile.username?.[0]?.toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group">
+                <Avatar className="h-24 w-24 ring-4 ring-background relative z-10 shadow-xl">
+                  <AvatarImage src={profile.avatar_url || undefined} />
+                  <AvatarFallback>
+                    {profile.username?.[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                {isOwnProfile && (
+                  <button
+                    onClick={() => setIsEditProfileOpen(true)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                  >
+                    <PencilIcon className="w-6 h-6 text-white" />
+                  </button>
+                )}
+              </div>
             </StoryRing>
           </div>
           <div className="flex-1">
@@ -143,6 +158,10 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
           </div>
         </div>
       </div>
+      <EditProfileDialog
+        open={isEditProfileOpen}
+        onOpenChange={setIsEditProfileOpen}
+      />
     </div>
   );
 };
