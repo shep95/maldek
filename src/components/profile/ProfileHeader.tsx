@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StoryRing } from "@/components/profile/StoryRing";
@@ -20,7 +19,6 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const isOwnProfile = session?.user?.id === profile?.id;
 
-  // Fetch user's subscription status with proper joins
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription', profile?.id],
     queryFn: async () => {
@@ -57,7 +55,6 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
     retry: 1,
   });
 
-  // Set up real-time subscription for follower count updates
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -82,6 +79,10 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
     };
   }, [profile?.id, queryClient]);
 
+  const handleProfileUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['profile', profile.id] });
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse">
@@ -96,7 +97,6 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
 
   if (!profile) return null;
 
-  // Ensure follower_count has a default value
   const followerCount = profile.follower_count ?? 0;
 
   return (
@@ -159,8 +159,10 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
         </div>
       </div>
       <EditProfileDialog
-        open={isEditProfileOpen}
+        isOpen={isEditProfileOpen}
         onOpenChange={setIsEditProfileOpen}
+        profile={profile}
+        onProfileUpdate={handleProfileUpdate}
       />
     </div>
   );
