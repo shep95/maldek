@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,10 +13,11 @@ import { Pencil } from "lucide-react";
 interface EditProfileDialogProps {
   profile: any;
   onProfileUpdate: () => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const EditProfileDialog = ({ profile, onProfileUpdate, isOpen, onOpenChange }: EditProfileDialogProps) => {
   const [username, setUsername] = useState(profile?.username || "");
   const [bio, setBio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +81,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
       
       toast.success("Profile updated successfully");
       onProfileUpdate();
-      setIsOpen(false);
+      onOpenChange(false);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast.error(error.message || "Failed to update profile");
@@ -88,18 +90,8 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
     }
   };
 
-  const handleClose = () => {
-    // Keep the draft in localStorage when closing
-    setIsOpen(false);
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-white">
-          Edit Profile
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
@@ -137,7 +129,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
               placeholder="Enter username"
               required
               minLength={3}
-              readOnly // Username can't be changed
+              readOnly
               className="bg-muted"
             />
           </div>
@@ -157,7 +149,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
             <Button
               type="button"
               variant="outline"
-              onClick={handleClose}
+              onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
               Cancel
