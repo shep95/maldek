@@ -24,6 +24,14 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
     return price % 1 === 0 ? price.toLocaleString() : price.toFixed(2);
   };
 
+  const handleSubscribe = () => {
+    if (isEmperor) {
+      window.location.href = 'https://buy.stripe.com/4gweXr3uxcUI8ZG5kk';
+    } else {
+      onSubscribe(tier.name);
+    }
+  };
+
   return (
     <Card className={cn(
       "relative overflow-hidden backdrop-blur-sm transition-all duration-300",
@@ -88,7 +96,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
       {/* Action Button */}
       <Button 
-        onClick={() => onSubscribe(tier.name)}
+        onClick={handleSubscribe}
         className={cn(
           "w-full mt-4",
           isEmperor ? "bg-yellow-500 hover:bg-yellow-400 text-black" :
