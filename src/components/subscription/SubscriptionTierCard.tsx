@@ -81,11 +81,19 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
         {/* Creator-only Features */}
         {isCreator && (
-          <FeatureItem
-            icon={Crown}
-            text="Talk With The Founders"
-            iconColor="text-white"
-          />
+          <>
+            <FeatureItem
+              icon={Crown}
+              text="Talk With The Founders"
+              iconColor="text-white"
+            />
+            <FeatureItem
+              icon={Crown}
+              text="Only Available To The First 100k Subscribers"
+              iconColor="text-white"
+              badge={{ text: "Limited", variant: "default" }}
+            />
+          </>
         )}
 
         {/* Standard Features */}
