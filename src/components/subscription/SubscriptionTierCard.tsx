@@ -84,8 +84,9 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           <>
             <FeatureItem
               icon={Crown}
-              text="Talk With The Founders"
+              text="Talk With The Founders (First 100k Only)"
               iconColor="text-white"
+              badge={{ text: "Limited", variant: "beta" }}
             />
             <FeatureItem
               icon={Crown}
