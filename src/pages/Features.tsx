@@ -3,6 +3,7 @@ import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign, Music, Langu
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 const Features = () => {
   const navigate = useNavigate();
