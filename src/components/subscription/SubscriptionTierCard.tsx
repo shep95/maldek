@@ -27,6 +27,8 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
   const handleSubscribe = () => {
     if (isEmperor) {
       window.location.href = 'https://buy.stripe.com/4gweXr3uxcUI8ZG5kk';
+    } else if (isCreator) {
+      window.location.href = 'https://buy.stripe.com/fZe02x0il1c0fo4bIJ';
     } else {
       onSubscribe(tier.name);
     }
@@ -76,6 +78,15 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
         {/* Premium Features */}
         {isPremium && <PremiumFeatures />}
+
+        {/* Creator-only Features */}
+        {isCreator && (
+          <FeatureItem
+            icon={Crown}
+            text="Talk With The Founders"
+            iconColor="text-white"
+          />
+        )}
 
         {/* Standard Features */}
         <StandardFeatures tier={tier} />
