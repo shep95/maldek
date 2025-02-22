@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
 import { ProfilePrivacyTab } from "@/components/profile/ProfilePrivacyTab";
-import { Card } from "@/components/ui/card";
 import { CircuitBoard, Signal, Lock } from "lucide-react";
 
 const Profiles = () => {
