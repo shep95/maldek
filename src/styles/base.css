@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,7 +21,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;  /* #fafafa - Modern light gray background */
+    --background: 0 0% 9%;  /* #171717 */
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;  /* #ffffff - Pure white for cards */
     --card-foreground: 240 10% 3.9%;
