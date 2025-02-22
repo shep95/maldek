@@ -5,7 +5,6 @@ import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
-import { FeaturesDialog } from "@/components/features/FeaturesDialog";
 import { ProfilePopup } from "@/components/profile/ProfilePopup";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -33,7 +32,6 @@ export const NavItems = ({
   const location = useLocation();
   const unreadCount = useNotificationCount(userId);
   const isMobile = useIsMobile();
-  const [showFeatures, setShowFeatures] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const session = useSession();
 
@@ -145,7 +143,8 @@ export const NavItems = ({
     {
       icon: Layers,
       label: "Our Features",
-      onClick: () => setShowFeatures(true),
+      path: "/features",
+      active: location.pathname === "/features",
       description: "Learn about our platform features",
       className: "text-accent hover:bg-accent/10"
     },
@@ -199,11 +198,6 @@ export const NavItems = ({
           />
         ))}
       </nav>
-
-      <FeaturesDialog 
-        isOpen={showFeatures} 
-        onClose={() => setShowFeatures(false)} 
-      />
 
       <ProfilePopup
         isOpen={isProfileOpen}
