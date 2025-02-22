@@ -91,7 +91,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
               icon={Crown}
               text="Only Available To The First 100k Subscribers"
               iconColor="text-white"
-              badge={{ text: "Limited", variant: "default" }}
+              badge={{ text: "Limited", variant: "beta" }}
             />
           </>
         )}
