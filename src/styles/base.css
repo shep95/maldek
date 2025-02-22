@@ -21,7 +21,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 9%;  /* #171717 */
+    --background: 0 0% 98%;  /* #fafafa - Modern light gray background */
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;  /* #ffffff - Pure white for cards */
     --card-foreground: 240 10% 3.9%;
@@ -55,7 +55,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 0%;  /* Pure black in dark mode */
+    --primary: #171717;  /* Updated light color theme */
     --primary-foreground: 0 0% 98%;
     --secondary: 240 3.7% 5.1%;  /* #0d0d0d in dark mode */
     --secondary-foreground: 0 0% 98%;
