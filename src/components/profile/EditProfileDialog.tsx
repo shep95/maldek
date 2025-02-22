@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -88,11 +89,6 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
     }
   };
 
-  const handleClose = () => {
-    // Keep the draft in localStorage when closing
-    setIsOpen(false);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -137,7 +133,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
               placeholder="Enter username"
               required
               minLength={3}
-              readOnly // Username can't be changed
+              readOnly
               className="bg-muted"
             />
           </div>
@@ -157,7 +153,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
             <Button
               type="button"
               variant="outline"
-              onClick={handleClose}
+              onClick={() => setIsOpen(false)}
               disabled={isSubmitting}
             >
               Cancel

@@ -160,8 +160,6 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
         </div>
       </div>
       <EditProfileDialog
-        isOpen={isEditProfileOpen}
-        onOpenChange={setIsEditProfileOpen}
         profile={profile}
         onProfileUpdate={handleProfileUpdate}
       />
