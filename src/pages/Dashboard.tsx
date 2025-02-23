@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -72,7 +73,7 @@ const Dashboard = () => {
         .from('posts')
         .select(`
           *,
-          profiles:user_id (
+          profiles!posts_user_id_fkey (
             id,
             username,
             avatar_url
