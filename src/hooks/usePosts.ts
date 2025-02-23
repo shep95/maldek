@@ -29,13 +29,13 @@ export const usePosts = (followingOnly: boolean = false) => {
           .from('posts')
           .select(`
             *,
-            profiles!posts_user_id_fkey (
+            profiles!inner (
               id,
               username,
               avatar_url,
-              user_subscriptions:user_subscriptions(
+              user_subscriptions (
                 status,
-                subscription_tiers(
+                subscription_tiers (
                   name,
                   checkmark_color
                 )
