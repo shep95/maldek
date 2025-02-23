@@ -73,7 +73,7 @@ const Dashboard = () => {
         .from('posts')
         .select(`
           *,
-          profiles:user_id (
+          profiles!inner (
             id,
             username,
             avatar_url
