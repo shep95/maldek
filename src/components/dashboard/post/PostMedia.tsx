@@ -95,21 +95,21 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
           const publicUrl = getPublicUrl(url);
 
           return (
-            <div key={url} className="relative overflow-hidden group">
+            <div key={url} className="relative overflow-hidden group rounded-lg">
               {isVideo ? (
                 <VideoPlayer 
                   videoUrl={url} 
                   controls 
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain rounded-lg"
                 />
               ) : (
                 <div onClick={() => onMediaClick?.(publicUrl)}>
                   <AspectRatio ratio={16 / 9}>
-                    <div className="relative bg-black/5 rounded-[22px]">
+                    <div className="relative bg-black/5 rounded-lg">
                       <img
                         src={publicUrl}
                         alt={`Media content ${i + 1}`}
-                        className="w-full h-full object-contain p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                        className="w-full h-full object-contain p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] rounded-lg"
                         loading="lazy"
                       />
                       {showWatermark && !hasPaidSubscription && (
