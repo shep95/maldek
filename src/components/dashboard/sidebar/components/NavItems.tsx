@@ -1,4 +1,5 @@
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers } from "lucide-react"
+
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers, Bot } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -41,7 +42,11 @@ export const NavItems = ({
         }
       }
     }
-    onNavigate(path);
+    if (path?.startsWith('http')) {
+      window.open(path, '_blank');
+    } else {
+      onNavigate(path);
+    }
   };
 
   const handleCreatePost = () => {
@@ -102,6 +107,13 @@ export const NavItems = ({
       path: "/features",
       active: location.pathname === "/features",
       description: "Learn about our platform features",
+      className: "text-accent hover:bg-accent/10"
+    },
+    {
+      icon: Bot,
+      label: "ZUKO AI",
+      path: "https://www.zukoi.app",
+      description: "Visit ZUKO AI",
       className: "text-accent hover:bg-accent/10"
     },
     { 
