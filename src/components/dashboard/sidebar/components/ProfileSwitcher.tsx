@@ -69,21 +69,31 @@ export const ProfileSwitcher = ({ collapsed }: { collapsed?: boolean }) => {
 
       const newUsername = `${session.user.email?.split('@')[0]}_2`;
       
-      const { error: insertError } = await supabase
+      const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
         .insert({
+          id: crypto.randomUUID(), // Generate UUID for the new profile
           username: newUsername,
           primary_profile_id: session.user.id,
           profile_type: 'secondary',
           bio: '',
           follower_count: 0,
+          avatar_url: null,
+          banner_url: null,
+          social_links: {},
+          badges: [],
+          achievements: [],
           total_posts: 0,
           total_likes_received: 0,
           total_views: 0,
           total_media: 0,
+          website: '',
           location: '',
-          website: ''
-        });
+          last_active: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
