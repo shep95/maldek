@@ -32,6 +32,13 @@ export const NavItems = ({
   const isMobile = useIsMobile();
   const session = useSession();
 
+  const isFebruary28th2025 = () => {
+    const now = new Date();
+    return now.getFullYear() === 2025 && 
+           now.getMonth() === 1 && // February is 1 (0-based months)
+           now.getDate() === 28;
+  };
+
   const handleNavigation = (path?: string) => {
     if (isMobile) {
       const mobileSheet = document.querySelector('[data-mobile="true"]');
@@ -43,6 +50,9 @@ export const NavItems = ({
       }
     }
     if (path?.startsWith('http')) {
+      if (path === 'https://www.zukoi.app' && !isFebruary28th2025()) {
+        return; // Do nothing if it's not February 28th, 2025
+      }
       window.open(path, '_blank');
     } else {
       onNavigate(path);
@@ -113,8 +123,8 @@ export const NavItems = ({
       icon: Bot,
       label: "ZUKO AI",
       path: "https://www.zukoi.app",
-      description: "Visit ZUKO AI",
-      className: "text-accent hover:bg-accent/10"
+      description: isFebruary28th2025() ? "Visit ZUKO AI" : "Available on February 28th, 2025",
+      className: isFebruary28th2025() ? "text-accent hover:bg-accent/10" : "text-muted-foreground cursor-not-allowed opacity-50"
     },
     { 
       icon: DollarSign, 
