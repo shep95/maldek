@@ -1409,8 +1409,6 @@ export type Database = {
           last_active: string | null
           last_post_time: string | null
           location: string | null
-          primary_profile_id: string | null
-          profile_type: Database["public"]["Enums"]["profile_type"] | null
           security_code: string | null
           social_links: Json | null
           theme_preference: string | null
@@ -1435,8 +1433,6 @@ export type Database = {
           last_active?: string | null
           last_post_time?: string | null
           location?: string | null
-          primary_profile_id?: string | null
-          profile_type?: Database["public"]["Enums"]["profile_type"] | null
           security_code?: string | null
           social_links?: Json | null
           theme_preference?: string | null
@@ -1461,8 +1457,6 @@ export type Database = {
           last_active?: string | null
           last_post_time?: string | null
           location?: string | null
-          primary_profile_id?: string | null
-          profile_type?: Database["public"]["Enums"]["profile_type"] | null
           security_code?: string | null
           social_links?: Json | null
           theme_preference?: string | null
@@ -1473,15 +1467,7 @@ export type Database = {
           username?: string
           website?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_primary_profile_id_fkey"
-            columns: ["primary_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       promo_codes: {
         Row: {
@@ -2364,7 +2350,6 @@ export type Database = {
         | "oceania"
         | "global"
       notification_type: "like" | "comment" | "follow" | "mention" | "repost"
-      profile_type: "primary" | "secondary"
       space_role: "host" | "co_host" | "speaker" | "listener"
       space_status: "scheduled" | "live" | "ended"
     }
