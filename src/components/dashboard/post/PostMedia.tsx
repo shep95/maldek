@@ -16,22 +16,44 @@ interface PostMediaProps {
 }
 
 export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaProps) => {
+  const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const [showWatermark, setShowWatermark] = useState(false);
   const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
                              subscription?.tier?.name === 'True Emperor';
 
   useEffect(() => {
+    const loadImageDimensions = async (url: string) => {
+      return new Promise<{ width: number; height: number }>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        };
+        img.src = url;
+      });
+    };
+
+    mediaUrls.forEach(async (url) => {
+      if (!isVideoFile(url)) {
+        const publicUrl = getPublicUrl(url);
+        const dimensions = await loadImageDimensions(publicUrl);
+        setImageDimensions(prev => ({
+          ...prev,
+          [url]: dimensions
+        }));
+      }
+    });
+  }, [mediaUrls]);
+
+  useEffect(() => {
     if (hasPaidSubscription) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Detect common screenshot shortcuts
       const isPrintScreen = e.key === 'PrintScreen';
       const isMacScreenshot = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '4';
       const isWindowsSnippingTool = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's';
       
       if (isPrintScreen || isMacScreenshot || isWindowsSnippingTool) {
         setShowWatermark(true);
-        // Keep watermark visible for a short duration after screenshot
         setTimeout(() => setShowWatermark(false), 2000);
       }
     };
@@ -54,6 +76,20 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
       .from('posts')
       .getPublicUrl(url);
     return data.publicUrl;
+  };
+
+  const getAspectRatio = (url: string) => {
+    const dimensions = imageDimensions[url];
+    if (!dimensions) return 16 / 9; // default aspect ratio while loading
+
+    const ratio = dimensions.width / dimensions.height;
+    
+    // Check if it's close to common aspect ratios
+    if (Math.abs(ratio - 1) < 0.1) return 1; // Square
+    if (Math.abs(ratio - 16/9) < 0.1) return 16/9; // 16:9
+    if (Math.abs(ratio - 4/3) < 0.1) return 4/3; // 4:3
+    
+    return ratio; // Use actual ratio if it doesn't match common ones
   };
 
   const handleDownload = async (url: string, e: React.MouseEvent) => {
@@ -93,6 +129,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
         {mediaUrls.map((url, i) => {
           const isVideo = isVideoFile(url);
           const publicUrl = getPublicUrl(url);
+          const aspectRatio = getAspectRatio(url);
 
           return (
             <div key={url} className="relative overflow-hidden group rounded-lg">
@@ -104,7 +141,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
                 />
               ) : (
                 <div onClick={() => onMediaClick?.(publicUrl)}>
-                  <AspectRatio ratio={16 / 9}>
+                  <AspectRatio ratio={aspectRatio}>
                     <div className="relative bg-black/5 rounded-lg">
                       <img
                         src={publicUrl}
@@ -156,4 +193,3 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     </div>
   );
 };
-
