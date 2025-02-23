@@ -14,6 +14,7 @@ interface NotificationPreference {
   email_enabled: boolean;
   push_enabled: boolean;
   muted_until?: string | null;
+  user_id: string;
 }
 
 export const NotificationPreferences = () => {
@@ -40,21 +41,30 @@ export const NotificationPreferences = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
+      const { type, ...updateData } = updates;
+      
       const { error } = await supabase
         .from('notification_preferences')
         .upsert({
           user_id: user.id,
-          notification_type: updates.type,
-          ...updates
+          notification_type: type,
+          enabled: updateData.enabled ?? true,
+          email_enabled: updateData.email_enabled ?? false,
+          push_enabled: updateData.push_enabled ?? false,
+          muted_until: updateData.muted_until,
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
       toast.success('Preferences updated');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Mutation error:', error);
       toast.error('Failed to update preferences');
     }
   });
@@ -131,3 +141,4 @@ export const NotificationPreferences = () => {
     </Card>
   );
 };
+
