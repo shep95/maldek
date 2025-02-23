@@ -1,3 +1,4 @@
+
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
@@ -99,16 +100,16 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
                 <VideoPlayer 
                   videoUrl={url} 
                   controls 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               ) : (
                 <div onClick={() => onMediaClick?.(publicUrl)}>
-                  <AspectRatio ratio={mediaUrls.length === 1 ? 16 / 9 : 1}>
-                    <div className="relative">
+                  <AspectRatio ratio={16 / 9}>
+                    <div className="relative bg-black/5 rounded-[22px]">
                       <img
                         src={publicUrl}
                         alt={`Media content ${i + 1}`}
-                        className="w-full h-full object-cover bg-muted/10 rounded-[22px] cursor-pointer transition-all duration-200 hover:scale-[1.02]"
+                        className="w-full h-full object-contain p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]"
                         loading="lazy"
                       />
                       {showWatermark && !hasPaidSubscription && (
@@ -155,3 +156,4 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     </div>
   );
 };
+
