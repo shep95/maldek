@@ -19,6 +19,7 @@ interface Profile {
   username: string;
   avatar_url: string | null;
   profile_type: 'primary' | 'secondary';
+  primary_profile_id: string | null;
 }
 
 export const ProfileSwitcher = ({ collapsed }: { collapsed?: boolean }) => {
@@ -29,36 +30,30 @@ export const ProfileSwitcher = ({ collapsed }: { collapsed?: boolean }) => {
   const { data: profiles, refetch } = useQuery({
     queryKey: ['user-profiles'],
     queryFn: async () => {
-      const { data: primaryProfile, error: primaryError } = await supabase
+      if (!session?.user?.id) return [];
+
+      const { data: allProfiles, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', session?.user?.id)
-        .single();
+        .or(`id.eq.${session.user.id},primary_profile_id.eq.${session.user.id}`)
+        .order('created_at', { ascending: true });
 
-      if (primaryError) throw primaryError;
-
-      const { data: secondaryProfile, error: secondaryError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('primary_profile_id', session?.user?.id)
-        .maybeSingle();
-
-      if (secondaryError) throw secondaryError;
-
-      return [primaryProfile, secondaryProfile].filter(Boolean) as Profile[];
+      if (error) throw error;
+      
+      return (allProfiles || []) as Profile[];
     },
     enabled: !!session?.user?.id
   });
 
   const handleCreateSecondaryProfile = async () => {
-    if (isCreating) return;
+    if (isCreating || !session?.user?.id) return;
     setIsCreating(true);
 
     try {
       const { data: existingProfiles } = await supabase
         .from('profiles')
         .select('id')
-        .eq('primary_profile_id', session?.user?.id);
+        .eq('primary_profile_id', session.user.id);
 
       if (existingProfiles && existingProfiles.length >= 1) {
         toast({
@@ -69,15 +64,23 @@ export const ProfileSwitcher = ({ collapsed }: { collapsed?: boolean }) => {
         return;
       }
 
-      const newUsername = `${session?.user?.email?.split('@')[0]}_2`;
+      const newUsername = `${session.user.email?.split('@')[0]}_2`;
       
       const { data: newProfile, error } = await supabase
         .from('profiles')
-        .insert({
+        .insert([{
           username: newUsername,
-          primary_profile_id: session?.user?.id,
-          profile_type: 'secondary'
-        })
+          primary_profile_id: session.user.id,
+          profile_type: 'secondary',
+          bio: '',
+          avatar_url: null,
+          banner_url: null,
+          follower_count: 0,
+          total_posts: 0,
+          total_likes_received: 0,
+          total_views: 0,
+          total_media: 0
+        }])
         .select()
         .single();
 
@@ -103,10 +106,7 @@ export const ProfileSwitcher = ({ collapsed }: { collapsed?: boolean }) => {
 
   const handleSwitchProfile = async (profileId: string) => {
     try {
-      // Store the current profile in localStorage
       localStorage.setItem('current_profile_id', profileId);
-      
-      // Refresh the page to apply the profile switch
       window.location.reload();
     } catch (error) {
       console.error('Error switching profile:', error);

@@ -170,10 +170,13 @@ export const NavItems = ({
 
   return (
     <nav className="space-y-2">
-      {navItems.map((item, index) => (
-        item.component ? (
-          <item.component key={index} {...item.props} />
-        ) : (
+      {navItems.map((item, index) => {
+        if ('component' in item) {
+          const Component = item.component;
+          return <Component key={index} {...item.props} />;
+        }
+        
+        return (
           <NavItem
             key={item.label}
             {...item}
@@ -181,8 +184,8 @@ export const NavItems = ({
             onNavigate={handleNavigation}
             collapsed={collapsed}
           />
-        )
-      ))}
+        );
+      })}
     </nav>
   );
 };
