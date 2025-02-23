@@ -2,6 +2,7 @@
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers, Bot } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
+import { ProfileSwitcher } from "./ProfileSwitcher";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -35,7 +36,7 @@ export const NavItems = ({
   const isFebruary28th2025 = () => {
     const now = new Date();
     return now.getFullYear() === 2025 && 
-           now.getMonth() === 1 && // February is 1 (0-based months)
+           now.getMonth() === 1 && 
            now.getDate() === 28;
   };
 
@@ -77,6 +78,10 @@ export const NavItems = ({
       path: "/profiles",
       active: location.pathname === "/profiles",
       description: "View your profile"
+    },
+    {
+      component: ProfileSwitcher,
+      props: { collapsed }
     },
     { 
       icon: Bell, 
@@ -165,14 +170,18 @@ export const NavItems = ({
 
   return (
     <nav className="space-y-2">
-      {navItems.map((item) => (
-        <NavItem
-          key={item.label}
-          {...item}
-          subscription={subscription}
-          onNavigate={handleNavigation}
-          collapsed={collapsed}
-        />
+      {navItems.map((item, index) => (
+        item.component ? (
+          <item.component key={index} {...item.props} />
+        ) : (
+          <NavItem
+            key={item.label}
+            {...item}
+            subscription={subscription}
+            onNavigate={handleNavigation}
+            collapsed={collapsed}
+          />
+        )
       ))}
     </nav>
   );
