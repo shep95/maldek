@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +25,7 @@ const PostDetail = () => {
     }
   }, [postId, navigate]);
 
-  // Optimized post query with minimal data fetching
+  // Optimized post query with complete data fetching
   const { data: post, isLoading: isLoadingPost, error: postError } = useQuery({
     queryKey: ['post', postId],
     queryFn: async () => {
@@ -36,17 +35,25 @@ const PostDetail = () => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          id,
-          content,
-          user_id,
-          media_urls,
-          created_at,
-          is_edited,
-          original_content,
-          author:profiles (
+          *,
+          post_likes (
+            id,
+            user_id
+          ),
+          comments (
+            id
+          ),
+          profiles!inner (
             id,
             username,
-            avatar_url
+            avatar_url,
+            user_subscriptions (
+              status,
+              subscription_tiers (
+                name,
+                checkmark_color
+              )
+            )
           )
         `)
         .eq('id', postId)
@@ -64,25 +71,29 @@ const PostDetail = () => {
 
       console.log('Post data fetched:', data);
       
-      return {
+      // Transform data to match Post type
+      const transformedPost: Post = {
         ...data,
         author: {
-          id: data.author.id,
-          username: data.author.username,
-          avatar_url: data.author.avatar_url,
-          name: data.author.username
+          id: data.profiles.id,
+          username: data.profiles.username,
+          avatar_url: data.profiles.avatar_url,
+          name: data.profiles.username,
+          subscription: data.profiles.user_subscriptions?.[0]?.subscription_tiers
         },
         timestamp: new Date(data.created_at),
-        likes: 0,
-        comments: 0,
-        reposts: 0,
-        isLiked: false,
+        likes: data.post_likes?.length || 0,
+        comments: data.comments?.length || 0,
+        reposts: data.reposts || 0,
+        isLiked: data.post_likes?.some(like => like.user_id === currentUserId) || false,
         isBookmarked: false,
-        view_count: 0
+        view_count: data.view_count || 0
       };
+
+      return transformedPost;
     },
-    staleTime: 1000 * 30, // Cache for 30 seconds
-    retry: 1 // Only retry once to avoid infinite loading
+    staleTime: 1000 * 30,
+    retry: 1
   });
 
   // Optimized comments query with prefetching
@@ -132,8 +143,8 @@ const PostDetail = () => {
       console.log('Comments fetched:', transformedComments);
       return transformedComments;
     },
-    staleTime: 1000 * 30, // Cache for 30 seconds
-    enabled: !!post // Only fetch comments if post exists
+    staleTime: 1000 * 30,
+    enabled: !!post
   });
 
   // Simplified real-time subscription with optimistic updates
@@ -213,15 +224,17 @@ const PostDetail = () => {
     <div className="space-y-6 p-6">
       <PostDetailHeader />
       
-      <PostDetailContent
-        post={post}
-        currentUserId={currentUserId || ''}
-        onPostAction={handlePostAction}
-      />
+      {post && (
+        <PostDetailContent
+          post={post}
+          currentUserId={currentUserId || ''}
+          onPostAction={handlePostAction}
+        />
+      )}
 
       <CommentSection
-        postId={post.id}
-        comments={comments}
+        postId={postId || ''}
+        comments={comments || []}
         currentUserId={currentUserId || ''}
       />
     </div>

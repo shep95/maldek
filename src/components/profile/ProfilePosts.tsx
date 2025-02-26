@@ -1,3 +1,4 @@
+
 import { PostCard } from "../dashboard/PostCard";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useEffect } from "react";
@@ -70,27 +71,37 @@ export const ProfilePosts = ({ posts, isLoading, onPostAction }: ProfilePostsPro
 
   return (
     <div className="mt-8 space-y-6">
-      {posts?.map((post) => (
-        <PostCard
-          key={post.id}
-          post={{
-            ...post,
-            author: {
-              id: post.profiles.id,
-              username: post.profiles.username,
-              avatar_url: post.profiles.avatar_url,
-              name: post.profiles.username
-            },
-            timestamp: new Date(post.created_at),
-            comments: post.comments?.length || 0,
-            isLiked: post.post_likes?.some(like => like.user_id === session?.user?.id) || false,
-            isBookmarked: post.bookmarks?.some(bookmark => bookmark.user_id === session?.user?.id) || false
-          }}
-          currentUserId={session?.user?.id || ''}
-          onPostAction={onPostAction}
-          onMediaClick={() => {}}
-        />
-      ))}
+      {posts?.map((post) => {
+        // Calculate correct counts from the nested data
+        const likeCount = post.post_likes?.length || 0;
+        const commentCount = post.comments?.length || 0;
+        const isLiked = post.post_likes?.some(like => like.user_id === session?.user?.id) || false;
+
+        return (
+          <PostCard
+            key={post.id}
+            post={{
+              ...post,
+              author: {
+                id: post.profiles.id,
+                username: post.profiles.username,
+                avatar_url: post.profiles.avatar_url,
+                name: post.profiles.username,
+                subscription: post.profiles.user_subscriptions?.[0]?.subscription_tiers
+              },
+              timestamp: new Date(post.created_at),
+              likes: likeCount,
+              comments: commentCount,
+              reposts: post.reposts || 0,
+              isLiked,
+              isBookmarked: post.bookmarks?.some(bookmark => bookmark.user_id === session?.user?.id) || false
+            }}
+            currentUserId={session?.user?.id || ''}
+            onPostAction={onPostAction}
+            onMediaClick={() => {}}
+          />
+        );
+      })}
 
       {posts?.length === 0 && (
         <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-lg border border-muted">

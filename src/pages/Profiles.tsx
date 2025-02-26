@@ -87,7 +87,14 @@ const Profiles = () => {
           profiles (
             id,
             username,
-            avatar_url
+            avatar_url,
+            user_subscriptions (
+              status,
+              subscription_tiers (
+                name,
+                checkmark_color
+              )
+            )
           ),
           post_likes (
             id,
