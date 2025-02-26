@@ -28,7 +28,7 @@ const TermsOfService = () => {
 
         <section className="space-y-3 sm:space-y-4">
           <h2 className="text-xl sm:text-2xl font-semibold">2. User Accounts</h2>
-          <p className="text-sm sm:text-base">Users must be at least 13 years old to create an account. You are responsible for maintaining the security of your account and password. Bosley cannot and will not be liable for any loss or damage from your failure to comply with this security obligation.</p>
+          <p className="text-sm sm:text-base">Users must be at least 18 years old to create an account. You are responsible for maintaining the security of your account and password. Bosley cannot and will not be liable for any loss or damage from your failure to comply with this security obligation.</p>
         </section>
 
         <section className="space-y-3 sm:space-y-4">
@@ -68,3 +68,4 @@ const TermsOfService = () => {
 };
 
 export default TermsOfService;
+
