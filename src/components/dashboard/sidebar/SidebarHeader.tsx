@@ -2,6 +2,7 @@
 import { cn } from "@/lib/utils";
 import { useSession } from "@supabase/auth-helpers-react";
 import { StoryRing } from "@/components/profile/StoryRing";
+import { Hexagon } from "lucide-react";
 
 interface SidebarHeaderProps {
   collapsed?: boolean;
@@ -18,20 +19,12 @@ export const SidebarHeader = ({ collapsed }: SidebarHeaderProps) => {
       {session?.user?.id ? (
         <StoryRing userId={session.user.id}>
           <div className="relative w-8 h-8">
-            <img 
-              src="/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png"
-              alt="Bosley Logo"
-              className="w-full h-full object-contain rounded-full bg-black"
-            />
+            <Hexagon className="w-full h-full text-accent" />
           </div>
         </StoryRing>
       ) : (
         <div className="relative w-8 h-8">
-          <img 
-            src="/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png"
-            alt="Bosley Logo"
-            className="w-full h-full object-contain rounded-full bg-black"
-          />
+          <Hexagon className="w-full h-full text-accent" />
         </div>
       )}
       {!collapsed && (
