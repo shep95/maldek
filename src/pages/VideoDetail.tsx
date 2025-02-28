@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +20,7 @@ const VideoDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [viewCount, setViewCount] = useState(0);
 
   // Fetch video details
   const { data: video, isLoading, error } = useQuery({
@@ -52,6 +52,21 @@ const VideoDetail = () => {
       if (error) {
         console.error('Error fetching video:', error);
         throw error;
+      }
+
+      // Get the current view count for this video
+      try {
+        const { data: analyticsData, error: analyticsError } = await supabase
+          .from('post_analytics')
+          .select('view_count')
+          .eq('post_id', videoId)
+          .maybeSingle();
+          
+        if (analyticsData && !analyticsError) {
+          setViewCount(analyticsData.view_count || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching view count:', error);
       }
 
       return data;
@@ -302,7 +317,7 @@ const VideoDetail = () => {
         
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center space-x-2 text-muted-foreground">
-            <span>{(video.post_analytics?.view_count || 0).toLocaleString()} views</span>
+            <span>{viewCount.toLocaleString()} views</span>
             <span>•</span>
             <span>{formatDistanceToNow(new Date(video.created_at), { addSuffix: true })}</span>
           </div>
