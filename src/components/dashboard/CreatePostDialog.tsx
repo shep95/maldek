@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export const CreatePostDialog = ({
     content,
     setContent,
     mediaFiles,
+    setMediaFiles,
     isSubmitting,
     uploadProgress,
     postsRemaining,
@@ -43,6 +45,12 @@ export const CreatePostDialog = ({
 
   const handleFileSelectWithValidation = async (files: FileList) => {
     try {
+      // Check if adding these new files would exceed the 6 file limit
+      if (mediaFiles.length + files.length > 6) {
+        toast.error("Maximum of 6 media files allowed");
+        return;
+      }
+
       if (isStory) {
         for (const file of Array.from(files)) {
           if (file.type.startsWith('video/')) {
@@ -68,6 +76,10 @@ export const CreatePostDialog = ({
       console.error('Error handling file selection:', error);
       toast.error("Failed to process selected files");
     }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCancel = (e: React.MouseEvent) => {
@@ -223,6 +235,8 @@ export const CreatePostDialog = ({
             isUploading={isSubmitting}
             uploadProgress={uploadProgress}
             accept={isStory ? "image/*,video/mp4,video/quicktime,video/webm" : undefined}
+            mediaFiles={mediaFiles}
+            onRemoveFile={handleRemoveFile}
           />
 
           {!isStory && (

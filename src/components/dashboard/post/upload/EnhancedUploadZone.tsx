@@ -12,6 +12,8 @@ interface EnhancedUploadZoneProps {
   isUploading: boolean;
   uploadProgress: number;
   accept?: string; // Added accept prop as optional
+  mediaFiles: File[];
+  onRemoveFile: (index: number) => void;
 }
 
 export const EnhancedUploadZone = ({
@@ -19,11 +21,28 @@ export const EnhancedUploadZone = ({
   onPaste,
   isUploading,
   uploadProgress,
-  accept
+  accept,
+  mediaFiles,
+  onRemoveFile
 }: EnhancedUploadZoneProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // Update preview URLs when mediaFiles change
+  useEffect(() => {
+    // Clear existing preview URLs
+    previewUrls.forEach(url => URL.revokeObjectURL(url));
+    
+    // Create new preview URLs for current media files
+    const newPreviewUrls = mediaFiles.map(file => URL.createObjectURL(file));
+    setPreviewUrls(newPreviewUrls);
+    
+    return () => {
+      // Cleanup preview URLs
+      newPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [mediaFiles]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -41,6 +60,11 @@ export const EnhancedUploadZone = ({
     setDragActive(false);
     setError(null);
 
+    if (mediaFiles.length >= 6) {
+      setError('Maximum of 6 media files allowed');
+      return;
+    }
+
     const files = Array.from(e.dataTransfer.files);
     const validFiles = files.filter(file => {
       const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
@@ -57,51 +81,65 @@ export const EnhancedUploadZone = ({
       return true;
     });
 
-    if (validFiles.length > 0) {
+    const remainingSlots = 6 - mediaFiles.length;
+    const filesToAdd = validFiles.slice(0, remainingSlots);
+
+    if (filesToAdd.length > 0) {
       const dataTransfer = new DataTransfer();
-      validFiles.forEach(file => {
+      filesToAdd.forEach(file => {
         dataTransfer.items.add(file);
-        const previewUrl = URL.createObjectURL(file);
-        setPreviewUrls(prev => [...prev, previewUrl]);
       });
       onFileSelect(dataTransfer.files);
     }
-  }, [onFileSelect]);
+    
+    if (validFiles.length > remainingSlots) {
+      setError(`Only ${remainingSlots} more file(s) could be added. Maximum of 6 files allowed.`);
+    }
+  }, [onFileSelect, mediaFiles.length]);
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    if (mediaFiles.length >= 6) {
+      setError('Maximum of 6 media files allowed');
+      return;
+    }
+
+    const remainingSlots = 6 - mediaFiles.length;
+    const files = Array.from(e.target.files).slice(0, remainingSlots);
+
+    if (files.length > 0) {
+      const dataTransfer = new DataTransfer();
       files.forEach(file => {
-        const previewUrl = URL.createObjectURL(file);
-        setPreviewUrls(prev => [...prev, previewUrl]);
+        dataTransfer.items.add(file);
       });
-      onFileSelect(e.target.files);
+      onFileSelect(dataTransfer.files);
+    }
+    
+    if (e.target.files.length > remainingSlots) {
+      setError(`Only ${remainingSlots} more file(s) could be added. Maximum of 6 files allowed.`);
     }
   };
 
   const handlePaste = useCallback((e: ClipboardEvent) => {
+    if (mediaFiles.length >= 6) {
+      setError('Maximum of 6 media files allowed');
+      return;
+    }
+
     const file = handlePasteEvent(e);
     if (file) {
       console.log('File pasted:', file.name, file.type, file.size);
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrls(prev => [...prev, previewUrl]);
       onPaste(file);
     }
-  }, [onPaste]);
-
-  const removePreview = (index: number) => {
-    URL.revokeObjectURL(previewUrls[index]);
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
+  }, [onPaste, mediaFiles.length]);
 
   useEffect(() => {
     document.addEventListener('paste', handlePaste);
     return () => {
       document.removeEventListener('paste', handlePaste);
-      // Cleanup preview URLs
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [handlePaste, previewUrls]);
+  }, [handlePaste]);
 
   return (
     <div
@@ -129,11 +167,11 @@ export const EnhancedUploadZone = ({
           variant="outline"
           onClick={() => document.getElementById("media-upload")?.click()}
           className="w-full gap-2 justify-center group"
-          disabled={isUploading}
+          disabled={isUploading || mediaFiles.length >= 6}
         >
           <Image className="h-4 w-4 transition-transform group-hover:scale-110" />
           <span className="text-sm">
-            {isUploading ? 'Uploading...' : 'Drop media here or click to upload'}
+            {isUploading ? 'Uploading...' : mediaFiles.length >= 6 ? 'Maximum files reached (6)' : 'Drop media here or click to upload'}
           </span>
         </Button>
 
@@ -162,7 +200,7 @@ export const EnhancedUploadZone = ({
         )}
 
         <p className="mt-2 text-sm text-muted-foreground text-center">
-          Supports images and videos up to 50MB
+          Supports up to 6 images/videos (max 50MB each)
           <br />
           <span className="text-xs opacity-75">
             You can also paste images from clipboard
@@ -183,7 +221,7 @@ export const EnhancedUploadZone = ({
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => removePreview(index)}
+                onClick={() => onRemoveFile(index)}
               >
                 <X className="h-4 w-4 text-white" />
               </Button>

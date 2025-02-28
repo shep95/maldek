@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -87,7 +88,17 @@ export const usePostCreation = (
         return true;
       });
 
-      setMediaFiles(prev => [...prev, ...validFiles]);
+      // Ensure we don't exceed 6 files total
+      const availableSlots = 6 - mediaFiles.length;
+      const filesToAdd = validFiles.slice(0, availableSlots);
+
+      if (filesToAdd.length > 0) {
+        setMediaFiles(prev => [...prev, ...filesToAdd]);
+      }
+      
+      if (validFiles.length > availableSlots) {
+        toast.error(`Only added ${filesToAdd.length} files. Maximum of 6 files allowed.`);
+      }
     } catch (error) {
       console.error('Error checking subscription:', error);
       toast.error("Failed to validate file upload permissions");
@@ -95,6 +106,12 @@ export const usePostCreation = (
   };
 
   const handlePaste = async (file: File) => {
+    // Check if adding this file would exceed the 6 file limit
+    if (mediaFiles.length >= 6) {
+      toast.error("Maximum of 6 media files allowed");
+      return;
+    }
+
     const { data: subscription } = await supabase
       .from('user_subscriptions')
       .select('tier_id, subscription_tiers(max_upload_size_mb, supports_gif_uploads)')
@@ -283,6 +300,7 @@ export const usePostCreation = (
     content,
     setContent,
     mediaFiles,
+    setMediaFiles,
     isSubmitting,
     uploadProgress,
     scheduledDate,
