@@ -1,11 +1,10 @@
-
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "@supabase/auth-helpers-react";
 import Index from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import TermsOfService from "@/pages/TermsOfService";
 import Dashboard from "@/pages/Dashboard";
-import Profile from "@/pages/Profiles"; // Fixed import path
+import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import Subscription from "@/pages/Subscription";
 import Videos from "@/pages/Videos";

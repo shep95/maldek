@@ -302,7 +302,7 @@ const VideoDetail = () => {
         
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center space-x-2 text-muted-foreground">
-            <span>{video.view_count ? video.view_count.toLocaleString() : "0"} views</span>
+            <span>{(video.post_analytics?.view_count || 0).toLocaleString()} views</span>
             <span>•</span>
             <span>{formatDistanceToNow(new Date(video.created_at), { addSuffix: true })}</span>
           </div>
