@@ -1,4 +1,3 @@
-
 import { Play } from "lucide-react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
@@ -6,7 +5,6 @@ import { VideoPlayer } from "./VideoPlayer";
 import { VideoMetadata } from "./VideoMetadata";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface VideoGridProps {
   videos: any[];
@@ -22,19 +20,26 @@ export const VideoGrid = ({
   viewMode = 'grid' 
 }: VideoGridProps) => {
   const session = useSession();
-  const navigate = useNavigate();
 
   const handleVideoClick = async (video: any) => {
     console.log('Video clicked:', video);
     
-    if (!video.id) {
-      console.error('No video ID found:', video);
-      toast.error("Video ID not found");
+    if (!video.video_url) {
+      console.error('No video URL found:', video);
+      toast.error("Video URL not found");
       return;
     }
 
-    // Navigate to video detail page instead of opening dialog
-    navigate(`/video/${video.id}`);
+    // Get public URL if it's a storage path
+    let publicUrl = video.video_url;
+    if (!video.video_url.startsWith('http')) {
+      const { data } = supabase.storage
+        .from('videos')
+        .getPublicUrl(video.video_url);
+      publicUrl = data.publicUrl;
+    }
+
+    onVideoSelect(publicUrl);
   };
 
   return (

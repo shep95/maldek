@@ -1,77 +1,162 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { VideoGrid } from "@/components/videos/VideoGrid";
-import { VideoDialog } from "@/components/videos/VideoDialog";
+import { useState } from "react";
+import { VideoUploadDialog } from "@/components/videos/VideoUploadDialog";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Search } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { debounce } from "lodash";
+import { VideoDialog } from "@/components/videos/VideoDialog";
+import { VideoGrid } from "@/components/videos/VideoGrid";
+import { VideoControls } from "@/components/videos/controls/VideoControls";
+import { cn } from "@/lib/utils"; // Add this import
 
 const Videos = () => {
-  const navigate = useNavigate();
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState('newest');
+  const queryClient = useQueryClient();
 
-  // Fetch videos
-  const { data: videos = [], isLoading, error } = useQuery({
-    queryKey: ['videos'],
+  const { data: videos, isLoading } = useQuery({
+    queryKey: ['videos', searchQuery, sortBy],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Fetching videos with search:', searchQuery);
+      let query = supabase
         .from('videos')
-        .select('*');
+        .select('*, profiles:user_id(username, avatar_url)');
+
+      if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`);
+      }
+
+      // Apply sorting
+      switch (sortBy) {
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+        case 'views':
+          query = query.order('view_count', { ascending: false });
+          break;
+        case 'newest':
+        default:
+          query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching videos:', error);
+        toast.error('Failed to load videos');
         throw error;
       }
 
+      console.log('Fetched videos:', data);
       return data;
-    },
+    }
   });
 
-  const handleDeleteVideo = async (id: string) => {
+  const handleDeleteVideo = async (videoId: string) => {
     try {
-      await supabase
+      const { error } = await supabase
         .from('videos')
         .delete()
-        .eq('id', id);
-      // Optionally refetch videos or update state
+        .eq('id', videoId);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      toast.success('Video deleted successfully');
     } catch (error) {
       console.error('Error deleting video:', error);
+      toast.error('Failed to delete video');
     }
   };
 
-  return (
-    <div className="container mx-auto py-6 px-4 space-y-8">
-      <h1 className="text-3xl font-bold">Videos</h1>
-      
-      {/* VideoGrid with refactored handler */}
-      <VideoGrid 
-        videos={videos} 
-        onVideoSelect={url => setSelectedVideo(url)}
-        onDeleteVideo={handleDeleteVideo} 
-        viewMode={viewMode}
-      />
-      
-      {/* Video Dialog */}
-      <VideoDialog 
-        videoUrl={selectedVideo} 
-        onClose={() => setSelectedVideo(null)} 
-      />
-      
-      {/* Loading state */}
-      {isLoading && (
-        <div className="space-y-4">
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
-        </div>
-      )}
+  const handleSearch = debounce((value: string) => {
+    console.log('Searching videos:', value);
+    setSearchQuery(value);
+  }, 300);
 
-      {/* Error state */}
-      {error && (
-        <div className="text-red-500">
-          Error loading videos: {error.message}
+  return (
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <VideoUploadDialog
+        isOpen={isUploadingVideo}
+        onOpenChange={setIsUploadingVideo}
+      />
+
+      <VideoDialog
+        videoUrl={selectedVideo}
+        onClose={() => setSelectedVideo(null)}
+      />
+
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Videos</h1>
+          <p className="text-muted-foreground">
+            Watch and share videos with the community
+          </p>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          <div className="relative flex-1 md:flex-initial">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search videos..."
+              className="pl-10 w-full md:w-[300px]"
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => setIsUploadingVideo(true)}
+            className="gap-2 bg-accent hover:bg-accent/90"
+          >
+            <Plus className="h-4 w-4" />
+            Upload Video
+          </Button>
+        </div>
+      </div>
+
+      <VideoControls
+        viewMode={viewMode}
+        sortBy={sortBy}
+        onViewModeChange={setViewMode}
+        onSortChange={setSortBy}
+      />
+
+      {isLoading ? (
+        <div className={cn(
+          "grid gap-6",
+          viewMode === 'grid' 
+            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" 
+            : "grid-cols-1"
+        )}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="bg-card rounded-lg h-[300px] animate-pulse" />
+          ))}
+        </div>
+      ) : videos && videos.length > 0 ? (
+        <VideoGrid
+          videos={videos}
+          onVideoSelect={setSelectedVideo}
+          onDeleteVideo={handleDeleteVideo}
+          viewMode={viewMode}
+        />
+      ) : (
+        <div className="text-center py-12 bg-card rounded-lg">
+          <h3 className="text-lg font-semibold mb-2">No videos found</h3>
+          <p className="text-muted-foreground mb-4">
+            {searchQuery ? 'Try a different search term' : 'Be the first to share a video with the community'}
+          </p>
+          <Button
+            onClick={() => setIsUploadingVideo(true)}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Upload Video
+          </Button>
         </div>
       )}
     </div>
