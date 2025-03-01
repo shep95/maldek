@@ -2,6 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { Hash } from "lucide-react";
 
 interface SearchResultsProps {
   isLoading: boolean;
@@ -23,6 +24,11 @@ interface SearchResultsProps {
         avatar_url: string | null;
       };
     }>;
+    hashtags?: Array<{
+      id: string;
+      name: string;
+      post_count: number;
+    }>;
   };
 }
 
@@ -39,6 +45,11 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
     navigate(`/post/${postId}`);
   };
 
+  const handleHashtagClick = (hashtag: string) => {
+    console.log('Navigating to hashtag:', hashtag);
+    navigate(`/hashtag/${hashtag}`);
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-2">
@@ -49,12 +60,39 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
     );
   }
 
-  if (!results || (results.users.length === 0 && results.posts.length === 0)) {
+  if (!results || (
+    results.users.length === 0 && 
+    results.posts.length === 0 && 
+    (!results.hashtags || results.hashtags.length === 0)
+  )) {
     return <p className="text-muted-foreground">No results found</p>;
   }
 
   return (
     <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+      {results.hashtags && results.hashtags.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium text-muted-foreground">Hashtags</h4>
+          {results.hashtags.map((hashtag) => (
+            <div 
+              key={hashtag.id} 
+              className="flex items-center gap-2 p-3 hover:bg-accent/10 rounded-md cursor-pointer transition-colors"
+              onClick={() => handleHashtagClick(hashtag.name)}
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10">
+                <Hash className="h-4 w-4 text-accent" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-medium">#{hashtag.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {hashtag.post_count} {hashtag.post_count === 1 ? 'post' : 'posts'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {results.users.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-muted-foreground">Users</h4>

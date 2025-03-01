@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,7 +44,7 @@ const getNotificationText = (type: Notification['type'], username: string) => {
     case 'new_follow':
       return <span><span className="font-semibold">{username}</span> started following you</span>;
     default:
-      return <span><span className="font-semibold">{username}</span> interacted with your post</span>;
+      return <span><span className="font-semibold">{username}</span> sent a notification</span>;
   }
 };
 
@@ -60,7 +59,6 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
   const navigate = useNavigate();
 
   const handleNotificationClick = async (e: React.MouseEvent) => {
-    // Prevent click event if checkbox is clicked
     if ((e.target as HTMLElement).closest('.checkbox-container')) {
       console.log('Checkbox clicked, preventing notification click');
       return;
@@ -73,7 +71,6 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
     });
 
     try {
-      // Only mark as read if it's not already read
       if (!notification.read) {
         console.log('Attempting to mark notification as read:', notification.id);
         const { error } = await supabase
@@ -90,7 +87,6 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
 
         console.log('Successfully marked notification as read');
 
-        // Invalidate both queries to update the UI
         await Promise.all([
           queryClient.invalidateQueries({ 
             queryKey: ['notifications'],
@@ -105,7 +101,6 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
         console.log('Queries invalidated successfully');
       }
 
-      // Navigate based on notification type
       const navigatePath = notification.type === 'new_follow' 
         ? `/@${notification.actor.username}`
         : `/post/${notification.post_id}`;

@@ -1,5 +1,5 @@
 
-import { Search, TrendingUp } from "lucide-react";
+import { Search, TrendingUp, Hash } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
@@ -11,62 +11,95 @@ import { TrendingPosts } from "./sidebar/TrendingPosts";
 
 export const RightSidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [isHashtagSearch, setIsHashtagSearch] = useState(false);
 
   // Enhanced search with more relevant fields and better ranking
   const { data: searchResults, isLoading: isLoadingSearch } = useQuery({
-    queryKey: ['search', searchQuery],
+    queryKey: ['search', searchQuery, isHashtagSearch],
     queryFn: async () => {
-      if (!searchQuery) return { users: [], posts: [] };
+      if (!searchQuery) return { users: [], posts: [], hashtags: [] };
 
-      console.log("Searching for:", searchQuery);
+      console.log("Searching for:", searchQuery, "Hashtag search:", isHashtagSearch);
       
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
         console.log("No active session, skipping search");
-        return { users: [], posts: [] };
+        return { users: [], posts: [], hashtags: [] };
       }
       
-      // Enhanced user search with engagement metrics
-      const usersResponse = await supabase
-        .from('profiles')
-        .select(`
-          id, 
-          username, 
-          avatar_url, 
-          follower_count,
-          bio,
-          total_posts,
-          total_likes_received
-        `)
-        .or(`
-          username.ilike.%${searchQuery}%,
-          bio.ilike.%${searchQuery}%
-        `)
-        .order('follower_count', { ascending: false })
-        .limit(5);
+      // Check if the search query starts with a # and remove it for searching
+      let cleanQuery = searchQuery;
+      if (searchQuery.startsWith('#')) {
+        cleanQuery = searchQuery.substring(1);
+        setIsHashtagSearch(true);
+      } else {
+        setIsHashtagSearch(false);
+      }
 
-      // Enhanced post search with engagement metrics and relevance
-      const postsResponse = await supabase
-        .from('posts')
+      // Enhanced hashtag search
+      const hashtagsResponse = await supabase
+        .from('hashtags')
         .select(`
           id,
-          content,
-          created_at,
-          likes,
-          view_count,
-          media_urls,
-          profiles (
-            username,
-            avatar_url,
-            follower_count
-          )
+          name,
+          post_count
         `)
-        .or(`
-          content.ilike.%${searchQuery}%,
-          profiles.username.ilike.%${searchQuery}%
-        `)
-        .order('created_at', { ascending: false })
+        .ilike('name', `%${cleanQuery}%`)
+        .order('post_count', { ascending: false })
         .limit(5);
+
+      // Only perform user and post search if not explicitly searching for hashtags
+      let usersResponse = { data: [], error: null };
+      let postsResponse = { data: [], error: null };
+      
+      if (!isHashtagSearch) {
+        // Enhanced user search with engagement metrics
+        usersResponse = await supabase
+          .from('profiles')
+          .select(`
+            id, 
+            username, 
+            avatar_url, 
+            follower_count,
+            bio,
+            total_posts,
+            total_likes_received
+          `)
+          .or(`
+            username.ilike.%${cleanQuery}%,
+            bio.ilike.%${cleanQuery}%
+          `)
+          .order('follower_count', { ascending: false })
+          .limit(5);
+
+        // Enhanced post search with engagement metrics and relevance
+        postsResponse = await supabase
+          .from('posts')
+          .select(`
+            id,
+            content,
+            created_at,
+            likes,
+            view_count,
+            media_urls,
+            profiles (
+              username,
+              avatar_url,
+              follower_count
+            )
+          `)
+          .or(`
+            content.ilike.%${cleanQuery}%,
+            profiles.username.ilike.%${cleanQuery}%
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
+      }
+
+      if (hashtagsResponse.error) {
+        console.error("Search hashtags error:", hashtagsResponse.error);
+        throw hashtagsResponse.error;
+      }
 
       if (usersResponse.error) {
         console.error("Search users error:", usersResponse.error);
@@ -79,6 +112,7 @@ export const RightSidebar = () => {
       }
 
       return {
+        hashtags: hashtagsResponse.data || [],
         users: usersResponse.data || [],
         posts: postsResponse.data || []
       };
@@ -130,6 +164,8 @@ export const RightSidebar = () => {
   const handleSearch = debounce((value: string) => {
     console.log("Search query:", value);
     setSearchQuery(value);
+    // If the search query starts with #, set hashtag search mode
+    setIsHashtagSearch(value.startsWith('#'));
   }, 300);
 
   return (
@@ -137,7 +173,7 @@ export const RightSidebar = () => {
       <Card className="h-[90vh] flex flex-col bg-black/20 border-border/50 backdrop-blur-md p-4 rounded-xl">
         <div className="relative mb-6">
           <Input 
-            placeholder="Search @users or posts" 
+            placeholder="Search @users, #hashtags, or posts" 
             className="pl-10 border-accent/20 bg-background/50 focus:border-accent transition-colors rounded-lg"
             onChange={(e) => handleSearch(e.target.value)}
           />
@@ -147,7 +183,14 @@ export const RightSidebar = () => {
         {searchQuery && (
           <div className="mb-6 space-y-4">
             <h3 className="font-semibold text-lg flex items-center gap-2">
-              Search Results
+              {isHashtagSearch ? (
+                <>
+                  <Hash className="h-5 w-5 text-accent" />
+                  Hashtag Results
+                </>
+              ) : (
+                'Search Results'
+              )}
             </h3>
             <SearchResults 
               isLoading={isLoadingSearch} 

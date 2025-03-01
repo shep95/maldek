@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
@@ -20,6 +19,7 @@ import Subscription from "@/pages/Subscription";
 import EmperorChatPage from "@/pages/EmperorChat";
 import TermsOfService from "@/pages/TermsOfService";
 import Features from "@/pages/Features";
+import HashtagPage from "@/pages/HashtagPage";
 
 const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -108,6 +108,7 @@ export const AppRoutes = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route 
           path="/daarp-ai" 
           element={
