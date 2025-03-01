@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Lock, Shield, Key, Upload, File, Eye, SortDesc, SortAsc, Image as ImageIcon } from 'lucide-react';
+import { Lock, Shield, Key, Upload, File, Eye, SortDesc, SortAsc, Image as ImageIcon, DollarSign } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MediaPreviewDialog } from '@/components/dashboard/MediaPreviewDialog';
@@ -34,6 +33,38 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription'],
+    queryFn: async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        const { data: subscription, error } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            tier:subscription_tiers(*)
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error fetching subscription:", error);
+          return null;
+        }
+
+        return subscription;
+      } catch (error) {
+        console.error("Error in subscription query:", error);
+        return null;
+      }
+    }
+  });
+
+  const hasPrivacyAccess = !!subscription?.tier?.name;
+
   const SecurityCodeSection = () => {
     return (
       <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
@@ -48,7 +79,18 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
           }
         </p>
 
-        {!userProfile?.security_code ? (
+        {!hasPrivacyAccess ? (
+          <div className="text-center p-4 border border-dashed rounded-lg">
+            <DollarSign className="h-10 w-10 text-accent mx-auto mb-2" />
+            <h3 className="text-lg font-medium mb-2">Premium Feature</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Private posts and enhanced privacy features are available with Creator subscription or higher.
+            </p>
+            <Button onClick={() => navigate('/subscription')} className="w-full">
+              Upgrade to Creator ($3.50/month)
+            </Button>
+          </div>
+        ) : !userProfile?.security_code ? (
           <form onSubmit={handleSetInitialCode} className="space-y-4">
             <div>
               <label htmlFor="newCode" className="block text-sm font-medium mb-2">
@@ -142,7 +184,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
   const { data: privatePosts, refetch: refetchPrivatePosts } = useQuery({
     queryKey: ['private-posts', userId, isVerified, sortOrder],
     queryFn: async () => {
-      if (!isVerified) return [];
+      if (!isVerified || !hasPrivacyAccess) return [];
       
       const { data, error } = await supabase
         .from('private_posts')
@@ -157,7 +199,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
       }
       return data || [];
     },
-    enabled: isVerified
+    enabled: isVerified && hasPrivacyAccess
   });
 
   const verifySecurityCode = useMutation({
@@ -325,7 +367,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
     <div className="space-y-6">
       <SecurityCodeSection />
       
-      {userProfile?.security_code && (
+      {userProfile?.security_code && hasPrivacyAccess && (
         <Card className="p-6 bg-background/20 backdrop-blur-lg border-white/10">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">

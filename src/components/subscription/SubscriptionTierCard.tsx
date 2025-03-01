@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Crown } from "lucide-react";
+import { Crown, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BaseFeatures } from "./features/BaseFeatures";
 import { PremiumFeatures } from "./features/PremiumFeatures";
@@ -81,12 +81,20 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
         {/* Creator-only Features */}
         {isCreator && (
-          <FeatureItem
-            icon={Crown}
-            text="Only Available To The First 100k Subscribers"
-            iconColor="text-white"
-            badge={{ text: "Limited", variant: "beta" }}
-          />
+          <>
+            <FeatureItem
+              icon={Lock}
+              text="Privacy Features & Private Posts"
+              iconColor="text-white"
+              badge={{ text: "NEW", variant: "beta" }}
+            />
+            <FeatureItem
+              icon={Crown}
+              text="Only Available To The First 100k Subscribers"
+              iconColor="text-white"
+              badge={{ text: "Limited", variant: "beta" }}
+            />
+          </>
         )}
 
         {/* Standard Features */}

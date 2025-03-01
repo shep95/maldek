@@ -1,5 +1,4 @@
-
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers, Bot } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -110,6 +109,16 @@ export const NavItems = ({
       label: "Analytics",
       path: "/analytics",
       active: location.pathname === "/analytics"
+    },
+    {
+      icon: Lock,
+      label: "Privacy",
+      premium: !subscription?.tier?.name,
+      onClick: !subscription?.tier?.name ? handlePremiumClick : undefined,
+      path: subscription?.tier?.name ? "/profiles" : undefined,
+      active: location.pathname === "/profiles",
+      description: subscription?.tier?.name ? "Access private posts" : "Requires Creator subscription",
+      className: "text-accent hover:bg-accent/10"
     },
     {
       icon: Layers,
