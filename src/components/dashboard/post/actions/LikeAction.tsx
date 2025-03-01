@@ -102,6 +102,20 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
             });
           
           if (likeError) throw likeError;
+          
+          // Create a notification for the post author if they're not the current user
+          if (authorId !== currentUserId) {
+            const { error: notificationError } = await supabase
+              .from('notifications')
+              .insert({
+                recipient_id: authorId,
+                actor_id: currentUserId,
+                type: 'like',
+                post_id: postId
+              });
+              
+            if (notificationError) console.error('Error creating notification:', notificationError);
+          }
         }
       } else {
         const { error: unlikeError } = await supabase

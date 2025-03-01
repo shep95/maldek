@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,19 +33,19 @@ const getNotificationIcon = (type: Notification['type']) => {
 const getNotificationText = (type: Notification['type'], username: string) => {
   switch (type) {
     case 'like':
-      return `${username} liked your post`;
+      return <span><span className="font-semibold">{username}</span> liked your post</span>;
     case 'comment':
-      return `${username} commented on your post`;
+      return <span><span className="font-semibold">{username}</span> commented on your post</span>;
     case 'share':
-      return `${username} shared your post`;
+      return <span><span className="font-semibold">{username}</span> shared your post</span>;
     case 'bookmark':
-      return `${username} bookmarked your post`;
+      return <span><span className="font-semibold">{username}</span> bookmarked your post</span>;
     case 'repost':
-      return `${username} reposted your post`;
+      return <span><span className="font-semibold">{username}</span> reposted your post</span>;
     case 'new_follow':
-      return `${username} started following you`;
+      return <span><span className="font-semibold">{username}</span> started following you</span>;
     default:
-      return `${username} interacted with your post`;
+      return <span><span className="font-semibold">{username}</span> interacted with your post</span>;
   }
 };
 
