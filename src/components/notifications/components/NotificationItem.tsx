@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -54,9 +56,47 @@ interface NotificationItemProps {
   onSelect: (checked: boolean) => void;
 }
 
+interface PostPreview {
+  content: string;
+  media_urls?: string[];
+}
+
 export const NotificationItem = ({ notification, isSelected, onSelect }: NotificationItemProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [postPreview, setPostPreview] = useState<PostPreview | null>(null);
+
+  // Fetch post details for preview
+  useEffect(() => {
+    const fetchPostPreview = async () => {
+      // Don't fetch for follow notifications
+      if (notification.type === 'new_follow' || !notification.post_id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('posts')
+          .select('content, media_urls')
+          .eq('id', notification.post_id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching post preview:', error);
+          return;
+        }
+        
+        if (data) {
+          setPostPreview({
+            content: data.content,
+            media_urls: data.media_urls
+          });
+        }
+      } catch (error) {
+        console.error('Error in post preview fetch:', error);
+      }
+    };
+    
+    fetchPostPreview();
+  }, [notification.post_id, notification.type]);
 
   const handleNotificationClick = async (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.checkbox-container')) {
@@ -114,6 +154,12 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
     }
   };
 
+  // Helper to truncate post content
+  const truncateContent = (content: string, maxLength = 60) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  };
+
   return (
     <Card
       className={cn(
@@ -144,6 +190,18 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
               {getNotificationText(notification.type, notification.actor.username)}
             </p>
           </div>
+          
+          {postPreview && notification.type !== 'new_follow' && (
+            <div className="mt-2 pl-1 border-l-2 border-accent/30 text-sm text-muted-foreground">
+              <p className="line-clamp-1">{truncateContent(postPreview.content)}</p>
+              {postPreview.media_urls && postPreview.media_urls.length > 0 && (
+                <div className="flex items-center gap-1 text-xs mt-1 text-accent">
+                  {postPreview.media_urls.length === 1 ? 'Media attached' : `${postPreview.media_urls.length} media items`}
+                </div>
+              )}
+            </div>
+          )}
+          
           <p className="text-xs text-muted-foreground">
             {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
           </p>
