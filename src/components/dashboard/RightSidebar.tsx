@@ -27,14 +27,19 @@ export const RightSidebar = () => {
         return { users: [], posts: [], hashtags: [] };
       }
       
-      // Check if the search query starts with a # and remove it for searching
+      // Clean the search query (remove # if present)
       let cleanQuery = searchQuery;
       if (searchQuery.startsWith('#')) {
         cleanQuery = searchQuery.substring(1);
         console.log("Hashtag search detected, cleaned query:", cleanQuery);
       }
 
-      // Always search for hashtags when # is detected, but prioritize them in hashtag search
+      // Set minimum length for search to avoid too many results
+      if (cleanQuery.length < 2) {
+        return { users: [], posts: [], hashtags: [] };
+      }
+
+      // Always search for hashtags, but prioritize them in hashtag search mode
       const hashtagsResponse = await supabase
         .from('hashtags')
         .select(`
@@ -48,7 +53,7 @@ export const RightSidebar = () => {
 
       console.log("Hashtag search results:", hashtagsResponse);
 
-      // Only perform user and post search if not explicitly searching for hashtags
+      // If specifically searching for hashtags, focus on those results
       let usersResponse = { data: [], error: null };
       let postsResponse = { data: [], error: null };
       
@@ -83,6 +88,7 @@ export const RightSidebar = () => {
             view_count,
             media_urls,
             profiles (
+              id,
               username,
               avatar_url,
               follower_count
@@ -93,7 +99,7 @@ export const RightSidebar = () => {
             profiles.username.ilike.%${cleanQuery}%
           `)
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(7);
       }
 
       if (hashtagsResponse.error) {
@@ -111,13 +117,22 @@ export const RightSidebar = () => {
         throw postsResponse.error;
       }
 
-      return {
+      // Prepare the final search results
+      const results = {
         hashtags: hashtagsResponse.data || [],
         users: usersResponse.data || [],
         posts: postsResponse.data || []
       };
+
+      console.log("Final search results:", 
+        `${results.hashtags.length} hashtags, ` +
+        `${results.users.length} users, ` +
+        `${results.posts.length} posts`
+      );
+
+      return results;
     },
-    enabled: searchQuery.length > 0
+    enabled: searchQuery.length > 1
   });
 
   // Watch for changes in searchQuery to detect hashtag searches
@@ -188,7 +203,7 @@ export const RightSidebar = () => {
         </div>
 
         {searchQuery && (
-          <div className="mb-6 space-y-4">
+          <div className="mb-6 space-y-4 overflow-hidden">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               {isHashtagSearch ? (
                 <>

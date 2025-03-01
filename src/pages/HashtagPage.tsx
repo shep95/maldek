@@ -15,13 +15,18 @@ const HashtagPage = () => {
   const { data: hashtagPosts, isLoading } = useQuery({
     queryKey: ['hashtag-posts', hashtag],
     queryFn: async () => {
+      if (!hashtag) {
+        console.log("No hashtag provided");
+        return [];
+      }
+      
       console.log(`Fetching posts for hashtag: #${hashtag}`);
       
       // First find the hashtag ID
       const { data: hashtagData, error: hashtagError } = await supabase
         .from('hashtags')
         .select('id')
-        .ilike('name', hashtag) // Changed from .eq to .ilike for better matching
+        .ilike('name', hashtag) // Case-insensitive matching
         .single();
         
       if (hashtagError) {

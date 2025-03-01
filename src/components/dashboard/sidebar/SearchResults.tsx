@@ -19,9 +19,14 @@ interface SearchResultsProps {
       id: string;
       content: string;
       created_at: string;
+      likes?: number;
+      view_count?: number;
+      media_urls?: string[];
       profiles: {
+        id: string;
         username: string;
         avatar_url: string | null;
+        follower_count?: number;
       };
     }>;
     hashtags?: Array<{
@@ -68,8 +73,13 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
     return <p className="text-muted-foreground">No results found</p>;
   }
 
+  // Helper function to truncate text
+  const truncateText = (text: string, length = 60) => {
+    return text.length > length ? text.substring(0, length) + '...' : text;
+  };
+
   return (
-    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
       {results.hashtags && results.hashtags.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-muted-foreground">Hashtags</h4>
@@ -144,6 +154,21 @@ export const SearchResults = ({ isLoading, results }: SearchResultsProps) => {
                 </span>
               </div>
               <p className="text-sm mt-2 line-clamp-2">{post.content}</p>
+              {post.media_urls && post.media_urls.length > 0 && (
+                <div className="mt-1 text-xs text-accent">
+                  {post.media_urls.length === 1 ? 'Media attached' : `${post.media_urls.length} media items`}
+                </div>
+              )}
+              {(post.likes !== undefined || post.view_count !== undefined) && (
+                <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                  {post.likes !== undefined && (
+                    <span>{post.likes} {post.likes === 1 ? 'like' : 'likes'}</span>
+                  )}
+                  {post.view_count !== undefined && (
+                    <span>• {post.view_count} {post.view_count === 1 ? 'view' : 'views'}</span>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
