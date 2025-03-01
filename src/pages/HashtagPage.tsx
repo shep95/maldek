@@ -5,10 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { PostList } from "@/components/dashboard/PostList";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Hash } from "lucide-react";
+import { useState } from "react";
 
 const HashtagPage = () => {
   const { hashtag } = useParams<{ hashtag: string }>();
   const session = useSession();
+  const [followingOnly, setFollowingOnly] = useState(false);
   
   const { data: hashtagPosts, isLoading } = useQuery({
     queryKey: ['hashtag-posts', hashtag],
@@ -138,10 +140,8 @@ const HashtagPage = () => {
       <div className="py-4">
         {!isLoading && hashtagPosts && hashtagPosts.length > 0 && (
           <PostList 
-            data={hashtagPosts}
-            isLoading={isLoading}
-            currentUserId={session?.user?.id || ''}
-            onPostAction={handlePostAction}
+            followingOnly={followingOnly}
+            setFollowingOnly={setFollowingOnly}
           />
         )}
         
