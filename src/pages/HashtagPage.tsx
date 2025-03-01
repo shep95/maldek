@@ -21,7 +21,7 @@ const HashtagPage = () => {
       const { data: hashtagData, error: hashtagError } = await supabase
         .from('hashtags')
         .select('id')
-        .eq('name', hashtag)
+        .ilike('name', hashtag) // Changed from .eq to .ilike for better matching
         .single();
         
       if (hashtagError) {
@@ -33,6 +33,8 @@ const HashtagPage = () => {
         console.log("Hashtag not found");
         return [];
       }
+      
+      console.log("Found hashtag ID:", hashtagData.id);
       
       // Get posts with this hashtag
       const { data: postHashtags, error: postHashtagError } = await supabase
@@ -51,6 +53,7 @@ const HashtagPage = () => {
       }
       
       const postIds = postHashtags.map(item => item.post_id);
+      console.log(`Found ${postIds.length} posts with hashtag #${hashtag}`);
       
       // Get the actual posts
       const { data: posts, error: postsError } = await supabase

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { debounce } from "lodash";
 import { SearchResults } from "./sidebar/SearchResults";
 import { TrendingPosts } from "./sidebar/TrendingPosts";
@@ -31,12 +31,10 @@ export const RightSidebar = () => {
       let cleanQuery = searchQuery;
       if (searchQuery.startsWith('#')) {
         cleanQuery = searchQuery.substring(1);
-        setIsHashtagSearch(true);
-      } else {
-        setIsHashtagSearch(false);
+        console.log("Hashtag search detected, cleaned query:", cleanQuery);
       }
 
-      // Enhanced hashtag search
+      // Always search for hashtags when # is detected, but prioritize them in hashtag search
       const hashtagsResponse = await supabase
         .from('hashtags')
         .select(`
@@ -46,7 +44,9 @@ export const RightSidebar = () => {
         `)
         .ilike('name', `%${cleanQuery}%`)
         .order('post_count', { ascending: false })
-        .limit(5);
+        .limit(isHashtagSearch ? 10 : 5);
+
+      console.log("Hashtag search results:", hashtagsResponse);
 
       // Only perform user and post search if not explicitly searching for hashtags
       let usersResponse = { data: [], error: null };
@@ -120,6 +120,15 @@ export const RightSidebar = () => {
     enabled: searchQuery.length > 0
   });
 
+  // Watch for changes in searchQuery to detect hashtag searches
+  useEffect(() => {
+    if (searchQuery.startsWith('#')) {
+      setIsHashtagSearch(true);
+    } else {
+      setIsHashtagSearch(false);
+    }
+  }, [searchQuery]);
+
   // Fetch only top 3 trending posts from the last 72 hours
   const { data: trendingPosts, isLoading: isLoadingTrending } = useQuery({
     queryKey: ['trending-posts'],
@@ -164,8 +173,6 @@ export const RightSidebar = () => {
   const handleSearch = debounce((value: string) => {
     console.log("Search query:", value);
     setSearchQuery(value);
-    // If the search query starts with #, set hashtag search mode
-    setIsHashtagSearch(value.startsWith('#'));
   }, 300);
 
   return (
