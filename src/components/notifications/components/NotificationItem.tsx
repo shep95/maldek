@@ -42,9 +42,9 @@ const getNotificationText = (type: Notification['type'], username: string) => {
     case 'repost':
       return <span><span className="font-semibold">{username}</span> reposted your post</span>;
     case 'new_follow':
-      return <span><span className="font-semibold">{username}</span> started following you</span>;
+      return <span><span className="font-semibold">{username}</span> followed you</span>;
     default:
-      return <span><span className="font-semibold">{username}</span> sent a notification</span>;
+      return <span><span className="font-semibold">{username}</span> interacted with your content</span>;
   }
 };
 

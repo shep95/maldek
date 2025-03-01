@@ -136,12 +136,14 @@ const HashtagPage = () => {
       </div>
       
       <div className="py-4">
-        <PostList 
-          posts={hashtagPosts || []}
-          isLoading={isLoading}
-          currentUserId={session?.user?.id || ''}
-          onPostAction={handlePostAction}
-        />
+        {!isLoading && hashtagPosts && hashtagPosts.length > 0 && (
+          <PostList 
+            data={hashtagPosts}
+            isLoading={isLoading}
+            currentUserId={session?.user?.id || ''}
+            onPostAction={handlePostAction}
+          />
+        )}
         
         {!isLoading && (!hashtagPosts || hashtagPosts.length === 0) && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
