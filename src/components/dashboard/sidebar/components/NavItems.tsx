@@ -63,6 +63,8 @@ export const NavItems = ({
     setIsCreatingPost(true);
   };
 
+  const hasPremiumSubscription = !!subscription?.tier?.name;
+
   const navItems = [
     { 
       icon: Home, 
@@ -110,16 +112,14 @@ export const NavItems = ({
       path: "/analytics",
       active: location.pathname === "/analytics"
     },
-    {
+    ...(hasPremiumSubscription ? [{
       icon: Lock,
       label: "Privacy",
-      premium: !subscription?.tier?.name,
-      onClick: !subscription?.tier?.name ? handlePremiumClick : undefined,
-      path: subscription?.tier?.name ? "/profiles" : undefined,
+      path: "/profiles",
       active: location.pathname === "/profiles",
-      description: subscription?.tier?.name ? "Access private posts" : "Requires Creator subscription",
+      description: "Access private posts",
       className: "text-accent hover:bg-accent/10"
-    },
+    }] : []),
     {
       icon: Layers,
       label: "Our Features",
