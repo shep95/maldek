@@ -40,7 +40,7 @@ export const useNotifications = (userId: string | null) => {
           avatar_url
         )
       `)
-      .eq('recipient_id', userId)
+      .eq('recipient_id', userId) // Only fetch notifications where the user is the recipient
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -79,7 +79,7 @@ export const useNotifications = (userId: string | null) => {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `recipient_id=eq.${userId}`,
+          filter: `recipient_id=eq.${userId}`, // Only react to notifications for this user
         },
         (payload) => {
           console.log('New notification received:', payload);

@@ -1,3 +1,4 @@
+
 import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createNotification } from "../utils/notificationUtils";
@@ -41,7 +42,11 @@ export const BookmarkAction = ({ postId, authorId, currentUserId, isBookmarked, 
           });
         
         if (bookmarkError) throw bookmarkError;
-        await createNotification(authorId, currentUserId, postId, 'bookmark');
+        
+        // Only create notification if author is not the current user
+        if (authorId !== currentUserId) {
+          await createNotification(authorId, currentUserId, postId, 'bookmark');
+        }
       }
 
       // Invalidate posts query to trigger a refetch

@@ -1,3 +1,4 @@
+
 import { Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createNotification } from "../utils/notificationUtils";
@@ -27,7 +28,12 @@ export const RepostAction = ({ postId, authorId, currentUserId, reposts, onActio
         .eq('id', postId);
       
       if (repostError) throw repostError;
-      await createNotification(authorId, currentUserId, postId, 'repost');
+      
+      // Only create notification if author is not the current user
+      if (authorId !== currentUserId) {
+        await createNotification(authorId, currentUserId, postId, 'repost');
+      }
+      
       onAction(postId, 'repost');
       toast.success('Post reposted successfully');
     } catch (error) {
