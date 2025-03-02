@@ -21,6 +21,11 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
   const isPremium = isEmperor || isCreator;
   
   const formatPrice = (price: number) => {
+    // For Emperor tier, always show $8,000 regardless of the tier.price value
+    if (isEmperor) {
+      return "8,000";
+    }
+    // For other tiers, use the existing formatting logic
     return price % 1 === 0 ? price.toLocaleString() : price.toFixed(2);
   };
 
