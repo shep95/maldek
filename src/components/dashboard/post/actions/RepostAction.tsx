@@ -18,10 +18,17 @@ export const RepostAction = ({ postId, authorId, currentUserId, reposts, onActio
     e.stopPropagation();
     try {
       if (!currentUserId) {
-        toast.error('Please sign in to repost');
+        toast.error('Please sign in to share this post');
         return;
       }
 
+      // Generate the post URL
+      const postUrl = `${window.location.origin}/post/${postId}`;
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(postUrl);
+      
+      // Update the repost count in the database
       const { error: repostError } = await supabase
         .from('posts')
         .update({ reposts: reposts + 1 })
@@ -35,10 +42,10 @@ export const RepostAction = ({ postId, authorId, currentUserId, reposts, onActio
       }
       
       onAction(postId, 'repost');
-      toast.success('Post reposted successfully');
+      toast.success('Post link copied to clipboard');
     } catch (error) {
-      console.error('Error handling repost:', error);
-      toast.error('Failed to repost');
+      console.error('Error handling share:', error);
+      toast.error('Failed to share post');
     }
   };
 
