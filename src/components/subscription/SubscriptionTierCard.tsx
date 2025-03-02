@@ -26,7 +26,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
   const handleSubscribe = () => {
     if (isEmperor) {
-      window.location.href = 'https://buy.stripe.com/4gweXr3uxcUI8ZG5kk';
+      window.location.href = 'https://buy.stripe.com/3cs3eJghj4ocek0fZ0';
     } else if (isCreator) {
       window.location.href = 'https://buy.stripe.com/fZe02x0il1c0fo4bIJ';
     } else {
@@ -57,14 +57,14 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
           isEmperor ? "bg-yellow-500/10 text-yellow-500" : 
           isCreator ? "bg-white/10 text-white" : "bg-accent/10 text-accent"
         )}>
-          {isEmperor ? 'One-Time' : 'Premium'}
+          {isEmperor ? 'Yearly' : 'Premium'}
         </Badge>
       </div>
 
       {/* Price */}
       <div className="flex items-baseline gap-2">
         <span className="text-4xl font-bold">${formatPrice(tier.price)}</span>
-        {!isEmperor && <span className="text-sm text-muted-foreground">/month</span>}
+        <span className="text-sm text-muted-foreground">/{isEmperor ? 'year' : 'month'}</span>
       </div>
 
       {/* Features */}
