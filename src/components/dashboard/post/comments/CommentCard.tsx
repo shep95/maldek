@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -34,9 +33,8 @@ export const CommentCard = ({
   const session = useSession();
   const currentUserId = session?.user?.id || '';
 
-  console.log("Comment data:", comment); // Debug log to see the comment data
+  console.log("Comment data:", comment);
 
-  // Early return if comment or user data is missing
   if (!comment || !comment.user) {
     console.error("Invalid comment data:", comment);
     return null;
@@ -65,7 +63,6 @@ export const CommentCard = ({
     setShowGifPicker(false);
   };
 
-  // Get the first letter of username safely
   const userInitial = comment.user.username ? comment.user.username[0].toUpperCase() : '?';
 
   return (
