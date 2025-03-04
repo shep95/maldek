@@ -11,4 +11,6 @@ export interface Comment {
     avatar_url: string | null;
   };
   replies?: Comment[];
+  likes?: number;
+  isLiked?: boolean;
 }

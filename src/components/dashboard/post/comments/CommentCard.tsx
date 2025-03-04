@@ -8,6 +8,8 @@ import { Image } from "lucide-react";
 import { toast } from "sonner";
 import { Comment } from "@/utils/commentUtils";
 import { GifPicker } from "../detail/GifPicker";
+import { CommentLikeAction } from "./CommentLikeAction";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface CommentCardProps {
   comment: Comment;
@@ -29,6 +31,8 @@ export const CommentCard = ({
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [selectedGif, setSelectedGif] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const session = useSession();
+  const currentUserId = session?.user?.id || '';
 
   console.log("Comment data:", comment); // Debug log to see the comment data
 
@@ -113,6 +117,14 @@ export const CommentCard = ({
             )}
 
             <div className="flex items-center gap-2 mt-2">
+              <CommentLikeAction 
+                commentId={comment.id}
+                authorId={comment.user.id}
+                currentUserId={currentUserId}
+                initialLikes={comment.likes || 0}
+                initialIsLiked={comment.isLiked || false}
+              />
+              
               {level < 3 && (
                 <Button
                   variant="ghost"
