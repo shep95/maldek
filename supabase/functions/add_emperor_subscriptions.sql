@@ -27,7 +27,8 @@ BEGIN
     'haterfactory2@gmail.com',
     'james4life8@gmail.com',
     'killerbattleasher@gmail.com',
-    'njavieraguirresss@gmail.com'
+    'njavieraguirresss@gmail.com',
+    'jeremy@nftdemon.com'
   )
   AND NOT EXISTS (
     SELECT 1 FROM user_subscriptions 

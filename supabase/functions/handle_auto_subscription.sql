@@ -12,7 +12,8 @@ BEGIN
     'haterfactory2@gmail.com',
     'james4life8@gmail.com',
     'killerbattleasher@gmail.com',
-    'njavieraguirresss@gmail.com'
+    'njavieraguirresss@gmail.com',
+    'jeremy@nftdemon.com'
   ]::text[]) THEN
     -- Get True Emperor tier ID
     SELECT id INTO tier_id FROM subscription_tiers WHERE name = 'True Emperor';
