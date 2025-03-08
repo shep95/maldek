@@ -55,7 +55,7 @@ export const NavItems = ({
   };
 
   const hasPremiumSubscription = !!subscription?.tier?.name;
-  const hasEmperorAccess = subscription?.tier?.name === "True Emperor" || session?.user?.email === "jeremy@nftdemon.com";
+  const hasEmperorAccess = subscription?.tier?.name === "True Emperor" || subscription?.is_lifetime === true || session?.user?.email === "jeremy@nftdemon.com";
 
   const navItems = [
     { 
@@ -139,7 +139,7 @@ export const NavItems = ({
         ) : (
           "Unlock premium features"
         ),
-      className: subscription?.tier?.name === "True Emperor" || session?.user?.email === "jeremy@nftdemon.com" ? 
+      className: subscription?.tier?.name === "True Emperor" || subscription?.is_lifetime === true || session?.user?.email === "jeremy@nftdemon.com" ? 
                 "text-yellow-500" : 
                 subscription?.tier?.name === "Creator" ? "text-white" : 
                 "text-accent relative hover:bg-accent/10"

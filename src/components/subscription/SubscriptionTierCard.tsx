@@ -30,13 +30,7 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
   };
 
   const handleSubscribe = () => {
-    if (isEmperor) {
-      onSubscribe(tier.name);
-    } else if (isCreator) {
-      onSubscribe(tier.name);
-    } else {
-      onSubscribe(tier.name);
-    }
+    onSubscribe(tier.name);
   };
 
   return (
