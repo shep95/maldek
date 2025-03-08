@@ -31,9 +31,9 @@ export const SubscriptionTierCard = ({ tier, currentTierId, onSubscribe }: Subsc
 
   const handleSubscribe = () => {
     if (isEmperor) {
-      window.location.href = 'https://buy.stripe.com/3cs3eJghj4ocek0fZ0';
+      onSubscribe(tier.name);
     } else if (isCreator) {
-      window.location.href = 'https://buy.stripe.com/fZe02x0il1c0fo4bIJ';
+      onSubscribe(tier.name);
     } else {
       onSubscribe(tier.name);
     }
