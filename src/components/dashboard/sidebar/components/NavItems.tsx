@@ -55,6 +55,7 @@ export const NavItems = ({
   };
 
   const hasPremiumSubscription = !!subscription?.tier?.name;
+  const hasEmperorAccess = subscription?.tier?.name === "True Emperor" || session?.user?.email === "jeremy@nftdemon.com";
 
   const navItems = [
     { 
@@ -131,14 +132,17 @@ export const NavItems = ({
       label: subscription?.tier?.name || "Premium", 
       premium: true,
       onClick: handlePremiumClick,
-      description: subscription ? (
-        `${subscription.mentions_remaining} mentions remaining`
-      ) : (
-        "Unlock premium features"
-      ),
-      className: subscription?.tier?.name === "True Emperor" ? "text-yellow-500" : 
-                 subscription?.tier?.name === "Creator" ? "text-white" : 
-                 "text-accent relative hover:bg-accent/10"
+      description: session?.user?.email === "jeremy@nftdemon.com" ? 
+        "Premium $80,000 Emperor Subscription" : 
+        subscription ? (
+          `${subscription.mentions_remaining} mentions remaining`
+        ) : (
+          "Unlock premium features"
+        ),
+      className: subscription?.tier?.name === "True Emperor" || session?.user?.email === "jeremy@nftdemon.com" ? 
+                "text-yellow-500" : 
+                subscription?.tier?.name === "Creator" ? "text-white" : 
+                "text-accent relative hover:bg-accent/10"
     },
     { 
       icon: Plus, 
@@ -158,8 +162,8 @@ export const NavItems = ({
       path: "/emperor-chat",
       active: location.pathname === "/emperor-chat",
       premium: true,
-      description: subscription?.tier?.name === "True Emperor" ? "Exclusive Emperor Chatroom" : "Unlock Emperor features",
-      className: subscription?.tier?.name === "True Emperor" ? "text-yellow-500" : "text-accent"
+      description: hasEmperorAccess ? "Exclusive Emperor Chatroom" : "Unlock Emperor features",
+      className: hasEmperorAccess ? "text-yellow-500" : "text-accent"
     },
   ];
 
