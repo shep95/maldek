@@ -1,4 +1,3 @@
-
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Bold, Italic, Link, Hash, AtSign, Image, Smile, Code } from "lucide-react";
@@ -17,6 +16,7 @@ interface RichTextEditorProps {
   onHashtag?: (tag: string) => void;
   className?: string;
   placeholder?: string;
+  isPremiumUser?: boolean;
 }
 
 export const RichTextEditor = ({
@@ -25,7 +25,8 @@ export const RichTextEditor = ({
   onMention,
   onHashtag,
   className,
-  placeholder = "What's happening?"
+  placeholder = "What's happening?",
+  isPremiumUser = false
 }: RichTextEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -262,9 +263,14 @@ export const RichTextEditor = ({
       </div>
 
       <div className="text-xs text-muted-foreground">
-        {value.length > 0 && (
+        {!isPremiumUser && value.length > 0 && (
           <span className="float-right">
             {value.length}/280 characters
+          </span>
+        )}
+        {isPremiumUser && value.length > 0 && (
+          <span className="float-right text-primary">
+            Premium user - no character limit
           </span>
         )}
       </div>

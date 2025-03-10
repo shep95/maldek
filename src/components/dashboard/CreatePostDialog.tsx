@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,6 +22,8 @@ export const CreatePostDialog = ({
   currentUser,
   onPostCreated
 }: CreatePostDialogProps) => {
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
+  
   const {
     content,
     setContent,
@@ -43,9 +44,30 @@ export const CreatePostDialog = ({
   const [isStory, setIsStory] = useState(false);
   const [showDateInput, setShowDateInput] = useState(false);
 
+  useEffect(() => {
+    const checkPremiumStatus = async () => {
+      try {
+        const { data: subscription } = await supabase
+          .from('user_subscriptions')
+          .select('tier_id, subscription_tiers(name), is_lifetime')
+          .eq('user_id', currentUser.id)
+          .eq('status', 'active')
+          .gt('ends_at', new Date().toISOString())
+          .maybeSingle();
+        
+        setIsPremiumUser(!!subscription?.subscription_tiers?.name || !!subscription?.is_lifetime);
+      } catch (error) {
+        console.error('Error checking premium status:', error);
+      }
+    };
+
+    if (currentUser?.id) {
+      checkPremiumStatus();
+    }
+  }, [currentUser?.id]);
+
   const handleFileSelectWithValidation = async (files: FileList) => {
     try {
-      // Check if adding these new files would exceed the 6 file limit
       if (mediaFiles.length + files.length > 6) {
         toast.error("Maximum of 6 media files allowed");
         return;
@@ -126,14 +148,13 @@ export const CreatePostDialog = ({
             .from('stories')
             .getPublicUrl(filePath);
 
-          // Create story record
           const { error: storyError } = await supabase
             .from('stories')
             .insert({
               user_id: currentUser.id,
               media_url: publicUrl,
               media_type: file.type.startsWith('video/') ? 'video' : 'image',
-              duration: file.type.startsWith('video/') ? 30 : 5 // 5 seconds for images, up to 30 for videos
+              duration: file.type.startsWith('video/') ? 30 : 5
             });
 
           if (storyError) {
@@ -196,7 +217,7 @@ export const CreatePostDialog = ({
           <DialogTitle>Create a New Post</DialogTitle>
           <DialogDescription className="flex flex-col gap-1">
             Share your thoughts, media, or mention other users in your post.
-            {postsRemaining !== null && (
+            {postsRemaining !== null && !isPremiumUser && (
               <span className="text-sm text-muted-foreground">
                 You have {postsRemaining} {postsRemaining === 1 ? 'post' : 'posts'} remaining this hour.
                 <Button 
@@ -206,6 +227,11 @@ export const CreatePostDialog = ({
                 >
                   Upgrade for unlimited posts
                 </Button>
+              </span>
+            )}
+            {isPremiumUser && (
+              <span className="text-sm text-primary">
+                Premium user - no character limit, unlimited posts
               </span>
             )}
           </DialogDescription>
@@ -226,6 +252,7 @@ export const CreatePostDialog = ({
               onChange={setContent}
               onMention={handleMention}
               onHashtag={(tag) => setContent(prev => `${prev}#${tag} `)}
+              isPremiumUser={isPremiumUser}
             />
           )}
           
