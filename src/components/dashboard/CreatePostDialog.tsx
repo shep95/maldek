@@ -38,14 +38,15 @@ export const CreatePostDialog = ({
     handlePaste,
     saveToDrafts,
     createPost,
-    resetFormState
+    resetFormState,
+    checkPostsRemaining
   } = usePostCreation(currentUser, onPostCreated, onOpenChange);
 
   const [isStory, setIsStory] = useState(false);
   const [showDateInput, setShowDateInput] = useState(false);
 
   useEffect(() => {
-    const checkPremiumStatus = async () => {
+    const checkUserStatus = async () => {
       try {
         const { data: subscription } = await supabase
           .from('user_subscriptions')
@@ -56,15 +57,19 @@ export const CreatePostDialog = ({
           .maybeSingle();
         
         setIsPremiumUser(!!subscription?.subscription_tiers?.name || !!subscription?.is_lifetime);
+        
+        if (!subscription?.subscription_tiers?.name && !subscription?.is_lifetime) {
+          checkPostsRemaining();
+        }
       } catch (error) {
-        console.error('Error checking premium status:', error);
+        console.error('Error checking user status:', error);
       }
     };
 
     if (currentUser?.id) {
-      checkPremiumStatus();
+      checkUserStatus();
     }
-  }, [currentUser?.id]);
+  }, [currentUser?.id, checkPostsRemaining]);
 
   const handleFileSelectWithValidation = async (files: FileList) => {
     try {
