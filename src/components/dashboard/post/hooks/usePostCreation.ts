@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
@@ -17,7 +16,7 @@ export const usePostCreation = (
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
   const [postsRemaining, setPostsRemaining] = useState<number | null>(null);
 
-  const fetchRemainingPosts = async () => {
+  const checkPostsRemaining = useCallback(async () => {
     try {
       const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       
@@ -44,11 +43,11 @@ export const usePostCreation = (
     } catch (error) {
       console.error('Error fetching remaining posts:', error);
     }
-  };
+  }, [currentUser.id]);
 
   useEffect(() => {
-    fetchRemainingPosts();
-  }, [currentUser.id]);
+    checkPostsRemaining();
+  }, [checkPostsRemaining]);
 
   const handleFileSelect = async (files: FileList) => {
     console.log('Files selected:', Array.from(files));
@@ -264,7 +263,7 @@ export const usePostCreation = (
         throw postError;
       }
 
-      await fetchRemainingPosts();
+      await checkPostsRemaining();
       
       setContent("");
       setMediaFiles([]);
@@ -317,6 +316,7 @@ export const usePostCreation = (
     handlePaste,
     saveToDrafts,
     createPost: handleCreatePost,
-    resetFormState
+    resetFormState,
+    checkPostsRemaining
   };
 };
