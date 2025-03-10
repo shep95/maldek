@@ -169,6 +169,17 @@ export const usePostCreation = (
       setIsSubmitting(true);
       const mediaUrls: string[] = [];
 
+      // Check if user has premium subscription to bypass character limits
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, subscription_tiers(name), is_lifetime')
+        .eq('user_id', currentUser.id)
+        .eq('status', 'active')
+        .gt('ends_at', new Date().toISOString())
+        .maybeSingle();
+      
+      const hasPremium = !!subscription?.subscription_tiers?.name || subscription?.is_lifetime;
+
       if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
           const fileExt = file.name.split('.').pop();
@@ -224,14 +235,18 @@ export const usePostCreation = (
         console.log('Scheduling post for:', scheduledForDate);
       }
 
+      // Create the post with bypass for character limits if user is premium
+      const postData = {
+        content: content.trim(),
+        user_id: currentUser.id,
+        media_urls: mediaUrls,
+        scheduled_for: scheduledForDate,
+        ...(hasPremium && { bypass_character_limit: true })
+      };
+
       const { data: newPost, error: postError } = await supabase
         .from('posts')
-        .insert([{
-          content: content.trim(),
-          user_id: currentUser.id,
-          media_urls: mediaUrls,
-          scheduled_for: scheduledForDate
-        }])
+        .insert([postData])
         .select('*, profiles(id, username, avatar_url)')
         .single();
 
@@ -264,14 +279,6 @@ export const usePostCreation = (
       console.error('Post creation error:', error);
       if (error.message.includes('can only post 3 times per hour')) {
         toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
-          duration: 5000,
-          action: {
-            label: "Upgrade",
-            onClick: () => window.location.href = '/subscription'
-          }
-        });
-      } else if (error.message.includes('exceeds character limit')) {
-        toast.error("Post exceeds character limit for your subscription tier", {
           duration: 5000,
           action: {
             label: "Upgrade",
