@@ -235,18 +235,14 @@ export const usePostCreation = (
         console.log('Scheduling post for:', scheduledForDate);
       }
 
-      // Create the post with premium status data
-      const postData: any = {
+      // Create the post data without explicit bypass_character_limit field
+      // The premium check is already done by the database function check_post_limit
+      const postData = {
         content: content.trim(),
         user_id: currentUser.id,
         media_urls: mediaUrls,
         scheduled_for: scheduledForDate
       };
-      
-      // Only include this field if the user is premium
-      if (hasPremium) {
-        postData.bypass_character_limit = true;
-      }
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
@@ -283,6 +279,14 @@ export const usePostCreation = (
       console.error('Post creation error:', error);
       if (error.message.includes('can only post 3 times per hour')) {
         toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
+          duration: 5000,
+          action: {
+            label: "Upgrade",
+            onClick: () => window.location.href = '/subscription'
+          }
+        });
+      } else if (error.message.includes('Post exceeds character limit')) {
+        toast.error("Your post exceeds the character limit for your subscription tier. Upgrade for longer posts!", {
           duration: 5000,
           action: {
             label: "Upgrade",
