@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -234,14 +235,18 @@ export const usePostCreation = (
         console.log('Scheduling post for:', scheduledForDate);
       }
 
-      // Create the post with bypass for character limits if user is premium
-      const postData = {
+      // Create the post with premium status data
+      const postData: any = {
         content: content.trim(),
         user_id: currentUser.id,
         media_urls: mediaUrls,
-        scheduled_for: scheduledForDate,
-        ...(hasPremium && { bypass_character_limit: true })
+        scheduled_for: scheduledForDate
       };
+      
+      // Only include this field if the user is premium
+      if (hasPremium) {
+        postData.bypass_character_limit = true;
+      }
 
       const { data: newPost, error: postError } = await supabase
         .from('posts')
