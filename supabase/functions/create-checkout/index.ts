@@ -16,6 +16,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Define pricing plans
+const PRICE_IDS = {
+  creator: 'price_1QsbJYRIC2EosLwjFLqmRXoX', // $3.50/month
+  "true emperor": 'price_1Qy0WORIC2EosLwjPd58zKZQ', // $8,000/year
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -50,23 +56,23 @@ serve(async (req) => {
       throw new Error(`Subscription tier "${tier}" not found`)
     }
 
-    // Create checkout session with proper pricing based on the tier
+    // Get the correct price ID based on the tier
+    const normalizedTier = tier.toLowerCase()
+    const priceId = PRICE_IDS[normalizedTier]
+    
+    if (!priceId) {
+      throw new Error(`No price ID configured for tier "${tier}"`)
+    }
+
+    console.log(`Using price ID ${priceId} for tier ${tier}`)
+
+    // Create checkout session with the specific price ID
     const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
       payment_method_types: ['card'],
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `${tierData.name} Subscription`,
-              description: `Access to premium features including ${tierData.monthly_mentions} monthly mentions and ${tierData.post_character_limit} character limit.`,
-            },
-            unit_amount: Math.round(tierData.price * 100), // Convert dollars to cents
-            recurring: {
-              interval: 'month',
-            },
-          },
+          price: priceId,
           quantity: 1,
         },
       ],

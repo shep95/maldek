@@ -1,3 +1,4 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,10 @@ import { toast } from "sonner";
 import { Crown, Check, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { PricingCard } from "@/components/ui/pricing-card";
+
+// Install framer-motion if it's not already installed
+<lov-add-dependency>framer-motion@12.0.0</lov-add-dependency>
 
 const Subscription = () => {
   const session = useSession();
@@ -126,31 +131,56 @@ const Subscription = () => {
 
   const renderFeatures = (tier) => {
     const features = [
-      { text: `${tier.post_character_limit} character limit`, check: true },
-      { text: `${tier.monthly_mentions} monthly mentions`, check: true },
-      { text: tier.supports_animated_avatars ? "Animated avatars" : "Standard avatars", check: tier.supports_animated_avatars },
-      { text: tier.supports_nft_avatars ? "NFT avatars" : "Standard avatars", check: tier.supports_nft_avatars },
-      { text: tier.watermark_disabled ? "No watermarks" : "Watermarked media", check: tier.watermark_disabled },
-      { text: `${tier.max_pinned_posts} pinned ${tier.max_pinned_posts > 1 ? 'posts' : 'post'}`, check: true },
+      { text: `${tier.post_character_limit} character limit`, checked: true },
+      { text: `${tier.monthly_mentions} monthly mentions`, checked: true },
+      { text: tier.supports_animated_avatars ? "Animated avatars" : "Standard avatars", checked: tier.supports_animated_avatars },
+      { text: tier.supports_nft_avatars ? "NFT avatars" : "Standard avatars", checked: tier.supports_nft_avatars },
+      { text: tier.watermark_disabled ? "No watermarks" : "Watermarked media", checked: tier.watermark_disabled },
+      { text: `${tier.max_pinned_posts} pinned ${tier.max_pinned_posts > 1 ? 'posts' : 'post'}`, checked: true },
     ];
 
-    return features.map((feature, index) => (
-      <li key={index} className="flex items-center gap-2">
-        {feature.check ? 
-          <Check className="h-4 w-4 text-primary" /> : 
-          <span className="h-4 w-4 flex items-center justify-center text-muted-foreground">-</span>
-        }
-        <span>{feature.text}</span>
-      </li>
-    ));
+    return features;
   };
 
   const isLoading = isLoadingSubscription || isLoadingTiers;
 
+  const mapTiersToPricingCards = () => {
+    if (!tiers) return [];
+    
+    return tiers.map(tier => {
+      const isCurrentPlan = subscription?.tier_id === tier.id;
+      const formattedPrice = tier.name === "True Emperor" ? 
+        "$8,000/year" : 
+        `$${tier.price}/month`;
+        
+      let bestFor = "";
+      if (tier.name === "Free") bestFor = "Basic features for everyone";
+      else if (tier.name === "Creator") bestFor = "Perfect for content creators";
+      else if (tier.name === "True Emperor") bestFor = "Ultimate premium experience";
+      
+      return {
+        tier: tier.name,
+        price: formattedPrice,
+        bestFor,
+        CTA: "Subscribe",
+        benefits: renderFeatures(tier),
+        isCurrentPlan,
+        onClickCTA: () => handleSubscribe(tier)
+      };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-12 px-4">
-        <h1 className="text-3xl font-bold mb-8 text-center">Subscription Plans</h1>
+        <div className="mb-12 space-y-3">
+          <h2 className="text-center text-3xl font-semibold leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
+            Subscription Plans
+          </h2>
+          <p className="text-center text-base text-muted-foreground md:text-lg">
+            Choose the right plan to enhance your social media experience.
+          </p>
+        </div>
         
         {isLoading ? (
           <div className="flex justify-center my-12">
@@ -216,7 +246,15 @@ const Subscription = () => {
                       <div>
                         <h3 className="text-sm font-medium mb-2">Plan features</h3>
                         <ul className="space-y-1 text-sm">
-                          {subscription.tier && renderFeatures(subscription.tier)}
+                          {subscription.tier && renderFeatures(subscription.tier).map((feature, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              {feature.checked ? 
+                                <Check className="h-4 w-4 text-primary" /> : 
+                                <span className="h-4 w-4 flex items-center justify-center text-muted-foreground">-</span>
+                              }
+                              <span>{feature.text}</span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     </div>
@@ -235,59 +273,12 @@ const Subscription = () => {
               </div>
             )}
             
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {tiers?.map((tier) => (
-                <Card key={tier.id} className={cn(
-                  "overflow-hidden transition-all duration-200 hover:shadow-lg",
-                  subscription?.tier_id === tier.id && "border-primary shadow-md"
-                )}>
-                  <CardHeader className={cn(
-                    "pb-4",
-                    tier.name === "True Emperor" ? "bg-yellow-500/10" : 
-                    tier.name === "Creator" ? "bg-primary/10" : 
-                    "bg-muted/50"
-                  )}>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-xl">
-                        {tier.name === "True Emperor" && <Crown className="h-5 w-5 text-yellow-500" />}
-                        {tier.name === "Creator" && <User className="h-5 w-5 text-primary" />}
-                        {tier.name}
-                      </CardTitle>
-                      {subscription?.tier_id === tier.id && (
-                        <Badge variant="outline" className="ml-auto">Current Plan</Badge>
-                      )}
-                    </div>
-                    <CardDescription>
-                      {tier.name === "True Emperor" ? "Ultimate premium experience" : 
-                       tier.name === "Creator" ? "Perfect for content creators" : 
-                       "Basic features for standard users"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="mb-6 flex items-baseline">
-                      <span className="text-3xl font-bold">${tier.price}</span>
-                      <span className="text-muted-foreground ml-1">/month</span>
-                    </div>
-                    
-                    <ul className="space-y-3 mb-6">
-                      {renderFeatures(tier)}
-                    </ul>
-                  </CardContent>
-                  <CardFooter className="border-t p-6 bg-muted/5">
-                    <Button 
-                      onClick={() => handleSubscribe(tier)}
-                      className={cn(
-                        "w-full",
-                        subscription?.tier_id === tier.id ? "bg-muted hover:bg-muted/90" : "",
-                        tier.name === "True Emperor" ? "bg-yellow-500 hover:bg-yellow-600 text-black" : ""
-                      )}
-                      disabled={subscription?.tier_id === tier.id}
-                      variant={tier.name === "True Emperor" ? "default" : "default"}
-                    >
-                      {subscription?.tier_id === tier.id ? 'Current Plan' : 'Subscribe'}
-                    </Button>
-                  </CardFooter>
-                </Card>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {mapTiersToPricingCards().map((cardProps, index) => (
+                <PricingCard
+                  key={index}
+                  {...cardProps}
+                />
               ))}
             </div>
           </>
