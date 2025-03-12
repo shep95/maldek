@@ -21,10 +21,10 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
       isCollapsed ? "w-24" : "w-72"
     )}>
       <Card className={cn(
-        "h-full flex flex-col bg-background/20 backdrop-blur-md relative",
+        "h-full flex flex-col bg-background/20 border-border/50 backdrop-blur-md relative",
         "rounded-xl shadow-lg hover:shadow-xl transition-all",
         isCollapsed && "shadow-lg hover:shadow-xl hover:shadow-accent/5",
-        "py-6 neon-border-accent"
+        "py-6"
       )}>
         <Button 
           variant="ghost" 

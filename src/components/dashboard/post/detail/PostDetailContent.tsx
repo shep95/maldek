@@ -33,7 +33,7 @@ export const PostDetailContent = ({
   });
 
   return (
-    <Card className="mb-6 p-6 neon-border">
+    <Card className="mb-6 p-6">
       <PostHeader 
         author={post.author}
         timestamp={post.timestamp}

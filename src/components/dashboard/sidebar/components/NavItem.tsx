@@ -53,7 +53,7 @@ export const NavItem = ({
       className={cn(
         "w-full justify-start gap-2 relative group transition-all duration-300",
         "hover:bg-white/5 hover:backdrop-blur-lg",
-        active && "bg-accent text-white neon-border-strong",
+        active && "bg-accent text-white",
         !active && "hover:text-accent",
         collapsed && "justify-center px-2",
         "overflow-hidden",
