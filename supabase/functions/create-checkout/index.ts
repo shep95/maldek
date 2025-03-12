@@ -30,6 +30,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Get user email
     const { data: { user }, error: userError } = await supabaseClient.auth.admin.getUserById(userId)
 
     if (userError || !user?.email) {
@@ -37,7 +38,19 @@ serve(async (req) => {
       throw new Error('User not found')
     }
 
-    // Simplified checkout session creation
+    // Get subscription tier details
+    const { data: tierData, error: tierError } = await supabaseClient
+      .from('subscription_tiers')
+      .select('*')
+      .eq('name', tier)
+      .maybeSingle()
+
+    if (tierError || !tierData) {
+      console.error('Error fetching tier data:', tierError)
+      throw new Error(`Subscription tier "${tier}" not found`)
+    }
+
+    // Create checkout session with proper pricing based on the tier
     const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
       payment_method_types: ['card'],
@@ -46,10 +59,10 @@ serve(async (req) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${tier} Subscription`,
-              description: 'Access to premium features',
+              name: `${tierData.name} Subscription`,
+              description: `Access to premium features including ${tierData.monthly_mentions} monthly mentions and ${tierData.post_character_limit} character limit.`,
             },
-            unit_amount: 500, // $5.00 (in cents) as a default
+            unit_amount: Math.round(tierData.price * 100), // Convert dollars to cents
             recurring: {
               interval: 'month',
             },
@@ -62,7 +75,8 @@ serve(async (req) => {
       cancel_url: `${req.headers.get('origin')}/subscription`,
       metadata: {
         userId: userId,
-        tier: tier
+        tierId: tierData.id,
+        tierName: tierData.name
       },
     })
 

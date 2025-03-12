@@ -1,6 +1,7 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
-import Stripe from 'https://esm.sh/stripe@12.3.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@13.6.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +16,6 @@ serve(async (req) => {
 
   try {
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      // This is an official recommended way to use Stripe with Deno
       apiVersion: '2023-10-16',
       httpClient: Stripe.createFetchHttpClient(),
     })
@@ -28,13 +28,18 @@ serve(async (req) => {
 
     const body = await req.text()
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+    
+    if (!webhookSecret) {
+      throw new Error('Webhook secret not configured')
+    }
+    
     let event
 
     try {
       event = stripe.webhooks.constructEvent(
         body,
         signature,
-        webhookSecret!
+        webhookSecret
       )
     } catch (err) {
       console.error(`Webhook signature verification failed:`, err.message)
@@ -55,12 +60,54 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object
         console.log('Checkout session completed:', session.id)
+        
+        // Get the subscription tier details from the metadata
+        const userId = session.metadata?.userId
+        const tierId = session.metadata?.tierId
+        
+        if (!userId || !tierId) {
+          console.error('Missing user or tier information in metadata')
+          break
+        }
+        
+        // Get tier details to determine mention count
+        const { data: tierData } = await supabase
+          .from('subscription_tiers')
+          .select('*')
+          .eq('id', tierId)
+          .maybeSingle()
+          
+        if (!tierData) {
+          console.error('Subscription tier not found:', tierId)
+          break
+        }
+          
+        // Create or update the user subscription
+        const { error: subscriptionError } = await supabase
+          .from('user_subscriptions')
+          .upsert({
+            user_id: userId,
+            tier_id: tierId,
+            stripe_subscription_id: session.subscription,
+            stripe_customer_id: session.customer,
+            status: 'active',
+            mentions_remaining: tierData.monthly_mentions,
+            mentions_used: 0,
+            starts_at: new Date().toISOString(),
+            ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            is_lifetime: false
+          })
+
+        if (subscriptionError) {
+          console.error('Error creating subscription:', subscriptionError)
+          throw subscriptionError
+        }
 
         // Record the payment in payment_history
         const { error: paymentError } = await supabase
           .from('payment_history')
           .insert({
-            user_id: session.client_reference_id,
+            user_id: userId,
             amount: session.amount_total / 100, // Convert from cents to dollars
             currency: session.currency,
             payment_date: new Date().toISOString(),
@@ -78,29 +125,60 @@ serve(async (req) => {
           throw paymentError
         }
 
-        // Update user subscription
-        if (session.mode === 'subscription') {
-          const { error: subscriptionError } = await supabase
-            .from('user_subscriptions')
-            .update({
-              stripe_subscription_id: session.subscription,
-              stripe_customer_id: session.customer,
-              status: 'active',
-            })
-            .eq('user_id', session.client_reference_id)
-
-          if (subscriptionError) {
-            console.error('Error updating subscription:', subscriptionError)
-            throw subscriptionError
-          }
-        }
-
         break
       }
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object
         console.log('Invoice payment succeeded:', invoice.id)
+        
+        // If this is a subscription invoice, update the subscription
+        if (invoice.subscription) {
+          // Get the subscription to access its metadata
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription)
+          const userId = subscription.metadata?.userId
+          
+          if (!userId) {
+            console.error('No user ID found in subscription metadata')
+            break
+          }
+
+          // Update the user's subscription end date
+          const { error: updateError } = await supabase
+            .from('user_subscriptions')
+            .update({
+              status: 'active',
+              ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // extend by 30 days
+            })
+            .eq('stripe_subscription_id', invoice.subscription)
+
+          if (updateError) {
+            console.error('Error updating subscription:', updateError)
+            throw updateError
+          }
+          
+          // Reset available mentions at the start of a new billing cycle
+          const { data: tierData } = await supabase
+            .from('subscription_tiers')
+            .select('*')
+            .eq('id', subscription.metadata?.tierId)
+            .maybeSingle()
+            
+          if (tierData) {
+            // Reset mentions for the new period
+            const { error: mentionsError } = await supabase
+              .from('user_subscriptions')
+              .update({
+                mentions_remaining: tierData.monthly_mentions,
+                mentions_used: 0
+              })
+              .eq('stripe_subscription_id', invoice.subscription)
+              
+            if (mentionsError) {
+              console.error('Error resetting mentions:', mentionsError)
+            }
+          }
+        }
 
         // Record the payment in payment_history
         const { error: paymentError } = await supabase
@@ -165,6 +243,19 @@ serve(async (req) => {
         const stripe_customer_id = invoice.customer
 
         console.warn(`Invoice payment failed for customer: ${stripe_customer_id}`)
+        
+        // Update the subscription status
+        if (invoice.subscription) {
+          const { error } = await supabase
+            .from('user_subscriptions')
+            .update({ status: 'past_due' })
+            .eq('stripe_subscription_id', invoice.subscription)
+
+          if (error) {
+            console.error('Error updating subscription status:', error)
+          }
+        }
+        
         break
       }
 
