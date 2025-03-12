@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { PostHeader } from "./post/PostHeader";
 import { PostContent } from "./post/PostContent";
@@ -85,7 +86,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
     <div 
       id={`post-${post.id}`}
       className={cn(
-        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 transition-all duration-300",
+        "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 transition-all duration-300 neon-border",
         !isEditing && "cursor-pointer hover:bg-accent/5 transition-colors duration-200"
       )}
       onClick={handlePostClick}

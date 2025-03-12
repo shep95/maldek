@@ -1,133 +1,81 @@
 
 @tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@font-face {
-  font-family: 'TeX Gyre Adventor';
-  src: url('https://cdn.jsdelivr.net/npm/@fontsource/tex-gyre-adventor@4.5.8/files/tex-gyre-adventor-latin-400-normal.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'TeX Gyre Adventor';
-  src: url('https://cdn.jsdelivr.net/npm/@fontsource/tex-gyre-adventor@4.5.8/files/tex-gyre-adventor-latin-700-normal.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 
 @layer base {
   :root {
-    --background: 0 0% 98%;  /* #fafafa - Modern light gray background */
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;  /* #ffffff - Pure white for cards */
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 24 9% 96%;  /* #f7f5f4 - Soft warm white */
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 60 56% 91%;  /* #f5f3e6 - Warm secondary */
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 24 95% 53%;  /* #f97316 - Vibrant orange accent */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 24 95% 53%;  /* Match accent color */
-    --radius: 0.75rem;
-    --video-glow: none;  /* Default video glow effect */
-    --safe-area-top: env(safe-area-inset-top, 0px);
-    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-area-left: env(safe-area-inset-left, 0px);
-    --safe-area-right: env(safe-area-inset-right, 0px);
-  }
-
-  .dark {
-    --background: 0 0% 0%;  /* Pure black in dark mode */
+    --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3%;
+    --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: #171717;  /* Updated light color theme */
+    --primary: 217.2 91.2% 59.8%;
+    --primary-rgb: 62, 138, 247; /* RGB values for primary color */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 5.1%;  /* #0d0d0d in dark mode */
+    --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 15%;
+    --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 24 95% 53%;  /* Orange in dark mode */
+    --accent: 240 3.7% 15.9%;
+    --accent-rgb: 39, 39, 42; /* RGB values for accent color */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
+    --destructive-rgb: 156, 26, 21; /* RGB values for destructive color */
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 24 95% 53%;  /* Orange in dark mode */
+    --ring: 240 4.9% 83.9%;
+    --radius: 0.5rem;
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 217.2 91.2% 59.8%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 240 4.9% 83.9%;
+  }
+  
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-rgb: 62, 138, 247; /* RGB values for primary color */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-rgb: 39, 39, 42; /* RGB values for accent color */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-rgb: 156, 26, 21; /* RGB values for destructive color */
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 217.2 91.2% 59.8%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 240 4.9% 83.9%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border selection:bg-white/10 selection:text-white;
+    @apply border-border;
   }
-  
   body {
-    @apply bg-background text-foreground antialiased font-adventor tracking-wider;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
-    /* Handle system UI on mobile */
-    padding-top: var(--safe-area-top);
-    padding-bottom: var(--safe-area-bottom);
-    padding-left: var(--safe-area-left);
-    padding-right: var(--safe-area-right);
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    background-color: #000000;
-  }
-
-  html {
-    @apply scroll-smooth;
-    height: -webkit-fill-available;
-  }
-
-  /* Fix for notched devices and system UI */
-  @supports (padding-top: env(safe-area-inset-top)) {
-    body {
-      --safe-area-top: env(safe-area-inset-top);
-      --safe-area-bottom: env(safe-area-inset-bottom);
-      --safe-area-left: env(safe-area-inset-left);
-      --safe-area-right: env(safe-area-inset-right);
-    }
-  }
-}
-
-@layer utilities {
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
-
-  .glass-morphism {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)];
-  }
-  
-  .neo-blur {
-    @apply backdrop-blur-2xl bg-black/40 border border-white/10;
-  }
-  
-  .text-gradient {
-    @apply bg-gradient-to-br from-white via-white/90 to-white/70 bg-clip-text text-transparent;
-  }
-  
-  .text-gradient-primary {
-    @apply bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

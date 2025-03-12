@@ -77,3 +77,34 @@
     display: none;
   }
 }
+
+/* Neon Border Effects */
+.neon-border {
+  @apply border border-primary/50 relative;
+  box-shadow: 0 0 5px rgba(var(--primary-rgb), 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+.neon-border:hover {
+  box-shadow: 0 0 10px rgba(var(--primary-rgb), 0.5);
+}
+
+.neon-border-accent {
+  @apply border border-accent/50 relative;
+  box-shadow: 0 0 5px rgba(var(--accent-rgb), 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+.neon-border-accent:hover {
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+}
+
+.neon-border-strong {
+  @apply border border-primary/70 relative;
+  box-shadow: 0 0 8px rgba(var(--primary-rgb), 0.5);
+  transition: box-shadow 0.3s ease;
+}
+
+.neon-border-strong:hover {
+  box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.7);
+}
