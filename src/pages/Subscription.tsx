@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { Crown, Check, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const Subscription = () => {
   const session = useSession();
@@ -124,7 +124,6 @@ const Subscription = () => {
     }
   };
 
-  // Helper to render feature list for each tier
   const renderFeatures = (tier) => {
     const features = [
       { text: `${tier.post_character_limit} character limit`, check: true },
