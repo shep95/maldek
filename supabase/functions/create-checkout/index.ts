@@ -22,8 +22,8 @@ serve(async (req) => {
   }
 
   try {
-    const { tier, userId, discountCode } = await req.json()
-    console.log('Creating checkout session for:', { tier, userId, discountCode })
+    const { tier, userId } = await req.json()
+    console.log('Creating checkout session for:', { tier, userId })
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -37,103 +37,36 @@ serve(async (req) => {
       throw new Error('User not found')
     }
 
-    // First, get the tier name based on the input
-    const tierName = tier === 'true emperor lifetime' ? 'True Emperor Lifetime' : 
-                    tier === 'true emperor' ? 'True Emperor' : 
-                    tier === 'creator' ? 'Creator' : 
-                    tier === 'bosley' ? 'Bosley' : 'Business';
-
-    // Get the subscription tier details
-    const { data: tierData, error: tierError } = await supabaseClient
-      .from('subscription_tiers')
-      .select('*')
-      .eq('name', tierName)
-      .single()
-
-    if (tierError || !tierData) {
-      console.error('Error fetching tier:', tierError)
-      throw new Error(`Subscription tier not found: ${tierName}`)
-    }
-
-    console.log('Found tier:', tierData)
-
-    // Determine price ID and mode
-    let priceId;
-    let mode: 'subscription' | 'payment' = 'subscription';
-
-    switch(tier.toLowerCase()) {
-      case 'creator':
-        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX'; // $3.50/month
-        break;
-      case 'business':
-        priceId = 'price_1QqL7NRIC2EosLwjd8FkAuzM';
-        break;
-      case 'true emperor':
-        priceId = 'price_1Qy0WORIC2EosLwjPd58zKZQ'; // $8k/year
-        break;
-      case 'true emperor lifetime':
-        priceId = 'price_1QsXsaRIC2EosLwjUQIZ9eiu';
-        mode = 'payment';
-        break;
-      case 'bosley':
-        priceId = 'price_1QsbJYRIC2EosLwjFLqmRXoX';
-        break;
-      default:
-        throw new Error('Invalid subscription tier');
-    }
-    
-    console.log('Creating checkout with:', {
-      priceId,
-      mode,
-      tierId: tierData.id,
-      tierName: tierData.name,
-      monthlyMentions: tierData.monthly_mentions,
-      discountCode
-    })
-
-    // Create the session configuration
-    const sessionConfig: any = {
+    // Simplified checkout session creation
+    const session = await stripe.checkout.sessions.create({
       customer_email: user.email,
+      payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${tier} Subscription`,
+              description: 'Access to premium features',
+            },
+            unit_amount: 500, // $5.00 (in cents) as a default
+            recurring: {
+              interval: 'month',
+            },
+          },
           quantity: 1,
         },
       ],
-      mode: mode,
+      mode: 'subscription',
       success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/subscription`,
       metadata: {
         userId: userId,
-        tierId: tierData.id,
-        tier: tierData.name,
-        isLifetime: mode === 'payment' ? 'true' : 'false',
-        monthlyMentions: tierData.monthly_mentions.toString()
+        tier: tier
       },
-      allow_promotion_codes: true, // Enable discount code input
-    }
-
-    // If a specific discount code is provided, validate and apply it
-    if (discountCode) {
-      try {
-        const coupon = await stripe.coupons.retrieve(discountCode);
-        if (coupon) {
-          sessionConfig.discounts = [{
-            coupon: discountCode,
-          }];
-        }
-      } catch (error) {
-        console.log('Invalid or expired discount code:', error);
-        // We'll continue without the discount if it's invalid
-      }
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionConfig);
-
-    console.log('Checkout session created:', {
-      sessionId: session.id,
-      metadata: session.metadata
     })
+
+    console.log('Checkout session created:', session.id)
 
     return new Response(
       JSON.stringify({ url: session.url }),
