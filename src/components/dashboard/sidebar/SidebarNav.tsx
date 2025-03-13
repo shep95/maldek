@@ -1,3 +1,4 @@
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,8 +75,8 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
   };
 
   const handlePremiumClick = () => {
-    // This now handles the "Invest" click
-    toast.info('Investment options coming soon');
+    // Navigate to the features page when clicking Invest
+    navigate('/features');
     if (onSidebarClose) onSidebarClose(); // Close sidebar after navigation
   };
 

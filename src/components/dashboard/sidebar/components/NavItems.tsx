@@ -1,6 +1,6 @@
 
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Coins, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -31,6 +31,7 @@ export const NavItems = ({
   const unreadCount = useNotificationCount(userId);
   const isMobile = useIsMobile();
   const session = useSession();
+  const navigate = useNavigate();
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
@@ -130,8 +131,8 @@ export const NavItems = ({
     { 
       icon: Coins, 
       label: "Invest", 
-      premium: true,
-      onClick: handlePremiumClick,
+      path: "/features",
+      active: location.pathname === "/features",
       description: "Invest in our platform",
       className: "text-accent relative hover:bg-accent/10"
     },
