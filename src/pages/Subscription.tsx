@@ -151,10 +151,17 @@ const Subscription = () => {
     
     return tiers.map(tier => {
       const isCurrentPlan = subscription?.tier_id === tier.id;
-      const formattedPrice = tier.name === "True Emperor" ? 
-        "$8,000/year" : 
-        tier.name === "Free" ? "Free" : `$${tier.price}/month`;
-        
+      
+      // Fix the price display for True Emperor tier - remove any $0/month references
+      let formattedPrice = "";
+      if (tier.name === "True Emperor") {
+        formattedPrice = "$8,000/year";
+      } else if (tier.name === "Free") {
+        formattedPrice = "Free";
+      } else {
+        formattedPrice = `$${tier.price}/month`;
+      }
+      
       let bestFor = "";
       if (tier.name === "Free") bestFor = "Basic features for everyone";
       else if (tier.name === "Creator") bestFor = "Perfect for content creators";
@@ -188,8 +195,7 @@ const Subscription = () => {
           <div className="flex justify-center my-12">
             <div className="animate-pulse w-full max-w-4xl">
               <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg mb-8"></div>
-              <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+              <div className="flex flex-col gap-8">
                 <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                 <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
               </div>
@@ -275,7 +281,8 @@ const Subscription = () => {
               </div>
             )}
             
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Change to flex-col to stack pricing cards vertically */}
+            <div className="flex flex-col gap-6 max-w-md mx-auto">
               {mapTiersToPricingCards().filter(card => card.tier !== "Free").map((cardProps, index) => (
                 <PricingCard
                   key={index}
