@@ -3,6 +3,7 @@ import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StarBorder } from "@/components/ui/star-border";
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +23,7 @@ interface NavItemProps {
   collapsed?: boolean;
   onClick?: () => void;
   onNavigate: (path?: string) => void;
+  useStarBorder?: boolean;
 }
 
 export const NavItem = ({
@@ -36,7 +38,8 @@ export const NavItem = ({
   subscription,
   collapsed,
   onClick,
-  onNavigate
+  onNavigate,
+  useStarBorder = false
 }: NavItemProps) => {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,7 +50,45 @@ export const NavItem = ({
     }
   };
 
-  const button = (
+  const buttonContent = (
+    <>
+      {/* Icon with glow effect */}
+      <div className={cn(
+        "relative z-10 transition-transform group-hover:scale-110",
+        active && "text-white"
+      )}>
+        <Icon className="h-4 w-4" />
+      </div>
+      
+      {/* Label */}
+      {!collapsed && (
+        <span className="relative z-10">{label}</span>
+      )}
+      
+      {/* Badge */}
+      {!collapsed && badge !== undefined && (
+        <Badge variant="secondary" className="ml-auto relative z-10">
+          {badge}
+        </Badge>
+      )}
+    </>
+  );
+
+  const button = useStarBorder ? (
+    <StarBorder
+      as="button"
+      className={cn(
+        "w-full justify-start gap-2 relative group transition-all duration-300",
+        "hover:bg-transparent",
+        collapsed && "justify-center px-2",
+        className
+      )}
+      onClick={handleClick}
+      color="hsl(var(--accent))"
+    >
+      {buttonContent}
+    </StarBorder>
+  ) : (
     <Button
       variant="ghost"
       className={cn(
@@ -68,25 +109,7 @@ export const NavItem = ({
         "blur-xl"
       )} />
       
-      {/* Icon with glow effect */}
-      <div className={cn(
-        "relative z-10 transition-transform group-hover:scale-110",
-        active && "text-white"
-      )}>
-        <Icon className="h-4 w-4" />
-      </div>
-      
-      {/* Label */}
-      {!collapsed && (
-        <span className="relative z-10">{label}</span>
-      )}
-      
-      {/* Badge */}
-      {!collapsed && badge !== undefined && (
-        <Badge variant="secondary" className="ml-auto relative z-10">
-          {badge}
-        </Badge>
-      )}
+      {buttonContent}
     </Button>
   );
 

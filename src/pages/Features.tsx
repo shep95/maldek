@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { StarBorder } from "@/components/ui/star-border";
 
 const Features = () => {
   const navigate = useNavigate();
@@ -28,7 +29,8 @@ const Features = () => {
       icon: FolderLock,
       title: "Free Safety Folder",
       description: "Protect your files and messages from anyone with our secure storage system in profile tab",
-      isPremium: true
+      isPremium: true,
+      highlight: true
     },
     {
       icon: DollarSign,
@@ -83,36 +85,73 @@ const Features = () => {
 
       <div className="grid gap-6 sm:grid-cols-2">
         {features.map((feature, index) => (
-          <div
-            key={index}
-            className={cn(
-              "group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border border-border/50 hover:bg-background/50 transition-colors",
-              feature.isPremium && "border-accent/50 bg-accent/5"
-            )}
-          >
-            <div className="relative">
-              <feature.icon className={cn(
-                "w-5 h-5 shrink-0 mt-1",
-                feature.isPremium ? "text-accent-foreground" : "text-accent",
-                "transition-all duration-300 ease-out",
-                "group-hover:scale-110 group-hover:rotate-[360deg]",
-                "after:content-[''] after:absolute after:inset-0",
-                "after:bg-accent/20 after:rounded-full after:scale-0",
-                "group-hover:after:scale-150 after:transition-transform",
-                "group-hover:text-accent-foreground"
-              )} />
-              <div className="absolute inset-0 bg-accent/10 rounded-full scale-0 group-hover:scale-150 transition-transform" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold mb-1">{feature.title}</h3>
-                {feature.isPremium && (
-                  <span className="text-xs px-1.5 py-0.5 bg-accent/20 text-accent-foreground rounded-full">Premium</span>
-                )}
+          feature.highlight ? (
+            <StarBorder
+              key={index}
+              as="div"
+              color="hsl(var(--accent))"
+              className="w-full"
+            >
+              <div className={cn(
+                "group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border-none hover:bg-background/50 transition-colors",
+                feature.isPremium && "bg-accent/5"
+              )}>
+                <div className="relative">
+                  <feature.icon className={cn(
+                    "w-5 h-5 shrink-0 mt-1",
+                    feature.isPremium ? "text-accent-foreground" : "text-accent",
+                    "transition-all duration-300 ease-out",
+                    "group-hover:scale-110 group-hover:rotate-[360deg]",
+                    "after:content-[''] after:absolute after:inset-0",
+                    "after:bg-accent/20 after:rounded-full after:scale-0",
+                    "group-hover:after:scale-150 after:transition-transform",
+                    "group-hover:text-accent-foreground"
+                  )} />
+                  <div className="absolute inset-0 bg-accent/10 rounded-full scale-0 group-hover:scale-150 transition-transform" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold mb-1">{feature.title}</h3>
+                    {feature.isPremium && (
+                      <span className="text-xs px-1.5 py-0.5 bg-accent/20 text-accent-foreground rounded-full">Premium</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">{feature.description}</p>
+            </StarBorder>
+          ) : (
+            <div
+              key={index}
+              className={cn(
+                "group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border border-border/50 hover:bg-background/50 transition-colors",
+                feature.isPremium && "border-accent/50 bg-accent/5"
+              )}
+            >
+              <div className="relative">
+                <feature.icon className={cn(
+                  "w-5 h-5 shrink-0 mt-1",
+                  feature.isPremium ? "text-accent-foreground" : "text-accent",
+                  "transition-all duration-300 ease-out",
+                  "group-hover:scale-110 group-hover:rotate-[360deg]",
+                  "after:content-[''] after:absolute after:inset-0",
+                  "after:bg-accent/20 after:rounded-full after:scale-0",
+                  "group-hover:after:scale-150 after:transition-transform",
+                  "group-hover:text-accent-foreground"
+                )} />
+                <div className="absolute inset-0 bg-accent/10 rounded-full scale-0 group-hover:scale-150 transition-transform" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold mb-1">{feature.title}</h3>
+                  {feature.isPremium && (
+                    <span className="text-xs px-1.5 py-0.5 bg-accent/20 text-accent-foreground rounded-full">Premium</span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </div>
             </div>
-          </div>
+          )
         ))}
       </div>
     </div>

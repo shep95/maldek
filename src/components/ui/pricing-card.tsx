@@ -4,6 +4,7 @@ import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { StarBorder } from "@/components/ui/star-border"
 
 interface BenefitProps {
   text: string
@@ -55,46 +56,53 @@ export const PricingCard = ({
       transition={{ duration: 0.5, ease: "easeInOut", delay: 0.25 }}
       className="w-full"
     >
-      <Card
-        className={cn(
-          "relative w-full overflow-hidden border",
-          "dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-950/50 dark:to-zinc-900/80",
-          "border-zinc-200 bg-gradient-to-br from-zinc-50/50 to-zinc-100/80",
-          "p-6",
-          isCurrentPlan && "border-primary shadow-md",
-          className,
-        )}
+      <StarBorder
+        as="div"
+        className="w-full"
+        color="hsl(var(--accent))"
+        speed="12s"
       >
-        <div className="flex flex-col items-start border-b pb-6 dark:border-zinc-700 border-zinc-200 w-full">
-          <span className="mb-6 inline-block dark:text-zinc-50 text-zinc-900">
-            {tier}
-          </span>
-          <span className="mb-3 inline-block text-4xl font-medium">
-            {price}
-          </span>
-          <span className="dark:bg-gradient-to-br dark:from-zinc-200 dark:to-zinc-500 bg-gradient-to-br from-zinc-700 to-zinc-900 bg-clip-text text-start text-transparent">
-            {bestFor}
-          </span>
-          {isCurrentPlan && (
-            <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
-              Current Plan
-            </span>
+        <Card
+          className={cn(
+            "relative w-full overflow-hidden border-none",
+            "dark:bg-gradient-to-br dark:from-zinc-950/50 dark:to-zinc-900/80",
+            "bg-gradient-to-br from-zinc-50/50 to-zinc-100/80",
+            "p-6",
+            isCurrentPlan && "shadow-md ring-1 ring-accent",
+            className,
           )}
-        </div>
-        <div className="space-y-4 py-9">
-          {benefits.map((benefit, index) => (
-            <Benefit key={index} {...benefit} />
-          ))}
-        </div>
-        <Button
-          className="w-full"
-          variant={tier === "Pro" ? "default" : "ghost"}
-          onClick={onClickCTA}
-          disabled={isCurrentPlan}
         >
-          {isCurrentPlan ? 'Current Plan' : CTA}
-        </Button>
-      </Card>
+          <div className="flex flex-col items-start border-b pb-6 dark:border-zinc-700 border-zinc-200 w-full">
+            <span className="mb-6 inline-block dark:text-zinc-50 text-zinc-900">
+              {tier}
+            </span>
+            <span className="mb-3 inline-block text-4xl font-medium">
+              {price}
+            </span>
+            <span className="dark:bg-gradient-to-br dark:from-zinc-200 dark:to-zinc-500 bg-gradient-to-br from-zinc-700 to-zinc-900 bg-clip-text text-start text-transparent">
+              {bestFor}
+            </span>
+            {isCurrentPlan && (
+              <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+                Current Plan
+              </span>
+            )}
+          </div>
+          <div className="space-y-4 py-9">
+            {benefits.map((benefit, index) => (
+              <Benefit key={index} {...benefit} />
+            ))}
+          </div>
+          <Button
+            className="w-full"
+            variant={tier === "Pro" ? "default" : "ghost"}
+            onClick={onClickCTA}
+            disabled={isCurrentPlan}
+          >
+            {isCurrentPlan ? 'Current Plan' : CTA}
+          </Button>
+        </Card>
+      </StarBorder>
     </motion.div>
   )
 }
