@@ -22,58 +22,39 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
                               subscription?.tier?.name === 'True Emperor';
   const [publicImageUrls, setPublicImageUrls] = useState<string[]>([]);
-  const [isReady, setIsReady] = useState(false);
   
   useEffect(() => {
-    if (!mediaUrls || mediaUrls.length === 0) return;
-    
     // Process all media URLs to transform storage URLs to public URLs
     const processMediaUrls = async () => {
-      try {
-        // Filter image URLs (non-video)
-        const imageUrls = mediaUrls.filter(url => url && !isVideoFile(url));
-        
-        // Transform to public URLs
-        const transformedImageUrls = imageUrls.map(url => getPublicUrl(url));
-        
-        console.log('Processed image URLs for carousel:', transformedImageUrls);
-        setPublicImageUrls(transformedImageUrls);
-        
-        // Load dimensions for all images
-        for (const url of imageUrls) {
-          if (!isVideoFile(url)) {
-            const publicUrl = getPublicUrl(url);
-            try {
-              const dimensions = await loadImageDimensions(publicUrl);
-              setImageDimensions(prev => ({
-                ...prev,
-                [url]: dimensions
-              }));
-            } catch (err) {
-              console.error("Failed to load image dimensions:", err);
-            }
+      // Filter and transform image URLs
+      const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
+      const transformedImageUrls = imageUrls.map(url => getPublicUrl(url));
+      setPublicImageUrls(transformedImageUrls);
+      
+      // Load dimensions for all images
+      for (const url of imageUrls) {
+        if (!isVideoFile(url)) {
+          const publicUrl = getPublicUrl(url);
+          try {
+            const dimensions = await loadImageDimensions(publicUrl);
+            setImageDimensions(prev => ({
+              ...prev,
+              [url]: dimensions
+            }));
+          } catch (err) {
+            console.error("Failed to load image dimensions:", err);
           }
         }
-        
-        setIsReady(true);
-      } catch (error) {
-        console.error("Error processing media URLs:", error);
       }
     };
     
     const loadImageDimensions = (url: string) => {
-      return new Promise<{ width: number; height: number }>((resolve, reject) => {
-        if (!url) {
-          reject(new Error("Invalid URL"));
-          return;
-        }
-        
+      return new Promise<{ width: number; height: number }>((resolve) => {
         const img = new Image();
         img.onload = () => {
           resolve({ width: img.naturalWidth, height: img.naturalHeight });
         };
-        img.onerror = (err) => {
-          console.error("Image load error:", err, url);
+        img.onerror = () => {
           // Fallback dimensions if image fails to load
           resolve({ width: 16, height: 9 });
         };
@@ -109,21 +90,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const canDownload = subscription?.tier?.name === 'Creator' || subscription?.tier?.name === 'True Emperor';
 
   const getPublicUrl = (url: string) => {
-    if (!url) return '';
-    
     if (url.startsWith('http')) {
       return url;
     }
-    
-    try {
-      const { data } = supabase.storage
-        .from('posts')
-        .getPublicUrl(url);
-      return data.publicUrl;
-    } catch (error) {
-      console.error("Error getting public URL:", error);
-      return url;
-    }
+    const { data } = supabase.storage
+      .from('posts')
+      .getPublicUrl(url);
+    return data.publicUrl;
   };
 
   const getAspectRatio = (url: string) => {
@@ -171,9 +144,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     }
   };
   
-  // Check if there are valid media items 
-  const imageUrls = mediaUrls.filter(url => url && !isVideoFile(url));
-  const videoUrls = mediaUrls.filter(url => url && isVideoFile(url));
+  // Check if there are 3 or more media items and if they're all images
+  const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
+  const videoUrls = mediaUrls.filter(url => isVideoFile(url));
   
   // Use carousel for 3+ images
   const shouldUseCarousel = imageUrls.length >= 3;
@@ -184,7 +157,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
       {videoUrls.length > 0 && (
         <div className={`grid ${videoUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
           {videoUrls.map((url, i) => (
-            <div key={`video-${i}-${url}`} className="relative overflow-hidden group rounded-lg">
+            <div key={url} className="relative overflow-hidden group rounded-lg">
               <VideoPlayer 
                 videoUrl={url} 
                 controls 
@@ -196,10 +169,8 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
       )}
       
       {/* Display images in carousel if 3+ images */}
-      {shouldUseCarousel && isReady && publicImageUrls.length >= 3 && (
-        <div className="rounded-lg overflow-hidden bg-transparent" style={{ height: "300px" }}>
-          <ThreeDPhotoCarousel imageUrls={publicImageUrls} />
-        </div>
+      {shouldUseCarousel && publicImageUrls.length >= 3 && (
+        <ThreeDPhotoCarousel imageUrls={publicImageUrls} />
       )}
       
       {/* Display images in grid if less than 3 */}
@@ -210,7 +181,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
             const aspectRatio = getAspectRatio(url);
             
             return (
-              <div key={`img-grid-${i}-${url}`} className="relative overflow-hidden group rounded-lg">
+              <div key={url} className="relative overflow-hidden group rounded-lg">
                 <div onClick={() => onMediaClick?.(publicUrl)}>
                   <AspectRatio ratio={aspectRatio}>
                     <div className="relative bg-black/5 rounded-lg">
