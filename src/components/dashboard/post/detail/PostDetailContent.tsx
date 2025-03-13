@@ -9,7 +9,7 @@ import { PostText } from "../content/PostText";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PostDetailContentProps {
   post: Post;
@@ -60,7 +60,17 @@ export const PostDetailContent = ({
     setSelectedMedia(url);
   };
 
+  // Force re-rendering of media component when post changes
+  const [mediaKey, setMediaKey] = useState(Date.now());
+  useEffect(() => {
+    if (post?.id) {
+      setMediaKey(Date.now());
+    }
+  }, [post?.id]);
+
   console.log("Post data in PostDetailContent:", {
+    id: post.id,
+    media_urls: post.media_urls,
     is_edited: post.is_edited,
     original_content: post.original_content
   });
@@ -81,11 +91,13 @@ export const PostDetailContent = ({
         />
       </div>
       {post.media_urls && post.media_urls.length > 0 && (
-        <PostMedia 
-          mediaUrls={post.media_urls} 
-          onMediaClick={handleMediaClick}
-          subscription={subscription}
-        />
+        <div key={mediaKey}>
+          <PostMedia 
+            mediaUrls={post.media_urls} 
+            onMediaClick={handleMediaClick}
+            subscription={subscription}
+          />
+        </div>
       )}
       <PostActions
         post={post}

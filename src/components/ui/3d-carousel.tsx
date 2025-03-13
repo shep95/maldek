@@ -1,7 +1,7 @@
 
 "use client"
 
-import { memo, useEffect, useLayoutEffect, useMemo, useState } from "react"
+import { memo, useEffect, useLayoutEffect, useMemo, useState, useRef } from "react"
 import {
   AnimatePresence,
   motion,
@@ -85,9 +85,33 @@ const Carousel = memo(
       rotation,
       (value) => `rotate3d(0, 1, 0, ${value}deg)`
     )
+    const carouselMounted = useRef(false);
 
     // Calculate how much rotation equals one card movement
     const stepRotation = 360 / faceCount
+    
+    // Fix the animation control mounting issue
+    useEffect(() => {
+      carouselMounted.current = true;
+      return () => {
+        carouselMounted.current = false;
+      };
+    }, []);
+
+    const handleDragEnd = (_, info) => {
+      if (isCarouselActive && carouselMounted.current) {
+        const targetRotation = Math.round(rotation.get() / stepRotation) * stepRotation;
+        controls.start({
+          rotateY: targetRotation,
+          transition: {
+            type: "spring",
+            stiffness: 100,
+            damping: 30,
+            mass: 0.1,
+          },
+        });
+      }
+    };
 
     return (
       <div
@@ -113,19 +137,7 @@ const Carousel = memo(
             // Reduced sensitivity for more controlled movement - one swipe moves roughly one card
             rotation.set(rotation.get() + info.offset.x * 0.015)
           }
-          onDragEnd={(_, info) =>
-            isCarouselActive &&
-            controls.start({
-              // Snap to the nearest card position after drag
-              rotateY: Math.round(rotation.get() / stepRotation) * stepRotation,
-              transition: {
-                type: "spring",
-                stiffness: 100,
-                damping: 30,
-                mass: 0.1,
-              },
-            })
-          }
+          onDragEnd={handleDragEnd}
           animate={controls}
         >
           {cards.map((imgUrl, i) => (
@@ -163,6 +175,7 @@ function ThreeDPhotoCarousel({ imageUrls }: { imageUrls: string[] }) {
   const [isCarouselActive, setIsCarouselActive] = useState(true)
   const controls = useAnimation()
   const cards = useMemo(() => imageUrls, [imageUrls])
+  const carouselMounted = useRef(false);
 
   const handleClick = (imgUrl: string) => {
     setActiveImg(imgUrl)
@@ -174,6 +187,13 @@ function ThreeDPhotoCarousel({ imageUrls }: { imageUrls: string[] }) {
     setActiveImg(null)
     setIsCarouselActive(true)
   }
+
+  useEffect(() => {
+    carouselMounted.current = true;
+    return () => {
+      carouselMounted.current = false;
+    };
+  }, []);
 
   if (!imageUrls || imageUrls.length < 3) {
     return null;

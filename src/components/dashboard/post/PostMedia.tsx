@@ -20,34 +20,49 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const [showWatermark, setShowWatermark] = useState(false);
   const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
-                             subscription?.tier?.name === 'True Emperor';
-  const [publicMediaUrls, setPublicMediaUrls] = useState<string[]>([]);
+                              subscription?.tier?.name === 'True Emperor';
+  const [publicImageUrls, setPublicImageUrls] = useState<string[]>([]);
   
   useEffect(() => {
-    // Transform storage URLs to public URLs
-    const transformedUrls = mediaUrls.map(url => getPublicUrl(url));
-    setPublicMediaUrls(transformedUrls);
+    // Process all media URLs to transform storage URLs to public URLs
+    const processMediaUrls = async () => {
+      // Filter and transform image URLs
+      const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
+      const transformedImageUrls = imageUrls.map(url => getPublicUrl(url));
+      setPublicImageUrls(transformedImageUrls);
+      
+      // Load dimensions for all images
+      for (const url of imageUrls) {
+        if (!isVideoFile(url)) {
+          const publicUrl = getPublicUrl(url);
+          try {
+            const dimensions = await loadImageDimensions(publicUrl);
+            setImageDimensions(prev => ({
+              ...prev,
+              [url]: dimensions
+            }));
+          } catch (err) {
+            console.error("Failed to load image dimensions:", err);
+          }
+        }
+      }
+    };
     
-    const loadImageDimensions = async (url: string) => {
+    const loadImageDimensions = (url: string) => {
       return new Promise<{ width: number; height: number }>((resolve) => {
         const img = new Image();
         img.onload = () => {
           resolve({ width: img.naturalWidth, height: img.naturalHeight });
         };
+        img.onerror = () => {
+          // Fallback dimensions if image fails to load
+          resolve({ width: 16, height: 9 });
+        };
         img.src = url;
       });
     };
-
-    mediaUrls.forEach(async (url) => {
-      if (!isVideoFile(url)) {
-        const publicUrl = getPublicUrl(url);
-        const dimensions = await loadImageDimensions(publicUrl);
-        setImageDimensions(prev => ({
-          ...prev,
-          [url]: dimensions
-        }));
-      }
-    });
+    
+    processMediaUrls();
   }, [mediaUrls]);
 
   useEffect(() => {
@@ -132,7 +147,6 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   // Check if there are 3 or more media items and if they're all images
   const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
   const videoUrls = mediaUrls.filter(url => isVideoFile(url));
-  const publicImageUrls = imageUrls.map(url => getPublicUrl(url));
   
   // Use carousel for 3+ images
   const shouldUseCarousel = imageUrls.length >= 3;
@@ -155,7 +169,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
       )}
       
       {/* Display images in carousel if 3+ images */}
-      {shouldUseCarousel && (
+      {shouldUseCarousel && publicImageUrls.length >= 3 && (
         <ThreeDPhotoCarousel imageUrls={publicImageUrls} />
       )}
       
