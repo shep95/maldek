@@ -127,6 +127,16 @@ const Subscription = () => {
   };
 
   const renderFeatures = (tier) => {
+    // For True Emperor tier, show simplified message about included features
+    if (tier.name === "True Emperor") {
+      return [
+        { text: "Everything in Creator tier", checked: true },
+        { text: "Exclusive groupchat with other Emperors", checked: true },
+        { text: "Gold crown", checked: true }
+      ];
+    }
+
+    // For other tiers, use the regular feature list
     const features = [
       { text: tier.name === "Free" ? "280 character limit" : "Unlimited character limit", checked: true },
       { text: `${tier.monthly_mentions} monthly mentions`, checked: true },
@@ -135,11 +145,6 @@ const Subscription = () => {
       { text: tier.watermark_disabled ? "No watermarks" : "Watermarked media", checked: tier.watermark_disabled },
       { text: `${tier.max_pinned_posts} pinned ${tier.max_pinned_posts > 1 ? 'posts' : 'post'}`, checked: true },
     ];
-
-    // Add exclusive chatroom feature for True Emperor tier
-    if (tier.name === "True Emperor") {
-      features.push({ text: "Exclusive chatroom with other Emperors", checked: true });
-    }
 
     return features;
   };
