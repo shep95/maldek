@@ -69,11 +69,15 @@ const Carousel = memo(
     controls,
     cards,
     isCarouselActive,
+    autoSpin = true, // Add a new prop for auto-spinning
+    autoSpinSpeed = 0.05, // Speed of auto-spin in degrees per frame
   }: {
     handleClick: (imgUrl: string, index: number) => void
     controls: any
     cards: string[]
     isCarouselActive: boolean
+    autoSpin?: boolean
+    autoSpinSpeed?: number
   }) => {
     const isScreenSizeSm = useMediaQuery("(max-width: 640px)")
     const cylinderWidth = isScreenSizeSm ? 600 : 1000
@@ -86,6 +90,8 @@ const Carousel = memo(
       (value) => `rotate3d(0, 1, 0, ${value}deg)`
     )
     const carouselMounted = useRef(false);
+    const isUserInteracting = useRef(false);
+    const autoRotationRef = useRef<number | null>(null);
 
     // Calculate how much rotation equals one card movement
     const stepRotation = 360 / faceCount
@@ -95,8 +101,44 @@ const Carousel = memo(
       carouselMounted.current = true;
       return () => {
         carouselMounted.current = false;
+        if (autoRotationRef.current !== null) {
+          cancelAnimationFrame(autoRotationRef.current);
+        }
       };
     }, []);
+
+    // Auto-spin animation
+    useEffect(() => {
+      if (!autoSpin || !isCarouselActive || !carouselMounted.current) return;
+      
+      let lastTime = 0;
+      
+      const animateRotation = (time: number) => {
+        if (!carouselMounted.current) return;
+        
+        // Skip animation when user is interacting
+        if (!isUserInteracting.current) {
+          // Smooth animation based on time difference
+          if (lastTime) {
+            const delta = time - lastTime;
+            // Update rotation value - slower speed for smoother rotation
+            rotation.set(rotation.get() + (autoSpinSpeed * delta / 16));
+          }
+          lastTime = time;
+        }
+        
+        autoRotationRef.current = requestAnimationFrame(animateRotation);
+      };
+      
+      autoRotationRef.current = requestAnimationFrame(animateRotation);
+      
+      return () => {
+        if (autoRotationRef.current !== null) {
+          cancelAnimationFrame(autoRotationRef.current);
+          autoRotationRef.current = null;
+        }
+      };
+    }, [autoSpin, isCarouselActive, rotation, autoSpinSpeed]);
 
     const handleDragEnd = (_, info) => {
       if (isCarouselActive && carouselMounted.current) {
@@ -132,12 +174,25 @@ const Carousel = memo(
             width: cylinderWidth,
             transformStyle: "preserve-3d",
           }}
-          onDrag={(_, info) =>
-            isCarouselActive &&
-            // Reduced sensitivity for more controlled movement - one swipe moves roughly one card
-            rotation.set(rotation.get() + info.offset.x * 0.015)
-          }
-          onDragEnd={handleDragEnd}
+          onDrag={(_, info) => {
+            if (isCarouselActive) {
+              // Reduced sensitivity for more controlled movement - one swipe moves roughly one card
+              rotation.set(rotation.get() + info.offset.x * 0.015);
+            }
+          }}
+          onDragStart={() => {
+            isUserInteracting.current = true;
+          }}
+          onDragEnd={(e, info) => {
+            isUserInteracting.current = false;
+            handleDragEnd(e, info);
+          }}
+          onHoverStart={() => {
+            isUserInteracting.current = true;
+          }}
+          onHoverEnd={() => {
+            isUserInteracting.current = false;
+          }}
           animate={controls}
         >
           {cards.map((imgUrl, i) => (
@@ -170,7 +225,15 @@ const Carousel = memo(
   }
 )
 
-function ThreeDPhotoCarousel({ imageUrls }: { imageUrls: string[] }) {
+function ThreeDPhotoCarousel({ 
+  imageUrls,
+  autoSpin = true,
+  autoSpinSpeed = 0.05
+}: { 
+  imageUrls: string[];
+  autoSpin?: boolean;
+  autoSpinSpeed?: number;
+}) {
   const [activeImg, setActiveImg] = useState<string | null>(null)
   const [isCarouselActive, setIsCarouselActive] = useState(true)
   const controls = useAnimation()
@@ -238,6 +301,8 @@ function ThreeDPhotoCarousel({ imageUrls }: { imageUrls: string[] }) {
           controls={controls}
           cards={cards}
           isCarouselActive={isCarouselActive}
+          autoSpin={autoSpin}
+          autoSpinSpeed={autoSpinSpeed}
         />
       </div>
     </motion.div>
