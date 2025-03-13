@@ -284,12 +284,12 @@ const Subscription = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {mapTiersToPricingCards()
-                .filter(card => card.tier !== "Free")
+                .filter(card => card.tier !== "Free" && card.price !== "$0/month")
                 .map((cardProps, index) => (
                 <PricingCard
                   key={index}
                   {...cardProps}
-                  className="h-auto w-full" // Make cards rectangular
+                  className="h-full w-full" // Make cards rectangular
                 />
               ))}
             </div>
