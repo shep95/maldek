@@ -1,4 +1,5 @@
 
+import { Button } from "@/components/ui/button";
 import { PricingCard } from "@/components/ui/pricing-card";
 
 const Features = () => {
