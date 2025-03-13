@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { cn } from "@/lib/utils";
+import { ThreeDPhotoCarousel } from "@/components/ui/3d-carousel";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -20,8 +21,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const [showWatermark, setShowWatermark] = useState(false);
   const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
                              subscription?.tier?.name === 'True Emperor';
-
+  const [publicMediaUrls, setPublicMediaUrls] = useState<string[]>([]);
+  
   useEffect(() => {
+    // Transform storage URLs to public URLs
+    const transformedUrls = mediaUrls.map(url => getPublicUrl(url));
+    setPublicMediaUrls(transformedUrls);
+    
     const loadImageDimensions = async (url: string) => {
       return new Promise<{ width: number; height: number }>((resolve) => {
         const img = new Image();
@@ -122,7 +128,17 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
       toast.error('Failed to download media');
     }
   };
+  
+  // Use 3D carousel for 3 or more images
+  if (mediaUrls.length >= 3 && !mediaUrls.some(url => isVideoFile(url))) {
+    return (
+      <div className="mt-4">
+        <ThreeDPhotoCarousel imageUrls={publicMediaUrls} />
+      </div>
+    );
+  }
 
+  // For 1-2 images or if any are videos, use the original grid layout
   return (
     <div className="mt-4">
       <div className={`grid ${mediaUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
