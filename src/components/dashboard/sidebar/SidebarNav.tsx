@@ -76,8 +76,8 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
   };
 
   const handlePremiumClick = () => {
-    // Navigate to the features page when clicking Invest
-    navigate('/features');
+    // Navigate to the invest page when clicking Invest
+    navigate('/invest');
     if (onSidebarClose) onSidebarClose(); // Close sidebar after navigation
   };
 

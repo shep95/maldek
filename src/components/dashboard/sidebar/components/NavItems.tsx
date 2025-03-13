@@ -131,8 +131,8 @@ export const NavItems = ({
     { 
       icon: Coins, 
       label: "Invest", 
-      path: "/features",
-      active: location.pathname === "/features",
+      path: "/invest",
+      active: location.pathname === "/invest",
       description: "Invest in our platform",
       className: "text-accent relative hover:bg-accent/10"
     },
