@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -69,7 +68,7 @@ export const PricingCard = ({
             "dark:bg-gradient-to-br dark:from-zinc-950/50 dark:to-zinc-900/80",
             "bg-gradient-to-br from-zinc-50/50 to-zinc-100/80",
             "p-6",
-            isCurrentPlan && "shadow-md ring-1 ring-accent",
+            isCurrentPlan && "shadow-md",
             className,
           )}
         >

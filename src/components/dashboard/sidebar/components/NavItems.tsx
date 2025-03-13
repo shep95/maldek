@@ -1,4 +1,3 @@
-
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -148,8 +147,8 @@ export const NavItems = ({
       icon: Plus, 
       label: "Create Post",
       onClick: handleCreatePost,
-      className: "border-none text-white",
-      useStarBorder: true
+      className: "border-none",
+      useStarBorder: false
     },
     { icon: Settings, label: "Settings", path: "/settings" },
     { 
