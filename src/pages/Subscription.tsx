@@ -1,10 +1,11 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Crown, Check, User } from "lucide-react";
+import { Crown, Check, User, FolderLock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PricingCard } from "@/components/ui/pricing-card";
@@ -130,7 +131,8 @@ const Subscription = () => {
       return [
         { text: "Everything in Creator tier", checked: true },
         { text: "Exclusive groupchat with other Emperors", checked: true },
-        { text: "Gold crown", checked: true }
+        { text: "Gold crown", checked: true },
+        { text: "Free Safety Folder", checked: true }
       ];
     }
 
@@ -141,6 +143,7 @@ const Subscription = () => {
       { text: tier.supports_nft_avatars ? "NFT avatars" : "Standard avatars", checked: tier.supports_nft_avatars },
       { text: tier.watermark_disabled ? "No watermarks" : "Watermarked media", checked: tier.watermark_disabled },
       { text: `${tier.max_pinned_posts} pinned ${tier.max_pinned_posts > 1 ? 'posts' : 'post'}`, checked: true },
+      { text: "Free Safety Folder", checked: tier.name !== "Free" }
     ];
 
     return features;
