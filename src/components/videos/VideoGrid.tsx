@@ -1,8 +1,7 @@
+
 import { Play } from "lucide-react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
-import { VideoPlayer } from "./VideoPlayer";
-import { VideoMetadata } from "./VideoMetadata";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -103,11 +102,13 @@ export const VideoGrid = ({
                   <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                     {video.description}
                   </p>
-                  <VideoMetadata
-                    views={video.view_count}
-                    createdAt={video.created_at}
-                    duration={video.duration}
-                  />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{video.view_count || 0} views</span>
+                    <span>•</span>
+                    <span>
+                      {new Date(video.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
                 
                 {session?.user?.id === video.user_id && (

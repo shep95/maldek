@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { VideoUploadDialog } from "@/components/videos/VideoUploadDialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { debounce } from "lodash";
 import { VideoDialog } from "@/components/videos/VideoDialog";
 import { VideoGrid } from "@/components/videos/VideoGrid";
 import { VideoControls } from "@/components/videos/controls/VideoControls";
-import { cn } from "@/lib/utils"; // Add this import
+import { cn } from "@/lib/utils";
 
 const Videos = () => {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);

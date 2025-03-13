@@ -1,7 +1,6 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
-import { VideoPlayer } from "./VideoPlayer";
+import VideoPlayer from "@/components/ui/video-player";
 
 interface VideoDialogProps {
   videoUrl: string | null;
@@ -12,24 +11,9 @@ export const VideoDialog = ({ videoUrl, onClose }: VideoDialogProps) => {
   if (!videoUrl) return null;
 
   return (
-    <Dialog open={!!videoUrl} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh] flex items-center justify-center bg-black/95 p-0 gap-0 border-none">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-4 text-white hover:bg-white/10 z-50"
-          onClick={onClose}
-        >
-          <X className="h-6 w-6" />
-        </Button>
-
-        <div className="relative w-full h-full flex items-center justify-center">
-          <VideoPlayer
-            videoUrl={videoUrl}
-            className="max-h-[600px] max-w-full rounded-lg"
-            autoPlay
-          />
-        </div>
+    <Dialog open={!!videoUrl} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-4xl bg-transparent border-none p-0 shadow-none">
+        <VideoPlayer src={videoUrl} />
       </DialogContent>
     </Dialog>
   );
