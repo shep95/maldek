@@ -114,14 +114,6 @@ export const NavItems = ({
       className: "text-accent hover:bg-accent/10"
     },
     {
-      icon: Layers,
-      label: "Our Features",
-      path: "/features",
-      active: location.pathname === "/features",
-      description: "Learn about our platform features",
-      className: "text-accent hover:bg-accent/10"
-    },
-    {
       icon: Bot,
       label: "ZUKO AI",
       path: "https://www.zukoi.app",

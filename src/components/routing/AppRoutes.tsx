@@ -15,7 +15,6 @@ import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
-import Features from "@/pages/Features";
 import Invest from "@/pages/Invest";
 import HashtagPage from "@/pages/HashtagPage";
 
@@ -56,7 +55,6 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
-        <Route path="/features" element={<Features />} />
         <Route path="/invest" element={<Invest />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
