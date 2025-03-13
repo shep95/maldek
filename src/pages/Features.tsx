@@ -1,4 +1,3 @@
-
 import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign, Music, Languages, Binary, Database } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,6 +90,7 @@ const Features = () => {
               as="div"
               color="hsl(var(--accent))"
               className="w-full"
+              transparent={true}
             >
               <div className={cn(
                 "group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border-none hover:bg-background/50 transition-colors",

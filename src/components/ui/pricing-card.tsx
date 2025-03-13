@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -61,6 +60,7 @@ export const PricingCard = ({
         className="w-full"
         color="hsl(var(--accent))"
         speed="12s"
+        transparent={true}
       >
         <Card
           className={cn(

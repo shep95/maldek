@@ -8,6 +8,7 @@ interface StarBorderProps<T extends ElementType> {
   speed?: string
   className?: string
   children: React.ReactNode
+  transparent?: boolean
 }
 
 export function StarBorder<T extends ElementType = "button">({
@@ -16,6 +17,7 @@ export function StarBorder<T extends ElementType = "button">({
   color,
   speed = "6s",
   children,
+  transparent = false,
   ...props
 }: StarBorderProps<T> & Omit<ComponentPropsWithoutRef<T>, keyof StarBorderProps<T>>) {
   const Component = as || "button"
@@ -51,8 +53,9 @@ export function StarBorder<T extends ElementType = "button">({
       />
       <div className={cn(
         "relative z-1 border text-foreground text-center text-base py-4 px-6 rounded-[20px]",
-        "bg-gradient-to-b from-background/90 to-muted/90 border-border/40",
-        "dark:from-background dark:to-muted dark:border-border"
+        transparent 
+          ? "bg-transparent border-border/40 dark:border-border" 
+          : "bg-gradient-to-b from-background/90 to-muted/90 border-border/40 dark:from-background dark:to-muted dark:border-border"
       )}>
         {children}
       </div>

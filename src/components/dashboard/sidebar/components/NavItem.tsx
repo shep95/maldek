@@ -1,4 +1,3 @@
-
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +84,7 @@ export const NavItem = ({
       )}
       onClick={handleClick}
       color="hsl(var(--accent))"
+      transparent={true}
     >
       {buttonContent}
     </StarBorder>
