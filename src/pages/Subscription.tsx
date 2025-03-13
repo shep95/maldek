@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,11 +8,12 @@ import { Crown, Check, User, FolderLock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PricingCard } from "@/components/ui/pricing-card";
+import { CancelAllSubscriptions } from "@/components/subscription/CancelAllSubscriptions";
 
 const Subscription = () => {
   const session = useSession();
 
-  const { data: subscription, isLoading: isLoadingSubscription } = useQuery({
+  const { data: subscription, isLoading: isLoadingSubscription, refetch: refetchSubscription } = useQuery({
     queryKey: ['user-subscription'],
     queryFn: async () => {
       try {
@@ -126,6 +126,37 @@ const Subscription = () => {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    try {
+      if (!session?.user?.id) {
+        toast.error("Please sign in to manage subscription");
+        return;
+      }
+
+      toast.loading("Cancelling subscription...");
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ 
+          status: 'cancelled',
+          ends_at: new Date().toISOString()
+        })
+        .eq('user_id', session.user.id);
+
+      if (error) {
+        console.error('Error cancelling subscription:', error);
+        toast.error("Failed to cancel subscription");
+        return;
+      }
+
+      toast.success("Your subscription has been cancelled");
+      refetchSubscription();
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      toast.error("Failed to cancel subscription");
+    }
+  };
+
   const renderFeatures = (tier) => {
     if (tier.name === "True Emperor") {
       return [
@@ -185,6 +216,9 @@ const Subscription = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Hidden component that cancels all premium subscriptions */}
+      <CancelAllSubscriptions />
+      
       <div className="container mx-auto py-12 px-4">
         <div className="mb-12 space-y-3">
           <h2 className="text-center text-3xl font-semibold leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
@@ -272,10 +306,15 @@ const Subscription = () => {
                     </div>
                   </CardContent>
                   {subscription.status === 'active' && (
-                    <CardFooter className="border-t bg-muted/20 px-6 py-4">
+                    <CardFooter className="border-t bg-muted/20 px-6 py-4 flex justify-between">
+                      <Button 
+                        onClick={handleCancelSubscription}
+                        variant="destructive"
+                      >
+                        Cancel Subscription
+                      </Button>
                       <Button 
                         onClick={handleManageSubscription}
-                        className="ml-auto"
                       >
                         Manage Subscription
                       </Button>
