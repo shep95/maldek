@@ -53,10 +53,11 @@ export const PricingCard = ({
       initial={{ filter: "blur(2px)" }}
       whileInView={{ filter: "blur(0px)" }}
       transition={{ duration: 0.5, ease: "easeInOut", delay: 0.25 }}
+      className="w-full"
     >
       <Card
         className={cn(
-          "relative h-full w-full overflow-hidden border",
+          "relative w-full overflow-hidden border",
           "dark:border-zinc-700 dark:bg-gradient-to-br dark:from-zinc-950/50 dark:to-zinc-900/80",
           "border-zinc-200 bg-gradient-to-br from-zinc-50/50 to-zinc-100/80",
           "p-6",
@@ -64,14 +65,14 @@ export const PricingCard = ({
           className,
         )}
       >
-        <div className="flex flex-col items-center border-b pb-6 dark:border-zinc-700 border-zinc-200">
+        <div className="flex flex-col items-start border-b pb-6 dark:border-zinc-700 border-zinc-200 w-full">
           <span className="mb-6 inline-block dark:text-zinc-50 text-zinc-900">
             {tier}
           </span>
           <span className="mb-3 inline-block text-4xl font-medium">
             {price}
           </span>
-          <span className="dark:bg-gradient-to-br dark:from-zinc-200 dark:to-zinc-500 bg-gradient-to-br from-zinc-700 to-zinc-900 bg-clip-text text-center text-transparent">
+          <span className="dark:bg-gradient-to-br dark:from-zinc-200 dark:to-zinc-500 bg-gradient-to-br from-zinc-700 to-zinc-900 bg-clip-text text-start text-transparent">
             {bestFor}
           </span>
           {isCurrentPlan && (

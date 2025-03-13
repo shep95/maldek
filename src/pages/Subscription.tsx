@@ -1,3 +1,4 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -283,10 +284,13 @@ const Subscription = () => {
             )}
             
             <div className="flex flex-col gap-6 max-w-md mx-auto">
-              {mapTiersToPricingCards().filter(card => card.tier !== "Free").map((cardProps, index) => (
+              {mapTiersToPricingCards()
+                .filter(card => card.tier !== "Free" && card.tier !== "True Emperor")
+                .map((cardProps, index) => (
                 <PricingCard
                   key={index}
                   {...cardProps}
+                  className="h-auto w-full" // Make cards rectangular
                 />
               ))}
             </div>
