@@ -91,13 +91,12 @@ const Carousel = memo(
 
     return (
       <div
-        className="flex h-full items-center justify-center bg-card"
+        className="flex h-full items-center justify-center bg-card/50 overflow-hidden rounded-lg"
         style={{
           perspective: "1000px",
           transformStyle: "preserve-3d",
           willChange: "transform",
           maxWidth: "100%",
-          overflow: "hidden"
         }}
       >
         <motion.div
@@ -112,7 +111,7 @@ const Carousel = memo(
           onDrag={(_, info) =>
             isCarouselActive &&
             // Reduced sensitivity for more controlled movement - one swipe moves roughly one card
-            rotation.set(rotation.get() + info.offset.x * 0.025)
+            rotation.set(rotation.get() + info.offset.x * 0.015)
           }
           onDragEnd={(_, info) =>
             isCarouselActive &&
@@ -132,7 +131,7 @@ const Carousel = memo(
           {cards.map((imgUrl, i) => (
             <motion.div
               key={`key-${imgUrl}-${i}`}
-              className="absolute flex h-full origin-center items-center justify-center rounded-xl bg-card p-2"
+              className="absolute flex h-full origin-center items-center justify-center rounded-xl bg-card/50 p-2"
               style={{
                 width: `${faceWidth}px`,
                 transform: `rotateY(${
