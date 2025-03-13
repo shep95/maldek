@@ -136,6 +136,11 @@ const Subscription = () => {
       { text: `${tier.max_pinned_posts} pinned ${tier.max_pinned_posts > 1 ? 'posts' : 'post'}`, checked: true },
     ];
 
+    // Add exclusive chatroom feature for True Emperor tier
+    if (tier.name === "True Emperor") {
+      features.push({ text: "Exclusive chatroom with other Emperors", checked: true });
+    }
+
     return features;
   };
 
