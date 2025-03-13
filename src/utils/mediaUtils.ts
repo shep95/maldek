@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const isVideoFile = (file: File | string): boolean => {
@@ -51,7 +52,7 @@ const getUserUploadLimit = async (userId: string): Promise<number> => {
 
 export const validateMediaFile = async (file: File, userId: string) => {
   const isVideo = isVideoFile(file);
-  const maxImageSize = 10 * 1024 * 1024; // 10MB for images
+  const maxImageSize = 20 * 1024 * 1024; // 20MB for images (increased from 10MB)
   
   // Get user's upload limit for videos
   const maxVideoSize = await getUserUploadLimit(userId);

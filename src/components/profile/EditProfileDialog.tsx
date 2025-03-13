@@ -41,6 +41,11 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Show file size warning if over 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      toast.info(`Uploading a large image (${(file.size / (1024 * 1024)).toFixed(1)}MB). This might take a moment.`);
+    }
+
     try {
       console.log('Starting avatar upload for user:', profile.id);
       const imageUrl = await handleImageUpload(file, profile.id);
@@ -121,6 +126,9 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
                 className="hidden"
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Supports JPEG, PNG, GIF, WebP (up to 20MB)
+            </p>
           </div>
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium">
