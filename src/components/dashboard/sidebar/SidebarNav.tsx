@@ -40,7 +40,8 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
             supports_animated_avatars: true,
             supports_nft_avatars: true,
             watermark_disabled: true,
-            max_pinned_posts: 10
+            max_pinned_posts: 10,
+            post_character_limit: null // null means unlimited character limit
           },
           status: "active",
           mentions_remaining: 999999,

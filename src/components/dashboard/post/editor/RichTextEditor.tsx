@@ -26,7 +26,7 @@ export const RichTextEditor = ({
   onHashtag,
   className,
   placeholder = "What's happening?",
-  isPremiumUser = false
+  isPremiumUser = true
 }: RichTextEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -262,15 +262,10 @@ export const RichTextEditor = ({
         )}
       </div>
 
-      <div className="text-xs text-muted-foreground">
-        {!isPremiumUser && value.length > 0 && (
+      <div className="text-xs text-primary">
+        {value.length > 0 && (
           <span className="float-right">
-            {value.length}/280 characters
-          </span>
-        )}
-        {isPremiumUser && value.length > 0 && (
-          <span className="float-right text-primary">
-            Premium user - no character limit
+            Unlimited character limit enabled
           </span>
         )}
       </div>

@@ -12,8 +12,8 @@ interface PostEditorProps {
 export const PostEditor = ({ 
   content, 
   onEditContentChange, 
-  isPremiumUser = false,
-  characterLimit = 280
+  isPremiumUser = true, // Default to true now that everyone is premium
+  characterLimit = 99999 // Very high limit effectively means unlimited
 }: PostEditorProps) => {
   // Calculate remaining characters
   const remainingChars = characterLimit - content.length;
@@ -36,27 +36,11 @@ export const PostEditor = ({
         autoFocus
       />
       
-      {!isPremiumUser && content.length > 0 && (
-        <div className={cn(
-          "text-xs flex justify-between items-center",
-          isNearLimit && !isOverLimit ? "text-yellow-500" : "",
-          isOverLimit ? "text-red-500" : "text-muted-foreground"
-        )}>
-          <span className={isOverLimit ? "text-red-500 font-medium" : ""}>
-            {isOverLimit ? "Character limit exceeded" : ""}
-          </span>
-          <span className="float-right">
-            {content.length}/{characterLimit} characters
-          </span>
-        </div>
-      )}
-      {isPremiumUser && content.length > 0 && (
-        <div className="text-xs text-primary">
-          <span className="float-right">
-            Premium user - {characterLimit > 280 ? `${characterLimit} character limit` : "no character limit"}
-          </span>
-        </div>
-      )}
+      <div className="text-xs text-primary">
+        <span className="float-right">
+          Unlimited character limit enabled
+        </span>
+      </div>
     </div>
   );
 };
