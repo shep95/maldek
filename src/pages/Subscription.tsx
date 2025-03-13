@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,7 +126,6 @@ const Subscription = () => {
   };
 
   const renderFeatures = (tier) => {
-    // For True Emperor tier, show simplified message about included features
     if (tier.name === "True Emperor") {
       return [
         { text: "Everything in Creator tier", checked: true },
@@ -136,7 +134,6 @@ const Subscription = () => {
       ];
     }
 
-    // For other tiers, use the regular feature list
     const features = [
       { text: tier.name === "Free" ? "280 character limit" : "Unlimited character limit", checked: true },
       { text: `${tier.monthly_mentions} monthly mentions`, checked: true },
@@ -157,7 +154,6 @@ const Subscription = () => {
     return tiers.map(tier => {
       const isCurrentPlan = subscription?.tier_id === tier.id;
       
-      // Fix the price display for True Emperor tier - remove any $0/month references
       let formattedPrice = "";
       if (tier.name === "True Emperor") {
         formattedPrice = "$8,000/year";
@@ -286,7 +282,6 @@ const Subscription = () => {
               </div>
             )}
             
-            {/* Change to flex-col to stack pricing cards vertically */}
             <div className="flex flex-col gap-6 max-w-md mx-auto">
               {mapTiersToPricingCards().filter(card => card.tier !== "Free").map((cardProps, index) => (
                 <PricingCard
