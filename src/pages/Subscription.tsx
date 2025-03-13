@@ -1,3 +1,4 @@
+
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,7 +128,7 @@ const Subscription = () => {
 
   const renderFeatures = (tier) => {
     const features = [
-      { text: `${tier.post_character_limit} character limit`, checked: true },
+      { text: tier.name === "Free" ? "280 character limit" : "Unlimited character limit", checked: true },
       { text: `${tier.monthly_mentions} monthly mentions`, checked: true },
       { text: tier.supports_animated_avatars ? "Animated avatars" : "Standard avatars", checked: tier.supports_animated_avatars },
       { text: tier.supports_nft_avatars ? "NFT avatars" : "Standard avatars", checked: tier.supports_nft_avatars },
@@ -147,7 +148,7 @@ const Subscription = () => {
       const isCurrentPlan = subscription?.tier_id === tier.id;
       const formattedPrice = tier.name === "True Emperor" ? 
         "$8,000/year" : 
-        `$${tier.price}/month`;
+        tier.name === "Free" ? "Free" : `$${tier.price}/month`;
         
       let bestFor = "";
       if (tier.name === "Free") bestFor = "Basic features for everyone";
@@ -235,7 +236,7 @@ const Subscription = () => {
                           </li>
                           <li className="flex justify-between">
                             <span className="text-muted-foreground">Character limit:</span> 
-                            <span>{subscription.tier?.post_character_limit || 280}</span>
+                            <span>Unlimited</span>
                           </li>
                         </ul>
                       </div>
@@ -270,7 +271,7 @@ const Subscription = () => {
             )}
             
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {mapTiersToPricingCards().map((cardProps, index) => (
+              {mapTiersToPricingCards().filter(card => card.tier !== "Free").map((cardProps, index) => (
                 <PricingCard
                   key={index}
                   {...cardProps}
