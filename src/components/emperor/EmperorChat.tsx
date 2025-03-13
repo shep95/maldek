@@ -138,7 +138,7 @@ export const EmperorChat = () => {
         <main className="w-full max-w-3xl px-4 py-6 md:py-8">
           <div className="flex items-center gap-3 mb-8">
             <Crown className="h-6 w-6 text-yellow-500" />
-            <h1 className="text-3xl font-bold text-foreground">Emperor Chat</h1>
+            <h1 className="text-3xl font-bold text-foreground">Chat Room</h1>
           </div>
 
           <Card className="h-[calc(100vh-16rem)] flex flex-col bg-black/20 border-border/50 backdrop-blur-md">

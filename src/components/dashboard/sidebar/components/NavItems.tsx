@@ -1,3 +1,4 @@
+
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Crown, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -53,8 +54,8 @@ export const NavItems = ({
     setIsCreatingPost(true);
   };
 
-  const hasPremiumSubscription = !!subscription?.tier?.name;
-  const hasEmperorAccess = subscription?.tier?.name === "True Emperor" || subscription?.is_lifetime === true || session?.user?.email === "jeremy@nftdemon.com";
+  // Everything is free now
+  const hasPremiumFeatures = true;
 
   const navItems = [
     { 
@@ -103,14 +104,14 @@ export const NavItems = ({
       path: "/analytics",
       active: location.pathname === "/analytics"
     },
-    ...(hasPremiumSubscription ? [{
+    {
       icon: Lock,
       label: "Privacy",
       path: "/profiles",
       active: location.pathname === "/profiles",
       description: "Access private posts",
       className: "text-accent hover:bg-accent/10"
-    }] : []),
+    },
     {
       icon: Layers,
       label: "Our Features",
@@ -128,20 +129,11 @@ export const NavItems = ({
     },
     { 
       icon: DollarSign, 
-      label: subscription?.tier?.name || "Premium", 
+      label: "Premium", 
       premium: true,
       onClick: handlePremiumClick,
-      description: session?.user?.email === "jeremy@nftdemon.com" ? 
-        "Premium $80,000 Emperor Subscription" : 
-        subscription ? (
-          `${subscription.mentions_remaining} mentions remaining`
-        ) : (
-          "Unlock premium features"
-        ),
-      className: subscription?.tier?.name === "True Emperor" || subscription?.is_lifetime === true || session?.user?.email === "jeremy@nftdemon.com" ? 
-                "text-yellow-500" : 
-                subscription?.tier?.name === "Creator" ? "text-white" : 
-                "text-accent relative hover:bg-accent/10"
+      description: "All premium features now free",
+      className: "text-accent relative hover:bg-accent/10"
     },
     { 
       icon: Plus, 
@@ -161,9 +153,8 @@ export const NavItems = ({
       label: "Emperor Chat",
       path: "/emperor-chat",
       active: location.pathname === "/emperor-chat",
-      premium: true,
-      description: hasEmperorAccess ? "Exclusive Emperor Chatroom" : "Unlock Emperor features",
-      className: hasEmperorAccess ? "text-yellow-500" : "text-accent"
+      description: "Chat freely with other users",
+      className: "text-yellow-500"
     },
   ];
 

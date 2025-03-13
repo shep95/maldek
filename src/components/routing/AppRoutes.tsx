@@ -1,8 +1,7 @@
+
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
 import Followers from "@/pages/Followers";
@@ -21,59 +20,14 @@ import TermsOfService from "@/pages/TermsOfService";
 import Features from "@/pages/Features";
 import HashtagPage from "@/pages/HashtagPage";
 
-const ProtectedPremiumRoute = ({ children }: { children: React.ReactNode }) => {
+// All features are now free - this wrapper just verifies authentication
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
-
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*, tier:subscription_tiers(*)')
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!session?.user?.id
-  });
-
-  if (!subscription) {
-    return <Navigate to="/subscription" replace />;
+  
+  if (!session) {
+    return <Navigate to="/auth" replace />;
   }
-
-  return <>{children}</>;
-};
-
-const ProtectedEmperorRoute = ({ children }: { children: React.ReactNode }) => {
-  const session = useSession();
-
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*, tier:subscription_tiers(*)')
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!session?.user?.id
-  });
-
-  if (!subscription || subscription.tier.name !== 'True Emperor') {
-    return <Navigate to="/subscription" replace />;
-  }
-
+  
   return <>{children}</>;
 };
 
@@ -109,22 +63,8 @@ export const AppRoutes = () => {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
-        <Route 
-          path="/daarp-ai" 
-          element={
-            <ProtectedPremiumRoute>
-              <DaarpAI />
-            </ProtectedPremiumRoute>
-          } 
-        />
-        <Route 
-          path="/emperor-chat" 
-          element={
-            <ProtectedEmperorRoute>
-              <EmperorChatPage />
-            </ProtectedEmperorRoute>
-          } 
-        />
+        <Route path="/daarp-ai" element={<DaarpAI />} />
+        <Route path="/emperor-chat" element={<EmperorChatPage />} />
         <Route path="/subscription" element={<Subscription />} />
       </Route>
       

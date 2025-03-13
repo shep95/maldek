@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from 'https://esm.sh/stripe@13.6.0'
@@ -53,6 +52,53 @@ serve(async (req) => {
     )
 
     console.log(`Processing webhook event: ${event.type}`)
+
+    // Automatically grant premium features to all users
+    // This code will run whenever a webhook event is received
+    const { data: allUsers, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      
+    if (userError) {
+      console.error('Error fetching users:', userError)
+    } else if (allUsers && allUsers.length > 0) {
+      // Get the Creator tier ID
+      const { data: creatorTier } = await supabase
+        .from('subscription_tiers')
+        .select('id')
+        .eq('name', 'Creator')
+        .maybeSingle()
+        
+      if (creatorTier) {
+        console.log(`Granting free premium access to ${allUsers.length} users`)
+        
+        // Process users in batches to avoid timeouts
+        const batchSize = 50
+        for (let i = 0; i < allUsers.length; i += batchSize) {
+          const batch = allUsers.slice(i, i + batchSize)
+          
+          for (const user of batch) {
+            // Grant premium subscription to each user
+            const { error: subscriptionError } = await supabase
+              .from('user_subscriptions')
+              .upsert({
+                user_id: user.id,
+                tier_id: creatorTier.id,
+                status: 'active',
+                mentions_remaining: 999999, // Unlimited mentions
+                mentions_used: 0,
+                starts_at: new Date().toISOString(),
+                ends_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year
+                is_lifetime: true
+              })
+              
+            if (subscriptionError) {
+              console.error('Error granting premium to user', user.id, ':', subscriptionError)
+            }
+          }
+        }
+      }
+    }
 
     switch (event.type) {
       case 'checkout.session.completed': {

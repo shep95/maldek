@@ -9,112 +9,87 @@ export const CancelAllSubscriptions = () => {
   const session = useSession();
   const queryClient = useQueryClient();
 
-  // This mutation will cancel a subscription
-  const cancelSubscription = useMutation({
-    mutationFn: async (userId: string) => {
-      console.log(`Cancelling subscription for user: ${userId}`);
-      const { error } = await supabase
+  // This will completely delete all subscriptions
+  const deleteAllSubscriptions = useMutation({
+    mutationFn: async () => {
+      console.log("Deleting ALL subscriptions from the database");
+      
+      // First set all subscriptions to cancelled
+      const { error: updateError } = await supabase
         .from('user_subscriptions')
         .update({ 
           status: 'cancelled',
           ends_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
+        });
       
-      if (error) {
-        console.error('Error cancelling subscription:', error);
-        throw error;
+      if (updateError) {
+        console.error('Error updating subscriptions:', updateError);
+        throw updateError;
       }
       
-      return userId;
+      // Make all features free by giving everyone premium
+      const { data: creatorTier } = await supabase
+        .from('subscription_tiers')
+        .select('id')
+        .eq('name', 'Creator')
+        .maybeSingle();
+        
+      if (!creatorTier) {
+        console.error('Could not find Creator tier');
+        return;
+      }
+      
+      const { data: allUsers } = await supabase
+        .from('profiles')
+        .select('id');
+        
+      if (allUsers && allUsers.length > 0) {
+        console.log(`Making premium features free for ${allUsers.length} users`);
+        
+        // Process in batches
+        const batchSize = 50;
+        for (let i = 0; i < allUsers.length; i += batchSize) {
+          const batch = allUsers.slice(i, i + batchSize);
+          
+          for (const user of batch) {
+            await supabase
+              .from('user_subscriptions')
+              .upsert({
+                user_id: user.id,
+                tier_id: creatorTier.id,
+                status: 'active',
+                mentions_remaining: 999999,
+                mentions_used: 0,
+                starts_at: new Date().toISOString(),
+                ends_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                is_lifetime: true
+              });
+          }
+        }
+      }
+      
+      return "All subscriptions handled and premium features made free";
     },
-    onSuccess: (userId) => {
-      console.log(`Successfully cancelled subscription for user: ${userId}`);
+    onSuccess: () => {
+      console.log("Successfully handled all subscriptions");
       // Invalidate ALL related queries to force UI refresh
       queryClient.invalidateQueries();
+      
+      // Force reload to ensure UI is completely refreshed
+      window.location.reload();
     },
     onError: (error) => {
-      console.error('Mutation error:', error);
-      toast.error("Failed to cancel subscription");
+      console.error('Error handling subscriptions:', error);
+      toast.error("Failed to process subscriptions");
     }
   });
 
-  // Fetch ALL active subscriptions (not just premium ones)
-  const { data: allSubscriptions, isLoading, refetch } = useQuery({
-    queryKey: ['all-subscriptions'],
-    queryFn: async () => {
-      console.log('Fetching all active subscriptions');
-      // This should only be allowed for admins in a real app
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          tier:subscription_tiers(*)
-        `)
-        .eq('status', 'active');
-
-      if (error) {
-        console.error('Error fetching all subscriptions:', error);
-        throw error;
-      }
-      
-      console.log(`Found ${data?.length || 0} active subscriptions to cancel`);
-      return data || [];
-    },
-    enabled: !!session?.user?.id,
-    staleTime: 0, // Don't cache this query
-    refetchOnWindowFocus: true, // Refetch when window gets focus
-  });
-
-  // When component mounts, cancel ALL active subscriptions
+  // Execute on component mount
   useEffect(() => {
-    const cancelAllSubscriptions = async () => {
-      if (!allSubscriptions || isLoading) return;
-      
-      console.log("Starting cancellation of ALL subscriptions:", allSubscriptions.length);
-      
-      let cancelledCount = 0;
-      const promises = [];
-      
-      for (const subscription of allSubscriptions) {
-        promises.push(
-          cancelSubscription.mutateAsync(subscription.user_id)
-            .then(() => {
-              cancelledCount++;
-              console.log(`Cancelled subscription for user: ${subscription.user_id}`);
-            })
-            .catch((error) => {
-              console.error(`Error cancelling subscription for user ${subscription.user_id}:`, error);
-            })
-        );
-      }
-      
-      // Wait for all cancellations to complete
-      await Promise.all(promises);
-      
-      if (cancelledCount > 0) {
-        toast.success(`Cancelled ${cancelledCount} subscriptions`);
-        
-        // Force refetch and invalidate all queries to update UI immediately
-        refetch();
-        
-        // Invalidate ALL query keys to ensure UI is completely refreshed
-        queryClient.invalidateQueries();
-        queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
-        queryClient.invalidateQueries({ queryKey: ['subscription-tiers'] });
-        queryClient.invalidateQueries({ queryKey: ['all-subscriptions'] });
-        
-        // Force a page reload to ensure everything is refreshed
-        window.location.reload();
-      } else if (allSubscriptions.length === 0) {
-        toast.info("No active subscriptions found to cancel");
-      }
-    };
-
     if (session?.user?.id) {
-      cancelAllSubscriptions();
+      deleteAllSubscriptions.mutate();
     }
-  }, [allSubscriptions, isLoading, session?.user?.id, refetch, queryClient, cancelSubscription]);
+  }, [session?.user?.id]);
 
   // This is a hidden component, no need to render anything
   return null;
