@@ -129,16 +129,111 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     }
   };
   
-  // Use 3D carousel for 3 or more images
-  if (mediaUrls.length >= 3 && !mediaUrls.some(url => isVideoFile(url))) {
-    return (
-      <div className="mt-4">
-        <ThreeDPhotoCarousel imageUrls={publicMediaUrls} />
-      </div>
-    );
+  // Check if there are 3 or more media items and if they're all images
+  const shouldUseCarousel = mediaUrls.length >= 3;
+  
+  // If using carousel, filter out video URLs for the image carousel
+  if (shouldUseCarousel) {
+    // If there are no videos, just use the carousel for all media
+    if (!mediaUrls.some(url => isVideoFile(url))) {
+      return (
+        <div className="mt-4">
+          <ThreeDPhotoCarousel imageUrls={publicMediaUrls} />
+        </div>
+      );
+    } else {
+      // If there are videos, display videos in grid and images in carousel if 3+ images
+      const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
+      const videoUrls = mediaUrls.filter(url => isVideoFile(url));
+      const publicImageUrls = imageUrls.map(url => getPublicUrl(url));
+      
+      return (
+        <div className="mt-4 space-y-4">
+          {/* Display videos in grid */}
+          {videoUrls.length > 0 && (
+            <div className={`grid ${videoUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
+              {videoUrls.map((url, i) => (
+                <div key={url} className="relative overflow-hidden group rounded-lg">
+                  <VideoPlayer 
+                    videoUrl={url} 
+                    controls 
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Display images in carousel if 3+ images */}
+          {imageUrls.length >= 3 && (
+            <ThreeDPhotoCarousel imageUrls={publicImageUrls} />
+          )}
+          
+          {/* Display images in grid if less than 3 */}
+          {imageUrls.length > 0 && imageUrls.length < 3 && (
+            <div className={`grid ${imageUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
+              {imageUrls.map((url, i) => {
+                const publicUrl = getPublicUrl(url);
+                const aspectRatio = getAspectRatio(url);
+                
+                return (
+                  <div key={url} className="relative overflow-hidden group rounded-lg">
+                    <div onClick={() => onMediaClick?.(publicUrl)}>
+                      <AspectRatio ratio={aspectRatio}>
+                        <div className="relative bg-black/5 rounded-lg">
+                          <img
+                            src={publicUrl}
+                            alt={`Media content ${i + 1}`}
+                            className="w-full h-full object-contain p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] rounded-lg"
+                            loading="lazy"
+                          />
+                          {showWatermark && !hasPaidSubscription && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
+                                Bosley
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                              "bg-black/50 hover:bg-black/70",
+                              !canDownload && "opacity-50 cursor-not-allowed"
+                            )}
+                            onClick={(e) => handleDownload(publicUrl, e)}
+                            title={canDownload ? "Download media" : "Upgrade to download"}
+                          >
+                            <Download className="h-4 w-4 text-white" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="bg-black/50 hover:bg-black/70"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMediaClick?.(publicUrl);
+                            }}
+                            title="View full size"
+                          >
+                            <Maximize className="h-4 w-4 text-white" />
+                          </Button>
+                        </div>
+                      </AspectRatio>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
   }
 
-  // For 1-2 images or if any are videos, use the original grid layout
+  // For 1-2 media items, use the original grid layout
   return (
     <div className="mt-4">
       <div className={`grid ${mediaUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>

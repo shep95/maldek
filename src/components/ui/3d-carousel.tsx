@@ -86,6 +86,9 @@ const Carousel = memo(
       (value) => `rotate3d(0, 1, 0, ${value}deg)`
     )
 
+    // Calculate how much rotation equals one card movement
+    const stepRotation = 360 / faceCount
+
     return (
       <div
         className="flex h-full items-center justify-center bg-card"
@@ -106,12 +109,14 @@ const Carousel = memo(
           }}
           onDrag={(_, info) =>
             isCarouselActive &&
-            rotation.set(rotation.get() + info.offset.x * 0.05)
+            // Reduced sensitivity for more controlled movement - one swipe moves roughly one card
+            rotation.set(rotation.get() + info.offset.x * 0.025)
           }
           onDragEnd={(_, info) =>
             isCarouselActive &&
             controls.start({
-              rotateY: rotation.get() + info.velocity.x * 0.05,
+              // Snap to the nearest card position after drag
+              rotateY: Math.round(rotation.get() / stepRotation) * stepRotation,
               transition: {
                 type: "spring",
                 stiffness: 100,

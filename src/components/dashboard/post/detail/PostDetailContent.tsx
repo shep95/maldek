@@ -6,6 +6,9 @@ import { PostActions } from "../PostActions";
 import { useNavigate } from "react-router-dom";
 import { Post } from "@/utils/postUtils";
 import { PostText } from "../content/PostText";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface PostDetailContentProps {
   post: Post;
@@ -19,6 +22,30 @@ export const PostDetailContent = ({
   onPostAction 
 }: PostDetailContentProps) => {
   const navigate = useNavigate();
+  const session = useSession();
+
+  // Get subscription for carousel component
+  const { data: subscription } = useQuery({
+    queryKey: ['user-subscription', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      console.log('Fetching subscription for user:', session.user.id);
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          tier:subscription_tiers (*)
+        `)
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id
+  });
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -48,7 +75,11 @@ export const PostDetailContent = ({
         />
       </div>
       {post.media_urls && post.media_urls.length > 0 && (
-        <PostMedia mediaUrls={post.media_urls} onMediaClick={() => {}} />
+        <PostMedia 
+          mediaUrls={post.media_urls} 
+          onMediaClick={() => {}}
+          subscription={subscription}
+        />
       )}
       <PostActions
         post={post}
