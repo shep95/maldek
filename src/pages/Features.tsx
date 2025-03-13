@@ -1,160 +1,78 @@
 
-import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign, Music, Languages, Binary, Database } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { StarBorder } from "@/components/ui/star-border";
+import { PricingCard } from "@/components/ui/pricing-card";
 
 const Features = () => {
-  const navigate = useNavigate();
-
-  const features = [
-    {
-      icon: Shield,
-      title: "Encrypted Database",
-      description: "Your data is protected with top-tier encryption"
-    },
-    {
-      icon: MessageSquare,
-      title: "Freedom of Speech",
-      description: "No shadow banning & bans - express yourself freely"
-    },
-    {
-      icon: Lock,
-      title: "Privacy First",
-      description: "We never collect your data or ask for device permissions to gather information"
-    },
-    {
-      icon: FolderLock,
-      title: "Free Safety Folder",
-      description: "Protect your files and messages from anyone with our secure storage system in profile tab",
-      isPremium: true,
-      highlight: true
-    },
-    {
-      icon: DollarSign,
-      title: "Affordable Premium Features",
-      description: "Free to use app with affordable subscription options - check them out!"
-    },
-    {
-      icon: Binary,
-      title: "Unbiased Algorithm",
-      description: "Our platform uses a neutral algorithm without any hidden biases or preferences"
-    },
-    {
-      icon: Music,
-      title: "Custom Background Music",
-      description: "Play your own playlist in the background while scrolling through posts"
-    },
-    {
-      icon: Languages,
-      title: "Free Post Translation",
-      description: "Auto translate any user's post to your preferred language at no cost"
-    },
-    {
-      icon: Info,
-      title: "Transparent Platform",
-      description: "Say what you want when-ever you want, with complete transparency"
-    },
-    {
-      icon: Shield,
-      title: "Modern UI Design",
-      description: "Built with the latest design trends for a sleek and intuitive experience"
-    },
-    {
-      icon: Lock,
-      title: "No Tracking",
-      description: "We respect your privacy - no data collection or tracking"
-    },
-    {
-      icon: Database,
-      title: "No Data Selling",
-      description: "Your data is yours - we never sell it to third parties"
-    }
-  ];
-
   return (
-    <div className="container max-w-4xl px-4 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-8 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Our Features</h1>
-        <Button variant="outline" onClick={() => navigate(-1)} className="w-full sm:w-auto">
-          Go Back
-        </Button>
-      </div>
-
-      <div className="grid gap-6 sm:grid-cols-2">
-        {features.map((feature, index) => (
-          feature.highlight ? (
-            <StarBorder
-              key={index}
-              as="div"
-              color="#FFFFFF"
-              className="w-full"
-              transparent={true}
-            >
-              <div className={cn(
-                "group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border-none hover:bg-background/50 transition-colors",
-                feature.isPremium && "bg-accent/5"
-              )}>
-                <div className="relative">
-                  <feature.icon className={cn(
-                    "w-5 h-5 shrink-0 mt-1",
-                    feature.isPremium ? "text-accent-foreground" : "text-accent",
-                    "transition-all duration-300 ease-out",
-                    "group-hover:scale-110 group-hover:rotate-[360deg]",
-                    "after:content-[''] after:absolute after:inset-0",
-                    "after:bg-accent/20 after:rounded-full after:scale-0",
-                    "group-hover:after:scale-150 after:transition-transform",
-                    "group-hover:text-accent-foreground"
-                  )} />
-                  <div className="absolute inset-0 bg-accent/10 rounded-full scale-0 group-hover:scale-150 transition-transform" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold mb-1">{feature.title}</h3>
-                    {feature.isPremium && (
-                      <span className="text-xs px-1.5 py-0.5 bg-accent/20 text-accent-foreground rounded-full">Premium</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
-                </div>
-              </div>
-            </StarBorder>
-          ) : (
-            <div
-              key={index}
-              className={cn(
-                "group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border border-border/50 hover:bg-background/50 transition-colors",
-                feature.isPremium && "border-accent/50 bg-accent/5"
-              )}
-            >
-              <div className="relative">
-                <feature.icon className={cn(
-                  "w-5 h-5 shrink-0 mt-1",
-                  feature.isPremium ? "text-accent-foreground" : "text-accent",
-                  "transition-all duration-300 ease-out",
-                  "group-hover:scale-110 group-hover:rotate-[360deg]",
-                  "after:content-[''] after:absolute after:inset-0",
-                  "after:bg-accent/20 after:rounded-full after:scale-0",
-                  "group-hover:after:scale-150 after:transition-transform",
-                  "group-hover:text-accent-foreground"
-                )} />
-                <div className="absolute inset-0 bg-accent/10 rounded-full scale-0 group-hover:scale-150 transition-transform" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold mb-1">{feature.title}</h3>
-                  {feature.isPremium && (
-                    <span className="text-xs px-1.5 py-0.5 bg-accent/20 text-accent-foreground rounded-full">Premium</span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>
-            </div>
-          )
-        ))}
-      </div>
+    <div className="container mx-auto px-4 py-10">
+      <section className="relative overflow-hidden bg-background text-foreground">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 md:px-8">
+          <div className="mb-12 space-y-3">
+            <h2 className="text-center text-3xl font-semibold leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
+              All Features Available
+            </h2>
+            <p className="text-center text-base text-muted-foreground md:text-lg">
+              Enjoy all premium features completely free!
+            </p>
+          </div>
+          
+          <div className="mb-20 grid grid-cols-1 gap-6 md:grid-cols-3">
+            <PricingCard
+              tier="Free"
+              price="$0"
+              bestFor="For everyone!"
+              CTA="Already Available"
+              benefits={[
+                { text: "Content creation", checked: true },
+                { text: "Video uploads", checked: true },
+                { text: "Community spaces", checked: true },
+                { text: "Privacy features", checked: true },
+                { text: "AI Assistant", checked: true },
+                { text: "Analytics", checked: true },
+              ]}
+            />
+            <PricingCard
+              tier="Investment Opportunity"
+              price="Contact us"
+              bestFor="For investors"
+              CTA="Learn More"
+              benefits={[
+                { text: "Early investor access", checked: true },
+                { text: "Platform equity", checked: true },
+                { text: "Revenue sharing", checked: true },
+                { text: "Advisory board", checked: true },
+                { text: "Strategic partnership", checked: true },
+                { text: "Platform influence", checked: true },
+              ]}
+            />
+            <PricingCard
+              tier="Partnership"
+              price="Contact us"
+              bestFor="For businesses"
+              CTA="Contact Us"
+              benefits={[
+                { text: "API access", checked: true },
+                { text: "White-label solutions", checked: true },
+                { text: "Custom integrations", checked: true },
+                { text: "Enterprise support", checked: true },
+                { text: "Dedicated account manager", checked: true },
+                { text: "Co-marketing opportunities", checked: true },
+              ]}
+            />
+          </div>
+          
+          <div className="bg-accent/10 rounded-lg p-8 text-center">
+            <h3 className="text-2xl font-bold mb-4">Why We Made Everything Free</h3>
+            <p className="text-muted-foreground mb-6">
+              We believe in building community first. By providing all features for free, 
+              we're focusing on growing our user base and creating the best possible experience.
+              In the future, we'll introduce revenue models that don't limit functionality for our users.
+            </p>
+            <Button className="bg-accent hover:bg-accent/90">
+              Get Started Now
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

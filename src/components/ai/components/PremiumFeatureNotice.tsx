@@ -1,6 +1,6 @@
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export const PremiumFeatureNotice = () => {
