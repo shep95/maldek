@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 import Stripe from 'https://esm.sh/stripe@13.6.0'
@@ -9,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -20,7 +18,6 @@ serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    // Get the signature from the header
     const signature = req.headers.get('stripe-signature')
     if (!signature) {
       throw new Error('No signature provided')
@@ -61,7 +58,6 @@ serve(async (req) => {
         const session = event.data.object
         console.log('Checkout session completed:', session.id)
         
-        // Get the subscription tier details from the metadata
         const userId = session.metadata?.userId
         const tierId = session.metadata?.tierId
         
@@ -70,7 +66,6 @@ serve(async (req) => {
           break
         }
         
-        // Get tier details to determine mention count
         const { data: tierData } = await supabase
           .from('subscription_tiers')
           .select('*')
@@ -82,7 +77,6 @@ serve(async (req) => {
           break
         }
           
-        // Create or update the user subscription
         const { error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .upsert({
@@ -94,7 +88,7 @@ serve(async (req) => {
             mentions_remaining: tierData.monthly_mentions,
             mentions_used: 0,
             starts_at: new Date().toISOString(),
-            ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+            ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             is_lifetime: false
           })
 
@@ -103,12 +97,11 @@ serve(async (req) => {
           throw subscriptionError
         }
 
-        // Record the payment in payment_history
         const { error: paymentError } = await supabase
           .from('payment_history')
           .insert({
             user_id: userId,
-            amount: session.amount_total / 100, // Convert from cents to dollars
+            amount: session.amount_total / 100,
             currency: session.currency,
             payment_date: new Date().toISOString(),
             stripe_payment_id: session.payment_intent,
@@ -132,9 +125,7 @@ serve(async (req) => {
         const invoice = event.data.object
         console.log('Invoice payment succeeded:', invoice.id)
         
-        // If this is a subscription invoice, update the subscription
         if (invoice.subscription) {
-          // Get the subscription to access its metadata
           const subscription = await stripe.subscriptions.retrieve(invoice.subscription)
           const userId = subscription.metadata?.userId
           
@@ -143,12 +134,11 @@ serve(async (req) => {
             break
           }
 
-          // Update the user's subscription end date
           const { error: updateError } = await supabase
             .from('user_subscriptions')
             .update({
               status: 'active',
-              ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // extend by 30 days
+              ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
             })
             .eq('stripe_subscription_id', invoice.subscription)
 
@@ -157,7 +147,6 @@ serve(async (req) => {
             throw updateError
           }
           
-          // Reset available mentions at the start of a new billing cycle
           const { data: tierData } = await supabase
             .from('subscription_tiers')
             .select('*')
@@ -165,7 +154,6 @@ serve(async (req) => {
             .maybeSingle()
             
           if (tierData) {
-            // Reset mentions for the new period
             const { error: mentionsError } = await supabase
               .from('user_subscriptions')
               .update({
@@ -180,7 +168,6 @@ serve(async (req) => {
           }
         }
 
-        // Record the payment in payment_history
         const { error: paymentError } = await supabase
           .from('payment_history')
           .insert({
@@ -210,9 +197,14 @@ serve(async (req) => {
         const stripe_subscription_id = subscription.id
         const status = subscription.status
 
+        console.log(`Subscription ${stripe_subscription_id} updated to status: ${status}`)
+
         const { error } = await supabase
           .from('user_subscriptions')
-          .update({ status })
+          .update({ 
+            status,
+            ...(status === 'canceled' || status === 'cancelled' ? { ends_at: new Date().toISOString() } : {})
+          })
           .eq('stripe_subscription_id', stripe_subscription_id)
 
         if (error) {
@@ -226,9 +218,14 @@ serve(async (req) => {
         const subscription = event.data.object
         const stripe_subscription_id = subscription.id
 
+        console.log(`Subscription ${stripe_subscription_id} deleted, marking as cancelled`)
+
         const { error } = await supabase
           .from('user_subscriptions')
-          .update({ status: 'cancelled' })
+          .update({ 
+            status: 'cancelled',
+            ends_at: new Date().toISOString()
+          })
           .eq('stripe_subscription_id', stripe_subscription_id)
 
         if (error) {
@@ -244,7 +241,6 @@ serve(async (req) => {
 
         console.warn(`Invoice payment failed for customer: ${stripe_customer_id}`)
         
-        // Update the subscription status
         if (invoice.subscription) {
           const { error } = await supabase
             .from('user_subscriptions')

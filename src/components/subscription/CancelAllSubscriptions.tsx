@@ -30,7 +30,10 @@ export const CancelAllSubscriptions = () => {
     },
     onSuccess: (userId) => {
       console.log(`Successfully cancelled subscription for user: ${userId}`);
+      // Invalidate both premium-subscriptions and user-subscription queries to update UI
+      queryClient.invalidateQueries({ queryKey: ['premium-subscriptions'] });
       queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-tiers'] });
     },
     onError: (error) => {
       console.error('Mutation error:', error);
@@ -38,8 +41,8 @@ export const CancelAllSubscriptions = () => {
     }
   });
 
-  // Fetch premium subscriptions (Emperor and Creator tiers)
-  const { data: premiumSubscriptions, isLoading } = useQuery({
+  // Fetch ALL active premium subscriptions (Emperor and Creator tiers)
+  const { data: premiumSubscriptions, isLoading, refetch } = useQuery({
     queryKey: ['premium-subscriptions'],
     queryFn: async () => {
       console.log('Fetching premium subscriptions');
@@ -61,7 +64,9 @@ export const CancelAllSubscriptions = () => {
       console.log(`Found ${data?.length || 0} premium subscriptions to cancel`);
       return data || [];
     },
-    enabled: !!session?.user?.id
+    enabled: !!session?.user?.id,
+    staleTime: 0, // Don't cache this query
+    refetchOnWindowFocus: true, // Refetch when window gets focus
   });
 
   // When component mounts, cancel all premium subscriptions
@@ -72,18 +77,29 @@ export const CancelAllSubscriptions = () => {
       console.log("Starting cancellation of premium subscriptions:", premiumSubscriptions.length);
       
       let cancelledCount = 0;
+      const promises = [];
+      
       for (const subscription of premiumSubscriptions) {
-        try {
-          await cancelSubscription.mutateAsync(subscription.user_id);
-          cancelledCount++;
-          console.log(`Cancelled subscription for user: ${subscription.user_id}`);
-        } catch (error) {
-          console.error("Error cancelling subscription:", error);
-        }
+        promises.push(
+          cancelSubscription.mutateAsync(subscription.user_id)
+            .then(() => {
+              cancelledCount++;
+              console.log(`Cancelled subscription for user: ${subscription.user_id}`);
+            })
+            .catch((error) => {
+              console.error(`Error cancelling subscription for user ${subscription.user_id}:`, error);
+            })
+        );
       }
+      
+      // Wait for all cancellations to complete
+      await Promise.all(promises);
       
       if (cancelledCount > 0) {
         toast.success(`Cancelled ${cancelledCount} premium subscriptions`);
+        // Force refetch to update UI immediately
+        refetch();
+        queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
       } else if (premiumSubscriptions.length === 0) {
         toast.info("No premium subscriptions found to cancel");
       }
@@ -92,7 +108,7 @@ export const CancelAllSubscriptions = () => {
     if (session?.user?.id) {
       cancelAllPremiumSubscriptions();
     }
-  }, [premiumSubscriptions, isLoading, session?.user?.id]);
+  }, [premiumSubscriptions, isLoading, session?.user?.id, refetch, queryClient]);
 
   // This is a hidden component, no need to render anything
   return null;
