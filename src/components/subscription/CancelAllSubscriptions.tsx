@@ -12,6 +12,7 @@ export const CancelAllSubscriptions = () => {
   // This mutation will cancel a subscription
   const cancelSubscription = useMutation({
     mutationFn: async (userId: string) => {
+      console.log(`Cancelling subscription for user: ${userId}`);
       const { error } = await supabase
         .from('user_subscriptions')
         .update({ 
@@ -20,29 +21,44 @@ export const CancelAllSubscriptions = () => {
         })
         .eq('user_id', userId);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error cancelling subscription:', error);
+        throw error;
+      }
+      
       return userId;
     },
-    onSuccess: () => {
+    onSuccess: (userId) => {
+      console.log(`Successfully cancelled subscription for user: ${userId}`);
       queryClient.invalidateQueries({ queryKey: ['user-subscription'] });
+    },
+    onError: (error) => {
+      console.error('Mutation error:', error);
+      toast.error("Failed to cancel subscription");
     }
   });
 
-  // Fetch all active subscriptions
-  const { data: activeSubscriptions, isLoading } = useQuery({
-    queryKey: ['all-active-subscriptions'],
+  // Fetch premium subscriptions (Emperor and Creator tiers)
+  const { data: premiumSubscriptions, isLoading } = useQuery({
+    queryKey: ['premium-subscriptions'],
     queryFn: async () => {
+      console.log('Fetching premium subscriptions');
       // This should only be allowed for admins in a real app
-      // For this example, we'll just fetch subscriptions
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
           *,
           tier:subscription_tiers(*)
         `)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .in('tier.name', ['True Emperor', 'Creator']);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching premium subscriptions:', error);
+        throw error;
+      }
+      
+      console.log(`Found ${data?.length || 0} premium subscriptions to cancel`);
       return data || [];
     },
     enabled: !!session?.user?.id
@@ -51,15 +67,16 @@ export const CancelAllSubscriptions = () => {
   // When component mounts, cancel all premium subscriptions
   useEffect(() => {
     const cancelAllPremiumSubscriptions = async () => {
-      if (!activeSubscriptions || isLoading) return;
+      if (!premiumSubscriptions || isLoading) return;
       
-      console.log("Found active subscriptions:", activeSubscriptions.length);
+      console.log("Starting cancellation of premium subscriptions:", premiumSubscriptions.length);
       
       let cancelledCount = 0;
-      for (const subscription of activeSubscriptions) {
+      for (const subscription of premiumSubscriptions) {
         try {
           await cancelSubscription.mutateAsync(subscription.user_id);
           cancelledCount++;
+          console.log(`Cancelled subscription for user: ${subscription.user_id}`);
         } catch (error) {
           console.error("Error cancelling subscription:", error);
         }
@@ -67,13 +84,15 @@ export const CancelAllSubscriptions = () => {
       
       if (cancelledCount > 0) {
         toast.success(`Cancelled ${cancelledCount} premium subscriptions`);
+      } else if (premiumSubscriptions.length === 0) {
+        toast.info("No premium subscriptions found to cancel");
       }
     };
 
     if (session?.user?.id) {
       cancelAllPremiumSubscriptions();
     }
-  }, [activeSubscriptions, isLoading, session?.user?.id]);
+  }, [premiumSubscriptions, isLoading, session?.user?.id]);
 
   // This is a hidden component, no need to render anything
   return null;
