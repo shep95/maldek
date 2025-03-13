@@ -96,6 +96,8 @@ const Carousel = memo(
           perspective: "1000px",
           transformStyle: "preserve-3d",
           willChange: "transform",
+          maxWidth: "100%",
+          overflow: "hidden"
         }}
       >
         <motion.div

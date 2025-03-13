@@ -9,6 +9,7 @@ import { PostText } from "../content/PostText";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
+import { useState } from "react";
 
 interface PostDetailContentProps {
   post: Post;
@@ -23,6 +24,7 @@ export const PostDetailContent = ({
 }: PostDetailContentProps) => {
   const navigate = useNavigate();
   const session = useSession();
+  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
 
   // Get subscription for carousel component
   const { data: subscription } = useQuery({
@@ -54,6 +56,10 @@ export const PostDetailContent = ({
     navigate(`/@${username}`);
   };
 
+  const handleMediaClick = (url: string) => {
+    setSelectedMedia(url);
+  };
+
   console.log("Post data in PostDetailContent:", {
     is_edited: post.is_edited,
     original_content: post.original_content
@@ -77,7 +83,7 @@ export const PostDetailContent = ({
       {post.media_urls && post.media_urls.length > 0 && (
         <PostMedia 
           mediaUrls={post.media_urls} 
-          onMediaClick={() => {}}
+          onMediaClick={handleMediaClick}
           subscription={subscription}
         />
       )}
