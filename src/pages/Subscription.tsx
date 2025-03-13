@@ -1,4 +1,3 @@
-
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,9 +8,6 @@ import { Crown, Check, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PricingCard } from "@/components/ui/pricing-card";
-
-// Install framer-motion if it's not already installed
-<lov-add-dependency>framer-motion@12.0.0</lov-add-dependency>
 
 const Subscription = () => {
   const session = useSession();
