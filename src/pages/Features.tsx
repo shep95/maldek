@@ -1,3 +1,4 @@
+
 import { Shield, Lock, MessageSquare, Info, FolderLock, DollarSign, Music, Languages, Binary, Database } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ const Features = () => {
             <StarBorder
               key={index}
               as="div"
-              color="hsl(var(--accent))"
+              color="#FFFFFF"
               className="w-full"
               transparent={true}
             >

@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -58,7 +59,7 @@ export const PricingCard = ({
       <StarBorder
         as="div"
         className="w-full"
-        color="hsl(var(--accent))"
+        color="#FFFFFF"
         speed="12s"
         transparent={true}
       >
