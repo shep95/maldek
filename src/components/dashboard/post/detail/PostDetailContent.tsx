@@ -60,20 +60,17 @@ export const PostDetailContent = ({
     setSelectedMedia(url);
   };
 
-  // Force re-rendering of media component when post changes
-  const [mediaKey, setMediaKey] = useState(Date.now());
+  // Ensure we recreate the media component when post changes
+  const [mediaKey, setMediaKey] = useState(() => Date.now());
+  
   useEffect(() => {
     if (post?.id) {
       setMediaKey(Date.now());
     }
   }, [post?.id]);
 
-  console.log("Post data in PostDetailContent:", {
-    id: post.id,
-    media_urls: post.media_urls,
-    is_edited: post.is_edited,
-    original_content: post.original_content
-  });
+  // Validate media URLs before rendering
+  const validMediaUrls = post.media_urls?.filter(url => url && typeof url === 'string') || [];
 
   return (
     <Card className="mb-6 p-6">
@@ -90,10 +87,10 @@ export const PostDetailContent = ({
           originalContent={post.original_content || null}
         />
       </div>
-      {post.media_urls && post.media_urls.length > 0 && (
-        <div key={mediaKey}>
+      {validMediaUrls.length > 0 && (
+        <div key={mediaKey} className="mt-4">
           <PostMedia 
-            mediaUrls={post.media_urls} 
+            mediaUrls={validMediaUrls} 
             onMediaClick={handleMediaClick}
             subscription={subscription}
           />

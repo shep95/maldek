@@ -1,7 +1,7 @@
 
 "use client"
 
-import { memo, useEffect, useLayoutEffect, useMemo, useState, useRef } from "react"
+import { memo, useEffect, useLayoutEffect, useState, useRef } from "react"
 import {
   AnimatePresence,
   motion,
@@ -77,7 +77,7 @@ const Carousel = memo(
   }) => {
     const isScreenSizeSm = useMediaQuery("(max-width: 640px)")
     const cylinderWidth = isScreenSizeSm ? 600 : 1000
-    const faceCount = cards.length
+    const faceCount = Math.max(cards.length, 1)
     const faceWidth = cylinderWidth / faceCount
     const radius = cylinderWidth / (2 * Math.PI)
     const rotation = useMotionValue(0)
@@ -85,21 +85,29 @@ const Carousel = memo(
       rotation,
       (value) => `rotate3d(0, 1, 0, ${value}deg)`
     )
-    const carouselMounted = useRef(false);
-
+    const carouselRef = useRef<HTMLDivElement>(null)
+    
     // Calculate how much rotation equals one card movement
     const stepRotation = 360 / faceCount
-    
-    // Fix the animation control mounting issue
+
+    // Initialize carousel with a small rotation to ensure it's visible
     useEffect(() => {
-      carouselMounted.current = true;
-      return () => {
-        carouselMounted.current = false;
-      };
-    }, []);
+      if (controls && cards.length > 0) {
+        controls.start({
+          rotateY: 5,
+          transition: {
+            type: "spring",
+            stiffness: 50,
+            damping: 10,
+          },
+        }).then(() => {
+          rotation.set(5);
+        });
+      }
+    }, [controls, cards.length]);
 
     const handleDragEnd = (_, info) => {
-      if (isCarouselActive && carouselMounted.current) {
+      if (isCarouselActive && cards.length > 0) {
         const targetRotation = Math.round(rotation.get() / stepRotation) * stepRotation;
         controls.start({
           rotateY: targetRotation,
@@ -109,41 +117,46 @@ const Carousel = memo(
             damping: 30,
             mass: 0.1,
           },
+        }).then(() => {
+          rotation.set(targetRotation);
         });
       }
     };
 
     return (
       <div
-        className="flex h-full items-center justify-center bg-card/50 overflow-hidden rounded-lg"
+        className="flex h-full items-center justify-center bg-card/20 overflow-hidden rounded-lg"
         style={{
           perspective: "1000px",
           transformStyle: "preserve-3d",
           willChange: "transform",
           maxWidth: "100%",
+          height: "300px",
         }}
+        ref={carouselRef}
       >
         <motion.div
-          drag={isCarouselActive ? "x" : false}
-          className="relative flex h-full origin-center cursor-grab justify-center active:cursor-grabbing"
+          drag={isCarouselActive && cards.length > 0 ? "x" : false}
+          className="relative flex h-full origin-center cursor-grab active:cursor-grabbing"
           style={{
             transform,
             rotateY: rotation,
             width: cylinderWidth,
             transformStyle: "preserve-3d",
           }}
-          onDrag={(_, info) =>
-            isCarouselActive &&
-            // Reduced sensitivity for more controlled movement - one swipe moves roughly one card
-            rotation.set(rotation.get() + info.offset.x * 0.015)
-          }
+          onDrag={(_, info) => {
+            if (isCarouselActive && cards.length > 0) {
+              // Reduced sensitivity for more controlled movement
+              rotation.set(rotation.get() + info.offset.x * 0.1)
+            }
+          }}
           onDragEnd={handleDragEnd}
           animate={controls}
         >
           {cards.map((imgUrl, i) => (
             <motion.div
-              key={`key-${imgUrl}-${i}`}
-              className="absolute flex h-full origin-center items-center justify-center rounded-xl bg-card/50 p-2"
+              key={`carousel-item-${i}-${imgUrl}`}
+              className="absolute flex h-full origin-center items-center justify-center rounded-xl bg-card/20 p-2"
               style={{
                 width: `${faceWidth}px`,
                 transform: `rotateY(${
@@ -156,7 +169,7 @@ const Carousel = memo(
                 src={imgUrl}
                 alt={`image_${i}`}
                 layoutId={`img-${imgUrl}`}
-                className="pointer-events-none w-full rounded-xl object-cover aspect-square"
+                className="pointer-events-none h-full w-full rounded-xl object-cover"
                 initial={{ filter: "blur(4px)" }}
                 layout="position"
                 animate={{ filter: "blur(0px)" }}
@@ -174,8 +187,9 @@ function ThreeDPhotoCarousel({ imageUrls }: { imageUrls: string[] }) {
   const [activeImg, setActiveImg] = useState<string | null>(null)
   const [isCarouselActive, setIsCarouselActive] = useState(true)
   const controls = useAnimation()
-  const cards = useMemo(() => imageUrls, [imageUrls])
-  const carouselMounted = useRef(false);
+  
+  // Make sure we have valid URLs
+  const cards = imageUrls?.filter(url => url && url.trim() !== '') || []
 
   const handleClick = (imgUrl: string) => {
     setActiveImg(imgUrl)
@@ -188,19 +202,13 @@ function ThreeDPhotoCarousel({ imageUrls }: { imageUrls: string[] }) {
     setIsCarouselActive(true)
   }
 
-  useEffect(() => {
-    carouselMounted.current = true;
-    return () => {
-      carouselMounted.current = false;
-    };
-  }, []);
-
-  if (!imageUrls || imageUrls.length < 3) {
+  // If we don't have enough images, don't render the carousel
+  if (!cards || cards.length < 3) {
     return null;
   }
 
   return (
-    <motion.div layout className="relative">
+    <motion.div layout className="relative" style={{ height: "300px" }}>
       <AnimatePresence mode="sync">
         {activeImg && (
           <motion.div
@@ -210,14 +218,14 @@ function ThreeDPhotoCarousel({ imageUrls }: { imageUrls: string[] }) {
             layoutId={`img-container-${activeImg}`}
             layout="position"
             onClick={handleClose}
-            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 m-5 md:m-36 lg:mx-[19rem] rounded-3xl"
+            className="fixed inset-0 z-50 m-5 flex items-center justify-center rounded-3xl bg-black bg-opacity-70 md:m-36 lg:mx-[19rem]"
             style={{ willChange: "opacity" }}
             transition={transitionOverlay}
           >
             <motion.img
               layoutId={`img-${activeImg}`}
               src={activeImg}
-              className="max-w-full max-h-full rounded-lg shadow-lg"
+              className="max-h-full max-w-full rounded-lg shadow-lg"
               initial={{ scale: 0.5 }}
               animate={{ scale: 1 }}
               transition={{
