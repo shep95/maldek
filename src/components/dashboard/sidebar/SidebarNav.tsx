@@ -1,4 +1,3 @@
-
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +16,8 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Fetch user's subscription status
+  // Since all features are free, we don't need to fetch subscription data anymore
+  // But keeping the structure to avoid breaking other components
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription'],
     queryFn: async () => {
@@ -29,23 +29,22 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
           return null;
         }
 
-        const { data: subscription, error } = await supabase
-          .from('user_subscriptions')
-          .select(`
-            *,
-            tier:subscription_tiers(*)
-          `)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (error) {
-          console.error("Error fetching subscription:", error);
-          return null;
-        }
-
-        console.log("Subscription data:", subscription);
-        return subscription;
+        // Always return a subscription object that indicates premium features are enabled
+        return {
+          tier_id: "premium",
+          tier: {
+            name: "Creator",
+            monthly_mentions: 999999,
+            max_upload_size_mb: 1024,
+            supports_animated_avatars: true,
+            supports_nft_avatars: true,
+            watermark_disabled: true,
+            max_pinned_posts: 10
+          },
+          status: "active",
+          mentions_remaining: 999999,
+          is_lifetime: true
+        };
       } catch (error) {
         console.error("Error in subscription query:", error);
         return null;
@@ -75,8 +74,8 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
   };
 
   const handlePremiumClick = () => {
-    navigate('/subscription');
-    toast.info(subscription ? 'Viewing your subscription' : 'Explore premium features');
+    // This now handles the "Invest" click
+    toast.info('Investment options coming soon');
     if (onSidebarClose) onSidebarClose(); // Close sidebar after navigation
   };
 
@@ -115,4 +114,3 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
     </ScrollArea>
   );
 };
-

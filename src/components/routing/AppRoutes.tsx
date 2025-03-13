@@ -14,8 +14,6 @@ import DaarpAI from "@/pages/DaarpAI";
 import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
-import Subscription from "@/pages/Subscription";
-import EmperorChatPage from "@/pages/EmperorChat";
 import TermsOfService from "@/pages/TermsOfService";
 import Features from "@/pages/Features";
 import HashtagPage from "@/pages/HashtagPage";
@@ -64,8 +62,7 @@ export const AppRoutes = () => {
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
-        <Route path="/emperor-chat" element={<EmperorChatPage />} />
-        <Route path="/subscription" element={<Subscription />} />
+        {/* Emperor chat route is removed */}
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

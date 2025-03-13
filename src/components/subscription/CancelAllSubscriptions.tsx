@@ -9,10 +9,10 @@ export const CancelAllSubscriptions = () => {
   const session = useSession();
   const queryClient = useQueryClient();
 
-  // This will completely delete all subscriptions
-  const deleteAllSubscriptions = useMutation({
+  // This will completely delete all subscriptions and make all features free
+  const grantFreeAccess = useMutation({
     mutationFn: async () => {
-      console.log("Deleting ALL subscriptions from the database");
+      console.log("Removing all subscriptions and making all features free");
       
       // First set all subscriptions to cancelled
       const { error: updateError } = await supabase
@@ -68,10 +68,10 @@ export const CancelAllSubscriptions = () => {
         }
       }
       
-      return "All subscriptions handled and premium features made free";
+      return "All features now available for free to all users";
     },
     onSuccess: () => {
-      console.log("Successfully handled all subscriptions");
+      console.log("Successfully granted free access to all users");
       // Invalidate ALL related queries to force UI refresh
       queryClient.invalidateQueries();
       
@@ -87,7 +87,7 @@ export const CancelAllSubscriptions = () => {
   // Execute on component mount
   useEffect(() => {
     if (session?.user?.id) {
-      deleteAllSubscriptions.mutate();
+      grantFreeAccess.mutate();
     }
   }, [session?.user?.id]);
 
