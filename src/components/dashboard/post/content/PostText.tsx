@@ -81,55 +81,48 @@ export const PostText = ({
         );
       }
 
-      // Process regular text
-      return part.split(' ').map((word, wordIndex) => {
-        // Handle mentions
-        if (word.startsWith('@')) {
-          const username = word.slice(1);
-          return (
-            <span key={`${index}-${wordIndex}`} className="inline-block">
-              <Button
-                variant="link"
-                className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/@${username}`);
-                }}
-              >
-                {word}
-              </Button>
-              {' '}
+      // Process regular text with word boundaries to handle URLs better
+      let lastIndex = 0;
+      const elements: JSX.Element[] = [];
+      let wordIndex = 0;
+
+      // Find all URLs in the text
+      const urlMatches = Array.from(part.matchAll(urlPattern));
+      const hashtagMatches = Array.from(part.matchAll(hashtagPattern));
+      const mentionMatches = Array.from(part.matchAll(mentionPattern));
+
+      // Combine all matches and sort by index
+      const allMatches = [
+        ...urlMatches.map(m => ({ type: 'url', match: m })),
+        ...hashtagMatches.map(m => ({ type: 'hashtag', match: m })),
+        ...mentionMatches.map(m => ({ type: 'mention', match: m }))
+      ].sort((a, b) => (a.match.index || 0) - (b.match.index || 0));
+
+      if (allMatches.length === 0) {
+        // No special content to process
+        return part;
+      }
+
+      // Process all matches in order
+      for (const { type, match } of allMatches) {
+        const matchIndex = match.index || 0;
+        const matchText = match[0];
+
+        // Add text before this match
+        if (matchIndex > lastIndex) {
+          elements.push(
+            <span key={`text-${index}-${wordIndex++}`}>
+              {part.substring(lastIndex, matchIndex)}
             </span>
           );
         }
-        
-        // Handle hashtags
-        if (word.match(hashtagPattern)) {
-          return (
-            <span key={`${index}-${wordIndex}`}>
-              <Button
-                variant="link"
-                className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/hashtag/${word.slice(1)}`);
-                }}
-              >
-                {word}
-              </Button>
-              {' '}
-            </span>
-          );
-        }
-        
-        // Enhanced URL handling
-        const urlMatch = word.match(urlPattern);
-        if (urlMatch) {
-          const url = urlMatch[0];
-          // Ensure URL has http/https protocol
+
+        // Handle the match based on its type
+        if (type === 'url') {
+          const url = matchText;
           const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-          return (
-            <span key={`${index}-${wordIndex}`} className="inline-flex items-center gap-1 max-w-full">
+          elements.push(
+            <span key={`url-${index}-${wordIndex++}`} className="inline-flex items-center gap-1 max-w-full">
               <a
                 href={fullUrl}
                 target="_blank"
@@ -144,10 +137,53 @@ export const PostText = ({
               {' '}
             </span>
           );
+        } else if (type === 'hashtag') {
+          elements.push(
+            <span key={`hashtag-${index}-${wordIndex++}`}>
+              <Button
+                variant="link"
+                className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/hashtag/${matchText.slice(1)}`);
+                }}
+              >
+                {matchText}
+              </Button>
+              {' '}
+            </span>
+          );
+        } else if (type === 'mention') {
+          elements.push(
+            <span key={`mention-${index}-${wordIndex++}`} className="inline-block">
+              <Button
+                variant="link"
+                className="p-0 h-auto text-orange-500 font-semibold hover:text-orange-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/@${matchText.slice(1)}`);
+                }}
+              >
+                {matchText}
+              </Button>
+              {' '}
+            </span>
+          );
         }
-        
-        return word + ' ';
-      });
+
+        lastIndex = matchIndex + matchText.length;
+      }
+
+      // Add any remaining text
+      if (lastIndex < part.length) {
+        elements.push(
+          <span key={`text-${index}-${wordIndex++}`}>
+            {part.substring(lastIndex)}
+          </span>
+        );
+      }
+
+      return <>{elements}</>;
     });
   };
 

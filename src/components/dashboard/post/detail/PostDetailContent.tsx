@@ -5,11 +5,12 @@ import { PostMedia } from "../PostMedia";
 import { PostActions } from "../PostActions";
 import { useNavigate } from "react-router-dom";
 import { Post } from "@/utils/postUtils";
-import { PostText } from "../content/PostText";
+import { PostContent } from "../PostContent";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useState, useEffect } from "react";
+import { useUserSettings } from "@/hooks/useUserSettings";
 
 interface PostDetailContentProps {
   post: Post;
@@ -25,6 +26,7 @@ export const PostDetailContent = ({
   const navigate = useNavigate();
   const session = useSession();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const { data: userSettings } = useUserSettings();
 
   // Get subscription for carousel component
   const { data: subscription } = useQuery({
@@ -83,8 +85,10 @@ export const PostDetailContent = ({
         onUsernameClick={handleUsernameClick}
       />
       <div className="mt-4">
-        <PostText 
+        <PostContent 
           content={post.content} 
+          userLanguage={userSettings?.preferred_language || 'en'}
+          isEditing={false}
           truncate={false} 
           isEdited={post.is_edited || false}
           originalContent={post.original_content || null}
