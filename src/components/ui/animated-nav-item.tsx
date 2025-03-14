@@ -61,7 +61,7 @@ export const AnimatedNavItem = ({
     damping: 30 
   };
 
-  // Transform scale based on hover
+  // Transform scale based on hover - only for the hovered icon
   const scaleTransform = useTransform(
     mouseDistance,
     [-150, 0, 150],
@@ -75,7 +75,7 @@ export const AnimatedNavItem = ({
   const bgOpacityTransform = useTransform(
     mouseDistance,
     [-150, 0, 150],
-    [0.05, 0.25, 0.05]
+    [0, 0.25, 0]
   );
   
   // Apply spring to background opacity
@@ -131,10 +131,11 @@ export const AnimatedNavItem = ({
   };
 
   // Create a proxy scale for neighboring items effect
+  // This will make icons above and below the hovered one slightly bigger
   const neighboringEffect = useTransform(
     mouseDistance,
     [-150, -100, 0, 100, 150],
-    [1.05, 1.15, 1, 1.15, 1.05]
+    [1, 1.15, 1, 1.15, 1]
   );
   
   const neighboringScale = useSpring(neighboringEffect, {
@@ -158,32 +159,35 @@ export const AnimatedNavItem = ({
           onMouseLeave={handleMouseLeave}
           onClick={handleClick}
           style={{ 
-            scale: active ? 1 : scale,
             rotateX,
             rotateY,
             perspective: 1000,
             transformStyle: "preserve-3d"
           }}
         >
-          {/* Background glow effect */}
+          {/* Circle background glow effect instead of square */}
           <motion.div 
             className={cn(
-              "absolute inset-0 rounded-xl",
+              "absolute inset-0 rounded-full",
               active ? "bg-accent" : "bg-accent"
             )}
             style={{ 
               opacity: active ? 0.2 : bgOpacity,
-              scale: active ? 1 : scale,
+              borderRadius: "50%", // Ensures it's a circle
+              width: "80%",
+              height: "80%",
+              left: "10%",
+              top: "10%",
               rotateX,
               rotateY,
             }}
           />
           
-          {/* Icon */}
+          {/* Icon - size changes only for hovered icon and slight change for neighbors */}
           <motion.div
             className="relative z-10"
             style={{ 
-              scale: active ? 1 : neighboringScale,
+              scale: active ? 1 : (mouseDistance.get() < 50 ? scale : neighboringScale),
               rotateX,
               rotateY,
              }}
@@ -199,17 +203,17 @@ export const AnimatedNavItem = ({
   );
 };
 
-// Create a container component for managing shared motion values
-interface AnimatedNavContainerProps {
-  children: ReactNode;
-  className?: string;
-}
-
 // Define a type for the expected children with added props
 type ChildProps = {
   mouseX: MotionValue<number>;
   mouseY: MotionValue<number>;
 };
+
+// Create a container component for managing shared motion values
+interface AnimatedNavContainerProps {
+  children: ReactNode;
+  className?: string;
+}
 
 export const AnimatedNavContainer = ({ children, className }: AnimatedNavContainerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
