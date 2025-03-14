@@ -7,7 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DockNavigation } from "./DockNavigation";
 import { cn } from "@/lib/utils";
 
 interface NavItemsProps {
@@ -59,18 +58,6 @@ export const NavItems = ({
 
   // Everything is free now
   const hasPremiumFeatures = true;
-
-  // Use the new dock component in collapsed mode, else use the traditional nav items
-  if (collapsed) {
-    return (
-      <DockNavigation 
-        handleCreatePost={handleCreatePost}
-        handleLogout={handleLogout}
-        onNavigate={handleNavigation}
-        userId={userId}
-      />
-    );
-  }
 
   const navItems = [
     { 

@@ -120,9 +120,9 @@ export const DockNavigation = ({
   ];
 
   return (
-    <div className="w-full flex items-center justify-center my-4">
+    <div className="w-full h-full flex items-center justify-center">
       <Dock 
-        className="flex-col items-center gap-2 py-4 px-2 bg-background/20 backdrop-blur-md border border-border/50 shadow-lg rounded-lg"
+        className="flex-col items-center gap-2 py-6 px-2 bg-background/20 backdrop-blur-md border border-border/50 shadow-lg rounded-lg h-full"
         panelHeight={600} 
         magnification={60}
         distance={100}
