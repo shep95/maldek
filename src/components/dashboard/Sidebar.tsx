@@ -18,13 +18,13 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
   return (
     <div className={cn(
       "hidden md:block fixed left-0 h-[calc(100dvh-2rem)] transition-all duration-300 px-4 py-6",
-      isCollapsed ? "w-28" : "w-72" // Increased width for collapsed state
+      isCollapsed ? "w-32" : "w-72" // Increased width for collapsed state
     )}>
       <Card className={cn(
         "h-full flex flex-col bg-background/20 border-border/50 backdrop-blur-md relative",
         "rounded-xl shadow-lg hover:shadow-xl transition-all",
         isCollapsed && "shadow-lg hover:shadow-xl hover:shadow-accent/5",
-        "py-6"
+        "py-6 overflow-hidden" // Added overflow-hidden to prevent orange background
       )}>
         <Button 
           variant="ghost" 

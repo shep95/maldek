@@ -25,6 +25,9 @@ interface AnimatedNavItemProps {
   active?: boolean;
   onClick?: () => void;
   className?: string;
+  index?: number;
+  mouseX?: MotionValue<number>;
+  mouseY?: MotionValue<number>;
 }
 
 export const AnimatedNavItem = ({
@@ -34,12 +37,15 @@ export const AnimatedNavItem = ({
   active,
   onClick,
   className,
+  index = 0,
+  mouseX: parentMouseX,
+  mouseY: parentMouseY,
 }: AnimatedNavItemProps) => {
   const ref = useRef<HTMLDivElement>(null);
   
   // Motion values for the hover animation
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  const mouseX = parentMouseX || useMotionValue(0);
+  const mouseY = parentMouseY || useMotionValue(0);
   const mouseDistance = useMotionValue(0);
   
   // Spring configuration for smooth animations
@@ -118,13 +124,26 @@ export const AnimatedNavItem = ({
     if (onClick) onClick();
   };
 
+  // Create a proxy scale for neighboring items effect
+  const neighboringEffect = useTransform(
+    mouseDistance,
+    [-150, -100, 0, 100, 150],
+    [1.05, 1.15, 1, 1.15, 1.05]
+  );
+  
+  const neighboringScale = useSpring(neighboringEffect, {
+    mass: 0.2,
+    stiffness: 200,
+    damping: 20
+  });
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <motion.div
           ref={ref}
           className={cn(
-            "relative flex items-center justify-center w-16 h-16 mx-auto my-3 rounded-xl",
+            "relative flex items-center justify-center w-20 h-20 mx-auto my-4 rounded-xl",
             "cursor-pointer transition-colors",
             active ? "text-white" : "text-foreground/80 hover:text-accent",
             className
@@ -133,7 +152,7 @@ export const AnimatedNavItem = ({
           onMouseLeave={handleMouseLeave}
           onClick={handleClick}
           style={{ 
-            scale,
+            scale: active ? 1 : scale,
             rotateX,
             rotateY,
             perspective: 1000,
@@ -158,12 +177,12 @@ export const AnimatedNavItem = ({
           <motion.div
             className="relative z-10"
             style={{ 
-              scale: active ? 1 : scale,
+              scale: active ? 1 : neighboringScale,
               rotateX,
               rotateY,
              }}
           >
-            <Icon className="h-6 w-6" />
+            <Icon className="h-7 w-7" />
           </motion.div>
         </motion.div>
       </TooltipTrigger>
@@ -171,5 +190,49 @@ export const AnimatedNavItem = ({
         <p>{label}</p>
       </TooltipContent>
     </Tooltip>
+  );
+};
+
+// Create a container component for managing shared motion values
+interface AnimatedNavContainerProps {
+  children: ReactNode;
+  className?: string;
+}
+
+export const AnimatedNavContainer = ({ children, className }: AnimatedNavContainerProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  const handleMouseMove = (e: React.MouseEvent) => {
+    mouseX.set(e.clientX);
+    mouseY.set(e.clientY);
+  };
+  
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+  
+  // Add the global mouse position to all children
+  const childrenWithProps = React.Children.map(children, (child) => {
+    if (React.isValidElement(child)) {
+      return React.cloneElement(child, { 
+        mouseX,
+        mouseY
+      });
+    }
+    return child;
+  });
+  
+  return (
+    <motion.div 
+      ref={containerRef}
+      className={cn("py-4", className)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {childrenWithProps}
+    </motion.div>
   );
 };

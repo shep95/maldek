@@ -2,7 +2,7 @@
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Coins, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
-import { AnimatedNavItem } from "@/components/ui/animated-nav-item";
+import { AnimatedNavItem, AnimatedNavContainer } from "@/components/ui/animated-nav-item";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -146,8 +146,8 @@ export const NavItems = ({
 
   if (collapsed) {
     return (
-      <nav className="flex flex-col items-center py-6 space-y-2">
-        {navItems.map((item) => (
+      <AnimatedNavContainer className="flex flex-col items-center py-6">
+        {navItems.map((item, index) => (
           <AnimatedNavItem
             key={item.label}
             icon={item.icon}
@@ -156,9 +156,10 @@ export const NavItems = ({
             active={item.active}
             onClick={item.onClick || (item.path ? () => handleNavigation(item.path) : undefined)}
             className={item.className}
+            index={index}
           />
         ))}
-      </nav>
+      </AnimatedNavContainer>
     );
   }
 
