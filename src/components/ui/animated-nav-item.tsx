@@ -165,49 +165,77 @@ export const AnimatedNavItem = ({
             transformStyle: "preserve-3d"
           }}
         >
-          {/* Circle background glow effect */}
+          {/* Enhanced 3D circle background with multiple layers */}
           <motion.div 
             className={cn(
-              "absolute rounded-full bg-gradient-to-br from-accent to-accent/70",
-              "shadow-[0_0_15px_rgba(255,120,0,0.3)]",
+              "absolute rounded-full bg-gradient-to-br from-accent to-accent/50",
               active ? "opacity-20" : ""
             )}
             style={{ 
-              opacity: active ? 0.2 : bgOpacity,
+              opacity: active ? 0.3 : bgOpacity,
               width: "80%",
               height: "80%",
               left: "10%",
               top: "10%",
               rotateX,
               rotateY,
-              filter: "drop-shadow(0 0 8px rgba(255,120,0,0.3))"
+              filter: "drop-shadow(0 0 12px rgba(255,120,0,0.4))",
+              boxShadow: "inset 0 2px 6px rgba(255,255,255,0.4), 0 4px 8px rgba(0,0,0,0.2)"
             }}
           />
           
-          {/* Icon container with 3D effects */}
+          {/* Inner glow for more depth */}
+          <motion.div 
+            className="absolute rounded-full bg-accent/10"
+            style={{ 
+              opacity: active ? 0.5 : bgOpacity * 1.2,
+              width: "60%",
+              height: "60%",
+              left: "20%",
+              top: "20%",
+              rotateX,
+              rotateY,
+              filter: "blur(8px)",
+              boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.2)"
+            }}
+          />
+          
+          {/* Icon container with enhanced 3D effects */}
           <motion.div
             className="relative z-10"
             style={{ 
               scale: active ? 1 : (mouseDistance.get() < 50 ? scale : neighboringScale),
               rotateX,
               rotateY,
+              transformStyle: "preserve-3d",
+              transform: "translateZ(10px)",
             }}
           >
-            {/* Icon with inner shadow for 3D effect */}
+            {/* Icon with enhanced 3D effect */}
             <div className="relative">
               <Icon 
                 className={cn(
                   "h-7 w-7",
-                  "drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]"
+                  "drop-shadow-[0_3px_4px_rgba(0,0,0,0.4)]"
                 )}
                 strokeWidth={1.5} 
                 style={{
-                  filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))"
+                  filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.6))",
+                  transform: "translateZ(5px)",
                 }}
               />
               
-              {/* Subtle highlight effect on top */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-full opacity-70 pointer-events-none" />
+              {/* Top highlight effect */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-full opacity-80 pointer-events-none" 
+                style={{ transform: "translateZ(2px) translateY(-1px)" }}
+              />
+              
+              {/* Bottom shadow for depth */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-full opacity-60 pointer-events-none" 
+                style={{ transform: "translateZ(-2px) translateY(1px)" }}
+              />
             </div>
           </motion.div>
         </motion.div>
