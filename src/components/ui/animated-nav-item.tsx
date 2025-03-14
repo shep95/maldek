@@ -165,14 +165,14 @@ export const AnimatedNavItem = ({
             transformStyle: "preserve-3d"
           }}
         >
-          {/* Enhanced 3D circle background with multiple layers */}
+          {/* 3D circular background */}
           <motion.div 
             className={cn(
               "absolute rounded-full bg-gradient-to-br from-accent to-accent/50",
               active ? "opacity-20" : ""
             )}
             style={{ 
-              opacity: active ? 0.3 : bgOpacity,
+              opacity: active ? 0.3 : bgOpacity.get(),
               width: "80%",
               height: "80%",
               left: "10%",
@@ -180,15 +180,16 @@ export const AnimatedNavItem = ({
               rotateX,
               rotateY,
               filter: "drop-shadow(0 0 12px rgba(255,120,0,0.4))",
-              boxShadow: "inset 0 2px 6px rgba(255,255,255,0.4), 0 4px 8px rgba(0,0,0,0.2)"
+              boxShadow: "inset 0 2px 6px rgba(255,255,255,0.4), 0 4px 8px rgba(0,0,0,0.2)",
+              transform: "translateZ(-5px)"
             }}
           />
           
-          {/* Inner glow for more depth */}
+          {/* Inner glow effect for depth */}
           <motion.div 
             className="absolute rounded-full bg-accent/10"
             style={{ 
-              opacity: active ? 0.5 : bgOpacity * 1.2,
+              opacity: active ? 0.5 : (bgOpacity.get() || 0) * 1.2,
               width: "60%",
               height: "60%",
               left: "20%",
@@ -196,11 +197,12 @@ export const AnimatedNavItem = ({
               rotateX,
               rotateY,
               filter: "blur(8px)",
-              boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.2)"
+              boxShadow: "inset 0 -2px 5px rgba(0,0,0,0.2)",
+              transform: "translateZ(-2px)"
             }}
           />
           
-          {/* Icon container with enhanced 3D effects */}
+          {/* Icon container with 3D elevation */}
           <motion.div
             className="relative z-10"
             style={{ 
@@ -211,7 +213,7 @@ export const AnimatedNavItem = ({
               transform: "translateZ(10px)",
             }}
           >
-            {/* Icon with enhanced 3D effect */}
+            {/* Icon with 3D effects */}
             <div className="relative">
               <Icon 
                 className={cn(
@@ -225,7 +227,7 @@ export const AnimatedNavItem = ({
                 }}
               />
               
-              {/* Top highlight effect */}
+              {/* Top light reflection */}
               <div 
                 className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-full opacity-80 pointer-events-none" 
                 style={{ transform: "translateZ(2px) translateY(-1px)" }}
