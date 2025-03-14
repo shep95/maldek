@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { PostText } from "./content/PostText";
 import { PostTranslation } from "./content/PostTranslation";
@@ -47,6 +48,8 @@ export const PostContent = ({
         translatedContent={translatedContent}
         onShowOriginal={() => setTranslatedContent(null)}
         truncate={truncate}
+        isEdited={isEdited}
+        originalContent={originalContent}
       />
       {!translatedContent && (
         <PostTranslation
@@ -54,25 +57,6 @@ export const PostContent = ({
           userLanguage={userLanguage}
           onTranslated={setTranslatedContent}
         />
-      )}
-      {isEdited && (
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-muted-foreground">Edited</span>
-          {originalContent && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowingOriginal(!showingOriginal);
-              }}
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              {showingOriginal ? "Show edited" : "Show original"}
-            </Button>
-          )}
-        </div>
       )}
     </div>
   );
