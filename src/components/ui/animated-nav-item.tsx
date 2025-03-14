@@ -1,6 +1,13 @@
 
 'use client';
 
+import React, {
+  ReactNode, 
+  useRef,
+  cloneElement,
+  isValidElement,
+  Children
+} from 'react';
 import {
   motion,
   MotionValue,
@@ -9,7 +16,6 @@ import {
   useTransform,
   type SpringOptions,
 } from 'framer-motion';
-import { ReactNode, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import {
@@ -199,6 +205,12 @@ interface AnimatedNavContainerProps {
   className?: string;
 }
 
+// Define a type for the expected children with added props
+type ChildProps = {
+  mouseX: MotionValue<number>;
+  mouseY: MotionValue<number>;
+};
+
 export const AnimatedNavContainer = ({ children, className }: AnimatedNavContainerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mouseX = useMotionValue(0);
@@ -215,12 +227,12 @@ export const AnimatedNavContainer = ({ children, className }: AnimatedNavContain
   };
   
   // Use proper TypeScript-compatible approach to pass props to children
-  const childrenWithProps = React.Children.map(children, (child) => {
-    if (React.isValidElement(child)) {
-      return React.cloneElement(child, { 
+  const childrenWithProps = Children.map(children, (child) => {
+    if (isValidElement(child)) {
+      return cloneElement(child, { 
         mouseX,
         mouseY
-      });
+      } as ChildProps);
     }
     return child;
   });
