@@ -18,7 +18,7 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
   return (
     <div className={cn(
       "hidden md:block fixed left-0 h-[calc(100dvh-2rem)] transition-all duration-300 px-4 py-6",
-      isCollapsed ? "w-24" : "w-72"
+      isCollapsed ? "w-28" : "w-72" // Increased width for collapsed state
     )}>
       <Card className={cn(
         "h-full flex flex-col bg-background/20 border-border/50 backdrop-blur-md relative",
@@ -35,7 +35,7 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
         {!isCollapsed && <SidebarHeader collapsed={isCollapsed} />}
-        <div className="flex-1 overflow-hidden">
+        <div className={cn("flex-1 overflow-hidden", isCollapsed && "mt-6")}>
           <SidebarNav setIsCreatingPost={setIsCreatingPost} collapsed={isCollapsed} />
         </div>
       </Card>

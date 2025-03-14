@@ -146,7 +146,7 @@ export const NavItems = ({
 
   if (collapsed) {
     return (
-      <nav className="flex flex-col items-center py-4 space-y-1">
+      <nav className="flex flex-col items-center py-6 space-y-2">
         {navItems.map((item) => (
           <AnimatedNavItem
             key={item.label}
