@@ -7,7 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
 
 interface NavItemsProps {
   subscription: any;
@@ -142,6 +141,7 @@ export const NavItems = ({
       label: "Logout", 
       onClick: handleLogout
     },
+    // Emperor Chat item removed
   ];
 
   return (

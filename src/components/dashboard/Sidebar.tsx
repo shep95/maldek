@@ -34,7 +34,7 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
-        {!isCollapsed && <SidebarHeader collapsed={isCollapsed} />}
+        <SidebarHeader collapsed={isCollapsed} />
         <div className="flex-1 overflow-hidden">
           <SidebarNav setIsCreatingPost={setIsCreatingPost} collapsed={isCollapsed} />
         </div>

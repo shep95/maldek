@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { NavItems } from "./components/NavItems";
 import { useEffect, useState } from "react";
-import { DockNavigation } from "./components/DockNavigation";
 
 interface SidebarNavProps {
   setIsCreatingPost: (value: boolean) => void;
@@ -100,22 +99,6 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
     fetchUserId();
   }, []);
 
-  // If collapsed, render only the dock navigation
-  if (collapsed) {
-    return (
-      <DockNavigation
-        handleCreatePost={() => {
-          setIsCreatingPost(true);
-          if (onSidebarClose) onSidebarClose();
-        }}
-        handleLogout={handleLogout}
-        onNavigate={handleNavigation}
-        userId={userId}
-      />
-    );
-  }
-
-  // If not collapsed, render the regular navigation
   return (
     <ScrollArea className="h-full px-2 py-2">
       <NavItems
