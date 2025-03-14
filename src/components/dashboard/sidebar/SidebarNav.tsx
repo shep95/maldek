@@ -100,7 +100,7 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
   }, []);
 
   return (
-    <ScrollArea className={`h-full ${collapsed ? 'px-0 py-0' : 'px-2 py-2'}`}>
+    <ScrollArea className="h-full px-2 py-2">
       <NavItems
         subscription={subscription}
         userId={userId}
