@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 interface LikeActionProps {
   postId: string;
@@ -155,7 +156,7 @@ export const LikeAction = ({ postId, authorId, currentUserId, likes: initialLike
       onClick={handleLike}
     >
       <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-      <span>{likeCount}</span>
+      <AnimatedCounter value={likeCount} />
     </Button>
   );
 };

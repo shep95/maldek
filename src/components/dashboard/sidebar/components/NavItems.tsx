@@ -2,12 +2,13 @@
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Coins, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
-import { AnimatedNavItem, AnimatedNavContainer } from "@/components/ui/animated-nav-item";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { DockNavigation } from "./DockNavigation";
+import { cn } from "@/lib/utils";
 
 interface NavItemsProps {
   subscription: any;
@@ -58,6 +59,18 @@ export const NavItems = ({
 
   // Everything is free now
   const hasPremiumFeatures = true;
+
+  // Use the new dock component in collapsed mode, else use the traditional nav items
+  if (collapsed) {
+    return (
+      <DockNavigation 
+        handleCreatePost={handleCreatePost}
+        handleLogout={handleLogout}
+        onNavigate={handleNavigation}
+        userId={userId}
+      />
+    );
+  }
 
   const navItems = [
     { 
@@ -143,25 +156,6 @@ export const NavItems = ({
       onClick: handleLogout
     },
   ];
-
-  if (collapsed) {
-    return (
-      <AnimatedNavContainer className="flex flex-col items-center py-6">
-        {navItems.map((item, index) => (
-          <AnimatedNavItem
-            key={item.label}
-            icon={item.icon}
-            label={item.label}
-            path={item.path}
-            active={item.active}
-            onClick={item.onClick || (item.path ? () => handleNavigation(item.path) : undefined)}
-            className={item.className}
-            index={index}
-          />
-        ))}
-      </AnimatedNavContainer>
-    );
-  }
 
   return (
     <nav className="space-y-2">

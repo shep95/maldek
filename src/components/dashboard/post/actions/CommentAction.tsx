@@ -1,6 +1,8 @@
+
 import { MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 interface CommentActionProps {
   postId: string;
@@ -24,7 +26,7 @@ export const CommentAction = ({ postId, comments }: CommentActionProps) => {
       onClick={handleComment}
     >
       <MessageSquare className="h-4 w-4" />
-      <span>{comments || 0}</span>
+      <AnimatedCounter value={comments || 0} />
     </Button>
   );
 };
