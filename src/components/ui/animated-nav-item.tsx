@@ -214,7 +214,7 @@ export const AnimatedNavContainer = ({ children, className }: AnimatedNavContain
     mouseY.set(0);
   };
   
-  // Add the global mouse position to all children
+  // Use proper TypeScript-compatible approach to pass props to children
   const childrenWithProps = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child, { 
