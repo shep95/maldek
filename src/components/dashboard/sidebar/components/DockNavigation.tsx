@@ -101,7 +101,7 @@ export const DockNavigation = ({
     { 
       title: "Create Post", 
       icon: <Plus className="h-full w-full text-white" />,
-      onClick: handleCreatePost,
+      action: handleCreatePost,
       active: false,
       className: "bg-accent"
     },
@@ -114,18 +114,10 @@ export const DockNavigation = ({
     { 
       title: "Logout", 
       icon: <LogOut className="h-full w-full text-accent" />,
-      onClick: handleLogout,
+      action: handleLogout,
       active: false
     }
   ];
-
-  const handleClick = (item: any) => {
-    if (item.onClick) {
-      item.onClick();
-    } else if (item.path) {
-      onNavigate(item.path);
-    }
-  };
 
   return (
     <div className="w-full flex items-center justify-center my-4">
@@ -135,16 +127,34 @@ export const DockNavigation = ({
         magnification={60}
         distance={100}
       >
-        {navItems.map((item, idx) => (
-          <DockItem
-            key={idx}
-            className={`aspect-square rounded-full ${item.active ? 'bg-accent/10' : 'bg-background/40'} ${item.className || ''}`}
-            onClick={() => handleClick(item)}
-          >
-            <DockLabel>{item.title}</DockLabel>
-            <DockIcon>{item.icon}</DockIcon>
-          </DockItem>
-        ))}
+        {navItems.map((item, idx) => {
+          // Create a click handler inside the map function
+          const handleItemClick = () => {
+            if (item.action) {
+              item.action();
+            } else if (item.path) {
+              onNavigate(item.path);
+            }
+          };
+
+          return (
+            <DockItem
+              key={idx}
+              className={`aspect-square rounded-full ${item.active ? 'bg-accent/10' : 'bg-background/40'} ${item.className || ''} cursor-pointer`}
+            >
+              <DockLabel>{item.title}</DockLabel>
+              <DockIcon>
+                {/* Add onClick to the icon wrapper which will propagate to the parent */}
+                <div 
+                  onClick={handleItemClick}
+                  className="w-full h-full"
+                >
+                  {item.icon}
+                </div>
+              </DockIcon>
+            </DockItem>
+          );
+        })}
       </Dock>
     </div>
   );
