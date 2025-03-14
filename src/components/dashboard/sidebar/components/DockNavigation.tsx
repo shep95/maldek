@@ -122,7 +122,7 @@ export const DockNavigation = ({
   return (
     <div className="w-full flex items-center justify-center my-4">
       <Dock 
-        className="flex-col items-center gap-6 py-4 bg-background/20 backdrop-blur-md border border-border/50 shadow-lg"
+        className="flex-col items-center gap-2 py-4 px-2 bg-background/20 backdrop-blur-md border border-border/50 shadow-lg rounded-lg"
         panelHeight={600} 
         magnification={60}
         distance={100}
@@ -140,14 +140,13 @@ export const DockNavigation = ({
           return (
             <DockItem
               key={idx}
-              className={`aspect-square rounded-full ${item.active ? 'bg-accent/10' : 'bg-background/40'} ${item.className || ''} cursor-pointer`}
+              className={`rounded-lg ${item.active ? 'bg-accent/10' : 'bg-background/40'} ${item.className || ''} cursor-pointer hover:bg-accent/20 transition-all duration-200`}
             >
               <DockLabel>{item.title}</DockLabel>
               <DockIcon>
-                {/* Add onClick to the icon wrapper which will propagate to the parent */}
                 <div 
                   onClick={handleItemClick}
-                  className="w-full h-full"
+                  className="w-full h-full p-1"
                 >
                   {item.icon}
                 </div>
