@@ -165,34 +165,50 @@ export const AnimatedNavItem = ({
             transformStyle: "preserve-3d"
           }}
         >
-          {/* Circle background glow effect instead of square */}
+          {/* Circle background glow effect */}
           <motion.div 
             className={cn(
-              "absolute inset-0 rounded-full",
-              active ? "bg-accent" : "bg-accent"
+              "absolute rounded-full bg-gradient-to-br from-accent to-accent/70",
+              "shadow-[0_0_15px_rgba(255,120,0,0.3)]",
+              active ? "opacity-20" : ""
             )}
             style={{ 
               opacity: active ? 0.2 : bgOpacity,
-              borderRadius: "50%", // Ensures it's a circle
               width: "80%",
               height: "80%",
               left: "10%",
               top: "10%",
               rotateX,
               rotateY,
+              filter: "drop-shadow(0 0 8px rgba(255,120,0,0.3))"
             }}
           />
           
-          {/* Icon - size changes only for hovered icon and slight change for neighbors */}
+          {/* Icon container with 3D effects */}
           <motion.div
             className="relative z-10"
             style={{ 
               scale: active ? 1 : (mouseDistance.get() < 50 ? scale : neighboringScale),
               rotateX,
               rotateY,
-             }}
+            }}
           >
-            <Icon className="h-7 w-7" />
+            {/* Icon with inner shadow for 3D effect */}
+            <div className="relative">
+              <Icon 
+                className={cn(
+                  "h-7 w-7",
+                  "drop-shadow-[0_2px_3px_rgba(0,0,0,0.3)]"
+                )}
+                strokeWidth={1.5} 
+                style={{
+                  filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))"
+                }}
+              />
+              
+              {/* Subtle highlight effect on top */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-full opacity-70 pointer-events-none" />
+            </div>
           </motion.div>
         </motion.div>
       </TooltipTrigger>
