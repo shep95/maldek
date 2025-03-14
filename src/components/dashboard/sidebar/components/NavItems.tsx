@@ -2,6 +2,7 @@
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Coins, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
+import { AnimatedNavItem } from "@/components/ui/animated-nav-item";
 import { useNotificationCount } from "../hooks/useNotificationCount";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -141,8 +142,25 @@ export const NavItems = ({
       label: "Logout", 
       onClick: handleLogout
     },
-    // Emperor Chat item removed
   ];
+
+  if (collapsed) {
+    return (
+      <nav className="flex flex-col items-center py-4 space-y-1">
+        {navItems.map((item) => (
+          <AnimatedNavItem
+            key={item.label}
+            icon={item.icon}
+            label={item.label}
+            path={item.path}
+            active={item.active}
+            onClick={item.onClick || (item.path ? () => handleNavigation(item.path) : undefined)}
+            className={item.className}
+          />
+        ))}
+      </nav>
+    );
+  }
 
   return (
     <nav className="space-y-2">
