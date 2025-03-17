@@ -15,8 +15,10 @@ import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
-import Subscription from "@/pages/Subscription"; // Changed from Invest to Subscription
+import Subscription from "@/pages/Subscription";
+import Features from "@/pages/Features";
 import HashtagPage from "@/pages/HashtagPage";
+import { CancelAllSubscriptions } from "@/components/subscription/CancelAllSubscriptions";
 
 // All features are now free - this wrapper just verifies authentication
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -48,6 +50,8 @@ export const AppRoutes = () => {
       <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
       
       <Route element={<DashboardLayout />}>
+        {/* Add CancelAllSubscriptions component to automatically make all features free */}
+        <Route path="*" element={<CancelAllSubscriptions />} />
         <Route path="/@:username" element={<Profiles />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/followers" element={<Followers />} />
@@ -55,14 +59,14 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
-        <Route path="/subscription" element={<Subscription />} /> {/* Changed from /invest to /subscription */}
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/features" element={<Features />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
-        {/* Emperor chat route is removed */}
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

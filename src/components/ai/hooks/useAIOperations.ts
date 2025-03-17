@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useAIServices } from '@/hooks/useAIServices';
 import { toast } from 'sonner';
@@ -26,17 +27,12 @@ export const useAIOperations = ({
     synthesizeSpeech
   } = useAIServices();
 
+  // All features are free, so no need to check subscription status
   const checkSubscription = useCallback(() => {
-    if (!subscription) {
-      toast.error("This feature is only available for premium users");
-      return false;
-    }
     return true;
-  }, [subscription]);
+  }, []);
 
   const handleEnhance = useCallback(async () => {
-    if (!checkSubscription()) return;
-
     try {
       const { enhanced } = await enhanceText(value);
       onChange(enhanced);
@@ -44,10 +40,10 @@ export const useAIOperations = ({
     } catch (error) {
       console.error('Enhancement error:', error);
     }
-  }, [value, enhanceText, onChange, checkSubscription]);
+  }, [value, enhanceText, onChange]);
 
   const handleGenerateImage = useCallback(async () => {
-    if (!checkSubscription() || !onImageGenerate) return;
+    if (!onImageGenerate) return;
     
     try {
       const { imageUrl } = await generateImage(value);
@@ -56,11 +52,9 @@ export const useAIOperations = ({
     } catch (error) {
       console.error('Image generation error:', error);
     }
-  }, [value, generateImage, onImageGenerate, checkSubscription]);
+  }, [value, generateImage, onImageGenerate]);
 
   const handleTranslate = useCallback(async (targetLanguage: string) => {
-    if (!checkSubscription()) return;
-
     try {
       const { translated } = await translateContent(value, targetLanguage);
       onChange(translated);
@@ -68,11 +62,9 @@ export const useAIOperations = ({
     } catch (error) {
       console.error('Translation error:', error);
     }
-  }, [value, translateContent, onChange, checkSubscription]);
+  }, [value, translateContent, onChange]);
 
   const handleModerate = useCallback(async () => {
-    if (!checkSubscription()) return;
-
     try {
       const { flagged, categories } = await moderateContent(value);
       if (flagged) {
@@ -87,10 +79,10 @@ export const useAIOperations = ({
     } catch (error) {
       console.error('Moderation error:', error);
     }
-  }, [value, moderateContent, checkSubscription]);
+  }, [value, moderateContent]);
 
   const handleSpeechSynthesis = useCallback(async () => {
-    if (!checkSubscription() || !onAudioGenerate) return;
+    if (!onAudioGenerate) return;
     
     try {
       const { audioData } = await synthesizeSpeech(value);
@@ -99,7 +91,7 @@ export const useAIOperations = ({
     } catch (error) {
       console.error('Speech synthesis error:', error);
     }
-  }, [value, synthesizeSpeech, onAudioGenerate, checkSubscription]);
+  }, [value, synthesizeSpeech, onAudioGenerate]);
 
   return {
     isLoading,

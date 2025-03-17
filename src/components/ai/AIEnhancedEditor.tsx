@@ -1,9 +1,9 @@
+
 import { useState } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PremiumFeatureNotice } from './components/PremiumFeatureNotice';
 import { AIActionButtons } from './components/AIActionButtons';
 import { useAIOperations } from './hooks/useAIOperations';
 
@@ -23,27 +23,20 @@ export const AIEnhancedEditor = ({
   const session = useSession();
   const [targetLanguage] = useState('es');
 
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*, tier:subscription_tiers(*)')
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (error) {
-        console.error('Error fetching subscription:', error);
-        return null;
-      }
-
-      return data;
+  // Create a premium subscription object that we'll always provide
+  const premiumSubscription = {
+    tier: {
+      name: "Creator",
+      monthly_mentions: 999999,
+      max_upload_size_mb: 1024,
+      supports_animated_avatars: true,
+      supports_nft_avatars: true,
+      watermark_disabled: true
     },
-    enabled: !!session?.user?.id
-  });
+    status: "active",
+    mentions_remaining: 999999,
+    is_lifetime: true
+  };
 
   const {
     isLoading,
@@ -57,12 +50,8 @@ export const AIEnhancedEditor = ({
     onChange,
     onImageGenerate,
     onAudioGenerate,
-    subscription
+    subscription: premiumSubscription // Always provide a premium subscription
   });
-
-  if (!subscription) {
-    return <PremiumFeatureNotice />;
-  }
 
   return (
     <div className="space-y-4">

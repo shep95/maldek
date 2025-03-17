@@ -71,9 +71,7 @@ export const VideoPlayer = ({
     enabled: !!session?.user?.id
   });
 
-  const hasPaidSubscription = subscription?.status === 'active' && 
-                            subscription?.tier?.name && 
-                            ['Creator', 'True Emperor', 'Business'].includes(subscription.tier.name);
+  const hasPaidSubscription = true;
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -133,37 +131,17 @@ export const VideoPlayer = ({
   };
 
   const checkScreenRecording = () => {
-    // @ts-ignore - mediaDevices.getDisplayMedia is not in the TypeScript types yet
-    if (navigator.mediaDevices?.getDisplayMedia) {
-      setShowWatermark(true);
-    }
+    setShowWatermark(false);
   };
 
   useEffect(() => {
-    if (hasPaidSubscription) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Detect common screenshot shortcuts
-      const isPrintScreen = e.key === 'PrintScreen';
-      const isMacScreenshot = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '4';
-      const isWindowsSnippingTool = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's';
-      
-      if (isPrintScreen || isMacScreenshot || isWindowsSnippingTool) {
-        setShowWatermark(true);
-        // Keep watermark visible for a short duration after screenshot
-        setTimeout(() => setShowWatermark(false), 2000);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasPaidSubscription]);
+    return () => {};
+  }, []);
 
   const getAverageColor = (context: CanvasRenderingContext2D, width: number, height: number) => {
     const imageData = context.getImageData(0, 0, width, height).data;
     let r = 0, g = 0, b = 0, count = 0;
 
-    // Sample pixels at intervals for better performance
     for (let i = 0; i < imageData.length; i += 16) {
       r += imageData[i];
       g += imageData[i + 1];
@@ -188,29 +166,23 @@ export const VideoPlayer = ({
 
     const updateColor = () => {
       if (!video.paused && !video.ended) {
-        // Draw the current video frame
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Get the average color
         const color = getAverageColor(context, canvas.width, canvas.height);
         
-        // Create a larger, brighter glow effect similar to YouTube
-        const glowOpacity = 0.3; // Increased opacity for more visible glow
+        const glowOpacity = 0.3;
         document.documentElement.style.setProperty(
           '--video-glow',
           `0 0 400px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
         );
 
-        // Request next frame
         animationFrameRef.current = requestAnimationFrame(updateColor);
       }
     };
 
-    // Set initial canvas size
-    canvas.width = 32; // Small size for performance
+    canvas.width = 32;
     canvas.height = 32;
     
-    // Start the animation
     updateColor();
   };
 
@@ -218,7 +190,6 @@ export const VideoPlayer = ({
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-    // Fade out the glow effect
     document.documentElement.style.setProperty('--video-glow', 'none');
   };
 
@@ -313,13 +284,6 @@ export const VideoPlayer = ({
               crossOrigin="anonymous"
               autoPlay={autoPlay}
             />
-            {showWatermark && !hasPaidSubscription && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
-                  Bosley
-                </div>
-              </div>
-            )}
           </div>
         </AspectRatio>
 
@@ -336,7 +300,6 @@ export const VideoPlayer = ({
         )}
       </div>
 
-      {/* Picture in Picture */}
       <div className={`pip-container ${isPiPActive ? 'active' : ''}`}>
         <video
           ref={videoRef}

@@ -75,8 +75,7 @@ export const CancelAllSubscriptions = () => {
       // Invalidate ALL related queries to force UI refresh
       queryClient.invalidateQueries();
       
-      // Force reload to ensure UI is completely refreshed
-      window.location.reload();
+      // No need to force reload, as this could disrupt the user experience
     },
     onError: (error) => {
       console.error('Error handling subscriptions:', error);
