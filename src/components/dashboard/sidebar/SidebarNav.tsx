@@ -10,14 +10,15 @@ import { useEffect, useState } from "react";
 interface SidebarNavProps {
   setIsCreatingPost: (value: boolean) => void;
   collapsed?: boolean;
-  onSidebarClose?: () => void;
+  onSidebarClose?: () => void; // New prop for handling sidebar close
 }
 
 export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: SidebarNavProps) => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Always provide a premium subscription for all users
+  // Since all features are free, we don't need to fetch subscription data anymore
+  // But keeping the structure to avoid breaking other components
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription'],
     queryFn: async () => {
@@ -75,8 +76,8 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
   };
 
   const handlePremiumClick = () => {
-    // Navigate to the features page when clicking Features
-    navigate('/features');
+    // Navigate to the subscription page when clicking Subscription
+    navigate('/subscription');
     if (onSidebarClose) onSidebarClose(); // Close sidebar after navigation
   };
 

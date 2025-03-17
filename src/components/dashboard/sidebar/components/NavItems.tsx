@@ -122,10 +122,10 @@ export const NavItems = ({
     },
     { 
       icon: Coins, 
-      label: "Features", 
-      path: "/features",
-      active: location.pathname === "/features" || location.pathname === "/subscription",
-      description: "See all free features",
+      label: "Subscription", 
+      path: "/subscription",
+      active: location.pathname === "/subscription",
+      description: "Manage your subscription",
       className: "text-accent relative hover:bg-accent/10"
     },
     { 
@@ -141,6 +141,7 @@ export const NavItems = ({
       label: "Logout", 
       onClick: handleLogout
     },
+    // Emperor Chat item removed
   ];
 
   return (

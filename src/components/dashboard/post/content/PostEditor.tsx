@@ -17,6 +17,8 @@ export const PostEditor = ({
 }: PostEditorProps) => {
   // Calculate remaining characters
   const remainingChars = characterLimit - content.length;
+  const isNearLimit = remainingChars <= 20 && !isPremiumUser;
+  const isOverLimit = remainingChars < 0 && !isPremiumUser;
 
   return (
     <div className="space-y-2">
@@ -27,7 +29,8 @@ export const PostEditor = ({
           "w-full min-h-[100px] p-4 bg-background/50 backdrop-blur-sm",
           "border border-input focus:border-primary",
           "rounded-lg resize-none transition-all duration-200",
-          "placeholder:text-muted-foreground focus:ring-1 focus:ring-primary"
+          "placeholder:text-muted-foreground focus:ring-1 focus:ring-primary",
+          isOverLimit && "border-red-500 focus:border-red-500 focus:ring-red-500"
         )}
         placeholder="What's on your mind?"
         autoFocus
