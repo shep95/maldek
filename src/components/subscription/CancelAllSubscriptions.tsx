@@ -74,8 +74,6 @@ export const CancelAllSubscriptions = () => {
       console.log("Successfully granted free access to all users");
       // Invalidate ALL related queries to force UI refresh
       queryClient.invalidateQueries();
-      
-      // No need to force reload, as this could disrupt the user experience
     },
     onError: (error) => {
       console.error('Error handling subscriptions:', error);
