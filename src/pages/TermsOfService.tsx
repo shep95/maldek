@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +17,7 @@ const TermsOfService = () => {
       <Card className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <section className="space-y-3 sm:space-y-4">
           <h2 className="text-xl sm:text-2xl font-semibold">Our Mission</h2>
-          <p className="text-sm sm:text-base">Our mission since September 5th 2024 is to protect human rights of speech and privacy. We do not collect any data besides email and passwords and any public posts you make including profile pictures, posts, imagines and videos.</p>
+          <p className="text-sm sm:text-base">Our mission since October 22nd 2024 is to protect human rights of speech and privacy. We do not collect any data besides email and passwords and any public posts you make including profile pictures, posts, imagines and videos.</p>
         </section>
 
         <section className="space-y-3 sm:space-y-4">
@@ -68,4 +67,3 @@ const TermsOfService = () => {
 };
 
 export default TermsOfService;
-
