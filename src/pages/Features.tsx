@@ -32,12 +32,12 @@ const Features = () => {
               ]}
             />
             <PricingCard
-              tier="Investment Opportunity"
+              tier="Subscription Opportunity"
               price="Contact us"
-              bestFor="For investors"
+              bestFor="For subscribers"
               CTA="Learn More"
               benefits={[
-                { text: "Early investor access", checked: true },
+                { text: "Early subscriber access", checked: true },
                 { text: "Platform equity", checked: true },
                 { text: "Revenue sharing", checked: true },
                 { text: "Advisory board", checked: true },
