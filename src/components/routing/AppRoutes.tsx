@@ -15,7 +15,7 @@ import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
-import Invest from "@/pages/Invest";
+import Subscription from "@/pages/Subscription"; // Changed from Invest to Subscription
 import HashtagPage from "@/pages/HashtagPage";
 
 // All features are now free - this wrapper just verifies authentication
@@ -55,7 +55,7 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
-        <Route path="/invest" element={<Invest />} />
+        <Route path="/subscription" element={<Subscription />} /> {/* Changed from /invest to /subscription */}
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
