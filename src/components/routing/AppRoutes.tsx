@@ -15,8 +15,9 @@ import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
-import Invest from "@/pages/Invest";
+import Subscription from "@/pages/Subscription";
 import HashtagPage from "@/pages/HashtagPage";
+import Features from "@/pages/Features";
 
 // All features are now free - this wrapper just verifies authentication
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -55,14 +56,14 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
-        <Route path="/invest" element={<Invest />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/features" element={<Features />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
-        {/* Emperor chat route is removed */}
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

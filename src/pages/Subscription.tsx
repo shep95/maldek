@@ -6,10 +6,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CancelAllSubscriptions } from "@/components/subscription/CancelAllSubscriptions";
+import { useEffect } from "react";
+import { initFastSpring, openFastSpringStore, PRODUCT_IDS } from "@/integrations/fastspring/client";
+import { supabase } from "@/integrations/supabase/client";
 
 const Subscription = () => {
   const session = useSession();
   const navigate = useNavigate();
+
+  // Initialize FastSpring when component mounts
+  useEffect(() => {
+    initFastSpring();
+  }, []);
+
+  const handleSubscribe = async (productId: string) => {
+    if (!session) {
+      navigate('/auth');
+      return;
+    }
+
+    // Get user email for FastSpring
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Open FastSpring store
+    openFastSpringStore(productId, {
+      email: user?.email,
+      userId: user?.id || '',
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
