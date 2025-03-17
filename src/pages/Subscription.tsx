@@ -19,10 +19,10 @@ const Subscription = () => {
       <div className="container mx-auto py-12 px-4">
         <div className="mb-12 space-y-3">
           <h2 className="text-center text-3xl font-semibold leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
-            Invest in Our Platform
+            Subscribe to Our Platform
           </h2>
           <p className="text-center text-base text-muted-foreground md:text-lg">
-            Investment opportunities coming soon
+            Subscription options coming soon
           </p>
         </div>
         
@@ -38,7 +38,7 @@ const Subscription = () => {
               <div className="space-y-6 text-center">
                 <div>
                   <p className="text-lg mb-4">
-                    Investment opportunities will be available soon. All premium features are currently free for everyone.
+                    Subscription options will be available soon. All premium features are currently free for everyone.
                   </p>
                   
                   <div className="flex flex-col gap-2 items-center">

@@ -32,12 +32,12 @@ const Features = () => {
               ]}
             />
             <PricingCard
-              tier="Investment Opportunity"
+              tier="Subscription Opportunity"
               price="Contact us"
-              bestFor="For investors"
+              bestFor="For subscribers"
               CTA="Learn More"
               benefits={[
-                { text: "Early investor access", checked: true },
+                { text: "Early subscriber access", checked: true },
                 { text: "Platform equity", checked: true },
                 { text: "Revenue sharing", checked: true },
                 { text: "Advisory board", checked: true },
@@ -66,7 +66,7 @@ const Features = () => {
             <p className="text-muted-foreground mb-6">
               We believe in building community first. By providing all features for free, 
               we're focusing on growing our user base and creating the best possible experience.
-              In the future, we'll introduce revenue models that don't limit functionality for our users.
+              In the future, we'll introduce subscription models that don't limit functionality for our users.
             </p>
             <Button className="bg-accent hover:bg-accent/90">
               Get Started Now
