@@ -1,3 +1,4 @@
+
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Coins, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -121,9 +122,9 @@ export const NavItems = ({
     },
     { 
       icon: Coins, 
-      label: "Subscribe", 
-      path: "/subscription",
-      active: location.pathname === "/subscription",
+      label: "Invest", 
+      path: "/invest",
+      active: location.pathname === "/invest",
       description: "Invest in our platform",
       className: "text-accent relative hover:bg-accent/10"
     },
@@ -140,6 +141,7 @@ export const NavItems = ({
       label: "Logout", 
       onClick: handleLogout
     },
+    // Emperor Chat item removed
   ];
 
   return (
