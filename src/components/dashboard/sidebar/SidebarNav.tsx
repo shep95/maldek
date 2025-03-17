@@ -76,8 +76,8 @@ export const SidebarNav = ({ setIsCreatingPost, collapsed, onSidebarClose }: Sid
   };
 
   const handlePremiumClick = () => {
-    // Navigate to the subscription page when clicking Subscription
-    navigate('/subscription');
+    // Navigate to the invest page when clicking Invest
+    navigate('/invest');
     if (onSidebarClose) onSidebarClose(); // Close sidebar after navigation
   };
 
