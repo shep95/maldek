@@ -1,4 +1,3 @@
-
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
@@ -146,7 +145,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
             const publicUrl = getPublicUrl(url);
             return (
               <div key={url} className="relative overflow-hidden group rounded-lg">
-                <VideoPlayer src={publicUrl} />
+                <div className="mx-auto w-[95%] max-w-[600px]">
+                  <VideoPlayer src={publicUrl} />
+                </div>
               </div>
             );
           })}
@@ -218,3 +219,4 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     </div>
   );
 };
+
