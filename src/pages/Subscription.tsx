@@ -13,12 +13,29 @@ const Subscription = () => {
       <div className="container mx-auto py-12 px-4">
         <div className="mb-12 space-y-3">
           <h2 className="text-center text-3xl font-semibold leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
-            Subscribe to Our Platform
+            All Features Are Now Free!
           </h2>
           <p className="text-center text-base text-muted-foreground md:text-lg">
-            Help us build the future of social media
+            We've made all premium features available at no cost
           </p>
         </div>
+        
+        <div className="max-w-3xl mx-auto bg-accent/10 rounded-lg p-8 text-center mb-12">
+          <h3 className="text-2xl font-bold mb-4">Why We Made Everything Free</h3>
+          <p className="text-muted-foreground mb-6">
+            We believe in building community first. By providing all features for free, 
+            we're focusing on growing our user base and creating the best possible experience.
+            If you'd still like to support our platform development, you can subscribe below.
+          </p>
+          <Button 
+            className="bg-accent hover:bg-accent/90"
+            onClick={() => navigate('/features')}
+          >
+            Explore All Features
+          </Button>
+        </div>
+        
+        <h3 className="text-2xl font-bold text-center mb-8">Support Our Development</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Basic Subscription Option */}

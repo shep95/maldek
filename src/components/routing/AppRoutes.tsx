@@ -16,6 +16,7 @@ import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
 import Subscription from "@/pages/Subscription";
+import Features from "@/pages/Features";
 import HashtagPage from "@/pages/HashtagPage";
 
 // All features are now free - this wrapper just verifies authentication
@@ -56,6 +57,7 @@ export const AppRoutes = () => {
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
         <Route path="/subscription" element={<Subscription />} />
+        <Route path="/features" element={<Features />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
