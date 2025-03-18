@@ -27,12 +27,6 @@ const Subscription = () => {
             we're focusing on growing our user base and creating the best possible experience.
             If you'd still like to support our platform development, you can subscribe below.
           </p>
-          <Button 
-            className="bg-accent hover:bg-accent/90"
-            onClick={() => navigate('/features')}
-          >
-            Explore All Features
-          </Button>
         </div>
         
         <h3 className="text-2xl font-bold text-center mb-8">Support Our Development</h3>
