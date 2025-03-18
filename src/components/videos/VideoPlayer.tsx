@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -38,6 +39,7 @@ export const VideoPlayer = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
   const [showWatermark, setShowWatermark] = useState(false);
+  const [ambientLightActive, setAmbientLightActive] = useState(true);
   const session = useSession();
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
@@ -118,18 +120,24 @@ export const VideoPlayer = ({
     if (backgroundMusic.isPlaying) {
       backgroundMusic.togglePlay();
     }
-    startColorAnalysis();
+    if (ambientLightActive) {
+      startColorAnalysis();
+    }
     if (!hasPaidSubscription) {
       checkScreenRecording();
     }
   };
 
   const handlePause = () => {
-    stopColorAnalysis();
+    if (ambientLightActive) {
+      stopColorAnalysis();
+    }
   };
 
   const handleEnded = () => {
-    stopColorAnalysis();
+    if (ambientLightActive) {
+      stopColorAnalysis();
+    }
   };
 
   const checkScreenRecording = () => {
@@ -194,8 +202,8 @@ export const VideoPlayer = ({
         // Get the average color
         const color = getAverageColor(context, canvas.width, canvas.height);
         
-        // Create a larger, brighter glow effect similar to YouTube
-        const glowOpacity = 0.3; // Increased opacity for more visible glow
+        // Create a larger, brighter glow effect
+        const glowOpacity = 0.35; // Adjusted for better visibility
         document.documentElement.style.setProperty(
           '--video-glow',
           `0 0 400px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
@@ -220,6 +228,15 @@ export const VideoPlayer = ({
     }
     // Fade out the glow effect
     document.documentElement.style.setProperty('--video-glow', 'none');
+  };
+
+  const toggleAmbientLight = () => {
+    setAmbientLightActive(!ambientLightActive);
+    if (!ambientLightActive) {
+      if (isPlaying) startColorAnalysis();
+    } else {
+      stopColorAnalysis();
+    }
   };
 
   const handleVideoError = (e: any) => {
@@ -289,7 +306,7 @@ export const VideoPlayer = ({
 
   return (
     <>
-      <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-[var(--video-glow)]">
+      <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-[var(--video-glow)] transition-shadow duration-300">
         <canvas 
           ref={canvasRef} 
           className="hidden"
@@ -320,6 +337,17 @@ export const VideoPlayer = ({
                 </div>
               </div>
             )}
+            
+            {/* Ambient Light Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white z-10"
+              onClick={toggleAmbientLight}
+              title={ambientLightActive ? "Disable ambient light" : "Enable ambient light"}
+            >
+              <div className={`w-3 h-3 rounded-full ${ambientLightActive ? 'bg-green-500' : 'bg-gray-500'}`} />
+            </Button>
           </div>
         </AspectRatio>
 

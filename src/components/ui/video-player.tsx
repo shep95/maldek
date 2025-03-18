@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, Volume1, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,6 +48,8 @@ const CustomSlider = ({
 
 const VideoPlayer = ({ src }: { src: string }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
   const [progress, setProgress] = useState(0);
@@ -56,13 +58,20 @@ const VideoPlayer = ({ src }: { src: string }) => {
   const [showControls, setShowControls] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [ambientLightActive, setAmbientLightActive] = useState(true);
 
   const togglePlay = () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        if (ambientLightActive) {
+          stopColorAnalysis();
+        }
       } else {
         videoRef.current.play();
+        if (ambientLightActive) {
+          startColorAnalysis();
+        }
       }
       setIsPlaying(!isPlaying);
     }
@@ -117,15 +126,128 @@ const VideoPlayer = ({ src }: { src: string }) => {
     }
   };
 
+  const getAverageColor = (context: CanvasRenderingContext2D, width: number, height: number) => {
+    const imageData = context.getImageData(0, 0, width, height).data;
+    let r = 0, g = 0, b = 0, count = 0;
+
+    // Sample pixels at intervals for better performance
+    for (let i = 0; i < imageData.length; i += 16) {
+      r += imageData[i];
+      g += imageData[i + 1];
+      b += imageData[i + 2];
+      count++;
+    }
+
+    return {
+      r: Math.round(r / count),
+      g: Math.round(g / count),
+      b: Math.round(b / count)
+    };
+  };
+
+  const startColorAnalysis = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    const updateColor = () => {
+      if (!video.paused && !video.ended) {
+        // Draw the current video frame
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Get the average color
+        const color = getAverageColor(context, canvas.width, canvas.height);
+        
+        // Create a glow effect
+        const glowOpacity = 0.35;
+        document.documentElement.style.setProperty(
+          '--video-glow',
+          `0 0 400px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
+        );
+
+        // Request next frame
+        animationFrameRef.current = requestAnimationFrame(updateColor);
+      }
+    };
+
+    // Set initial canvas size
+    canvas.width = 32; // Small size for performance
+    canvas.height = 32;
+    
+    // Start the animation
+    updateColor();
+  };
+
+  const stopColorAnalysis = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    // Fade out the glow effect
+    document.documentElement.style.setProperty('--video-glow', 'none');
+  };
+
+  const toggleAmbientLight = () => {
+    setAmbientLightActive(!ambientLightActive);
+    if (!ambientLightActive) {
+      if (isPlaying) startColorAnalysis();
+    } else {
+      stopColorAnalysis();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handlePlay = () => {
+      setIsPlaying(true);
+      if (ambientLightActive) {
+        startColorAnalysis();
+      }
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+      if (ambientLightActive) {
+        stopColorAnalysis();
+      }
+    };
+
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
+
+    return () => {
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
+    };
+  }, [ambientLightActive]);
+
   return (
     <motion.div
-      className="relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden bg-[#11111198] shadow-[0_0_20px_rgba(0,0,0,0.2)] backdrop-blur-sm"
+      className="relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden bg-[#11111198] shadow-[var(--video-glow)] backdrop-blur-sm transition-shadow duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >
+      <canvas
+        ref={canvasRef}
+        className="hidden"
+        aria-hidden="true"
+      />
+      
       <video
         ref={videoRef}
         className="w-full"
@@ -133,6 +255,16 @@ const VideoPlayer = ({ src }: { src: string }) => {
         src={src}
         onClick={togglePlay}
       />
+
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white z-10"
+        onClick={toggleAmbientLight}
+        title={ambientLightActive ? "Disable ambient light" : "Enable ambient light"}
+      >
+        <div className={`w-3 h-3 rounded-full ${ambientLightActive ? 'bg-green-500' : 'bg-gray-500'}`} />
+      </Button>
 
       <AnimatePresence>
         {showControls && (

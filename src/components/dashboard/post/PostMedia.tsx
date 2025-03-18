@@ -146,7 +146,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   
   return (
     <div className="mt-4 space-y-4">
-      {/* Display videos in grid */}
+      {/* Display videos in grid with ambient light effect */}
       {videoUrls.length > 0 && (
         <div className={`grid ${videoUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
           {videoUrls.map((url, i) => (
