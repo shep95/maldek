@@ -1,3 +1,4 @@
+
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
@@ -5,9 +6,9 @@ import { isVideoFile } from "@/utils/mediaUtils";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { cn } from "@/lib/utils";
 import { ThreeDPhotoCarousel } from "@/components/ui/3d-carousel";
+import VideoPlayer from "@/components/ui/video-player";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -141,15 +142,14 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     <div className="mt-4 space-y-4">
       {videoUrls.length > 0 && (
         <div className={`grid ${videoUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
-          {videoUrls.map((url, i) => (
-            <div key={url} className="relative overflow-hidden group rounded-lg">
-              <VideoPlayer 
-                videoUrl={url} 
-                controls 
-                className="w-full h-full object-contain rounded-lg"
-              />
-            </div>
-          ))}
+          {videoUrls.map((url, i) => {
+            const publicUrl = getPublicUrl(url);
+            return (
+              <div key={url} className="relative overflow-hidden group rounded-lg">
+                <VideoPlayer src={publicUrl} />
+              </div>
+            );
+          })}
         </div>
       )}
       
