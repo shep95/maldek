@@ -103,14 +103,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     const dimensions = imageDimensions[url];
     if (!dimensions) return 16 / 9; // default aspect ratio while loading
 
-    const ratio = dimensions.width / dimensions.height;
-    
-    // Check if it's close to common aspect ratios
-    if (Math.abs(ratio - 1) < 0.1) return 1; // Square
-    if (Math.abs(ratio - 16/9) < 0.1) return 16/9; // 16:9
-    if (Math.abs(ratio - 4/3) < 0.1) return 4/3; // 4:3
-    
-    return ratio; // Use actual ratio if it doesn't match common ones
+    return dimensions.width / dimensions.height; // Return actual aspect ratio
   };
 
   const handleDownload = async (url: string, e: React.MouseEvent) => {
