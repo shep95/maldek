@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -41,6 +40,8 @@ export const VideoPlayer = ({
   const [showWatermark, setShowWatermark] = useState(false);
   const [ambientLightActive, setAmbientLightActive] = useState(true);
   const session = useSession();
+  
+  const [originalVolume, setOriginalVolume] = useState<number | null>(null);
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
 
@@ -116,32 +117,69 @@ export const VideoPlayer = ({
     }
   };
 
+  const fadeBackgroundMusic = (fadeOut: boolean, duration: number = 1000) => {
+    if (!backgroundMusic.isPlaying && !originalVolume) return;
+    
+    if (fadeOut && originalVolume === null) {
+      setOriginalVolume(backgroundMusic.volume);
+    }
+    
+    const startVolume = fadeOut ? backgroundMusic.volume : 0;
+    const endVolume = fadeOut ? 0 : (originalVolume || backgroundMusic.volume);
+    const startTime = performance.now();
+    
+    const fadeStep = () => {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const newVolume = startVolume + (endVolume - startVolume) * progress;
+      backgroundMusic.setVolume(newVolume);
+      
+      if (progress < 1) {
+        requestAnimationFrame(fadeStep);
+      } else if (!fadeOut) {
+        setOriginalVolume(null);
+      }
+    };
+    
+    requestAnimationFrame(fadeStep);
+  };
+
   const handlePlay = () => {
     if (backgroundMusic.isPlaying) {
-      backgroundMusic.togglePlay();
+      fadeBackgroundMusic(true);
     }
+    
     if (ambientLightActive) {
       startColorAnalysis();
     }
+    
     if (!hasPaidSubscription) {
       checkScreenRecording();
     }
   };
 
   const handlePause = () => {
+    if (originalVolume !== null) {
+      fadeBackgroundMusic(false);
+    }
+    
     if (ambientLightActive) {
       stopColorAnalysis();
     }
   };
 
   const handleEnded = () => {
+    if (originalVolume !== null) {
+      fadeBackgroundMusic(false);
+    }
+    
     if (ambientLightActive) {
       stopColorAnalysis();
     }
   };
 
   const checkScreenRecording = () => {
-    // @ts-ignore - mediaDevices.getDisplayMedia is not in the TypeScript types yet
     if (navigator.mediaDevices?.getDisplayMedia) {
       setShowWatermark(true);
     }
@@ -151,14 +189,12 @@ export const VideoPlayer = ({
     if (hasPaidSubscription) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Detect common screenshot shortcuts
       const isPrintScreen = e.key === 'PrintScreen';
       const isMacScreenshot = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '4';
       const isWindowsSnippingTool = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's';
       
       if (isPrintScreen || isMacScreenshot || isWindowsSnippingTool) {
         setShowWatermark(true);
-        // Keep watermark visible for a short duration after screenshot
         setTimeout(() => setShowWatermark(false), 2000);
       }
     };
@@ -171,7 +207,6 @@ export const VideoPlayer = ({
     const imageData = context.getImageData(0, 0, width, height).data;
     let r = 0, g = 0, b = 0, count = 0;
 
-    // Sample pixels at intervals for better performance
     for (let i = 0; i < imageData.length; i += 16) {
       r += imageData[i];
       g += imageData[i + 1];
@@ -196,29 +231,23 @@ export const VideoPlayer = ({
 
     const updateColor = () => {
       if (!video.paused && !video.ended) {
-        // Draw the current video frame
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Get the average color
         const color = getAverageColor(context, canvas.width, canvas.height);
         
-        // Create a larger, brighter glow effect
-        const glowOpacity = 0.35; // Adjusted for better visibility
+        const glowOpacity = 0.35;
         document.documentElement.style.setProperty(
           '--video-glow',
           `0 0 400px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
         );
 
-        // Request next frame
         animationFrameRef.current = requestAnimationFrame(updateColor);
       }
     };
 
-    // Set initial canvas size
-    canvas.width = 32; // Small size for performance
+    canvas.width = 32;
     canvas.height = 32;
     
-    // Start the animation
     updateColor();
   };
 
@@ -226,7 +255,6 @@ export const VideoPlayer = ({
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-    // Fade out the glow effect
     document.documentElement.style.setProperty('--video-glow', 'none');
   };
 
@@ -238,6 +266,19 @@ export const VideoPlayer = ({
       stopColorAnalysis();
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      
+      if (originalVolume !== null) {
+        backgroundMusic.setVolume(originalVolume);
+        setOriginalVolume(null);
+      }
+    };
+  }, [backgroundMusic, originalVolume]);
 
   const handleVideoError = (e: any) => {
     const videoElement = e.target as HTMLVideoElement;
@@ -338,7 +379,6 @@ export const VideoPlayer = ({
               </div>
             )}
             
-            {/* Ambient Light Toggle */}
             <Button
               variant="ghost"
               size="icon"
@@ -364,7 +404,6 @@ export const VideoPlayer = ({
         )}
       </div>
 
-      {/* Picture in Picture */}
       <div className={`pip-container ${isPiPActive ? 'active' : ''}`}>
         <video
           ref={videoRef}

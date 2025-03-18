@@ -1,4 +1,3 @@
-
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
@@ -24,14 +23,11 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const [publicImageUrls, setPublicImageUrls] = useState<string[]>([]);
   
   useEffect(() => {
-    // Process all media URLs to transform storage URLs to public URLs
     const processMediaUrls = async () => {
-      // Filter and transform image URLs
       const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
       const transformedImageUrls = imageUrls.map(url => getPublicUrl(url));
       setPublicImageUrls(transformedImageUrls);
       
-      // Load dimensions for all images
       for (const url of imageUrls) {
         if (!isVideoFile(url)) {
           const publicUrl = getPublicUrl(url);
@@ -55,7 +51,6 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
           resolve({ width: img.naturalWidth, height: img.naturalHeight });
         };
         img.onerror = () => {
-          // Fallback dimensions if image fails to load
           resolve({ width: 16, height: 9 });
         };
         img.src = url;
@@ -137,16 +132,13 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     }
   };
   
-  // Check if there are 3 or more media items and if they're all images
   const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
   const videoUrls = mediaUrls.filter(url => isVideoFile(url));
   
-  // Use carousel for 3+ images
   const shouldUseCarousel = imageUrls.length >= 3;
   
   return (
     <div className="mt-4 space-y-4">
-      {/* Display videos in grid with ambient light effect */}
       {videoUrls.length > 0 && (
         <div className={`grid ${videoUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
           {videoUrls.map((url, i) => (
@@ -161,12 +153,10 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
         </div>
       )}
       
-      {/* Display images in carousel if 3+ images */}
       {shouldUseCarousel && publicImageUrls.length >= 3 && (
         <ThreeDPhotoCarousel imageUrls={publicImageUrls} />
       )}
       
-      {/* Display images in grid if less than 3 */}
       {imageUrls.length > 0 && imageUrls.length < 3 && (
         <div className={`grid ${imageUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
           {imageUrls.map((url, i) => {
