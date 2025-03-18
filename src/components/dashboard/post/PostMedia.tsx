@@ -145,7 +145,7 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
             const publicUrl = getPublicUrl(url);
             return (
               <div key={url} className="relative overflow-hidden group rounded-lg">
-                <div className="mx-auto w-[95%] max-w-[600px]">
+                <div className="mx-auto w-[70%] max-w-[500px]">
                   <VideoPlayer src={publicUrl} />
                 </div>
               </div>
@@ -219,4 +219,3 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     </div>
   );
 };
-
