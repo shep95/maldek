@@ -1,13 +1,15 @@
+
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
 import { isVideoFile } from "@/utils/mediaUtils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { cn } from "@/lib/utils";
 import { ThreeDPhotoCarousel } from "@/components/ui/3d-carousel";
+import { AudioVisualizer } from "@/components/videos/AudioVisualizer";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -21,12 +23,16 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
                               subscription?.tier?.name === 'True Emperor';
   const [publicImageUrls, setPublicImageUrls] = useState<string[]>([]);
+  const [videoElements, setVideoElements] = useState<(HTMLVideoElement | null)[]>([]);
   
   useEffect(() => {
     const processMediaUrls = async () => {
       const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
       const transformedImageUrls = imageUrls.map(url => getPublicUrl(url));
       setPublicImageUrls(transformedImageUrls);
+      
+      // Reset video elements array when urls change
+      setVideoElements(new Array(mediaUrls.filter(url => isVideoFile(url)).length).fill(null));
       
       for (const url of imageUrls) {
         if (!isVideoFile(url)) {
@@ -136,6 +142,14 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const videoUrls = mediaUrls.filter(url => isVideoFile(url));
   
   const shouldUseCarousel = imageUrls.length >= 3;
+
+  const handleVideoElementReady = (element: HTMLVideoElement | null, index: number) => {
+    setVideoElements(prev => {
+      const newElements = [...prev];
+      newElements[index] = element;
+      return newElements;
+    });
+  };
   
   return (
     <div className="mt-4 space-y-4">
@@ -145,9 +159,20 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
             <div key={url} className="relative overflow-hidden group rounded-lg">
               <VideoPlayer 
                 videoUrl={url} 
-                controls 
+                controls={false}
                 className="w-full h-full object-contain rounded-lg"
+                onVideoElementReady={(element) => handleVideoElementReady(element, i)}
+                showVisualizer={false}
               />
+              
+              {/* Audio visualizer for each video */}
+              <div className="mt-2">
+                <AudioVisualizer 
+                  audioElement={videoElements[i]} 
+                  className="h-8 bg-black/10"
+                  barCount={50}
+                />
+              </div>
             </div>
           ))}
         </div>

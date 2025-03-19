@@ -74,7 +74,8 @@ export const PostDetailContent = ({
     id: post.id,
     media_urls: post.media_urls,
     is_edited: post.is_edited,
-    original_content: post.original_content
+    original_content: post.original_content,
+    has_audio: post.has_audio
   });
 
   return (

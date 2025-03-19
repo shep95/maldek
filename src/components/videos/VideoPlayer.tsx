@@ -10,12 +10,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Database } from "@/integrations/supabase/types";
+import { AudioVisualizer } from "./AudioVisualizer";
 
 interface VideoPlayerProps {
   videoUrl: string;
   className?: string;
   controls?: boolean;
   autoPlay?: boolean;
+  onVideoElementReady?: (element: HTMLVideoElement | null) => void;
+  showVisualizer?: boolean;
 }
 
 type DbSubscriptionTier = Database['public']['Tables']['subscription_tiers']['Row'];
@@ -27,7 +30,9 @@ export const VideoPlayer = ({
   videoUrl, 
   className = "", 
   controls = true,
-  autoPlay = false 
+  autoPlay = false,
+  onVideoElementReady,
+  showVisualizer = true
 }: VideoPlayerProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +49,12 @@ export const VideoPlayer = ({
   const [originalVolume, setOriginalVolume] = useState<number | null>(null);
   
   const { publicUrl, error: urlError, isLoading: isUrlLoading } = useVideoUrl(videoUrl);
+
+  useEffect(() => {
+    if (onVideoElementReady) {
+      onVideoElementReady(videoRef.current);
+    }
+  }, [onVideoElementReady]);
 
   const { data: subscription } = useQuery<DbUserSubscription | null>({
     queryKey: ['user-subscription', session?.user?.id],
@@ -390,6 +401,15 @@ export const VideoPlayer = ({
             </Button>
           </div>
         </AspectRatio>
+
+        {showVisualizer && isPlaying && !controls && (
+          <div className="mt-2">
+            <AudioVisualizer 
+              audioElement={videoRef.current} 
+              color="bg-accent"
+            />
+          </div>
+        )}
 
         {isLoading && !error && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/10">
