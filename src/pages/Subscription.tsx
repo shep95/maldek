@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Coins, Users, Star } from "lucide-react";
+import { Coins, Users, Star, Image, FolderLock, Crown, Play, BarChart2 } from "lucide-react";
 
 const Subscription = () => {
   const navigate = useNavigate();
@@ -61,6 +61,26 @@ const Subscription = () => {
                   <div className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-primary" />
                     <span className="text-sm">Early access to future features</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Image className="h-4 w-4 text-primary" />
+                    <span className="text-sm">Animated profile picture & GIF uploads</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FolderLock className="h-4 w-4 text-primary" />
+                    <span className="text-sm">Safety folder</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-primary" />
+                    <span className="text-sm">White crown badge</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Play className="h-4 w-4 text-primary" />
+                    <span className="text-sm">Start and host spaces</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="h-4 w-4 text-primary" />
+                    <span className="text-sm">Access to modern analytics</span>
                   </div>
                 </div>
               </div>

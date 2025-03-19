@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { PricingCard } from "@/components/ui/pricing-card";
+import { Image, FolderLock, Crown, Play, BarChart2 } from "lucide-react";
 
 const Features = () => {
   return (

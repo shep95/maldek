@@ -1,5 +1,5 @@
 
-import { Image, Sparkles, FolderLock } from "lucide-react";
+import { Image, Sparkles, FolderLock, Crown, Play, BarChart2 } from "lucide-react";
 import { FeatureItem } from "./FeatureItem";
 
 export const PremiumFeatures = () => {
@@ -28,6 +28,21 @@ export const PremiumFeatures = () => {
       <FeatureItem
         icon={FolderLock}
         text="Free Safety Folder"
+        iconColor="text-accent"
+      />
+      <FeatureItem
+        icon={Crown}
+        text="White Crown Badge"
+        iconColor="text-accent"
+      />
+      <FeatureItem
+        icon={Play}
+        text="Start and Host Spaces"
+        iconColor="text-accent"
+      />
+      <FeatureItem
+        icon={BarChart2}
+        text="Access to Modern Analytics"
         iconColor="text-accent"
       />
     </>
