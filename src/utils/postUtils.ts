@@ -25,7 +25,6 @@ export interface Post {
   view_count?: number;
   is_edited?: boolean;
   original_content?: string | null;
-  has_audio?: boolean;
 }
 
 export const createNewPost = async (content: string, mediaFiles: File[], author: Author): Promise<Post> => {
@@ -37,9 +36,6 @@ export const createNewPost = async (content: string, mediaFiles: File[], author:
       return URL.createObjectURL(file);
     })
   );
-
-  // Check if any of the files are videos (which would have audio)
-  const hasAudio = mediaFiles.some(file => file.type.startsWith('video/'));
 
   return {
     id: crypto.randomUUID(),
@@ -55,7 +51,6 @@ export const createNewPost = async (content: string, mediaFiles: File[], author:
     isBookmarked: false,
     view_count: 0,
     is_edited: false,
-    original_content: null,
-    has_audio: hasAudio
+    original_content: null
   };
 };
