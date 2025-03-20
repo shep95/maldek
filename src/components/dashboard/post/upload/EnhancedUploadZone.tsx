@@ -1,19 +1,22 @@
-
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Image, AlertCircle, X } from "lucide-react";
 import { useState, useCallback, useEffect } from "react";
 import { handlePasteEvent } from "@/utils/postUploadUtils";
 import { cn } from "@/lib/utils";
+import { checkVideoUploadRestrictions } from "@/utils/postUtils";
+import { toast } from "sonner";
+import { isVideoFile } from "@/utils/mediaUtils";
 
 interface EnhancedUploadZoneProps {
   onFileSelect: (files: FileList) => void;
   onPaste: (file: File) => void;
   isUploading: boolean;
   uploadProgress: number;
-  accept?: string; // Added accept prop as optional
+  accept?: string;
   mediaFiles: File[];
   onRemoveFile: (index: number) => void;
+  currentUserId: string;
 }
 
 export const EnhancedUploadZone = ({
@@ -23,23 +26,18 @@ export const EnhancedUploadZone = ({
   uploadProgress,
   accept,
   mediaFiles,
-  onRemoveFile
+  onRemoveFile,
+  currentUserId
 }: EnhancedUploadZoneProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
-  // Update preview URLs when mediaFiles change
   useEffect(() => {
-    // Clear existing preview URLs
     previewUrls.forEach(url => URL.revokeObjectURL(url));
-    
-    // Create new preview URLs for current media files
     const newPreviewUrls = mediaFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(newPreviewUrls);
-    
     return () => {
-      // Cleanup preview URLs
       newPreviewUrls.forEach(url => URL.revokeObjectURL(url));
     };
   }, [mediaFiles]);
@@ -54,7 +52,7 @@ export const EnhancedUploadZone = ({
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -66,20 +64,31 @@ export const EnhancedUploadZone = ({
     }
 
     const files = Array.from(e.dataTransfer.files);
-    const validFiles = files.filter(file => {
+    const validFiles = [];
+    
+    for (const file of files) {
       const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
       const isValidSize = file.size <= 50 * 1024 * 1024; // 50MB limit
       
       if (!isValid) {
         setError('Invalid file type. Only images and videos are allowed.');
-        return false;
+        continue;
       }
       if (!isValidSize) {
         setError('File too large. Maximum size is 50MB.');
-        return false;
+        continue;
       }
-      return true;
-    });
+      
+      if (isVideoFile(file)) {
+        const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
+        if (!allowed) {
+          toast.error(message || "Video upload restrictions apply");
+          continue;
+        }
+      }
+      
+      validFiles.push(file);
+    }
 
     const remainingSlots = 6 - mediaFiles.length;
     const filesToAdd = validFiles.slice(0, remainingSlots);
@@ -95,9 +104,9 @@ export const EnhancedUploadZone = ({
     if (validFiles.length > remainingSlots) {
       setError(`Only ${remainingSlots} more file(s) could be added. Maximum of 6 files allowed.`);
     }
-  }, [onFileSelect, mediaFiles.length]);
+  }, [onFileSelect, mediaFiles.length, currentUserId]);
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
     if (mediaFiles.length >= 6) {
@@ -105,23 +114,37 @@ export const EnhancedUploadZone = ({
       return;
     }
 
-    const remainingSlots = 6 - mediaFiles.length;
-    const files = Array.from(e.target.files).slice(0, remainingSlots);
+    const files = Array.from(e.target.files);
+    const validFiles = [];
+    
+    for (const file of files) {
+      if (isVideoFile(file)) {
+        const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
+        if (!allowed) {
+          toast.error(message || "Video upload restrictions apply");
+          continue;
+        }
+      }
+      validFiles.push(file);
+    }
 
-    if (files.length > 0) {
+    const remainingSlots = 6 - mediaFiles.length;
+    const filesToAdd = validFiles.slice(0, remainingSlots);
+
+    if (filesToAdd.length > 0) {
       const dataTransfer = new DataTransfer();
-      files.forEach(file => {
+      filesToAdd.forEach(file => {
         dataTransfer.items.add(file);
       });
       onFileSelect(dataTransfer.files);
     }
     
-    if (e.target.files.length > remainingSlots) {
+    if (validFiles.length > remainingSlots) {
       setError(`Only ${remainingSlots} more file(s) could be added. Maximum of 6 files allowed.`);
     }
   };
 
-  const handlePaste = useCallback((e: ClipboardEvent) => {
+  const handlePaste = useCallback(async (e: ClipboardEvent) => {
     if (mediaFiles.length >= 6) {
       setError('Maximum of 6 media files allowed');
       return;
@@ -130,9 +153,18 @@ export const EnhancedUploadZone = ({
     const file = handlePasteEvent(e);
     if (file) {
       console.log('File pasted:', file.name, file.type, file.size);
+      
+      if (isVideoFile(file)) {
+        const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
+        if (!allowed) {
+          toast.error(message || "Video upload restrictions apply");
+          return;
+        }
+      }
+      
       onPaste(file);
     }
-  }, [onPaste, mediaFiles.length]);
+  }, [onPaste, mediaFiles.length, currentUserId]);
 
   useEffect(() => {
     document.addEventListener('paste', handlePaste);

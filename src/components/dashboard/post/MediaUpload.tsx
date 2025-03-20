@@ -1,3 +1,4 @@
+
 import { AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -5,19 +6,23 @@ import { MediaPreview } from "./upload/MediaPreview";
 import { MediaUploadZone } from "./upload/MediaUploadZone";
 import { compressVideo } from "@/utils/videoCompression";
 import { isVideoFile } from "@/utils/mediaUtils";
+import { checkVideoUploadRestrictions } from "@/utils/postUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MediaUploadProps {
   mediaFiles: File[];
   mediaPreviewUrls: string[];
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveMedia: (index: number) => void;
+  currentUserId: string;
 }
 
 export const MediaUpload = ({
   mediaFiles,
   mediaPreviewUrls,
   onFileUpload,
-  onRemoveMedia
+  onRemoveMedia,
+  currentUserId
 }: MediaUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>(
@@ -41,8 +46,17 @@ export const MediaUpload = ({
           size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
         });
 
+        // Check video restrictions
         if (isVideoFile(file)) {
           console.log('Processing video file:', file.name);
+          
+          // Check if video meets restrictions
+          const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
+          if (!allowed) {
+            toast.error(message || "Cannot upload this video");
+            continue;
+          }
+          
           const compressedVideo = await compressVideo(file);
           processedFiles.push(compressedVideo);
         } else {
@@ -51,13 +65,15 @@ export const MediaUpload = ({
       }
 
       // Create a synthetic event
-      const event = {
-        target: {
-          files: processedFiles
-        }
-      } as unknown as React.ChangeEvent<HTMLInputElement>;
+      if (processedFiles.length > 0) {
+        const event = {
+          target: {
+            files: processedFiles
+          }
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
 
-      onFileUpload(event);
+        onFileUpload(event);
+      }
     } catch (error) {
       console.error('Error processing files:', error);
       toast.error("Failed to process media. Please try again.");
