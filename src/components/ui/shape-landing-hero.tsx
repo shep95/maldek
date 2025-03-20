@@ -45,11 +45,25 @@ function ElegantShape({
             <motion.div
                 animate={{
                     y: [0, 15, 0],
+                    x: [0, 5, 0, -5, 0],
+                    scale: [1, 1.03, 1, 0.97, 1],
                 }}
                 transition={{
-                    duration: 12,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "easeInOut",
+                    y: {
+                        duration: 12,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                    },
+                    x: {
+                        duration: 18,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                    },
+                    scale: {
+                        duration: 8,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                    }
                 }}
                 style={{
                     width,
@@ -57,13 +71,25 @@ function ElegantShape({
                 }}
                 className="relative"
             >
-                <div
+                <motion.div
+                    animate={{
+                        opacity: [0.7, 1, 0.7],
+                        boxShadow: [
+                            "0 8px 32px 0 rgba(255,255,255,0.08)",
+                            "0 8px 32px 0 rgba(255,255,255,0.15)",
+                            "0 8px 32px 0 rgba(255,255,255,0.08)"
+                        ]
+                    }}
+                    transition={{
+                        duration: 4,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                    }}
                     className={cn(
                         "absolute inset-0 rounded-full",
                         "bg-gradient-to-r to-transparent",
                         gradient,
                         "backdrop-blur-[2px] border-2 border-white/[0.15]",
-                        "shadow-[0_8px_32px_0_rgba(255,255,255,0.1)]",
                         "after:absolute after:inset-0 after:rounded-full",
                         "after:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.2),transparent_70%)]"
                     )}
@@ -145,6 +171,25 @@ function HeroGeometric({
                     rotate={-25}
                     gradient="from-cyan-500/[0.15]"
                     className="left-[20%] md:left-[25%] top-[5%] md:top-[10%]"
+                />
+
+                {/* Mobile-specific shapes (smaller and better positioned) */}
+                <ElegantShape
+                    delay={0.35}
+                    width={120}
+                    height={35}
+                    rotate={15}
+                    gradient="from-pink-500/[0.15]"
+                    className="md:hidden left-[10%] top-[40%]"
+                />
+
+                <ElegantShape
+                    delay={0.55}
+                    width={100}
+                    height={30}
+                    rotate={-12}
+                    gradient="from-blue-500/[0.15]"
+                    className="md:hidden right-[8%] top-[35%]"
                 />
             </div>
 
