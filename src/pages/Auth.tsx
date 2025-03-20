@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -6,6 +5,7 @@ import { AuthHeader } from "@/components/auth/AuthHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { HeroGeometric } from "@/components/ui/shape-landing-hero";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -121,28 +121,16 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 bg-black relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute w-[500px] h-[500px] -top-48 -right-48 bg-accent/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute w-[500px] h-[500px] -bottom-48 -left-48 bg-accent/20 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
-
-      {/* Grid pattern overlay */}
-      <div 
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: 'linear-gradient(#ff5e00 1px, transparent 1px), linear-gradient(to right, #ff5e00 1px, transparent 1px)',
-          backgroundSize: '50px 50px'
-        }}
-      />
+    <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 relative overflow-hidden">
+      {/* Geometric Hero Background */}
+      <HeroGeometric hideContent={true} />
 
       {/* Main content */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative"
+        className="w-full max-w-md relative z-20"
       >
         <div className="bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl border border-accent/10 p-4 md:p-8">
           <AuthHeader isLogin={isLogin} />
@@ -165,7 +153,7 @@ const Auth = () => {
       </motion.div>
 
       {/* Decorative elements */}
-      <div className="absolute bottom-4 left-4 text-xs text-muted-foreground/50">
+      <div className="absolute bottom-4 left-4 text-xs text-muted-foreground/50 z-20">
         Bosley © 2024
       </div>
     </div>
