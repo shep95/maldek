@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 export interface Author {
   id: string;
   username: string;
@@ -67,8 +69,8 @@ export const checkVideoUploadRestrictions = async (
   }
 };
 
-// Helper function to get video duration
-const getVideoDuration = (file: File): Promise<number> => {
+// Helper function to get video duration - now exported
+export const getVideoDuration = (file: File): Promise<number> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
