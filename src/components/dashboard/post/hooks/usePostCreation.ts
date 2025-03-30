@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -235,12 +234,11 @@ export const usePostCreation = (
         console.log('Scheduling post for:', scheduledForDate);
       }
 
-      // Create the post data without explicit bypass_character_limit field
-      // The premium check is already done by the database function check_post_limit
+      // Create the post data - IP address will be automatically logged by the database trigger
       const postData = {
         content: content.trim(),
         user_id: currentUser.id,
-        media_urls: mediaUrls,
+        media_urls: mediaUrls.length > 0 ? mediaUrls : null,
         scheduled_for: scheduledForDate
       };
 
