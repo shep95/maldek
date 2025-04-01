@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { SecurityCodeSection } from "@/components/settings/SecurityCodeSection";
+import { SupportSection } from "@/components/settings/SupportSection";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -45,6 +46,7 @@ const Settings = () => {
       <ThemeToggle />
       <DownloadSection />
       <LanguageSection />
+      <SupportSection />
       <SecurityCodeSection />
       <AccountSection />
       <EmailSection />

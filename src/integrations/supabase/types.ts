@@ -1257,7 +1257,6 @@ export type Database = {
           edit_count: number | null
           engagement_score: number | null
           id: string
-          ip_address: string | null
           is_community_post: boolean | null
           is_deleted: boolean | null
           is_edited: boolean | null
@@ -1284,7 +1283,6 @@ export type Database = {
           edit_count?: number | null
           engagement_score?: number | null
           id?: string
-          ip_address?: string | null
           is_community_post?: boolean | null
           is_deleted?: boolean | null
           is_edited?: boolean | null
@@ -1311,7 +1309,6 @@ export type Database = {
           edit_count?: number | null
           engagement_score?: number | null
           id?: string
-          ip_address?: string | null
           is_community_post?: boolean | null
           is_deleted?: boolean | null
           is_edited?: boolean | null
