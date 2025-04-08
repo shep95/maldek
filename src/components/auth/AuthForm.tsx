@@ -1,8 +1,21 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+// List of known disposable email domains
+const DISPOSABLE_EMAIL_DOMAINS = [
+  "mailinator.com", "guerrillamail.com", "temp-mail.org", "fakeinbox.com", "tempmail.com",
+  "10minutemail.com", "yopmail.com", "getairmail.com", "mailnesia.com", "mailcatch.com",
+  "trashmail.com", "sharklasers.com", "guerrillamail.org", "disposableinbox.com", "tempinbox.com",
+  "dispostable.com", "mailinator.net", "mailinator.org", "33mail.com", "meltmail.com",
+  "mintemail.com", "maildrop.cc", "emailondeck.com", "spamgourmet.com", "getnada.com",
+  "tempr.email", "temp-mail.io", "tempmailo.com", "throwawaymail.com", "wegwerfmail.de",
+  "burnermail.io", "spambox.us", "mailnull.com", "incognitomail.com", "tempinbox.net",
+  "instantemailaddress.com", "tempmail.ninja", "fakemail.net"
+];
 
 interface AuthFormProps {
   isLogin: boolean;
@@ -20,6 +33,20 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDisposableEmail, setIsDisposableEmail] = useState(false);
+
+  const checkIfDisposableEmail = (email: string) => {
+    if (!email || !email.includes('@')) return false;
+    
+    const domain = email.split('@')[1].toLowerCase();
+    return DISPOSABLE_EMAIL_DOMAINS.includes(domain);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setIsDisposableEmail(checkIfDisposableEmail(newEmail));
+  };
 
   const handleUsernameCheck = async (username: string) => {
     if (!username || username.length < 3) {
@@ -64,6 +91,11 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
     if (!isLogin && isUsernameTaken) {
       toast.error("Username is already taken");
+      return;
+    }
+
+    if (!isLogin && isDisposableEmail) {
+      toast.error("Please use a permanent email address. Temporary or disposable email addresses are not allowed.");
       return;
     }
 
@@ -145,15 +177,22 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
             )}
           </div>
         )}
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="bg-muted/50 w-full"
-          required
-          disabled={isSubmitting}
-        />
+        <div className="relative">
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={handleEmailChange}
+            className={`bg-muted/50 w-full ${isDisposableEmail ? "border-red-500" : ""}`}
+            required
+            disabled={isSubmitting}
+          />
+          {isDisposableEmail && (
+            <div className="text-xs text-red-500 mt-1">
+              Temporary email addresses are not allowed.
+            </div>
+          )}
+        </div>
         <Input
           type="password"
           placeholder="Password"
@@ -167,7 +206,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={isSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken))}
+          disabled={isSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail))}
         >
           {isSubmitting ? "Please wait..." : (isLogin ? "Sign in" : "Sign up")}
         </Button>
