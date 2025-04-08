@@ -6,18 +6,17 @@ import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useState } from "react";
-import { SpaceManagementDialog } from "@/components/spaces/SpaceManagementDialog";
 import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
 import { SpaceCard } from "@/components/spaces/SpaceCard";
 import { SpaceHistoryCard } from "@/components/spaces/SpaceHistoryCard";
+import { TwitterSpaceDialog } from "@/components/spaces/TwitterSpaceDialog";
 
 const Spaces = () => {
   const session = useSession();
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
-  const [isManagementOpen, setIsManagementOpen] = useState(false);
+  const [isSpaceDialogOpen, setIsSpaceDialogOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // Fetch user's subscription status
   const { data: subscription } = useQuery({
     queryKey: ['user-subscription'],
     queryFn: async () => {
@@ -44,7 +43,6 @@ const Spaces = () => {
     }
   });
 
-  // Fetch live spaces with host, participants, and their roles
   const { data: liveSpaces, refetch: refetchSpaces } = useQuery({
     queryKey: ['live-spaces'],
     queryFn: async () => {
@@ -74,7 +72,6 @@ const Spaces = () => {
     }
   });
 
-  // Fetch user's space history
   const { data: spaceHistory } = useQuery({
     queryKey: ['space-history'],
     queryFn: async () => {
@@ -139,7 +136,7 @@ const Spaces = () => {
       }
 
       setSelectedSpaceId(spaceId);
-      setIsManagementOpen(true);
+      setIsSpaceDialogOpen(true);
     } catch (error) {
       console.error("Error joining space:", error);
       toast.error("Failed to join space");
@@ -246,15 +243,10 @@ const Spaces = () => {
           </Tabs>
 
           {selectedSpaceId && (
-            <SpaceManagementDialog
-              isOpen={isManagementOpen}
-              onOpenChange={setIsManagementOpen}
+            <TwitterSpaceDialog
+              isOpen={isSpaceDialogOpen}
+              onOpenChange={setIsSpaceDialogOpen}
               spaceId={selectedSpaceId}
-              isHost={liveSpaces?.find(s => s.id === selectedSpaceId)?.host_id === session?.user?.id}
-              onLeave={() => {
-                handleLeaveSpace(selectedSpaceId);
-                setIsManagementOpen(false);
-              }}
             />
           )}
 
