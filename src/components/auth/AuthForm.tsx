@@ -17,6 +17,12 @@ const DISPOSABLE_EMAIL_DOMAINS = [
   "instantemailaddress.com", "tempmail.ninja", "fakemail.net"
 ];
 
+// List of allowed email domains
+const ALLOWED_EMAIL_DOMAINS = [
+  "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", 
+  "live.com", "msn.com", "icloud.com", "me.com", "mac.com", "aol.com"
+];
+
 interface AuthFormProps {
   isLogin: boolean;
   onSubmit: (formData: {
@@ -34,18 +40,40 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDisposableEmail, setIsDisposableEmail] = useState(false);
+  const [isValidEmailDomain, setIsValidEmailDomain] = useState(true);
 
-  const checkIfDisposableEmail = (email: string) => {
-    if (!email || !email.includes('@')) return false;
+  const checkEmailDomain = (email: string) => {
+    if (!email || !email.includes('@')) {
+      setIsDisposableEmail(false);
+      setIsValidEmailDomain(true);
+      return;
+    }
     
     const domain = email.split('@')[1].toLowerCase();
-    return DISPOSABLE_EMAIL_DOMAINS.includes(domain);
+    
+    // Check if it's a disposable email
+    const isDisposable = DISPOSABLE_EMAIL_DOMAINS.includes(domain);
+    setIsDisposableEmail(isDisposable);
+    
+    // If not disposable, check if it's in the allowed list or looks like a business email
+    if (!isDisposable) {
+      // Business emails typically have domains that aren't common consumer domains
+      const isAllowedDomain = ALLOWED_EMAIL_DOMAINS.includes(domain);
+      const isDomainLikelyBusiness = domain.includes('.') && 
+        !domain.endsWith('.ru') && 
+        !domain.endsWith('.cn') && 
+        domain.length > 4;
+      
+      setIsValidEmailDomain(isAllowedDomain || isDomainLikelyBusiness);
+    } else {
+      setIsValidEmailDomain(false);
+    }
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;
     setEmail(newEmail);
-    setIsDisposableEmail(checkIfDisposableEmail(newEmail));
+    checkEmailDomain(newEmail);
   };
 
   const handleUsernameCheck = async (username: string) => {
@@ -96,6 +124,11 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
 
     if (!isLogin && isDisposableEmail) {
       toast.error("Please use a permanent email address. Temporary or disposable email addresses are not allowed.");
+      return;
+    }
+
+    if (!isLogin && !isValidEmailDomain) {
+      toast.error("Please use a Gmail, Yahoo, Outlook, or business email address.");
       return;
     }
 
@@ -183,13 +216,18 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
             placeholder="Email"
             value={email}
             onChange={handleEmailChange}
-            className={`bg-muted/50 w-full ${isDisposableEmail ? "border-red-500" : ""}`}
+            className={`bg-muted/50 w-full ${isDisposableEmail || !isValidEmailDomain ? "border-red-500" : ""}`}
             required
             disabled={isSubmitting}
           />
           {isDisposableEmail && (
             <div className="text-xs text-red-500 mt-1">
               Temporary email addresses are not allowed.
+            </div>
+          )}
+          {!isDisposableEmail && !isValidEmailDomain && email.includes('@') && (
+            <div className="text-xs text-red-500 mt-1">
+              Please use Gmail, Yahoo, Outlook, or a business email.
             </div>
           )}
         </div>
@@ -206,7 +244,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={isSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail))}
+          disabled={isSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
         >
           {isSubmitting ? "Please wait..." : (isLogin ? "Sign in" : "Sign up")}
         </Button>
