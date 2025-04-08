@@ -158,7 +158,7 @@ export const TwitterSpaceUI = ({
       {/* Controls */}
       <div className="p-4 border-t bg-background flex items-center justify-between">
         <div className="flex items-center">
-          <Badge variant={isConnected ? "success" : "destructive"} className="mr-2">
+          <Badge variant={isConnected ? "secondary" : "destructive"} className="mr-2">
             {isConnected ? "Connected" : "Disconnected"}
           </Badge>
           <span className="text-xs text-muted-foreground">
