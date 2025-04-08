@@ -32,13 +32,17 @@ export const TwitterSpaceUI = ({
 }: TwitterSpaceUIProps) => {
   const session = useSession();
   const [activeTab, setActiveTab] = useState("people");
+  const [speakerRequests, setSpeakerRequests] = useState<string[]>([]);
+  
   const {
     isConnected,
     isLoading,
     error,
     participants,
     isMuted,
-    toggleMute
+    toggleMute,
+    sendMessage,
+    channel
   } = useGetStreamSpaces(spaceId);
   
   const isHost = session?.user?.id === hostId;
@@ -46,9 +50,54 @@ export const TwitterSpaceUI = ({
     p.id === session?.user?.id && p.role === 'speaker'
   );
   
-  const handleRequestToSpeak = () => {
-    toast.success("Request to speak sent!");
-    // Implementation would be added with actual GetStream API
+  useEffect(() => {
+    if (channel) {
+      // Listen for speaker requests
+      const handleSpeakerRequest = (event: any) => {
+        if (event.type === 'speaker-request') {
+          setSpeakerRequests(prev => 
+            prev.includes(event.user.id) ? prev : [...prev, event.user.id]
+          );
+          toast.info(`${event.user.name} requests to speak`);
+        }
+      };
+      
+      channel.on('custom.event', handleSpeakerRequest);
+      
+      return () => {
+        channel.off('custom.event', handleSpeakerRequest);
+      };
+    }
+  }, [channel]);
+  
+  const handleRequestToSpeak = async () => {
+    try {
+      if (channel) {
+        await channel.sendEvent({
+          type: 'speaker-request',
+          user: {
+            id: session?.user?.id,
+            name: session?.user?.user_metadata?.username || 'Anonymous'
+          }
+        });
+        toast.success("Request to speak sent!");
+      }
+    } catch (err) {
+      toast.error("Failed to send request");
+      console.error(err);
+    }
+  };
+  
+  const handleApproveSpeaker = async (userId: string) => {
+    try {
+      // In a real implementation, you'd update the role in your database
+      // and send an event to the user
+      toast.success(`Speaker approved`);
+      setSpeakerRequests(prev => prev.filter(id => id !== userId));
+    } catch (err) {
+      toast.error("Failed to approve speaker");
+      console.error(err);
+    }
   };
   
   const speakers = participants.filter(p => p.role === 'speaker' || p.id === hostId);
@@ -149,9 +198,34 @@ export const TwitterSpaceUI = ({
         </TabsContent>
         
         <TabsContent value="requests" className="flex-1 p-4 m-0">
-          <p className="text-center text-muted-foreground py-8">
-            No speaker requests yet
-          </p>
+          {isHost && speakerRequests.length > 0 ? (
+            <div className="space-y-3">
+              {speakerRequests.map(userId => {
+                const user = participants.find(p => p.id === userId);
+                return user ? (
+                  <div key={userId} className="flex items-center justify-between p-2 border rounded-md">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.image} />
+                        <AvatarFallback>{user.name[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{user.name}</span>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleApproveSpeaker(userId)}
+                    >
+                      Approve
+                    </Button>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">
+              No speaker requests yet
+            </p>
+          )}
         </TabsContent>
       </Tabs>
       
