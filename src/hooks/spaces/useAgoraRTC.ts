@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack } from 'agora-rtc-sdk-ng';
 import { toast } from 'sonner';
@@ -72,8 +73,20 @@ export const useAgoraRTC = (channelName: string) => {
       // Join the channel
       await clientRef.current.join(appId, channelName, null, uid);
       
+      // Enable the track before publishing
+      if (isMuted) {
+        // If we're muted, we still need to enable the track for publishing
+        // but we'll mute it right after publishing
+        audioTrackRef.current.setEnabled(true);
+      }
+      
       // Publish audio track
       await clientRef.current.publish(audioTrackRef.current);
+      
+      // If user is muted, disable the track after publishing
+      if (isMuted) {
+        audioTrackRef.current.setEnabled(false);
+      }
       
       setIsConnected(true);
       console.log('Successfully joined channel:', channelName);
