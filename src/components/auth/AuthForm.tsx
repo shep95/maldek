@@ -1,9 +1,10 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { Shield } from "lucide-react";
 
 // List of known disposable email domains
 const DISPOSABLE_EMAIL_DOMAINS = [
@@ -41,6 +42,8 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDisposableEmail, setIsDisposableEmail] = useState(false);
   const [isValidEmailDomain, setIsValidEmailDomain] = useState(true);
+  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
 
   const checkEmailDomain = (email: string) => {
     if (!email || !email.includes('@')) {
@@ -109,6 +112,17 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
     }
   };
 
+  const handleCaptchaVerify = (token: string) => {
+    setHcaptchaToken(token);
+  };
+
+  const resetCaptcha = () => {
+    setHcaptchaToken(null);
+    if (captchaRef.current) {
+      captchaRef.current.resetCaptcha();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -132,6 +146,11 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
+    if (!hcaptchaToken) {
+      toast.error("Please complete the captcha verification");
+      return;
+    }
+
     setIsSubmitting(true);
     console.log("Starting form submission with username:", username);
 
@@ -143,7 +162,8 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           password,
           options: {
             data: {
-              username: username.toLowerCase()
+              username: username.toLowerCase(),
+              captchaToken: hcaptchaToken
             }
           }
         });
@@ -154,16 +174,19 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         toast.success("Account created successfully! You can now sign in.");
+        resetCaptcha();
       } else {
         // For login, use the provided onSubmit
         await onSubmit({
           email,
           password
         });
+        resetCaptcha();
       }
     } catch (error: any) {
       console.error("Form submission error:", error);
       toast.error(error.message || "Authentication failed");
+      resetCaptcha();
     } finally {
       setIsSubmitting(false);
     }
@@ -241,10 +264,27 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           minLength={6}
           disabled={isSubmitting}
         />
+        
+        {/* hCaptcha integration */}
+        <div className="mt-4 flex justify-center">
+          <HCaptcha
+            sitekey="10000000-ffff-ffff-ffff-000000000001"
+            onVerify={handleCaptchaVerify}
+            ref={captchaRef}
+            theme="dark"
+            size="normal"
+          />
+        </div>
+        
+        <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1 mt-1">
+          <Shield className="w-3 h-3" />
+          <span>Protected by hCaptcha</span>
+        </div>
+        
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={isSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
+          disabled={isSubmitting || !hcaptchaToken || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
         >
           {isSubmitting ? "Please wait..." : (isLogin ? "Sign in" : "Sign up")}
         </Button>
