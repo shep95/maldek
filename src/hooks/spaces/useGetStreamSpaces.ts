@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { getStreamClient } from '@/integrations/getstream/client';
+import { getStreamClient, generateUserToken } from '@/integrations/getstream/client';
 import { useSession } from '@supabase/auth-helpers-react';
 import { toast } from 'sonner';
 
@@ -31,6 +31,13 @@ export const useGetStreamSpaces = (spaceId: string) => {
         
         clientRef.current = client;
         
+        // Generate a user token
+        const userToken = generateUserToken(session.user.id);
+        
+        if (!userToken) {
+          throw new Error('Failed to generate user token');
+        }
+        
         // Connect user to Stream
         await client.connectUser(
           {
@@ -38,7 +45,7 @@ export const useGetStreamSpaces = (spaceId: string) => {
             name: session.user.user_metadata?.username || 'Anonymous',
             image: session.user.user_metadata?.avatar_url
           },
-          client.devToken(session.user.id) // Using dev token for demo purposes
+          userToken
         );
         
         // Create or join the space channel

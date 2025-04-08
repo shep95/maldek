@@ -3,8 +3,7 @@ import { StreamChat } from 'stream-chat';
 
 // Initialize Stream Chat client
 export const getStreamClient = () => {
-  const apiKey = import.meta.env.VITE_GETSTREAM_API_KEY;
-  const apiSecret = import.meta.env.VITE_GETSTREAM_API_SECRET;
+  const apiKey = '5xmj3535vkam';
   
   if (!apiKey) {
     console.error('GetStream API key is missing');
@@ -16,8 +15,8 @@ export const getStreamClient = () => {
 
 // Create a server client (for server-side token generation)
 export const createServerClient = () => {
-  const apiKey = import.meta.env.VITE_GETSTREAM_API_KEY;
-  const apiSecret = import.meta.env.VITE_GETSTREAM_API_SECRET;
+  const apiKey = '5xmj3535vkam';
+  const apiSecret = 'rtbf2u7zcvube9nhp9r79wbuvftdp88fvfh5bjqa2psz6kp8gkzkeads46wc7jkr';
   
   if (!apiKey || !apiSecret) {
     console.error('GetStream API key or secret is missing');
@@ -34,4 +33,3 @@ export const generateUserToken = (userId: string) => {
   
   return serverClient.createToken(userId);
 };
-
