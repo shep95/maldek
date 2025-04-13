@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,12 +12,10 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
   const [postsRemaining, setPostsRemaining] = useState<number | null>(null);
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   
-  // Check posts remaining for free users
   const checkPostsRemaining = useCallback(async () => {
     if (!currentUser?.id) return;
     
     try {
-      // First check if user has premium subscription
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('tier_id, subscription_tiers(name)')
@@ -27,13 +24,11 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
         .gt('ends_at', new Date().toISOString())
         .maybeSingle();
       
-      // If user has premium, they have unlimited posts
       if (subscription?.subscription_tiers?.name) {
         setPostsRemaining(null);
         return;
       }
       
-      // Get posts in the last hour
       const oneHourAgo = new Date();
       oneHourAgo.setHours(oneHourAgo.getHours() - 1);
       
@@ -48,27 +43,23 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
         return;
       }
       
-      // Free users get 3 posts per hour
       setPostsRemaining(Math.max(0, 3 - (recentPosts?.length || 0)));
     } catch (error) {
       console.error('Error checking posts remaining:', error);
     }
   }, [currentUser?.id]);
   
-  // Handle file selection
   const handleFileSelect = useCallback((files: FileList) => {
     const filesArray = Array.from(files);
     setMediaFiles(prev => [...prev, ...filesArray]);
   }, []);
   
-  // Handle paste
   const handlePaste = useCallback((file: File) => {
     if (file) {
       setMediaFiles(prev => [...prev, file]);
     }
   }, []);
   
-  // Save to drafts
   const saveToDrafts = useCallback(() => {
     if (content.trim()) {
       saveDraft({
@@ -79,7 +70,6 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
     }
   }, [content, mediaFiles, scheduledDate]);
   
-  // Reset form state
   const resetFormState = useCallback(() => {
     setContent("");
     setMediaFiles([]);
@@ -88,7 +78,6 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
     setScheduledDate(null);
   }, []);
   
-  // Create post
   const createPost = useCallback(async () => {
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
@@ -100,7 +89,6 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
       return;
     }
     
-    // Check if user is premium to see if we need to enforce character limit
     const { data: isPremiumUser } = await supabase
       .from('user_subscriptions')
       .select('id')
@@ -109,13 +97,11 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
       .gt('ends_at', new Date().toISOString())
       .limit(1);
     
-    // Check if content exceeds character limit for non-premium users
     if (!isPremiumUser?.length && content.length > 280) {
       toast.error("Free accounts are limited to 280 characters per post. Upgrade to premium for unlimited characters.");
       return;
     }
     
-    // Check if user has already posted 3 times in the last hour (free users only)
     if (!isPremiumUser?.length) {
       await checkPostsRemaining();
       if (postsRemaining !== null && postsRemaining <= 0) {
@@ -131,7 +117,6 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
     try {
       console.log('Create post clicked');
       
-      // Process and upload media files
       if (mediaFiles.length > 0) {
         let progress = 0;
         const increment = 100 / mediaFiles.length;
@@ -156,7 +141,6 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
         }
       }
       
-      // Create post payload
       const postData = {
         content,
         user_id: currentUser.id,
@@ -164,7 +148,6 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
         scheduled_for: scheduledDate ? scheduledDate.toISOString() : null
       };
       
-      // Insert post
       const { data: post, error } = await supabase
         .from('posts')
         .insert(postData)
@@ -177,14 +160,13 @@ export const usePostCreation = (currentUser, onPostCreated, onClose) => {
       }
       
       console.log('Post created successfully:', post);
-      toast.success("Post created successfully!");
-      
       resetFormState();
       if (onPostCreated) onPostCreated(post);
-      if (onClose) onClose(false);
+      return post;
     } catch (error: any) {
       console.error('Error creating post:', error);
       toast.error(error.message || "Failed to create post");
+      throw error;
     } finally {
       setIsSubmitting(false);
     }

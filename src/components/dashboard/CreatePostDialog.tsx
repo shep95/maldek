@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { validateMediaFile } from "@/utils/mediaUtils";
+import { PostSuccessAnimation } from "./post/PostSuccessAnimation";
 
 export const CreatePostDialog = ({
   isOpen,
@@ -23,6 +24,7 @@ export const CreatePostDialog = ({
   onPostCreated
 }: CreatePostDialogProps) => {
   const [isPremiumUser, setIsPremiumUser] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   
   const {
     content,
@@ -172,15 +174,27 @@ export const CreatePostDialog = ({
 
         console.log('Successfully created stories:', results);
         toast.success("Story created successfully!");
-        onOpenChange(false);
-        resetFormState();
+        setShowSuccessAnimation(true);
+        // We'll close the dialog after the animation completes
       } catch (error: any) {
         console.error('Error creating story:', error);
         toast.error(error.message || "Failed to create story");
       }
     } else {
-      await createPost();
+      try {
+        await createPost();
+        setShowSuccessAnimation(true);
+        // We'll close the dialog after the animation completes
+      } catch (error) {
+        console.error('Error creating post:', error);
+      }
     }
+  };
+
+  const handleSuccessAnimationComplete = () => {
+    setShowSuccessAnimation(false);
+    onOpenChange(false);
+    resetFormState();
   };
 
   const handleMention = async (username: string) => {
@@ -216,7 +230,7 @@ export const CreatePostDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={showSuccessAnimation ? undefined : onOpenChange}>
       <DialogContent className="sm:max-w-[525px] bg-card">
         <DialogHeader>
           <DialogTitle>Create a New Post</DialogTitle>
@@ -346,6 +360,9 @@ export const CreatePostDialog = ({
             </Button>
           </div>
         </div>
+        {showSuccessAnimation && (
+          <PostSuccessAnimation onComplete={handleSuccessAnimationComplete} />
+        )}
       </DialogContent>
     </Dialog>
   );

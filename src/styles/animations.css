@@ -1,5 +1,4 @@
 
-
 /* Message Animations */
 @keyframes fadeIn {
   from {
@@ -34,6 +33,28 @@
 @keyframes messageHighlight {
   0% { background-color: rgba(249, 115, 22, 0.2); }
   100% { background-color: rgba(249, 115, 22, 0); }
+}
+
+/* Post Success Animation */
+@keyframes circleScale {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes circleComplete {
+  0% { stroke-dashoffset: 283; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes checkmarkDraw {
+  0% { stroke-dashoffset: 50; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes fadeSuccess {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* Picture in Picture Animation */
@@ -80,6 +101,28 @@
   animation: messageHighlight 1s ease-out forwards;
 }
 
+/* Post Success Animation Classes */
+.animate-circle-scale {
+  animation: circleScale 0.5s ease-out forwards;
+}
+
+.animate-circle-complete {
+  animation: circleComplete 1s ease-out forwards;
+  stroke-dasharray: 283;
+  stroke-dashoffset: 283;
+}
+
+.animate-checkmark-draw {
+  animation: checkmarkDraw 0.6s ease-out 0.8s forwards;
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+}
+
+.animate-fade-success {
+  animation: fadeSuccess 0.5s ease-out 1.2s forwards;
+  opacity: 0;
+}
+
 /* Picture in Picture Classes */
 .pip-container {
   position: fixed;
@@ -121,3 +164,45 @@
   opacity: 1;
 }
 
+/* Post Success Modal */
+.post-success-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.post-success-container {
+  width: 180px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: hsl(var(--background));
+  border-radius: 16px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  padding: 32px;
+  position: relative;
+}
+
+.post-success-circle {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 24px;
+}
+
+.post-success-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  text-align: center;
+}

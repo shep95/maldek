@@ -1,9 +1,11 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
+import { PostSuccessAnimation } from "@/components/dashboard/post/PostSuccessAnimation";
 
 interface ChatMessage {
   id: string;
@@ -21,11 +23,13 @@ interface SpaceChatProps {
 
 export const SpaceChat = ({ messages, onSendMessage }: SpaceChatProps) => {
   const [message, setMessage] = useState("");
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleSend = () => {
     if (message.trim()) {
       onSendMessage(message);
       setMessage("");
+      setShowSuccessAnimation(true);
     }
   };
 
@@ -72,6 +76,10 @@ export const SpaceChat = ({ messages, onSendMessage }: SpaceChatProps) => {
           </Button>
         </form>
       </div>
+      
+      {showSuccessAnimation && (
+        <PostSuccessAnimation onComplete={() => setShowSuccessAnimation(false)} />
+      )}
     </div>
   );
 };
