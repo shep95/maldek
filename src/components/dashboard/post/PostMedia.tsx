@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { VideoPlayer } from "@/components/videos/VideoPlayer";
 import { cn } from "@/lib/utils";
 import { ThreeDPhotoCarousel } from "@/components/ui/3d-carousel";
+import { TelegramMediaViewer } from "@/components/dashboard/TelegramMediaViewer";
 
 interface PostMediaProps {
   mediaUrls: string[];
@@ -21,7 +22,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
   const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
                               subscription?.tier?.name === 'True Emperor';
   const [publicImageUrls, setPublicImageUrls] = useState<string[]>([]);
-  
+  const [tgViewerOpen, setTgViewerOpen] = useState(false);
+  const [tgViewerMedia, setTgViewerMedia] = useState<{ url: string; isVideo: boolean }>({ url: "", isVideo: false });
+
   useEffect(() => {
     const processMediaUrls = async () => {
       const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
@@ -131,7 +134,17 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
       toast.error('Failed to download media');
     }
   };
-  
+
+  const handleImageClick = (url: string) => {
+    setTgViewerMedia({ url, isVideo: false });
+    setTgViewerOpen(true);
+  };
+
+  const handleVideoMaximize = (url: string) => {
+    setTgViewerMedia({ url, isVideo: true });
+    setTgViewerOpen(true);
+  };
+
   const imageUrls = mediaUrls.filter(url => !isVideoFile(url));
   const videoUrls = mediaUrls.filter(url => isVideoFile(url));
   
@@ -143,29 +156,38 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
         <div className={`grid ${videoUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
           {videoUrls.map((url, i) => (
             <div key={url} className="relative overflow-hidden group rounded-lg">
-              <VideoPlayer 
-                videoUrl={url} 
-                controls 
+              <VideoPlayer
+                videoUrl={url}
+                controls
                 className="w-full h-full object-contain rounded-lg"
               />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white z-10"
+                onClick={() => handleVideoMaximize(url)}
+                title="View fullscreen"
+              >
+                <Maximize className="h-5 w-5" />
+              </Button>
             </div>
           ))}
         </div>
       )}
-      
+
       {shouldUseCarousel && publicImageUrls.length >= 3 && (
         <ThreeDPhotoCarousel imageUrls={publicImageUrls} />
       )}
-      
+
       {imageUrls.length > 0 && imageUrls.length < 3 && (
         <div className={`grid ${imageUrls.length === 1 ? '' : 'grid-cols-2'} gap-2`}>
           {imageUrls.map((url, i) => {
             const publicUrl = getPublicUrl(url);
             const aspectRatio = getAspectRatio(url);
-            
+
             return (
               <div key={url} className="relative overflow-hidden group rounded-lg">
-                <div onClick={() => onMediaClick?.(publicUrl)}>
+                <div onClick={() => handleImageClick(publicUrl)}>
                   <AspectRatio ratio={aspectRatio}>
                     <div className="relative bg-black/5 rounded-lg">
                       <img
@@ -201,9 +223,9 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
                         className="bg-black/50 hover:bg-black/70"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onMediaClick?.(publicUrl);
+                          handleImageClick(publicUrl);
                         }}
-                        title="View full size"
+                        title="View"
                       >
                         <Maximize className="h-4 w-4 text-white" />
                       </Button>
@@ -215,6 +237,22 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
           })}
         </div>
       )}
+
+      <TelegramMediaViewer
+        open={tgViewerOpen}
+        mediaUrl={tgViewerMedia.url}
+        isVideo={tgViewerMedia.isVideo}
+        onClose={() => setTgViewerOpen(false)}
+        onFullscreen={() => {
+          if (tgViewerMedia.isVideo || !tgViewerMedia.url) {
+            window.open(tgViewerMedia.url, "_blank");
+          } else {
+            window.open(tgViewerMedia.url, "_blank");
+          }
+        }}
+        onMinimize={() => setTgViewerOpen(false)}
+        showMinimize={!tgViewerMedia.isVideo}
+      />
     </div>
   );
 };

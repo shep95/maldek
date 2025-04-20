@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { PostHeader } from "./post/PostHeader";
 import { PostContent } from "./post/PostContent";
@@ -43,6 +42,11 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/@${post.author.username}`);
+  };
+
+  const handleMediaClick = (url: string) => {
+    // This will trigger image popout via PostMedia's handler
+    onMediaClick?.(url);
   };
 
   const handleEdit = async () => {
@@ -129,7 +133,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
           {post.media_urls && post.media_urls.length > 0 && (
             <PostMedia 
               mediaUrls={post.media_urls} 
-              onMediaClick={onMediaClick}
+              onMediaClick={handleMediaClick}
             />
           )}
           {isEditing ? (
