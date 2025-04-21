@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { X, Maximize, Minimize } from "lucide-react";
 import { Button } from "../ui/button";
@@ -27,6 +28,8 @@ export const TelegramMediaViewer = ({
   const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const lastPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const imgContainerRef = useRef<HTMLDivElement>(null);
 
   const handleResetZoom = () => {
     setZoom(1);
@@ -62,15 +65,13 @@ export const TelegramMediaViewer = ({
     e.preventDefault();
   };
 
-  const touchStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const imgContainerRef = useRef<HTMLDivElement>(null);
-
   const handleTouchStart = (e: React.TouchEvent) => {
     if (zoom === 1) return;
     const touch = e.touches[0];
     setDragging(true);
     touchStart.current = { x: touch.clientX - offset.x, y: touch.clientY - offset.y };
   };
+  
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!dragging) return;
     const touch = e.touches[0];
@@ -78,6 +79,7 @@ export const TelegramMediaViewer = ({
     const nextY = touch.clientY - touchStart.current.y;
     setOffset({ x: nextX, y: nextY });
   };
+  
   const handleTouchEnd = () => {
     setDragging(false);
   };
