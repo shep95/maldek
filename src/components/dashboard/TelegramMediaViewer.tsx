@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { X, Maximize, Minimize } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
@@ -36,8 +36,15 @@ export const TelegramMediaViewer = ({
     setOffset({ x: 0, y: 0 });
   };
 
+  // Reset zoom when modal closes
+  useEffect(() => {
+    if (!open) {
+      handleResetZoom();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   if (!open) {
-    if (zoom !== 1) handleResetZoom();
     return null;
   }
 
@@ -168,7 +175,6 @@ export const TelegramMediaViewer = ({
             size="icon"
             onClick={() => {
               onClose();
-              handleResetZoom();
             }}
             className="bg-black/40 hover:bg-black/90 text-white"
             title="Close"
@@ -223,3 +229,5 @@ export const TelegramMediaViewer = ({
     </div>
   );
 };
+
+// ... no code below, the rest is kept the same ...
