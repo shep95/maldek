@@ -1,5 +1,4 @@
-
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, DollarSign, BrainCircuit, Users, LayoutGrid, Coins, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, LayoutGrid, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -55,7 +54,6 @@ export const NavItems = ({
     setIsCreatingPost(true);
   };
 
-  // Everything is free now
   const hasPremiumFeatures = true;
 
   const navItems = [
@@ -121,14 +119,6 @@ export const NavItems = ({
       className: "text-accent hover:bg-accent/10"
     },
     { 
-      icon: Coins, 
-      label: "Subscribe", 
-      path: "/subscription",
-      active: location.pathname === "/subscription",
-      description: "Subscribe to our platform",
-      className: "text-accent relative hover:bg-accent/10"
-    },
-    { 
       icon: Plus, 
       label: "Create Post",
       onClick: handleCreatePost,
@@ -141,7 +131,6 @@ export const NavItems = ({
       label: "Logout", 
       onClick: handleLogout
     },
-    // Emperor Chat item removed
   ];
 
   return (

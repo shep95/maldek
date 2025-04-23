@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
@@ -15,11 +14,9 @@ import Profiles from "@/pages/Profiles";
 import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
-import Subscription from "@/pages/Subscription";
 import Features from "@/pages/Features";
 import HashtagPage from "@/pages/HashtagPage";
 
-// All features are now free - this wrapper just verifies authentication
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
   
@@ -56,7 +53,6 @@ export const AppRoutes = () => {
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
         <Route path="/spaces" element={<Spaces />} />
-        <Route path="/subscription" element={<Subscription />} />
         <Route path="/features" element={<Features />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
@@ -64,7 +60,6 @@ export const AppRoutes = () => {
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
-        {/* Emperor chat route is removed */}
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
