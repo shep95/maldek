@@ -1,5 +1,0 @@
-
-project_id = "yridaehdhtmdtasnbsrn"
-
-[functions.create-checkout]
-verify_jwt = true

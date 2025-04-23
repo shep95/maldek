@@ -1,4 +1,0 @@
-project_id = "yridaehdhtmdtasnbsrn"
-
-[functions.handle-ad-payment]
-verify_jwt = false

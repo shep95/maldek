@@ -1,13 +1,9 @@
-
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Coins, Users, Star, Image, FolderLock, Crown, Play, BarChart2, BadgeCheck, Calendar } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Coins, Users, Star, Image, FolderLock, Crown, Play, BarChart2, BadgeCheck, Calendar } from "lucide-react";
 
 const Subscription = () => {
-  const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState("monthly");
   
   return (
@@ -27,11 +23,13 @@ const Subscription = () => {
           <p className="text-muted-foreground mb-6">
             We believe in building community first. By providing all features for free, 
             we're focusing on growing our user base and creating the best possible experience.
-            If you'd still like to support our platform development, you can subscribe below.
+            If you'd like to support our platform in the future, let us know!
           </p>
         </div>
         
-        <h3 className="text-2xl font-bold text-center mb-8">Support Our Development</h3>
+        <h3 className="text-2xl font-bold text-center mb-8">
+          Support Our Development
+        </h3>
         
         <div className="max-w-5xl mx-auto">
           <Tabs defaultValue="monthly" value={selectedTab} onValueChange={setSelectedTab} className="w-full">
@@ -105,14 +103,6 @@ const Subscription = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-center pb-6">
-                    <Button 
-                      className="w-full bg-primary hover:bg-primary/90"
-                      onClick={() => window.open('https://buy.stripe.com/9AQ9D74yBg6UdfW3cf', '_blank')}
-                    >
-                      Subscribe Monthly
-                    </Button>
-                  </CardFooter>
                 </Card>
               </div>
             </TabsContent>
@@ -172,14 +162,6 @@ const Subscription = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-center pb-6">
-                    <Button 
-                      className="w-full bg-primary hover:bg-primary/90"
-                      onClick={() => window.open('https://buy.stripe.com/6oE02x0il4ocfo45kq', '_blank')}
-                    >
-                      Subscribe Yearly
-                    </Button>
-                  </CardFooter>
                 </Card>
               </div>
             </TabsContent>
@@ -219,14 +201,6 @@ const Subscription = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-center pb-6">
-                    <Button 
-                      className="w-full bg-accent hover:bg-accent/90"
-                      onClick={() => window.open('https://buy.stripe.com/cN2dTne9b07Wgs8bIM', '_blank')}
-                    >
-                      Subscribe Yearly
-                    </Button>
-                  </CardFooter>
                 </Card>
               </div>
             </TabsContent>
