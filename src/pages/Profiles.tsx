@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
 import { ProfilePrivacyTab } from "@/components/profile/ProfilePrivacyTab";
 import { CircuitBoard, Signal, Lock } from "lucide-react";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 const Profiles = () => {
   const session = useSession();
@@ -21,6 +21,7 @@ const Profiles = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { blockedUserIds, isLoadingBlocked } = useBlockedUsers();
 
   console.log('=== Profile Page Debug Logs ===');
   console.log('Current pathname:', location.pathname);
@@ -164,14 +165,12 @@ const Profiles = () => {
     }
   };
 
-  if (profileError) {
-    return <DashboardError />;
-  }
+  const visiblePosts = posts?.filter(
+    post => !blockedUserIds?.includes(post.user_id)
+  ) || [];
 
-  if (profileLoading) {
-    return <DashboardLoading />;
-  }
-
+  if (profileError) return <DashboardError />;
+  if (profileLoading || isLoadingBlocked) return <DashboardLoading />;
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -186,7 +185,6 @@ const Profiles = () => {
     );
   }
 
-  // Only show privacy tab for the user's own profile
   const isOwnProfile = session?.user?.id === profile.id;
 
   return (
@@ -222,9 +220,9 @@ const Profiles = () => {
           
           <TabsContent value="posts" className="mt-0 animate-fade-in">
             <ProfilePosts 
-              posts={posts || []} 
-              isLoading={postsLoading} 
-              onPostAction={handlePostAction} 
+              posts={visiblePosts}
+              isLoading={postsLoading}
+              onPostAction={handlePostAction}
             />
           </TabsContent>
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePosts } from "@/hooks/usePosts";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
 import { CheckCircle2, Users } from "lucide-react";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 interface PostListProps {
   followingOnly: boolean;
@@ -24,6 +24,7 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 2000;
+  const { blockedUserIds, isLoadingBlocked } = useBlockedUsers();
 
   React.useEffect(() => {
     const fetchPostStats = async () => {
@@ -146,7 +147,11 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
     }
   };
 
-  if (isLoading) {
+  const visiblePosts = posts?.filter(
+    (post) => !blockedUserIds.includes(post.author?.id)
+  ) || [];
+
+  if (isLoading || isLoadingBlocked) {
     return (
       <div className="space-y-6">
         {[1, 2, 3].map((i) => (
@@ -173,7 +178,6 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
       />
 
       <div className="space-y-6">
-        {/* Desktop filter bar - only visible on desktop */}
         <div className="hidden md:block sticky top-0 z-50 rounded-xl pt-6 mb-6">
           <div className="bg-background/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-1.5">
             <div className="grid grid-cols-2 gap-3 w-full">
@@ -204,9 +208,9 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
         </div>
 
         <div className="md:pt-6 space-y-8">
-          {posts && posts.length > 0 ? (
+          {visiblePosts && visiblePosts.length > 0 ? (
             <>
-              {posts.map((post) => (
+              {visiblePosts.map((post) => (
                 <PostCard
                   key={post.id}
                   post={{
