@@ -11,13 +11,14 @@ import { PostCard } from "@/components/dashboard/PostCard";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 const Followers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const session = useSession();
+  const { blockedUserIds, blockUser, unblockUser, isBlocking, isUnblocking } = useBlockedUsers();
 
-  // Query to check if the current user is following a specific user
   const { data: followingData, refetch: refetchFollowing } = useQuery({
     queryKey: ['following-status', selectedUser?.id],
     queryFn: async () => {
@@ -30,7 +31,7 @@ const Followers = () => {
         .eq('following_id', selectedUser.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is the "no rows returned" error
+      if (error && error.code !== 'PGRST116') {
         console.error('Error checking follow status:', error);
         throw error;
       }
@@ -40,7 +41,6 @@ const Followers = () => {
     enabled: !!session?.user?.id && !!selectedUser?.id,
   });
 
-  // Add refetch to searchResults query
   const { data: searchResults, isLoading, refetch: refetchSearch } = useQuery({
     queryKey: ['user-search', searchQuery],
     queryFn: async () => {
@@ -149,7 +149,7 @@ const Followers = () => {
         });
 
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
           toast.error("You are already following this user");
           return;
         }
@@ -157,10 +157,9 @@ const Followers = () => {
       }
 
       toast.success("Successfully followed user");
-      refetchFollowing(); // Refresh following status
-      refetchSearch(); // Refresh the search results to update follower count
-      
-      // If the user is currently selected in the dialog, update their data
+      refetchFollowing();
+      refetchSearch();
+
       if (selectedUser?.id === userId) {
         const { data } = await supabase
           .from('profiles')
@@ -191,10 +190,9 @@ const Followers = () => {
       if (error) throw error;
 
       toast.success("Successfully unfollowed user");
-      refetchFollowing(); // Refresh following status
-      refetchSearch(); // Refresh the search results to update follower count
-      
-      // If the user is currently selected in the dialog, update their data
+      refetchFollowing();
+      refetchSearch();
+
       if (selectedUser?.id === userId) {
         const { data } = await supabase
           .from('profiles')
@@ -210,6 +208,14 @@ const Followers = () => {
       console.error("Error unfollowing user:", error);
       toast.error("Failed to unfollow user");
     }
+  };
+
+  const handleBlockUser = (userId: string) => {
+    if (!blockedUserIds?.includes(userId)) blockUser(userId);
+  };
+
+  const handleUnblockUser = (userId: string) => {
+    if (blockedUserIds?.includes(userId)) unblockUser(userId);
   };
 
   return (
@@ -265,17 +271,44 @@ const Followers = () => {
                   )}
                 </div>
                 {session?.user?.id !== user.id && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFollow(user.id);
-                    }}
-                    className="ml-2"
-                  >
-                    Follow
-                  </Button>
+                  <div className="flex flex-col gap-2 ml-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFollow(user.id);
+                      }}
+                      className="mb-1"
+                    >
+                      Follow
+                    </Button>
+                    {!blockedUserIds?.includes(user.id) ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={isBlocking}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBlockUser(user.id);
+                        }}
+                      >
+                        Block
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={isUnblocking}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUnblockUser(user.id);
+                        }}
+                      >
+                        Unblock
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </Card>
@@ -303,97 +336,39 @@ const Followers = () => {
               </div>
             </div>
             {session?.user?.id !== selectedUser?.id && (
-              <Button 
-                variant="outline"
-                onClick={() => followingData ? 
-                  handleUnfollow(selectedUser.id) : 
-                  handleFollow(selectedUser.id)
-                }
-              >
-                {followingData ? 'Unfollow' : 'Follow'}
-              </Button>
+              <div className="flex flex-col gap-2 items-end">
+                <Button 
+                  variant="outline"
+                  onClick={() => followingData ? 
+                    handleUnfollow(selectedUser.id) : 
+                    handleFollow(selectedUser.id)
+                  }
+                  className="mb-1"
+                >
+                  {followingData ? 'Unfollow' : 'Follow'}
+                </Button>
+                {!blockedUserIds?.includes(selectedUser.id) ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={isBlocking}
+                    onClick={() => handleBlockUser(selectedUser.id)}
+                  >
+                    Block
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={isUnblocking}
+                    onClick={() => handleUnblockUser(selectedUser.id)}
+                  >
+                    Unblock
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-
-          <Tabs defaultValue="posts" className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
-              <TabsTrigger value="media" className="flex-1">Media</TabsTrigger>
-              <TabsTrigger value="videos" className="flex-1">Videos</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="posts" className="mt-4 max-h-[400px] overflow-y-auto">
-              {userPosts?.length ? (
-                <div className="space-y-4">
-                  {userPosts.map((post) => (
-                    <PostCard
-                      key={post.id}
-                      post={{
-                        ...post,
-                        author: {
-                          id: post.profiles.id,
-                          username: post.profiles.username,
-                          avatar_url: post.profiles.avatar_url,
-                          name: post.profiles.username
-                        },
-                        timestamp: new Date(post.created_at),
-                        comments: post.comments?.length || 0,
-                        isLiked: post.post_likes?.some(like => like.user_id === session?.user?.id) || false,
-                        isBookmarked: post.bookmarks?.some(bookmark => bookmark.user_id === session?.user?.id) || false
-                      }}
-                      currentUserId={session?.user?.id || ''}
-                      onPostAction={() => {}}
-                      onMediaClick={() => {}}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">No posts yet</p>
-              )}
-            </TabsContent>
-
-            <TabsContent value="media" className="mt-4 max-h-[400px] overflow-y-auto">
-              {userMedia?.length ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {userMedia.map((post) => (
-                    post.media_urls.map((url: string, index: number) => (
-                      <img
-                        key={`${post.id}-${index}`}
-                        src={url}
-                        alt={`Media by ${selectedUser?.username}`}
-                        className="w-full h-32 object-cover rounded-md"
-                      />
-                    ))
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">No media posts yet</p>
-              )}
-            </TabsContent>
-
-            <TabsContent value="videos" className="mt-4 max-h-[400px] overflow-y-auto">
-              {userVideos?.length ? (
-                <div className="space-y-4">
-                  {userVideos.map((video) => (
-                    <div key={video.id} className="rounded-lg overflow-hidden">
-                      <video
-                        src={video.video_url}
-                        controls
-                        className="w-full"
-                        poster={video.thumbnail_url}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                      <h3 className="font-semibold mt-2">{video.title}</h3>
-                      <p className="text-sm text-muted-foreground">{video.description}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground py-4">No videos yet</p>
-              )}
-            </TabsContent>
-          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
