@@ -22,7 +22,6 @@ const Features = () => {
               tier="Free"
               price="$0"
               bestFor="For everyone!"
-              CTA="Already Available"
               benefits={[
                 { text: "Content creation", checked: true },
                 { text: "Video uploads", checked: true },
@@ -36,7 +35,6 @@ const Features = () => {
               tier="Subscription Opportunity"
               price="Contact us"
               bestFor="For subscribers"
-              CTA="Learn More"
               benefits={[
                 { text: "Early subscriber access", checked: true },
                 { text: "Platform equity", checked: true },
@@ -50,7 +48,6 @@ const Features = () => {
               tier="Partnership"
               price="Contact us"
               bestFor="For businesses"
-              CTA="Contact Us"
               benefits={[
                 { text: "API access", checked: true },
                 { text: "White-label solutions", checked: true },
