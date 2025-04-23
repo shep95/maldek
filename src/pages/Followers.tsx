@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,12 +211,26 @@ const Followers = () => {
     }
   };
 
+  // Fix: Add null checks for session before trying to access blockedUserIds
   const handleBlockUser = (userId: string) => {
-    if (!blockedUserIds?.includes(userId)) blockUser(userId);
+    if (!session) {
+      toast.error("Please sign in to block users");
+      return;
+    }
+    if (blockedUserIds && !blockedUserIds.includes(userId)) {
+      blockUser(userId);
+    }
   };
 
+  // Fix: Add null checks for session before trying to access blockedUserIds  
   const handleUnblockUser = (userId: string) => {
-    if (blockedUserIds?.includes(userId)) unblockUser(userId);
+    if (!session) {
+      toast.error("Please sign in to unblock users");
+      return;
+    }
+    if (blockedUserIds && blockedUserIds.includes(userId)) {
+      unblockUser(userId);
+    }
   };
 
   return (
@@ -270,7 +285,7 @@ const Followers = () => {
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{user.bio}</p>
                   )}
                 </div>
-                {session?.user?.id !== user.id && (
+                {session?.user?.id && session.user.id !== user.id && (
                   <div className="flex flex-col gap-2 ml-2">
                     <Button 
                       variant="outline" 
@@ -325,7 +340,7 @@ const Followers = () => {
           <div className="flex items-center gap-4 mb-6">
             <Avatar className="h-20 w-20">
               <AvatarImage src={selectedUser?.avatar_url || ''} />
-              <AvatarFallback>{selectedUser?.username[0]?.toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{selectedUser?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <h2 className="text-2xl font-bold">@{selectedUser?.username}</h2>
@@ -335,7 +350,7 @@ const Followers = () => {
                 <span>{selectedUser?.total_posts || 0} posts</span>
               </div>
             </div>
-            {session?.user?.id !== selectedUser?.id && (
+            {session?.user?.id && selectedUser && session?.user?.id !== selectedUser?.id && (
               <div className="flex flex-col gap-2 items-end">
                 <Button 
                   variant="outline"
