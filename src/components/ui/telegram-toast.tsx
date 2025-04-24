@@ -9,7 +9,7 @@ interface TelegramToastProps {
 }
 
 export const showTelegramToast = ({ title, message, avatar }: TelegramToastProps) => {
-  toast.custom((t: { visible: boolean; id: string }) => (
+  toast.custom((id) => (
     <div className={`
       animate-telegramPopoutIn
       group
@@ -17,7 +17,7 @@ export const showTelegramToast = ({ title, message, avatar }: TelegramToastProps
       border border-white/10 shadow-lg
       p-4 rounded-xl
       flex items-start gap-3
-      ${t.visible ? 'opacity-100' : 'opacity-0 translate-y-4'}
+      opacity-100
       transition-all duration-200
     `}>
       <Avatar className="h-10 w-10 shrink-0">
