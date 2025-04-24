@@ -9,7 +9,7 @@ interface TelegramToastProps {
 }
 
 export const showTelegramToast = ({ title, message, avatar }: TelegramToastProps) => {
-  toast.custom((t) => (
+  toast.custom((t: { visible: boolean; id: string }) => (
     <div className={`
       animate-telegramPopoutIn
       group
