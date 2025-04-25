@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -8,6 +7,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { HeroGeometric } from "@/components/ui/shape-landing-hero";
 import { Copy, RectangleHorizontal } from "lucide-react";
+import { TbaCopyBox } from "@/components/auth/TbaCopyBox";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -133,20 +133,9 @@ const Auth = () => {
       {/* Geometric Hero Background */}
       <HeroGeometric hideContent={true} />
 
-      {/* TBA Rectangle and Copy CA */}
-      <div className="flex items-center gap-3 mb-6 z-20 relative">
-        <span className="flex items-center bg-[#222] text-white px-4 py-2 rounded-lg border border-[#ccc] font-semibold text-lg select-none shadow-sm">
-          <RectangleHorizontal className="w-4 h-4 mr-2 text-accent" />
-          TBA
-        </span>
-        <button
-          onClick={handleCopyCA}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-accent bg-white/10 text-accent hover:bg-accent hover:text-white transition-colors text-sm font-medium shadow-sm active:scale-95"
-          type="button"
-        >
-          <Copy className="w-4 h-4" />
-          Copy CA
-        </button>
+      {/* TBA Copy Card - modern and centered */}
+      <div className="mb-8 z-20 relative">
+        <TbaCopyBox />
       </div>
 
       {/* Main content */}
