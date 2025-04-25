@@ -1,3 +1,4 @@
+
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
@@ -11,7 +12,6 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import Settings from "@/pages/Settings";
 import DaarpAI from "@/pages/DaarpAI";
 import Profiles from "@/pages/Profiles";
-import Spaces from "@/pages/Spaces";
 import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
 import Features from "@/pages/Features";
@@ -52,7 +52,6 @@ export const AppRoutes = () => {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/profiles" element={<Profiles />} />
-        <Route path="/spaces" element={<Spaces />} />
         <Route path="/features" element={<Features />} />
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
