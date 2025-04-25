@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { HeroGeometric } from "@/components/ui/shape-landing-hero";
 import { Copy, RectangleHorizontal } from "lucide-react";
 import { TbaCopyBox } from "@/components/auth/TbaCopyBox";
+import { GooglePlayBadge } from "@/components/auth/GooglePlayBadge";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -163,6 +164,8 @@ const Auth = () => {
             </button>
           </div>
         </div>
+        {/* Google Play badge below the main box */}
+        <GooglePlayBadge />
       </motion.div>
 
       {/* Decorative elements */}
