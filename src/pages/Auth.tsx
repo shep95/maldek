@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -6,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { HeroGeometric } from "@/components/ui/shape-landing-hero";
+import { Copy, RectangleHorizontal } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -120,10 +122,32 @@ const Auth = () => {
     }
   };
 
+  // Handler for copying "CA" to clipboard
+  const handleCopyCA = () => {
+    navigator.clipboard.writeText("CA");
+    toast.success("Copied CA to clipboard");
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 relative overflow-hidden">
       {/* Geometric Hero Background */}
       <HeroGeometric hideContent={true} />
+
+      {/* TBA Rectangle and Copy CA */}
+      <div className="flex items-center gap-3 mb-6 z-20 relative">
+        <span className="flex items-center bg-[#222] text-white px-4 py-2 rounded-lg border border-[#ccc] font-semibold text-lg select-none shadow-sm">
+          <RectangleHorizontal className="w-4 h-4 mr-2 text-accent" />
+          TBA
+        </span>
+        <button
+          onClick={handleCopyCA}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-accent bg-white/10 text-accent hover:bg-accent hover:text-white transition-colors text-sm font-medium shadow-sm active:scale-95"
+          type="button"
+        >
+          <Copy className="w-4 h-4" />
+          Copy CA
+        </button>
+      </div>
 
       {/* Main content */}
       <motion.div 
