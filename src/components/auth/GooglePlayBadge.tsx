@@ -1,7 +1,7 @@
 
 import React from "react";
 
-// Google Play logo only (brand-compliant)
+// Google Play logo with improved cross-browser compatibility
 export const GooglePlayBadge: React.FC = () => (
   <a
     href="https://play.google.com/store/apps/details?id=com.tGBvxWwSLUzd.natively"
@@ -11,13 +11,15 @@ export const GooglePlayBadge: React.FC = () => (
     aria-label="Get it on Google Play"
   >
     <img
-      src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-      alt="Google Play Store logo"
+      src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png"
+      alt="Get it on Google Play"
       className="h-10 w-auto"
       style={{ display: "block" }}
       draggable={false}
       decoding="async"
       loading="lazy"
+      fetchPriority="high"
+      crossOrigin="anonymous"
     />
   </a>
 );
