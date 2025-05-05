@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -89,7 +88,7 @@ export const CommentSection = ({ postId, comments, currentUserId }: CommentSecti
     }
   };
 
-  const handleReplySubmit = async (content: string, parentId: string, gifUrl?: string) => {
+  const handleReplySubmit = async (content: string, parentId: string, gifUrl?: string): Promise<void> => {
     if (!session) {
       toast.error('You must be logged in to reply.');
       return;
@@ -129,7 +128,7 @@ export const CommentSection = ({ postId, comments, currentUserId }: CommentSecti
       // Update the query cache
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       
-      return data;
+      // No need to return data, just fulfill the Promise<void> return type
     } catch (error) {
       console.error('Error submitting reply:', error);
       throw error;
