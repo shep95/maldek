@@ -1,15 +1,14 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CircuitBoard, Signal, Lock, User, ArrowLeft } from "lucide-react";
+import { CircuitBoard, Signal, Lock, X, User } from "lucide-react";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfilePosts } from "@/components/profile/ProfilePosts";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
 import { ProfilePrivacyTab } from "@/components/profile/ProfilePrivacyTab";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { useProfileNavigation } from "@/hooks/useProfileNavigation";
 
 interface ProfilePopupProps {
@@ -22,8 +21,7 @@ interface ProfilePopupProps {
 }
 
 export const ProfilePopup = ({ isOpen, onClose, profile, isOwnProfile, posts, isLoading }: ProfilePopupProps) => {
-  const navigate = useNavigate();
-  const { navigateToProfile } = useProfileNavigation();
+  const { viewFullProfile } = useProfileNavigation();
   
   if (!profile) return null;
 
@@ -43,25 +41,31 @@ export const ProfilePopup = ({ isOpen, onClose, profile, isOwnProfile, posts, is
       toast.error(`Failed to ${action} post`);
     }
   };
-  
-  const viewFullProfile = () => {
-    onClose();
-    navigateToProfile(profile.username);
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-4 sm:p-0 gap-0 bg-background/60 backdrop-blur-xl border-border/50 sm:mt-0 sm:mb-0 mt-4 mb-4 mx-4 sm:mx-0 rounded-xl">
         <div className="overflow-y-auto max-h-[90vh] scrollbar-none relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={viewFullProfile}
-            className="absolute top-4 right-4 z-20 bg-background/50 backdrop-blur-sm border border-border/50 rounded-full"
-            aria-label="View full profile"
-          >
-            <User className="h-5 w-5" />
-          </Button>
+          <div className="absolute top-4 right-4 z-20 flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => viewFullProfile(profile.username)}
+              className="bg-background/50 backdrop-blur-sm border border-border/50 rounded-full"
+              aria-label="View full profile"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="bg-background/50 backdrop-blur-sm border border-border/50 rounded-full"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
           
           <ProfileHeader profile={profile} isLoading={false} />
           
