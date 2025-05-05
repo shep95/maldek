@@ -40,6 +40,7 @@ export const SpaceParticipantItem = ({
 
   const handleProfileClick = (e: React.MouseEvent) => {
     if (participant.profile?.username) {
+      e.preventDefault(); // Prevent default behavior
       navigateToProfile(participant.profile.username, e);
     }
   };

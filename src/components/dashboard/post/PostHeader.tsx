@@ -34,6 +34,7 @@ export const PostHeader = ({
   };
 
   const handleAvatarClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default behavior
     navigateToProfile(author.username, e);
   };
 

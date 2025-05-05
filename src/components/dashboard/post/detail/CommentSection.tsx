@@ -87,6 +87,7 @@ export const CommentSection = ({ postId, comments, currentUserId }: CommentSecti
   };
 
   const handleUserClick = (username: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default behavior
     e.stopPropagation();
     navigateToProfile(username, e);
   };
