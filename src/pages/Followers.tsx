@@ -563,14 +563,7 @@ const Followers = () => {
               </div>
             </Card>
           ) : (
-            <Card className="p-8 h-80 flex items-center justify-center text-center bg-black/30 border-accent/10">
-              <div>
-                <h3 className="text-xl font-medium mb-2">Select a user to view their profile</h3>
-                <p className="text-muted-foreground">
-                  Choose from trending creators in the list on the left
-                </p>
-              </div>
-            </Card>
+            <div></div>
           )}
         </div>
       </div>
