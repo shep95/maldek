@@ -10,6 +10,7 @@ export const useAnalytics = (userId: string) => {
       console.log('Fetching analytics for user:', userId);
       
       try {
+        // First fetch user's posts to get the post IDs
         const { data: posts, error: postsError } = await supabase
           .from('posts')
           .select('id, created_at')
@@ -22,7 +23,7 @@ export const useAnalytics = (userId: string) => {
 
         if (!posts || posts.length === 0) {
           console.log('No posts found for user, generating sample data');
-          // Generate sample data for demonstration
+          // Generate sample data for demonstration if no posts exist
           return generateSampleData();
         }
 
@@ -47,7 +48,7 @@ export const useAnalytics = (userId: string) => {
 
         if (commentsError) throw commentsError;
 
-        // Get views data
+        // Get views data from post_analytics
         const { data: viewsData, error: viewsError } = await supabase
           .from('post_analytics')
           .select('*')
@@ -99,6 +100,7 @@ export const useAnalytics = (userId: string) => {
           if (dateEntry) dateEntry.comment_count += 1;
         });
 
+        // Transform the data for the frontend
         return dates.map(day => ({
           date: format(new Date(day.date), 'MMM dd'),
           views: day.view_count,
@@ -108,6 +110,7 @@ export const useAnalytics = (userId: string) => {
         }));
       } catch (error) {
         console.error('Error in analytics query:', error);
+        // Fallback to sample data if error
         return generateSampleData();
       }
     },
