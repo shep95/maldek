@@ -1,3 +1,5 @@
+
+import { useState, useEffect } from "react";
 import { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
@@ -5,18 +7,64 @@ interface AnalyticsCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
-  trend?: string; // Added trend as an optional prop
+  trend?: string;
 }
 
 export const AnalyticsCard = ({ title, value, icon: Icon, trend }: AnalyticsCardProps) => {
+  const [animatedValue, setAnimatedValue] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // Animate the number counting up
+  useEffect(() => {
+    const numericValue = typeof value === 'number' ? value : parseInt(value.toString()) || 0;
+    let startValue = 0;
+    const duration = 2000; // Animation duration in ms
+    const frameRate = 30; // Updates per second
+    const totalFrames = duration / (1000 / frameRate);
+    const valueIncrement = numericValue / totalFrames;
+    let currentFrame = 0;
+    
+    const timer = setInterval(() => {
+      currentFrame++;
+      startValue += valueIncrement;
+      setAnimatedValue(Math.floor(startValue));
+      
+      if (currentFrame >= totalFrames) {
+        clearInterval(timer);
+        setAnimatedValue(numericValue);
+      }
+    }, 1000 / frameRate);
+    
+    return () => clearInterval(timer);
+  }, [value]);
+
+  // Format trend as a positive or negative value
+  const isTrendPositive = trend && trend.startsWith('+');
+  
   return (
-    <Card className="p-4 bg-black/20 backdrop-blur border-accent/20">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="h-5 w-5 text-accent" />
-        <h3 className="text-lg font-semibold">{title}</h3>
+    <Card 
+      className={`p-4 bg-black/20 backdrop-blur border-accent/20 transition-all duration-300 ${
+        isHovered ? 'shadow-[0_0_20px_rgba(249,115,22,0.2)]' : ''
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className={`h-5 w-5 text-accent transition-all duration-300 ${
+          isHovered ? 'scale-110' : ''
+        }`} />
+        <h3 className="text-sm font-medium text-gray-300">{title}</h3>
       </div>
-      <p className="text-3xl font-bold text-accent">{value}</p>
-      {trend && <p className="text-sm text-accent/80 mt-1">{trend}</p>}
+      <div className="flex items-baseline gap-2">
+        <p className="text-2xl font-bold text-white">{animatedValue.toLocaleString()}</p>
+        {trend && (
+          <span className={`text-xs ${
+            isTrendPositive ? 'text-emerald-400' : 'text-rose-400'
+          }`}>
+            {trend}
+          </span>
+        )}
+      </div>
     </Card>
   );
 };

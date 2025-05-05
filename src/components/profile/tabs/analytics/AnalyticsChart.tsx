@@ -1,20 +1,20 @@
+
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { 
-  BarChart, 
-  Bar, 
+  AreaChart,
+  Area, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
   Legend,
-  Area,
   ComposedChart,
-  Line
+  Line,
+  Bar
 } from 'recharts';
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Eye, ThumbsUp, MessageSquare, Clock, BarChart2, LineChart, Activity } from "lucide-react";
+import { Eye, ThumbsUp, MessageSquare, Clock } from "lucide-react";
 
 interface ChartData {
   date: string;
@@ -28,10 +28,10 @@ interface AnalyticsChartProps {
   data: ChartData[];
 }
 
-type ChartType = 'bar' | 'line' | 'composed';
+type ChartType = 'area' | 'line';
 
 export const AnalyticsChart = ({ data }: AnalyticsChartProps) => {
-  const [chartType, setChartType] = useState<ChartType>('composed');
+  const [chartType, setChartType] = useState<ChartType>('area');
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -61,19 +61,72 @@ export const AnalyticsChart = ({ data }: AnalyticsChartProps) => {
     };
 
     switch (chartType) {
-      case 'bar':
+      case 'area':
         return (
-          <BarChart {...commonProps}>
+          <AreaChart {...commonProps}>
+            <defs>
+              <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#F97316" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#F97316" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22C55E" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="colorComments" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="colorWatchTime" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#A855F7" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="#A855F7" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
             <XAxis dataKey="date" stroke="#666" />
             <YAxis stroke="#666" />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Bar dataKey="views" name="Views" fill="#F97316" />
-            <Bar dataKey="likes" name="Likes" fill="#22C55E" />
-            <Bar dataKey="comments" name="Comments" fill="#3B82F6" />
-            <Bar dataKey="watchTime" name="Watch Time (min)" fill="#A855F7" />
-          </BarChart>
+            <Area 
+              type="monotone" 
+              dataKey="views" 
+              name="Views" 
+              stroke="#F97316" 
+              fill="url(#colorViews)" 
+              strokeWidth={2} 
+              activeDot={{ r: 6, fill: "#F97316", stroke: "#fff" }} 
+              animationDuration={1500}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="likes" 
+              name="Likes" 
+              stroke="#22C55E" 
+              fill="url(#colorLikes)" 
+              strokeWidth={2} 
+              activeDot={{ r: 6, fill: "#22C55E", stroke: "#fff" }} 
+              animationDuration={1500}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="comments" 
+              name="Comments" 
+              stroke="#3B82F6" 
+              fill="url(#colorComments)" 
+              strokeWidth={2} 
+              activeDot={{ r: 6, fill: "#3B82F6", stroke: "#fff" }} 
+              animationDuration={1500}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="watchTime" 
+              name="Watch Time (min)" 
+              stroke="#A855F7" 
+              fill="url(#colorWatchTime)" 
+              strokeWidth={2} 
+              activeDot={{ r: 6, fill: "#A855F7", stroke: "#fff" }} 
+              animationDuration={1500}
+            />
+          </AreaChart>
         );
 
       case 'line':
@@ -83,71 +136,79 @@ export const AnalyticsChart = ({ data }: AnalyticsChartProps) => {
             <XAxis dataKey="date" stroke="#666" />
             <YAxis stroke="#666" />
             <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Line type="monotone" dataKey="views" name="Views" stroke="#F97316" dot={{ fill: '#F97316' }} />
-            <Line type="monotone" dataKey="likes" name="Likes" stroke="#22C55E" dot={{ fill: '#22C55E' }} />
-            <Line type="monotone" dataKey="comments" name="Comments" stroke="#3B82F6" dot={{ fill: '#3B82F6' }} />
-            <Line type="monotone" dataKey="watchTime" name="Watch Time (min)" stroke="#A855F7" dot={{ fill: '#A855F7' }} />
-          </ComposedChart>
-        );
-
-      case 'composed':
-        return (
-          <ComposedChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-            <XAxis dataKey="date" stroke="#666" />
-            <YAxis stroke="#666" />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Area type="monotone" dataKey="views" name="Views" fill="#F97316" fillOpacity={0.1} stroke="#F97316" />
-            <Bar dataKey="likes" name="Likes" fill="#22C55E" />
-            <Bar dataKey="comments" name="Comments" fill="#3B82F6" />
-            <Line type="monotone" dataKey="watchTime" name="Watch Time (min)" stroke="#A855F7" dot={{ fill: '#A855F7' }} />
+            <Line 
+              type="monotone" 
+              dataKey="views" 
+              name="Views" 
+              stroke="#F97316" 
+              strokeWidth={3}
+              dot={{ stroke: '#F97316', strokeWidth: 2, r: 4, fill: '#000' }}
+              activeDot={{ r: 8, stroke: '#F97316', strokeWidth: 2, fill: '#000' }}
+              animationDuration={1500}
+            />
+            <Bar 
+              dataKey="likes" 
+              name="Likes" 
+              fill="#22C55E" 
+              radius={[4, 4, 0, 0]}
+              animationDuration={1500}
+            />
+            <Bar 
+              dataKey="comments" 
+              name="Comments" 
+              fill="#3B82F6" 
+              radius={[4, 4, 0, 0]}
+              animationDuration={1500} 
+            />
+            <Line 
+              type="monotone" 
+              dataKey="watchTime" 
+              name="Watch Time (min)" 
+              stroke="#A855F7" 
+              strokeWidth={3}
+              dot={{ stroke: '#A855F7', strokeWidth: 2, r: 4, fill: '#000' }}
+              activeDot={{ r: 8, stroke: '#A855F7', strokeWidth: 2, fill: '#000' }}
+              animationDuration={1500}
+            />
           </ComposedChart>
         );
     }
   };
 
   return (
-    <Card className="p-6 bg-black/20 backdrop-blur border-accent/20">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold">7-Day Performance</h3>
+    <>
+      <div className="flex items-center justify-between mb-4">
         <div className="flex gap-2">
-          <Button
-            variant={chartType === 'bar' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setChartType('bar')}
-            className="gap-2"
+          <button
+            onClick={() => setChartType('area')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              chartType === 'area' 
+                ? 'bg-accent text-white' 
+                : 'text-gray-400 hover:text-white bg-black/30'
+            }`}
           >
-            <BarChart2 className="w-4 h-4" />
-            Bar
-          </Button>
-          <Button
-            variant={chartType === 'line' ? 'default' : 'outline'}
-            size="sm"
+            Area
+          </button>
+          <button
             onClick={() => setChartType('line')}
-            className="gap-2"
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              chartType === 'line' 
+                ? 'bg-accent text-white' 
+                : 'text-gray-400 hover:text-white bg-black/30'
+            }`}
           >
-            <LineChart className="w-4 h-4" />
-            Line
-          </Button>
-          <Button
-            variant={chartType === 'composed' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setChartType('composed')}
-            className="gap-2"
-          >
-            <Activity className="w-4 h-4" />
-            Mixed
-          </Button>
+            Combined
+          </button>
         </div>
       </div>
-      <div className="h-[400px] w-full">
+      
+      <div className="h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
           {renderChart()}
         </ResponsiveContainer>
       </div>
-      <div className="grid grid-cols-4 gap-4 mt-6">
+      
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
         <div className="flex items-center gap-2 text-sm text-gray-400">
           <Eye className="w-4 h-4 text-[#F97316]" />
           <span>Views</span>
@@ -165,6 +226,6 @@ export const AnalyticsChart = ({ data }: AnalyticsChartProps) => {
           <span>Watch Time</span>
         </div>
       </div>
-    </Card>
+    </>
   );
 };
