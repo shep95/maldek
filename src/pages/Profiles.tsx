@@ -37,7 +37,7 @@ const Profiles = () => {
     };
   }, [username]);
 
-  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useQuery({
     queryKey: ['profile', username || session?.user?.id],
     queryFn: async () => {
       console.log('Starting profile fetch...');
@@ -166,6 +166,11 @@ const Profiles = () => {
     }
   };
 
+  const handleProfileUpdate = () => {
+    // Refetch profile data when profile is updated
+    refetchProfile();
+  };
+
   const visiblePosts = posts?.filter(
     post => !blockedUserIds?.includes(post.user_id)
   ) || [];
@@ -191,7 +196,10 @@ const Profiles = () => {
   return (
     <div className="min-h-screen relative">
       <ProfileBackButton />
-      <ProfileHeader profile={profile} isLoading={profileLoading} />
+      <ProfileHeader 
+        profile={profile} 
+        isLoading={profileLoading} 
+      />
       <div className="max-w-4xl mx-auto px-4 mt-8">
         <Tabs defaultValue="posts" className="w-full">
           <TabsList className="w-full justify-start h-14 bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 p-1 mb-8 overflow-hidden">
