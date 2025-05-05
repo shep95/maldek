@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,6 +11,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Send, Image } from 'lucide-react';
 import { GifPicker } from './GifPicker';
 import { useProfileNavigation } from '@/hooks/useProfileNavigation';
+import { CommentCard } from '../comments/CommentCard';
+import { Comment } from '@/utils/commentUtils';
 
 interface CommentSectionProps {
   postId: string;
@@ -86,11 +89,108 @@ export const CommentSection = ({ postId, comments, currentUserId }: CommentSecti
     }
   };
 
+  const handleReplySubmit = async (content: string, parentId: string, gifUrl?: string) => {
+    if (!session) {
+      toast.error('You must be logged in to reply.');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert([
+          {
+            post_id: postId,
+            content,
+            user_id: session.user.id,
+            parent_id: parentId,
+            gif_url: gifUrl,
+          },
+        ])
+        .select(`
+          id,
+          content,
+          created_at,
+          parent_id,
+          gif_url,
+          user:profiles (
+            id,
+            username,
+            avatar_url
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('Error submitting reply:', error);
+        throw error;
+      }
+
+      // Update the query cache
+      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      
+      return data;
+    } catch (error) {
+      console.error('Error submitting reply:', error);
+      throw error;
+    }
+  };
+
   const handleUserClick = (username: string, e: React.MouseEvent) => {
     e.preventDefault(); // Prevent default behavior
     e.stopPropagation();
     navigateToProfile(username, e);
   };
+
+  // Process comments to create a tree structure
+  const processComments = (commentList: any[]): Comment[] => {
+    const commentMap = new Map<string, Comment>();
+    const rootComments: Comment[] = [];
+    
+    // First pass: Create all comment objects and store in map
+    commentList.forEach(comment => {
+      const processedComment: Comment = {
+        id: comment.id,
+        content: comment.content,
+        created_at: comment.created_at,
+        parent_id: comment.parent_id,
+        gif_url: comment.gif_url,
+        user: comment.user || {
+          id: 'unknown',
+          username: 'Unknown User',
+          avatar_url: null
+        },
+        replies: []
+      };
+      
+      commentMap.set(comment.id, processedComment);
+    });
+    
+    // Second pass: Build the tree
+    commentList.forEach(comment => {
+      const currentComment = commentMap.get(comment.id);
+      if (!currentComment) return;
+      
+      if (comment.parent_id) {
+        // This is a reply
+        const parentComment = commentMap.get(comment.parent_id);
+        if (parentComment) {
+          parentComment.replies = parentComment.replies || [];
+          parentComment.replies.push(currentComment);
+        } else {
+          // If parent doesn't exist, add to root (shouldn't happen)
+          rootComments.push(currentComment);
+        }
+      } else {
+        // This is a root comment
+        rootComments.push(currentComment);
+      }
+    });
+    
+    return rootComments;
+  };
+
+  const commentTree = processComments(comments);
 
   return (
     <div className="space-y-6">
@@ -159,43 +259,16 @@ export const CommentSection = ({ postId, comments, currentUserId }: CommentSecti
         </div>
       )}
 
-      {comments.length > 0 ? (
+      {commentTree.length > 0 ? (
         <div className="space-y-6">
-          {comments.map((comment) => (
-            <div key={comment.id} className="flex gap-3">
-              <Avatar 
-                className="h-8 w-8 cursor-pointer"
-                onClick={(e) => handleUserClick(comment.user.username, e)}
-              >
-                <AvatarImage src={comment.user.avatar_url} />
-                <AvatarFallback>{comment.user.username[0].toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={(e) => handleUserClick(comment.user.username, e)}
-                    className="font-semibold text-sm hover:underline"
-                  >
-                    @{comment.user.username}
-                  </button>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                  </span>
-                </div>
-                
-                {comment.content && <p className="mt-1">{comment.content}</p>}
-                
-                {comment.gif_url && (
-                  <div className="mt-2 max-w-sm">
-                    <img 
-                      src={comment.gif_url} 
-                      alt="GIF" 
-                      className="rounded-md max-h-[180px] object-cover w-auto"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
+          {commentTree.map((comment) => (
+            <CommentCard
+              key={comment.id}
+              comment={comment}
+              userLanguage="en"
+              onReplySubmit={handleReplySubmit}
+              replies={comment.replies}
+            />
           ))}
         </div>
       ) : (

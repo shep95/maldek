@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -125,29 +126,14 @@ const PostDetail = () => {
         throw error;
       }
 
-      // Transform the data to ensure correct structure
-      const transformedComments = data.map(comment => ({
-        id: comment.id,
-        content: comment.content,
-        created_at: comment.created_at,
-        parent_id: comment.parent_id,
-        gif_url: comment.gif_url,
-        user: {
-          id: comment.user.id,
-          username: comment.user.username,
-          avatar_url: comment.user.avatar_url
-        },
-        replies: []
-      }));
-
-      console.log('Comments fetched:', transformedComments);
-      return transformedComments;
+      console.log('Comments fetched:', data);
+      return data;
     },
     staleTime: 1000 * 30,
     enabled: !!post
   });
 
-  // Simplified real-time subscription with optimistic updates
+  // Real-time subscription for comments
   useEffect(() => {
     if (!postId) return;
 
@@ -164,14 +150,7 @@ const PostDetail = () => {
         },
         (payload) => {
           console.log('Comment update received:', payload);
-          if (payload.eventType === 'INSERT') {
-            queryClient.setQueryData(['comments', postId], (old: any[]) => {
-              if (!old) return [payload.new];
-              return [...old, payload.new];
-            });
-          } else {
-            queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-          }
+          queryClient.invalidateQueries({ queryKey: ['comments', postId] });
         }
       )
       .subscribe();
@@ -196,7 +175,6 @@ const PostDetail = () => {
         navigate('/');
       }
       // Handle other actions like like, bookmark, repost here
-      // For now we only have delete implemented
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
       toast.error(`Failed to ${action} post`);
