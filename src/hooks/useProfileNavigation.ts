@@ -17,13 +17,14 @@ export const useProfileNavigation = () => {
     const formattedUsername = username.startsWith('@') ? username : `@${username}`;
     console.log("Navigating to profile:", formattedUsername);
     
-    // Instead of navigating, open the popup
+    // Set the selected profile and open the popup
     setSelectedProfile(username);
     setProfilePopupOpen(true);
   };
 
   const closeProfilePopup = () => {
     setProfilePopupOpen(false);
+    setSelectedProfile(null); // Also clear the selected profile when closing
   };
 
   const viewFullProfile = (username: string) => {

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfileNavigation } from "@/hooks/useProfileNavigation";
@@ -86,6 +86,7 @@ export const ProfilePopupWrapper = () => {
       isOwnProfile={isOwnProfile}
       posts={posts || []}
       isLoading={isLoading}
+      onViewFullProfile={viewFullProfile}
     />
   );
 };

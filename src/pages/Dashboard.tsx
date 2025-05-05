@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from "@tanstack/react-query";
@@ -187,7 +188,7 @@ const Dashboard = () => {
         onPostCreated={handlePostCreated}
       />
 
-      {/* Add the ProfilePopupWrapper component */}
+      {/* Make sure the ProfilePopupWrapper is included */}
       <ProfilePopupWrapper />
     </div>
   );

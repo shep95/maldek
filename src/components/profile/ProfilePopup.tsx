@@ -9,7 +9,6 @@ import { ProfilePrivacyTab } from "@/components/profile/ProfilePrivacyTab";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useProfileNavigation } from "@/hooks/useProfileNavigation";
 
 interface ProfilePopupProps {
   isOpen: boolean;
@@ -18,10 +17,18 @@ interface ProfilePopupProps {
   isOwnProfile: boolean;
   posts: any[];
   isLoading: boolean;
+  onViewFullProfile?: (username: string) => void;
 }
 
-export const ProfilePopup = ({ isOpen, onClose, profile, isOwnProfile, posts, isLoading }: ProfilePopupProps) => {
-  const { viewFullProfile } = useProfileNavigation();
+export const ProfilePopup = ({ 
+  isOpen, 
+  onClose, 
+  profile, 
+  isOwnProfile, 
+  posts, 
+  isLoading,
+  onViewFullProfile
+}: ProfilePopupProps) => {
   
   if (!profile) return null;
 
@@ -50,7 +57,7 @@ export const ProfilePopup = ({ isOpen, onClose, profile, isOwnProfile, posts, is
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => viewFullProfile(profile.username)}
+              onClick={() => onViewFullProfile && onViewFullProfile(profile.username)}
               className="bg-background/50 backdrop-blur-sm border border-border/50 rounded-full"
               aria-label="View full profile"
             >
