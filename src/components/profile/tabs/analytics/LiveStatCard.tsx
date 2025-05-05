@@ -5,17 +5,19 @@ import { LucideIcon } from 'lucide-react';
 
 interface LiveStatCardProps {
   title: string;
-  value: number;
+  value: number | string;
   icon: LucideIcon;
+  comingSoon?: boolean;
 }
 
-export const LiveStatCard = ({ title, value, icon: Icon }: LiveStatCardProps) => {
-  const [displayValue, setDisplayValue] = useState(0);
+export const LiveStatCard = ({ title, value, icon: Icon, comingSoon = false }: LiveStatCardProps) => {
+  const [displayValue, setDisplayValue] = useState(comingSoon ? "Coming Soon" : 0);
   const [isAnimating, setIsAnimating] = useState(false);
   const prevValueRef = useRef(0);
   
   useEffect(() => {
-    if (value === displayValue) return;
+    if (comingSoon) return;
+    if (typeof value === 'string' || value === prevValueRef.current) return;
     
     // Animate number counting
     let startTime: number;
@@ -41,23 +43,25 @@ export const LiveStatCard = ({ title, value, icon: Icon }: LiveStatCardProps) =>
     requestAnimationFrame(animateCount);
     
     return () => {
-      prevValueRef.current = displayValue;
+      prevValueRef.current = typeof displayValue === 'number' ? displayValue : 0;
     };
-  }, [value]);
+  }, [value, comingSoon]);
 
   return (
-    <Card className={`p-6 bg-black/20 backdrop-blur border-accent/20 transition-all duration-300 ${
+    <Card className={`p-4 md:p-6 bg-black/20 backdrop-blur border-accent/20 transition-all duration-300 ${
       isAnimating ? 'shadow-[0_0_20px_rgba(249,115,22,0.15)]' : ''
     }`}>
-      <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-full bg-accent/10 text-accent ${
-          isAnimating ? 'animate-pulse' : ''
+      <div className="flex items-center gap-3 md:gap-4">
+        <div className={`p-2 md:p-3 rounded-full bg-accent/10 text-accent ${
+          isAnimating && !comingSoon ? 'animate-pulse' : ''
         }`}>
-          <Icon className="w-6 h-6" />
+          <Icon className="w-5 h-5 md:w-6 md:h-6" />
         </div>
         <div>
-          <h3 className="text-lg font-medium text-gray-300">{title}</h3>
-          <p className="text-2xl font-bold text-accent">{displayValue.toLocaleString()}</p>
+          <h3 className="text-sm md:text-lg font-medium text-gray-300">{title}</h3>
+          <p className={`text-xl md:text-2xl font-bold ${comingSoon ? 'text-amber-500/80 italic' : 'text-accent'}`}>
+            {typeof displayValue === 'number' ? displayValue.toLocaleString() : displayValue}
+          </p>
         </div>
       </div>
     </Card>

@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Progress } from "@/components/ui/progress";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MetricRingProps {
   title: string;
@@ -10,6 +11,7 @@ interface MetricRingProps {
 export const MetricRing = ({ title, value }: MetricRingProps) => {
   const [progress, setProgress] = useState(0);
   const [pulseEffect, setPulseEffect] = useState(false);
+  const isMobile = useIsMobile();
   
   // Animate progress on mount
   useEffect(() => {
@@ -31,14 +33,14 @@ export const MetricRing = ({ title, value }: MetricRingProps) => {
   }, []);
 
   // Calculate circle properties
-  const radius = 60;
+  const radius = isMobile ? 40 : 60;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
     <div className="flex flex-col items-center justify-center">
       <div 
-        className={`relative w-32 h-32 flex items-center justify-center ${
+        className={`relative w-20 h-20 md:w-32 md:h-32 flex items-center justify-center ${
           pulseEffect ? 'animate-pulse duration-1000' : ''
         }`}
       >
@@ -49,7 +51,7 @@ export const MetricRing = ({ title, value }: MetricRingProps) => {
             cy="70"
             r={radius}
             className="stroke-white/5"
-            strokeWidth="8"
+            strokeWidth={isMobile ? "6" : "8"}
             fill="transparent"
           />
         </svg>
@@ -61,7 +63,7 @@ export const MetricRing = ({ title, value }: MetricRingProps) => {
             cy="70"
             r={radius}
             className="stroke-accent drop-shadow-[0_0_10px_rgba(249,115,22,0.7)]"
-            strokeWidth="8"
+            strokeWidth={isMobile ? "6" : "8"}
             fill="transparent"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
@@ -72,10 +74,10 @@ export const MetricRing = ({ title, value }: MetricRingProps) => {
         
         {/* Value display */}
         <div className="relative z-10 flex flex-col items-center">
-          <span className="text-3xl font-bold text-white">{progress}%</span>
+          <span className="text-xl md:text-3xl font-bold text-white">{progress}%</span>
         </div>
       </div>
-      <p className="mt-3 text-sm text-center text-gray-300">{title}</p>
+      <p className="mt-2 md:mt-3 text-xs md:text-sm text-center text-gray-300">{title}</p>
     </div>
   );
 };

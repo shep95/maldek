@@ -11,9 +11,11 @@ import { PlatformUsageChart } from "@/components/profile/tabs/analytics/Platform
 import { DemographicChart } from "@/components/profile/tabs/analytics/DemographicChart";
 import { MetricRing } from "@/components/profile/tabs/analytics/MetricRing";
 import { LiveStatCard } from "@/components/profile/tabs/analytics/LiveStatCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Analytics = () => {
   const session = useSession();
+  const isMobile = useIsMobile();
   const { data: analytics, isLoading } = useAnalytics(session?.user?.id || '');
   const [counts, setCounts] = useState({
     followers: 0,
@@ -32,6 +34,22 @@ const Analytics = () => {
     }, 3000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  // Function to inject live-data feel
+  useEffect(() => {
+    const liveDataInterval = setInterval(() => {
+      const randomStat = Math.floor(Math.random() * 3);
+      const notifications = [
+        "New wallet connected from Asia region",
+        "30 new followers in the last hour",
+        "Trending post gaining traction: +125 views"
+      ];
+      
+      console.log(`[LIVE] ${notifications[randomStat]}`);
+    }, 5000);
+    
+    return () => clearInterval(liveDataInterval);
   }, []);
 
   if (!session?.user?.id) {
@@ -71,13 +89,13 @@ const Analytics = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white py-8 px-4 md:px-8">
+    <div className="min-h-screen bg-black text-white py-4 md:py-8 px-3 md:px-8 overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-400">
+        <h1 className="text-2xl md:text-4xl font-bold mb-4 md:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-400">
           Bosley Analytics
         </h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-8">
           <AnalyticsCard 
             title="Total Views" 
             value={analytics?.reduce((sum, day) => sum + day.views, 0) || 0}
@@ -104,31 +122,31 @@ const Analytics = () => {
           />
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
           <div className="lg:col-span-2">
-            <Card className="p-6 bg-black/20 backdrop-blur border-accent/20 h-full">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Card className="p-4 md:p-6 bg-black/20 backdrop-blur border-accent/20 h-full">
+              <h2 className="text-lg md:text-xl font-semibold mb-2 md:mb-4 flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-accent" />
                 Total Engagement
               </h2>
-              <div className="h-[350px]">
+              <div className="h-[250px] md:h-[350px]">
                 <AnalyticsChart data={analytics || []} />
               </div>
             </Card>
           </div>
           
           <div>
-            <Card className="p-6 bg-black/20 backdrop-blur border-accent/20 h-full">
-              <h2 className="text-xl font-semibold mb-4">Platform Usage</h2>
+            <Card className="p-4 md:p-6 bg-black/20 backdrop-blur border-accent/20 h-full">
+              <h2 className="text-lg md:text-xl font-semibold mb-2 md:mb-4">Platform Usage</h2>
               <PlatformUsageChart />
             </Card>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="p-6 bg-black/20 backdrop-blur border-accent/20">
-            <h2 className="text-xl font-semibold mb-6">Performance Metrics</h2>
-            <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
+          <Card className="p-4 md:p-6 bg-black/20 backdrop-blur border-accent/20">
+            <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-6">Performance Metrics</h2>
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <MetricRing title="User Growth" value={78} />
               <MetricRing title="Post Reach" value={64} />
               <MetricRing title="Bosley Coin Transactions" value={42} />
@@ -136,13 +154,13 @@ const Analytics = () => {
             </div>
           </Card>
           
-          <Card className="p-6 bg-black/20 backdrop-blur border-accent/20">
-            <h2 className="text-xl font-semibold mb-6">Demographics</h2>
+          <Card className="p-4 md:p-6 bg-black/20 backdrop-blur border-accent/20">
+            <h2 className="text-lg md:text-xl font-semibold mb-3 md:mb-6">Demographics</h2>
             <DemographicChart />
           </Card>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <LiveStatCard 
             title="Followers Today" 
             value={counts.followers} 
@@ -150,7 +168,8 @@ const Analytics = () => {
           />
           <LiveStatCard 
             title="Wallets Connected" 
-            value={counts.wallets} 
+            value="Coming Soon"
+            comingSoon={true}
             icon={Wallet} 
           />
           <LiveStatCard 

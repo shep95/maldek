@@ -1,8 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const DemographicChart = () => {
+  const isMobile = useIsMobile();
   const [ageData, setAgeData] = useState([
     { name: '18-24', value: 28 },
     { name: '25-34', value: 42 },
@@ -11,7 +13,7 @@ export const DemographicChart = () => {
   ]);
   
   const [regionData, setRegionData] = useState([
-    { name: 'North America', value: 35 },
+    { name: 'N.America', value: 35 },
     { name: 'Europe', value: 30 },
     { name: 'Asia', value: 25 },
     { name: 'Other', value: 10 },
@@ -23,7 +25,7 @@ export const DemographicChart = () => {
     { name: 'Tablet', value: 10 },
   ]);
 
-  // Simulate data changes
+  // Simulate data changes for live effect
   useEffect(() => {
     const interval = setInterval(() => {
       // Randomly adjust values
@@ -51,8 +53,8 @@ export const DemographicChart = () => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-black/90 border border-accent/20 p-3 rounded-lg shadow-xl">
-          <p className="text-sm font-medium">{`${label}: ${payload[0].value}%`}</p>
+        <div className="bg-black/90 border border-accent/20 p-2 rounded-lg shadow-xl">
+          <p className="text-xs md:text-sm font-medium">{`${label}: ${payload[0].value}%`}</p>
         </div>
       );
     }
@@ -66,11 +68,11 @@ export const DemographicChart = () => {
       deviceData;
     
     return (
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={isMobile ? 170 : 220}>
         <BarChart data={data} barGap={4}>
           <XAxis 
             dataKey="name" 
-            tick={{ fontSize: 12, fill: '#888' }}
+            tick={{ fontSize: isMobile ? 10 : 12, fill: '#888' }}
             axisLine={{ stroke: '#333' }}
             tickLine={{ stroke: '#333' }}
           />
@@ -92,10 +94,10 @@ export const DemographicChart = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex space-x-2 bg-black/30 rounded-lg p-1">
+    <div className="space-y-3 md:space-y-4">
+      <div className="flex space-x-1 md:space-x-2 bg-black/30 rounded-lg p-1">
         <button 
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+          className={`px-2 md:px-3 py-1 md:py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${
             activeTab === 'age' ? 'bg-accent text-white' : 'text-gray-400 hover:text-white'
           }`}
           onClick={() => setActiveTab('age')}
@@ -103,24 +105,24 @@ export const DemographicChart = () => {
           Age Groups
         </button>
         <button 
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+          className={`px-2 md:px-3 py-1 md:py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${
             activeTab === 'region' ? 'bg-accent text-white' : 'text-gray-400 hover:text-white'
           }`}
           onClick={() => setActiveTab('region')}
         >
-          Top Regions
+          Regions
         </button>
         <button 
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+          className={`px-2 md:px-3 py-1 md:py-1.5 rounded-md text-xs md:text-sm font-medium transition-colors ${
             activeTab === 'device' ? 'bg-accent text-white' : 'text-gray-400 hover:text-white'
           }`}
           onClick={() => setActiveTab('device')}
         >
-          Device Type
+          Devices
         </button>
       </div>
       
-      <div className="h-[220px]">
+      <div className="h-[170px] md:h-[220px]">
         {renderChart()}
       </div>
     </div>

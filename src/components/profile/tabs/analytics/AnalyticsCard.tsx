@@ -43,22 +43,22 @@ export const AnalyticsCard = ({ title, value, icon: Icon, trend }: AnalyticsCard
   
   return (
     <Card 
-      className={`p-4 bg-black/20 backdrop-blur border-accent/20 transition-all duration-300 ${
+      className={`p-3 md:p-4 bg-black/20 backdrop-blur border-accent/20 transition-all duration-300 ${
         isHovered ? 'shadow-[0_0_20px_rgba(249,115,22,0.2)]' : ''
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className={`h-5 w-5 text-accent transition-all duration-300 ${
+      <div className="flex items-center gap-1.5 md:gap-2 mb-0.5 md:mb-1">
+        <Icon className={`h-4 w-4 md:h-5 md:w-5 text-accent transition-all duration-300 ${
           isHovered ? 'scale-110' : ''
         }`} />
-        <h3 className="text-sm font-medium text-gray-300">{title}</h3>
+        <h3 className="text-xs md:text-sm font-medium text-gray-300">{title}</h3>
       </div>
-      <div className="flex items-baseline gap-2">
-        <p className="text-2xl font-bold text-white">{animatedValue.toLocaleString()}</p>
+      <div className="flex items-baseline gap-1 md:gap-2">
+        <p className="text-xl md:text-2xl font-bold text-white">{animatedValue.toLocaleString()}</p>
         {trend && (
-          <span className={`text-xs ${
+          <span className={`text-[10px] md:text-xs ${
             isTrendPositive ? 'text-emerald-400' : 'text-rose-400'
           }`}>
             {trend}
