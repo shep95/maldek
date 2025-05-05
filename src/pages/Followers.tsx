@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,7 +52,8 @@ const Followers = () => {
         .from('profiles')
         .select('*, user_subscriptions(tier_id, subscription_tiers(name, checkmark_color))')
         .order('follower_count', { ascending: false })
-        .limit(20);
+        .not('avatar_url', 'is', null) // Only include users with an avatar
+        .limit(5); // Limit to top 5 users
 
       // Filter based on selected tab
       if (selectedFilter === "recent") {
@@ -305,7 +305,7 @@ const Followers = () => {
           <div className="space-y-3">
             {isLoading ? (
               <div className="animate-pulse space-y-4">
-                {[1, 2, 3, 4].map((i) => (
+                {[1, 2, 3, 4, 5].map((i) => (
                   <Card key={i} className="p-4 bg-black/30 border border-accent/10">
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-full bg-accent/5" />
@@ -426,7 +426,7 @@ const Followers = () => {
                             size="sm"
                             className="text-xs w-28"
                             disabled={isBlocking}
-                            onClick={() => handleBlockUser(selectedUser.id)}
+                            onClick={() => blockUser(selectedUser.id)}
                           >
                             Block User
                           </Button>
