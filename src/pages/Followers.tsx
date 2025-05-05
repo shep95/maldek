@@ -249,7 +249,7 @@ const Followers = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6">
+    <div className="container mx-auto p-4 md:p-6 max-w-[1600px]">
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left Section - User List */}
         <div className="w-full lg:w-1/2 xl:w-2/5 space-y-6">
@@ -267,7 +267,7 @@ const Followers = () => {
               placeholder="Search for trending creators..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-black/30 border-accent/20 focus:border-accent/50 rounded-xl"
+              className="pl-10 bg-black/30 border-accent/20 focus:border-accent/50 rounded-xl h-11"
             />
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           </div>
@@ -321,7 +321,7 @@ const Followers = () => {
               searchResults.map((user) => (
                 <Card 
                   key={user.id} 
-                  className={`p-4 cursor-pointer hover:bg-accent/5 transition-all duration-200 ${
+                  className={`p-4 cursor-pointer transition-all duration-300 hover:shadow-[0_0_15px_rgba(249,115,22,0.15)] ${
                     selectedUser?.id === user.id ? 'border-accent bg-accent/10' : 'bg-black/30 border-accent/10'
                   }`}
                   onClick={() => setSelectedUser(user)}
@@ -345,7 +345,7 @@ const Followers = () => {
                       )}
                       <div className="flex items-center gap-3 mt-1.5">
                         <div className="flex items-center gap-1 text-xs font-medium">
-                          {renderTrendingIcon(user.trendingRank)}
+                          <Flame className="h-4 w-4 text-orange-500" />
                           <span className="text-orange-500">#{user.trendingRank} Trending</span>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-emerald-400">

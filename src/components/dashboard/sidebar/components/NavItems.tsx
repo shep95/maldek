@@ -1,3 +1,4 @@
+
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -84,14 +85,14 @@ export const NavItems = ({
       active: location.pathname === "/videos" 
     },
     {
-      icon: Users,
-      label: "Followers",
+      icon: TrendingUp,
+      label: "Trending",
       path: "/followers",
       active: location.pathname === "/followers",
-      description: "Manage followers"
+      description: "Discover trending users"
     },
     { 
-      icon: TrendingUp, 
+      icon: BarChart2, 
       label: "Analytics",
       path: "/analytics",
       active: location.pathname === "/analytics"
