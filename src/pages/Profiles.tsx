@@ -14,6 +14,7 @@ import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
 import { ProfilePrivacyTab } from "@/components/profile/ProfilePrivacyTab";
 import { CircuitBoard, Signal, Lock } from "lucide-react";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import { ProfileBackButton } from "@/components/profile/ProfileBackButton";
 
 const Profiles = () => {
   const session = useSession();
@@ -188,7 +189,8 @@ const Profiles = () => {
   const isOwnProfile = session?.user?.id === profile.id;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      <ProfileBackButton />
       <ProfileHeader profile={profile} isLoading={profileLoading} />
       <div className="max-w-4xl mx-auto px-4 mt-8">
         <Tabs defaultValue="posts" className="w-full">

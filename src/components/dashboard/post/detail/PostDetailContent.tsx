@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { PostHeader } from "../PostHeader";
 import { PostMedia } from "../PostMedia";
@@ -11,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useState, useEffect } from "react";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useProfileNavigation } from "@/hooks/useProfileNavigation";
 
 interface PostDetailContentProps {
   post: Post;
@@ -27,6 +27,7 @@ export const PostDetailContent = ({
   const session = useSession();
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const { data: userSettings } = useUserSettings();
+  const { navigateToProfile } = useProfileNavigation();
 
   // Get subscription for carousel component
   const { data: subscription } = useQuery({
@@ -53,9 +54,7 @@ export const PostDetailContent = ({
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const username = post.author.username;
-    console.log("Navigating to user profile:", username);
-    navigate(`/@${username}`);
+    navigateToProfile(post.author.username, e);
   };
 
   const handleMediaClick = (url: string) => {

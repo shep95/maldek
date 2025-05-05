@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Tilt } from "@/components/ui/tilt";
 import { Spotlight } from "@/components/ui/spotlight";
+import { useProfileNavigation } from "@/hooks/useProfileNavigation";
 
 interface PostCardProps {
   post: Post;
@@ -26,6 +27,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(post.content);
   const [isSaving, setIsSaving] = useState(false);
+  const { navigateToProfile } = useProfileNavigation();
 
   const handlePostClick = (e: React.MouseEvent) => {
     if (
@@ -41,7 +43,7 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
 
   const handleUsernameClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/@${post.author.username}`);
+    navigateToProfile(post.author.username, e);
   };
 
   const handleMediaClick = (url: string) => {

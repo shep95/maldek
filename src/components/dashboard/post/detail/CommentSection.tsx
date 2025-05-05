@@ -1,129 +1,54 @@
-
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Comment } from "@/utils/commentUtils";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { CommentCard } from "../comments/CommentCard";
-import { useQueryClient } from "@tanstack/react-query";
-import { Image } from "lucide-react";
-import { GifPicker } from "./GifPicker";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useSession } from '@supabase/auth-helpers-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
+import { Send, Image } from 'lucide-react';
+import { GifPicker } from './GifPicker';
+import { useProfileNavigation } from '@/hooks/useProfileNavigation';
 
 interface CommentSectionProps {
   postId: string;
-  comments: Comment[];
+  comments: any[];
   currentUserId: string;
 }
 
-export const CommentSection = ({
-  postId,
-  comments,
-  currentUserId
-}: CommentSectionProps) => {
-  const [newComment, setNewComment] = useState<string>("");
-  const [commentList, setCommentList] = useState<Comment[]>([]);
+export const CommentSection = ({ postId, comments, currentUserId }: CommentSectionProps) => {
+  const session = useSession();
+  const queryClient = useQueryClient();
+  const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [selectedGif, setSelectedGif] = useState<string | null>(null);
-  const queryClient = useQueryClient();
+  const { navigateToProfile } = useProfileNavigation();
+  
+  const submitComment = async () => {
+    if (!session) {
+      toast.error('You must be logged in to comment.');
+      return;
+    }
 
-  useEffect(() => {
-    const commentMap = new Map();
-    const rootComments: Comment[] = [];
-
-    comments.forEach(comment => {
-      comment.replies = [];
-      commentMap.set(comment.id, comment);
-      
-      if (comment.parent_id) {
-        const parent = commentMap.get(comment.parent_id);
-        if (parent) {
-          parent.replies.push(comment);
-        }
-      } else {
-        rootComments.push(comment);
-      }
-    });
-
-    console.log("Setting comment list:", rootComments); // Debug log
-    setCommentList(rootComments);
-  }, [comments]);
-
-  // Set up real-time subscription for comments
-  useEffect(() => {
-    const channel = supabase
-      .channel(`public:comments:${postId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'comments',
-          filter: `post_id=eq.${postId}`
-        },
-        async (payload) => {
-          console.log('Comment update received:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            // Fetch the complete comment data including user profile
-            const { data: newComment, error } = await supabase
-              .from('comments')
-              .select(`
-                id,
-                content,
-                created_at,
-                parent_id,
-                gif_url,
-                user:profiles (
-                  id,
-                  username,
-                  avatar_url
-                )
-              `)
-              .eq('id', payload.new.id)
-              .single();
-
-            if (error) {
-              console.error('Error fetching new comment:', error);
-              return;
-            }
-
-            console.log('New comment data:', newComment);
-            
-            if (newComment) {
-              queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [postId, queryClient]);
-
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if ((!newComment.trim() && !selectedGif) || isSubmitting) return;
+    if (!commentText.trim() && !selectedGif) {
+      toast.error('Comment cannot be empty.');
+      return;
+    }
 
     setIsSubmitting(true);
-    console.log("Submitting comment with GIF:", selectedGif);
-
     try {
-      const commentData = {
-        content: newComment.trim(),
-        post_id: postId,
-        user_id: currentUserId,
-        gif_url: selectedGif
-      };
-
-      console.log("Submitting comment data:", commentData); // Debug log
-
-      const { error, data } = await supabase
+      const { data, error } = await supabase
         .from('comments')
-        .insert(commentData)
+        .insert([
+          {
+            post_id: postId,
+            content: commentText,
+            user_id: session.user.id,
+            gif_url: selectedGif,
+          },
+        ])
         .select(`
           id,
           content,
@@ -138,157 +63,145 @@ export const CommentSection = ({
         `)
         .single();
 
-      if (error) throw error;
-
-      console.log("Comment added successfully:", data);
-      
-      // Add the new comment to the list immediately
-      if (data) {
-        const formattedComment: Comment = {
-          ...data,
-          user: {
-            id: data.user.id,
-            username: data.user.username,
-            avatar_url: data.user.avatar_url
-          },
-          gif_url: data.gif_url, // Ensure GIF URL is included
-          replies: []
-        };
-
-        setCommentList(prevComments => [...prevComments, formattedComment]);
+      if (error) {
+        console.error('Error submitting comment:', error);
+        toast.error('Failed to submit comment.');
+        return;
       }
 
-      // Reset form
-      setNewComment("");
-      setSelectedGif(null);
-      setShowGifPicker(false);
-      
-      toast.success("Comment added successfully");
+      // Optimistically update the comments list
+      queryClient.setQueryData(['comments', postId], (old: any[]) => {
+        if (!old) return [data];
+        return [...old, data];
+      });
 
-      // Refresh the comments list
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
+      setCommentText('');
+      setSelectedGif(null);
+      toast.success('Comment submitted successfully!');
     } catch (error) {
-      console.error("Failed to add comment:", error);
-      toast.error("Failed to add comment");
+      console.error('Error submitting comment:', error);
+      toast.error('Failed to submit comment.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReplySubmit = async (content: string, parentId: string, gifUrl?: string): Promise<void> => {
-    if (!content.trim() && !gifUrl) return;
-
-    try {
-      console.log("Submitting reply to comment:", { parentId, content, gifUrl });
-      const { error } = await supabase
-        .from('comments')
-        .insert({
-          content: content.trim(),
-          post_id: postId,
-          user_id: currentUserId,
-          parent_id: parentId,
-          gif_url: gifUrl
-        })
-        .select(`
-          id,
-          content,
-          created_at,
-          parent_id,
-          gif_url,
-          user:profiles (
-            id,
-            username,
-            avatar_url
-          )
-        `)
-        .single();
-
-      if (error) throw error;
-      
-      // Refresh the comments list after adding a reply
-      queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-    } catch (error) {
-      console.error("Failed to add reply:", error);
-      throw error;
-    }
-  };
-
-  const handleGifSelect = (gifUrl: string) => {
-    console.log("Selected GIF URL:", gifUrl);
-    setSelectedGif(gifUrl);
-    setShowGifPicker(false);
+  const handleUserClick = (username: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigateToProfile(username, e);
   };
 
   return (
-    <div className="mt-6 space-y-6">
-      <h3 className="text-lg font-medium text-gray-100">Comments</h3>
-      <form onSubmit={handleCommentSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Write a comment..."
-            className="min-h-[100px] bg-[#151515] border-[#222226] text-gray-200 placeholder:text-gray-500 focus:ring-orange-500 rounded-lg"
-          />
-          {selectedGif && (
-            <div className="relative">
-              <img 
-                src={selectedGif} 
-                alt="Selected GIF" 
-                className="w-32 h-32 object-cover rounded-lg"
-              />
-              <Button
-                type="button"
-                variant="destructive"
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Comments ({comments.length})</h2>
+      
+      {session && (
+        <div className="flex gap-3 items-start">
+          <Avatar className="h-8 w-8 mt-1">
+            <AvatarImage src={session.user?.user_metadata?.avatar_url} />
+            <AvatarFallback>{session?.user?.email?.[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 space-y-2">
+            <Textarea
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Add a comment..."
+              className="resize-none"
+              disabled={isSubmitting}
+              rows={2}
+            />
+            
+            {selectedGif && (
+              <div className="relative w-48">
+                <img src={selectedGif} alt="Selected GIF" className="rounded-md" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute top-1 right-1 bg-background/80 backdrop-blur-sm"
+                  onClick={() => setSelectedGif(null)}
+                >
+                  <Image className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex justify-between">
+              <Button 
+                type="button" 
+                variant="outline" 
                 size="sm"
-                className="absolute top-1 right-1"
-                onClick={() => setSelectedGif(null)}
+                onClick={() => setShowGifPicker(!showGifPicker)}
               >
-                Remove
+                <Image className="mr-1 h-4 w-4" />
+                GIF
+              </Button>
+              <Button 
+                onClick={submitComment} 
+                disabled={isSubmitting || (!commentText.trim() && !selectedGif)}
+                size="sm"
+              >
+                <Send className="mr-1 h-4 w-4" />
+                Comment
               </Button>
             </div>
-          )}
-        </div>
-        
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={() => setShowGifPicker(!showGifPicker)}
-            className="shrink-0"
-          >
-            <Image className="h-4 w-4" />
-          </Button>
-          
-          <Button 
-            type="submit" 
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            disabled={(!newComment.trim() && !selectedGif) || isSubmitting}
-          >
-            {isSubmitting ? "Adding Comment..." : "Add Comment"}
-          </Button>
-        </div>
-
-        {showGifPicker && (
-          <div className="relative z-50">
-            <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
+            
+            {showGifPicker && (
+              <GifPicker 
+                onSelect={(gif) => {
+                  setSelectedGif(gif);
+                  setShowGifPicker(false);
+                }}
+                onClose={() => setShowGifPicker(false)}
+              />
+            )}
           </div>
-        )}
-      </form>
+        </div>
+      )}
 
-      <div className="space-y-4">
-        {commentList.map((comment) => (
-          <CommentCard
-            key={comment.id}
-            comment={comment}
-            userLanguage="en"
-            onReplySubmit={handleReplySubmit}
-            level={0}
-            replies={comment.replies || []}
-          />
-        ))}
-      </div>
+      {comments.length > 0 ? (
+        <div className="space-y-6">
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex gap-3">
+              <Avatar 
+                className="h-8 w-8 cursor-pointer"
+                onClick={(e) => handleUserClick(comment.user.username, e)}
+              >
+                <AvatarImage src={comment.user.avatar_url} />
+                <AvatarFallback>{comment.user.username[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={(e) => handleUserClick(comment.user.username, e)}
+                    className="font-semibold text-sm hover:underline"
+                  >
+                    @{comment.user.username}
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+                
+                {comment.content && <p className="mt-1">{comment.content}</p>}
+                
+                {comment.gif_url && (
+                  <div className="mt-2 max-w-sm">
+                    <img 
+                      src={comment.gif_url} 
+                      alt="GIF" 
+                      className="rounded-md max-h-[180px] object-cover w-auto"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 bg-muted/30 rounded-lg">
+          <p className="text-muted-foreground">No comments yet. Be the first to comment!</p>
+        </div>
+      )}
     </div>
   );
 };
