@@ -43,7 +43,7 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
           {/* Avatar with Story Ring */}
           <div className="relative">
             {hasStories ? (
-              <StoryRing size="lg" viewed={false}>
+              <StoryRing size="lg" viewed={false} userId={profile.id}>
                 <Avatar className="h-32 w-32 border-4 border-background">
                   <AvatarImage src={profile?.avatar_url} />
                   <AvatarFallback className="text-3xl font-bold">

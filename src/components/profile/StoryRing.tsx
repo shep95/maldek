@@ -11,9 +11,11 @@ interface StoryRingProps {
   className?: string;
   children: React.ReactNode;
   userId: string; // Add userId to check stories for specific user
+  size?: string; // Add size prop to support different sizes
+  viewed?: boolean; // Add viewed prop to control ring appearance
 }
 
-export const StoryRing = ({ className, children, userId }: StoryRingProps) => {
+export const StoryRing = ({ className, children, userId, size, viewed = true }: StoryRingProps) => {
   const session = useSession();
   const [isStoriesOpen, setIsStoriesOpen] = useState(false);
 
@@ -52,7 +54,8 @@ export const StoryRing = ({ className, children, userId }: StoryRingProps) => {
       <div 
         className={cn(
           "relative rounded-full cursor-pointer",
-          hasUnviewedStory && "p-[3px] bg-gradient-to-br from-[#F97316] to-white",
+          hasUnviewedStory && !viewed && "p-[3px] bg-gradient-to-br from-[#F97316] to-white",
+          size === "lg" && "p-[4px]",
           className
         )}
         onClick={() => setIsStoriesOpen(true)}
