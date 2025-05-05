@@ -161,11 +161,11 @@ const VideoPlayer = ({ src }: { src: string }) => {
         // Get the average color
         const color = getAverageColor(context, canvas.width, canvas.height);
         
-        // Create a glow effect
-        const glowOpacity = 0.35;
+        // Create a glow effect with less spread
+        const glowOpacity = 0.25;
         document.documentElement.style.setProperty(
           '--video-glow',
-          `0 0 400px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
+          `0 0 50px rgba(${color.r}, ${color.g}, ${color.b}, ${glowOpacity})`
         );
 
         // Request next frame
@@ -235,7 +235,7 @@ const VideoPlayer = ({ src }: { src: string }) => {
 
   return (
     <motion.div
-      className="relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden bg-[#11111198] shadow-[var(--video-glow)] backdrop-blur-sm transition-shadow duration-300"
+      className="relative w-full max-w-4xl mx-auto rounded-xl overflow-hidden bg-[#11111198] backdrop-blur-sm transition-shadow duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

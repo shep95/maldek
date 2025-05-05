@@ -49,7 +49,7 @@ export const LiveStatCard = ({ title, value, icon: Icon, comingSoon = false }: L
 
   return (
     <Card className={`p-4 md:p-6 bg-black/20 backdrop-blur border-accent/20 transition-all duration-300 ${
-      isAnimating ? 'shadow-[0_0_20px_rgba(249,115,22,0.15)]' : ''
+      isAnimating ? 'shadow-[0_0_10px_rgba(249,115,22,0.1)]' : ''
     }`}>
       <div className="flex items-center gap-3 md:gap-4">
         <div className={`p-2 md:p-3 rounded-full bg-accent/10 text-accent ${
@@ -67,3 +67,4 @@ export const LiveStatCard = ({ title, value, icon: Icon, comingSoon = false }: L
     </Card>
   );
 };
+

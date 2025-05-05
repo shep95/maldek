@@ -44,7 +44,7 @@ export const AnalyticsCard = ({ title, value, icon: Icon, trend }: AnalyticsCard
   return (
     <Card 
       className={`p-3 md:p-4 bg-black/20 backdrop-blur border-accent/20 transition-all duration-300 ${
-        isHovered ? 'shadow-[0_0_20px_rgba(249,115,22,0.2)]' : ''
+        isHovered ? 'shadow-[0_0_10px_rgba(249,115,22,0.15)]' : ''
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -68,3 +68,4 @@ export const AnalyticsCard = ({ title, value, icon: Icon, trend }: AnalyticsCard
     </Card>
   );
 };
+

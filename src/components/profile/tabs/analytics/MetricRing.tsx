@@ -56,13 +56,13 @@ export const MetricRing = ({ title, value }: MetricRingProps) => {
           />
         </svg>
         
-        {/* Progress circle with glowing effect */}
+        {/* Progress circle with reduced glow effect */}
         <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 140 140">
           <circle
             cx="70"
             cy="70"
             r={radius}
-            className="stroke-accent drop-shadow-[0_0_10px_rgba(249,115,22,0.7)]"
+            className="stroke-accent drop-shadow-[0_0_5px_rgba(249,115,22,0.5)]"
             strokeWidth={isMobile ? "6" : "8"}
             fill="transparent"
             strokeDasharray={circumference}
@@ -81,3 +81,4 @@ export const MetricRing = ({ title, value }: MetricRingProps) => {
     </div>
   );
 };
+
