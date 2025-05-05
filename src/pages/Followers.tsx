@@ -327,32 +327,32 @@ const Followers = () => {
                   onClick={() => setSelectedUser(user)}
                 >
                   <div className="flex items-center gap-4">
-                    <Avatar className="h-14 w-14 border-2 border-accent/30">
+                    <Avatar className="h-12 w-12 border-2 border-accent/30">
                       <AvatarImage src={user.avatar_url || ''} />
                       <AvatarFallback>{user.username[0]?.toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1">
-                        <h3 className="font-bold text-lg truncate">@{user.username}</h3>
+                        <h3 className="font-bold text-base truncate">@{user.username}</h3>
                         {user.user_subscriptions?.[0]?.subscription_tiers && (
-                          <Badge className="ml-1" style={{ backgroundColor: user.user_subscriptions[0].subscription_tiers.checkmark_color }}>
+                          <Badge className="ml-1 text-xs py-0 px-1.5" style={{ backgroundColor: user.user_subscriptions[0].subscription_tiers.checkmark_color }}>
                             {user.user_subscriptions[0].subscription_tiers.name}
                           </Badge>
                         )}
                       </div>
                       {user.bio && (
-                        <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{user.bio}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{user.bio}</p>
                       )}
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <div className="flex items-center gap-1 text-xs font-medium">
-                          <Flame className="h-4 w-4 text-orange-500" />
-                          <span className="text-orange-500">#{user.trendingRank} Trending</span>
+                      <div className="flex items-center gap-3 mt-1 text-xs">
+                        <div className="flex items-center gap-1 font-medium">
+                          <Flame className="h-3.5 w-3.5 text-orange-500" />
+                          <span className="text-orange-500">#{user.trendingRank}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-emerald-400">
-                          <span>+{user.followerGrowth} followers</span>
+                        <div className="flex items-center gap-1 text-emerald-400">
+                          <span>+{user.followerGrowth}</span>
                         </div>
                         <div className="bg-accent/10 text-xs px-1.5 py-0.5 rounded">
-                          +{user.weeklyGrowthPercent}% weekly
+                          +{user.weeklyGrowthPercent}%
                         </div>
                       </div>
                     </div>
@@ -364,9 +364,9 @@ const Followers = () => {
                           e.stopPropagation();
                           followingData ? handleUnfollow(user.id) : handleFollow(user.id);
                         }}
-                        className="bg-accent/20 hover:bg-accent/40 border-accent text-white hover:text-white"
+                        className="bg-accent/20 hover:bg-accent/40 border-accent text-white hover:text-white h-8 text-xs"
                       >
-                        Follow
+                        {followingData ? 'Following' : 'Follow'}
                       </Button>
                     )}
                   </div>
@@ -391,56 +391,47 @@ const Followers = () => {
               <div className="flex flex-col">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6">
-                  <Avatar className="h-20 w-20 border-2 border-accent/50">
+                  <Avatar className="h-16 w-16 border-2 border-accent/50">
                     <AvatarImage src={selectedUser?.avatar_url || ''} />
                     <AvatarFallback>{selectedUser?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-2xl font-bold">@{selectedUser?.username}</h2>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h2 className="text-xl font-bold truncate">@{selectedUser?.username}</h2>
                       {selectedUser?.user_subscriptions?.[0]?.subscription_tiers && (
                         <Badge style={{ backgroundColor: selectedUser.user_subscriptions[0].subscription_tiers.checkmark_color }}>
                           {selectedUser.user_subscriptions[0].subscription_tiers.name}
                         </Badge>
                       )}
                     </div>
-                    <p className="text-muted-foreground text-sm">{selectedUser?.bio || "No bio available"}</p>
+                    <p className="text-muted-foreground text-sm line-clamp-2">{selectedUser?.bio || "No bio available"}</p>
                   </div>
                   
-                  <div className="flex flex-col items-end gap-2">
+                  <div className="flex flex-col items-end gap-2 shrink-0">
                     {session?.user?.id && selectedUser && session?.user?.id !== selectedUser?.id && (
                       <>
                         <Button 
                           variant="default"
                           onClick={() => followingData ? handleUnfollow(selectedUser.id) : handleFollow(selectedUser.id)}
-                          className="w-28 bg-accent hover:bg-accent/80"
+                          className="w-24 bg-accent hover:bg-accent/80 text-sm h-9"
                         >
                           {followingData ? 'Unfollow' : 'Follow'}
                         </Button>
-                        <Button variant="outline" size="sm" className="w-28 bg-transparent">
+                        <Button variant="outline" size="sm" className="w-24 bg-transparent text-sm h-9">
                           Message
                         </Button>
-                        {!blockedUserIds?.includes(selectedUser.id) ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs w-28"
-                            disabled={isBlocking}
-                            onClick={() => blockUser(selectedUser.id)}
-                          >
-                            Block User
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs w-28"
-                            disabled={isUnblocking}
-                            onClick={() => handleUnblockUser(selectedUser.id)}
-                          >
-                            Unblock User
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs w-24 h-8"
+                          disabled={blockedUserIds?.includes(selectedUser.id) ? isUnblocking : isBlocking}
+                          onClick={() => blockedUserIds?.includes(selectedUser.id) 
+                            ? handleUnblockUser(selectedUser.id)
+                            : handleBlockUser(selectedUser.id)
+                          }
+                        >
+                          {blockedUserIds?.includes(selectedUser.id) ? 'Unblock' : 'Block'}
+                        </Button>
                       </>
                     )}
                   </div>
@@ -448,41 +439,41 @@ const Followers = () => {
                 
                 {/* Stats */}
                 <div className="grid grid-cols-4 gap-4 mb-6">
-                  <div className="bg-black/20 p-4 rounded-lg text-center">
-                    <p className="text-2xl font-bold">{selectedUser?.follower_count || 0}</p>
+                  <div className="bg-black/20 p-3 rounded-lg text-center">
+                    <p className="text-xl font-bold">{selectedUser?.follower_count || 0}</p>
                     <p className="text-xs text-muted-foreground">Followers</p>
                   </div>
-                  <div className="bg-black/20 p-4 rounded-lg text-center">
-                    <p className="text-2xl font-bold">{selectedUser?.total_posts || 0}</p>
+                  <div className="bg-black/20 p-3 rounded-lg text-center">
+                    <p className="text-xl font-bold">{selectedUser?.total_posts || 0}</p>
                     <p className="text-xs text-muted-foreground">Posts</p>
                   </div>
-                  <div className="bg-black/20 p-4 rounded-lg text-center">
-                    <p className="text-2xl font-bold">{selectedUser?.total_likes_received || 0}</p>
+                  <div className="bg-black/20 p-3 rounded-lg text-center">
+                    <p className="text-xl font-bold">{selectedUser?.total_likes_received || 0}</p>
                     <p className="text-xs text-muted-foreground">Likes</p>
                   </div>
-                  <div className="bg-black/20 p-4 rounded-lg text-center">
-                    <p className="text-2xl font-bold">{selectedUser?.total_views || 0}</p>
+                  <div className="bg-black/20 p-3 rounded-lg text-center">
+                    <p className="text-xl font-bold">{selectedUser?.total_views || 0}</p>
                     <p className="text-xs text-muted-foreground">Views</p>
                   </div>
                 </div>
 
                 {/* Additional info */}
-                <div className="flex flex-wrap gap-4 items-center mb-6 text-sm text-muted-foreground">
+                <div className="flex flex-wrap gap-4 items-center mb-6 text-xs text-muted-foreground">
                   {selectedUser?.created_at && (
                     <div className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4" />
+                      <CalendarDays className="h-3.5 w-3.5" />
                       <span>Joined {format(new Date(selectedUser.created_at), 'MMM yyyy')}</span>
                     </div>
                   )}
                   {selectedUser?.location && (
                     <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
+                      <Users className="h-3.5 w-3.5" />
                       <span>{selectedUser.location}</span>
                     </div>
                   )}
                   {selectedUser?.trendingRank && (
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-orange-500" />
+                      <BarChart3 className="h-3.5 w-3.5 text-orange-500" />
                       <span className="text-orange-500">Trending #{selectedUser.trendingRank}</span>
                     </div>
                   )}
@@ -549,7 +540,7 @@ const Followers = () => {
                                 className="h-full w-full object-cover"
                               />
                               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                                <p className="font-medium line-clamp-1">{video.title}</p>
+                                <p className="font-medium line-clamp-1 text-sm">{video.title}</p>
                               </div>
                             </div>
                           </Card>

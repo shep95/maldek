@@ -86,19 +86,19 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
           className="group flex justify-between items-center hover:bg-black/30 p-2.5 rounded-lg transition-all duration-200 backdrop-blur-sm border border-transparent hover:border-accent/10 relative overflow-hidden"
         >
           <div 
-            className="flex items-center gap-3 cursor-pointer flex-grow min-w-0"
+            className="flex items-center gap-2 cursor-pointer min-w-0 flex-grow"
             onClick={(e) => handleUserClick(e, user.username)}
           >
             {/* Subtle glow behind avatar */}
             <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-16 h-16 bg-accent/10 rounded-full blur-xl opacity-0 group-hover:opacity-70 transition-opacity duration-300"></div>
             
-            <Avatar className="h-9 w-9 ring-2 ring-accent/20 group-hover:ring-accent/40 transition-all duration-300 flex-shrink-0">
+            <Avatar className="h-8 w-8 ring-2 ring-accent/20 group-hover:ring-accent/40 transition-all duration-300 flex-shrink-0">
               <AvatarImage src={user.avatar_url || ''} className="object-cover" />
               <AvatarFallback className="bg-black/30 text-accent">{user.username[0].toUpperCase()}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 flex-grow">
               <div className="flex items-center gap-1">
-                <span className="font-medium text-sm truncate group-hover:text-accent transition-colors">@{user.username}</span>
+                <span className="font-medium text-xs truncate max-w-[80px] group-hover:text-accent transition-colors">@{user.username}</span>
                 <Flame className="h-3 w-3 text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <span className="text-xs text-muted-foreground truncate">{user.follower_count} followers</span>
@@ -108,7 +108,7 @@ export const TrendingUsers = ({ isLoading, users }: TrendingUsersProps) => {
             <Button 
               variant="outline" 
               size="sm"
-              className="ml-2 bg-transparent border border-accent/30 hover:bg-accent/20 hover:border-accent text-white hover:text-white flex-shrink-0 w-[70px] h-7 text-xs transition-all opacity-0 group-hover:opacity-100"
+              className="ml-1 bg-transparent border border-accent/30 hover:bg-accent/20 hover:border-accent text-white hover:text-white flex-shrink-0 w-[60px] h-6 text-[10px] px-1 transition-all opacity-0 group-hover:opacity-100"
               onClick={(e) => handleFollowUser(e, user.id)}
             >
               Follow
