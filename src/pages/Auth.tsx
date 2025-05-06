@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -6,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { HeroGeometric } from "@/components/ui/shape-landing-hero";
-import { Copy, RectangleHorizontal } from "lucide-react";
 import { TbaCopyBox } from "@/components/auth/TbaCopyBox";
 import { GooglePlayBadge } from "@/components/auth/GooglePlayBadge";
 
@@ -121,12 +121,6 @@ const Auth = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Handler for copying "CA" to clipboard
-  const handleCopyCA = () => {
-    navigator.clipboard.writeText("CA");
-    toast.success("Copied CA to clipboard");
   };
 
   return (
