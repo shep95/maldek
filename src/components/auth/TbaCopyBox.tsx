@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import React from "react";
 
 const TBA_TEXT = "AhNfqqgCSKvtUKgwnhxjFNnsyKKH4KtBQ99gvAjmmoon";
-const DISPLAY_TEXT = TBA_TEXT.slice(0, 5) + "...";
 
 export const TbaCopyBox: React.FC = () => {
   const handleCopy = () => {
@@ -34,12 +33,9 @@ export const TbaCopyBox: React.FC = () => {
         flex items-center gap-2 font-bold text-lg 
         tracking-wide text-accent group-hover:text-white"
       >
-        {DISPLAY_TEXT}
+        {TBA_TEXT}
       </span>
       <Copy className="w-5 h-5 text-accent group-hover:text-white transition-colors" />
-      <span className="ml-2 text-xs font-medium opacity-70 group-hover:opacity-100">
-        Tap to Copy
-      </span>
     </motion.button>
   );
 };
