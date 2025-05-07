@@ -13,29 +13,41 @@ export const TbaCopyBox: React.FC = () => {
   };
 
   return (
-    <motion.button
-      onClick={handleCopy}
-      type="button"
-      whileTap={{ scale: 0.97 }}
-      whileHover={{ scale: 1.03 }}
-      className={`
-        group flex items-center gap-2 px-6 py-2 rounded-xl 
-        bg-white/10 border border-accent/30 shadow-lg 
-        backdrop-blur-md transition-all
-        hover:bg-accent hover:text-white hover:shadow-xl
-        active:scale-95
-        cursor-pointer select-none
-      `}
-      aria-label="Copy TBA"
-      style={{ minWidth: 120 }}
-    >
-      <span className="
-        flex items-center gap-2 font-bold text-lg 
-        tracking-wide text-accent group-hover:text-white"
+    <div className="relative">
+      <motion.div
+        onClick={handleCopy}
+        whileTap={{ scale: 0.97 }}
+        whileHover={{ scale: 1.03 }}
+        className="
+          group flex items-center gap-2 px-6 py-2 rounded-xl 
+          bg-white/10 border border-accent/30 shadow-lg 
+          backdrop-blur-md transition-all
+          hover:bg-accent hover:shadow-xl
+          cursor-pointer select-none
+          copy-box
+        "
+        aria-label="Copy TBA"
+        style={{ minWidth: 120 }}
       >
-        {TBA_TEXT}
-      </span>
-      <Copy className="w-5 h-5 text-accent group-hover:text-white transition-colors" />
-    </motion.button>
+        <input 
+          type="text" 
+          id="contract-address" 
+          className="
+            copy-input bg-transparent border-none outline-none 
+            text-lg font-bold text-accent group-hover:text-white
+            w-full cursor-pointer
+          " 
+          value={TBA_TEXT} 
+          readOnly 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.select();
+            handleCopy();
+          }}
+        />
+        <Copy className="w-5 h-5 text-accent group-hover:text-white transition-colors flex-shrink-0" />
+      </motion.div>
+    </div>
   );
 };
