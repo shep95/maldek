@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -6,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { HeroGeometric } from "@/components/ui/shape-landing-hero";
+import { TbaCopyBox } from "@/components/auth/TbaCopyBox";
 import { GooglePlayBadge } from "@/components/auth/GooglePlayBadge";
 
 const Auth = () => {
@@ -125,6 +127,11 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 relative overflow-hidden">
       {/* Geometric Hero Background */}
       <HeroGeometric hideContent={true} />
+
+      {/* TBA Copy Card - modern and centered */}
+      <div className="mb-8 z-20 relative">
+        <TbaCopyBox />
+      </div>
 
       {/* Main content */}
       <motion.div 
