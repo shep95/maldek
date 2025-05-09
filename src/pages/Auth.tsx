@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { AuthHeader } from "@/components/auth/AuthHeader";
@@ -9,11 +9,28 @@ import { motion } from "framer-motion";
 import { HeroGeometric } from "@/components/ui/shape-landing-hero";
 import { TbaCopyBox } from "@/components/auth/TbaCopyBox";
 import { GooglePlayBadge } from "@/components/auth/GooglePlayBadge";
+import { SecuritySetupDialog } from "@/components/auth/SecuritySetupDialog";
+import { encryptionService } from "@/services/encryptionService";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSecuritySetup, setShowSecuritySetup] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        // User is already logged in, redirect to dashboard
+        navigate('/dashboard');
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const handleSubmit = async (formData: {
     email: string;
@@ -27,7 +44,7 @@ const Auth = () => {
       
       if (isLogin) {
         console.log("Attempting to sign in user:", formData.email);
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
@@ -41,7 +58,19 @@ const Auth = () => {
         
         console.log("Sign in successful");
         toast.success("Successfully signed in!");
-        navigate('/dashboard');
+        
+        // Check if we need to initialize encryption
+        // If there's no encrypted key in local storage, we'll show the security setup dialog
+        const hasEncryptedKey = localStorage.getItem("bosley_encrypted_master_key");
+        
+        if (hasEncryptedKey) {
+          // User already has an encryption key, redirect to dashboard
+          navigate('/dashboard');
+        } else {
+          // User needs to set up encryption, show the security setup dialog
+          setCurrentUserId(data.user?.id || null);
+          setShowSecuritySetup(true);
+        }
       } else {
         if (!formData.username) {
           throw new Error('Username is required');
@@ -123,12 +152,31 @@ const Auth = () => {
     }
   };
 
+  const handleSecuritySetup = async (securityCode: string) => {
+    try {
+      console.log("Setting up encryption with security code");
+      
+      // Initialize the encryption service with the user's security code
+      const success = await encryptionService.initialize(securityCode);
+      
+      if (success) {
+        toast.success("Security setup completed. Your data will now be encrypted.");
+        navigate('/dashboard');
+      } else {
+        toast.error("Failed to set up security. Please try again.");
+      }
+    } catch (error) {
+      console.error("Security setup error:", error);
+      toast.error("Failed to set up security");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 relative overflow-hidden">
       {/* Geometric Hero Background */}
       <HeroGeometric hideContent={true} />
 
-      {/* TBA Copy Card - modern and centered */}
+      {/* TBA Copy Card */}
       <div className="mb-8 z-20 relative">
         <TbaCopyBox />
       </div>
@@ -161,6 +209,14 @@ const Auth = () => {
         {/* Google Play badge below the main box */}
         <GooglePlayBadge />
       </motion.div>
+
+      {/* Security Setup Dialog */}
+      <SecuritySetupDialog 
+        isOpen={showSecuritySetup} 
+        onOpenChange={setShowSecuritySetup}
+        onSetupComplete={handleSecuritySetup}
+        userId={currentUserId}
+      />
 
       {/* Decorative elements */}
       <div className="absolute bottom-4 left-4 text-xs text-muted-foreground/50 z-20">
