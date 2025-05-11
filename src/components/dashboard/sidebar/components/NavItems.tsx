@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessageSquare } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -70,6 +70,13 @@ export const NavItems = ({
       path: "/profiles",
       active: location.pathname === "/profiles",
       description: "View your profile"
+    },
+    {
+      icon: MessageSquare,
+      label: "Messages",
+      path: "/messages",
+      active: location.pathname === "/messages",
+      description: "Secure encrypted messaging"
     },
     { 
       icon: Bell, 
