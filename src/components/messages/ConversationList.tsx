@@ -51,7 +51,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   <span className="font-medium truncate">
                     {otherParticipant?.username || "Unknown"}
                   </span>
-                  {conversation.last_message && (
+                  {conversation.updated_at && (
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
                     </span>

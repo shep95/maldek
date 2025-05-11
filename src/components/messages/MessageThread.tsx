@@ -1,122 +1,87 @@
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
-import { Message, User } from "./types/messageTypes";
+import { Message as MessageType, User } from "./types/messageTypes";
+import { format } from "date-fns";
+import { Lock } from "lucide-react";
 
 interface MessageThreadProps {
-  messages: Message[];
-  currentUser: User;
-  recipient: User;
-  onSendMessage: (content: string) => void;
+  messages: MessageType[];
+  currentUserId: string | undefined;
+  users: Record<string, User>;
 }
 
 export const MessageThread: React.FC<MessageThreadProps> = ({
   messages,
-  currentUser,
-  recipient,
-  onSendMessage,
+  currentUserId,
+  users,
 }) => {
-  const [newMessage, setNewMessage] = React.useState("");
-  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    // Scroll to bottom when messages change
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+  useEffect(() => {
+    // Scroll to the bottom when messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      onSendMessage(newMessage);
-      setNewMessage("");
-    }
-  };
+  if (messages.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+        <p>No messages yet</p>
+        <p className="text-sm">Start the conversation by sending a message below</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="border-b pb-4 mb-4">
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={recipient.avatar_url || undefined} />
-            <AvatarFallback>{recipient.username[0]?.toUpperCase() || "?"}</AvatarFallback>
-          </Avatar>
-          <h2 className="font-semibold">{recipient.username}</h2>
-        </div>
-      </div>
+    <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+      {messages.map((message) => {
+        const isSentByMe = message.sender_id === currentUserId;
+        const sender = isSentByMe ? "You" : users[message.sender_id]?.username || "Unknown";
+        const senderAvatar = !isSentByMe ? users[message.sender_id]?.avatar_url : undefined;
 
-      <ScrollArea ref={scrollAreaRef} className="flex-grow mb-4 pr-4">
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              No messages yet. Start the conversation!
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isCurrentUser = message.sender_id === currentUser.id;
-              
-              return (
+        return (
+          <div
+            key={message.id}
+            className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}
+          >
+            <div className={`flex gap-2 max-w-[80%] ${isSentByMe ? "flex-row-reverse" : ""}`}>
+              {!isSentByMe && (
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={senderAvatar || undefined} />
+                  <AvatarFallback>{sender[0]?.toUpperCase() || "?"}</AvatarFallback>
+                </Avatar>
+              )}
+              <div>
                 <div
-                  key={message.id}
-                  className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                  className={`rounded-md p-3 ${
+                    isSentByMe
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                  }`}
                 >
-                  <div className="flex items-start gap-2 max-w-[80%]">
-                    {!isCurrentUser && (
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={recipient.avatar_url || undefined} />
-                        <AvatarFallback>{recipient.username[0]?.toUpperCase() || "?"}</AvatarFallback>
-                      </Avatar>
-                    )}
-                    
-                    <div
-                      className={`rounded-lg p-3 ${
-                        isCurrentUser
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted"
-                      }`}
-                    >
-                      {message.is_encrypted && message.decrypted_content ? (
-                        <>
-                          <p>{message.decrypted_content}</p>
-                          <span className="text-xs opacity-70 mt-1">🔒 Encrypted</span>
-                        </>
-                      ) : (
-                        <p>{message.content}</p>
-                      )}
+                  {message.is_encrypted ? (
+                    <div className="flex items-center gap-1 text-xs">
+                      <Lock size={12} />
+                      <span>Encrypted message</span>
                     </div>
-                    
-                    {isCurrentUser && (
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={currentUser.avatar_url || undefined} />
-                        <AvatarFallback>{currentUser.username[0]?.toUpperCase() || "?"}</AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
+                  ) : null}
+                  <p className="whitespace-pre-wrap break-words">
+                    {message.decrypted_content || message.content}
+                  </p>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </ScrollArea>
-
-      <form onSubmit={handleSendMessage} className="mt-auto">
-        <div className="flex gap-2">
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-grow"
-          />
-          <Button type="submit" disabled={!newMessage.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </form>
+                <div
+                  className={`text-xs text-muted-foreground mt-1 ${
+                    isSentByMe ? "text-right" : ""
+                  }`}
+                >
+                  {format(new Date(message.created_at), "HH:mm")}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      <div ref={messagesEndRef} />
     </div>
   );
 };
