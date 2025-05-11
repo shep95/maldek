@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -50,16 +49,16 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 isRequestTab && "border-l-2 border-primary"
               )}
             >
-              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border flex-shrink-0">
+              <Avatar className="h-11 w-11 sm:h-12 sm:w-12 border flex-shrink-0">
                 <AvatarImage src={otherParticipant?.avatar_url || undefined} />
-                <AvatarFallback className="font-medium">
+                <AvatarFallback className="font-medium text-base">
                   {otherParticipant?.username?.[0]?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1 overflow-hidden min-w-0">
                 <div className="flex justify-between items-center">
-                  <span className={cn("truncate text-base", hasUnread && "font-semibold")}>
+                  <span className={cn("truncate text-base font-medium", hasUnread && "font-semibold")}>
                     {otherParticipant?.username || "Unknown"}
                   </span>
                   {conversation.updated_at && (
@@ -117,4 +116,3 @@ function formatTime(dateString: string): string {
   // Otherwise, show the date
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
-
