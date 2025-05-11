@@ -79,7 +79,7 @@ export const EnhancedUploadZone = ({
         continue;
       }
       
-      if (isVideoFile(file)) {
+      if (file.type.startsWith('video/')) {
         const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
         if (!allowed) {
           toast.error(message || "Video upload restrictions apply");
@@ -118,7 +118,7 @@ export const EnhancedUploadZone = ({
     const validFiles = [];
     
     for (const file of files) {
-      if (isVideoFile(file)) {
+      if (file.type.startsWith('video/')) {
         const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
         if (!allowed) {
           toast.error(message || "Video upload restrictions apply");
@@ -154,7 +154,7 @@ export const EnhancedUploadZone = ({
     if (file) {
       console.log('File pasted:', file.name, file.type, file.size);
       
-      if (isVideoFile(file)) {
+      if (file.type.startsWith('video/')) {
         const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
         if (!allowed) {
           toast.error(message || "Video upload restrictions apply");
