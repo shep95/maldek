@@ -11,9 +11,9 @@ const Messages = () => {
 
   return (
     <DashboardLayout>
-      <div className="min-h-[100dvh] bg-background">
+      <div className="min-h-screen bg-background">
         <div className="w-full max-w-7xl mx-auto">
-          <div className="md:grid md:grid-cols-[320px_1fr] h-[100dvh]">
+          <div className="md:grid md:grid-cols-[320px_1fr] h-screen">
             <div className="hidden md:flex md:flex-col border-r border-white/10 h-full">
               <ConversationList
                 selectedConversationId={selectedConversationId}
