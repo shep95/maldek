@@ -42,7 +42,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               key={conversation.id}
               onClick={() => onSelectConversation(conversation.id)}
               className={cn(
-                "w-full flex items-center gap-3 p-3 sm:p-3 rounded-lg text-left transition-colors touch-target",
+                "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors touch-target",
                 selectedConversationId === conversation.id 
                   ? "bg-accent text-accent-foreground" 
                   : "hover:bg-accent/10",
@@ -50,7 +50,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 isRequestTab && "border-l-2 border-primary"
               )}
             >
-              <Avatar className="h-12 w-12 border flex-shrink-0">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border flex-shrink-0">
                 <AvatarImage src={otherParticipant?.avatar_url || undefined} />
                 <AvatarFallback className="font-medium">
                   {otherParticipant?.username?.[0]?.toUpperCase() || "?"}
@@ -92,7 +92,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   );
 };
 
-// Helper function to format time in a more human-readable way like the reference
+// Helper function to format time in a more human-readable way
 function formatTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -117,3 +117,4 @@ function formatTime(dateString: string): string {
   // Otherwise, show the date
   return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
+

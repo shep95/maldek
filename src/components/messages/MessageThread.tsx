@@ -86,7 +86,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         
         {onSendMessage && (
           <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t pb-safe">
-            <div className="flex gap-2">
+            <div className="flex gap-2 max-w-5xl mx-auto">
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
@@ -151,7 +151,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       </div>
 
       <div className="flex-grow overflow-y-auto p-3 sm:p-4 md:p-6 hide-scrollbar">
-        <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto">
+        <div className="flex flex-col gap-3 sm:gap-4 max-w-5xl mx-auto">
           {messages.map((message) => {
             const isSentByMe = message.sender_id === actualCurrentUserId;
             const sender = isSentByMe 
@@ -166,7 +166,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                 key={message.id}
                 className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}
               >
-                <div className={`flex gap-2 max-w-[90%] ${isSentByMe ? "flex-row-reverse" : ""}`}>
+                <div className={`flex gap-2 max-w-[85%] sm:max-w-[90%] ${isSentByMe ? "flex-row-reverse" : ""}`}>
                   {!isSentByMe && (
                     <Avatar className="h-8 w-8 hidden sm:flex mt-1">
                       <AvatarImage src={senderAvatar || undefined} />
@@ -187,7 +187,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                           <span>Encrypted message</span>
                         </div>
                       ) : null}
-                      <p className="whitespace-pre-wrap break-words text-sm sm:text-base">
+                      <p className="whitespace-pre-wrap break-words text-sm">
                         {message.decrypted_content || message.content}
                       </p>
                     </div>
@@ -208,7 +208,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       </div>
 
       {onSendMessage && (
-        <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 md:p-5 border-t pb-safe">
+        <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t pb-safe">
           <div className="flex gap-2 max-w-5xl mx-auto">
             <Input
               value={newMessage}
@@ -219,7 +219,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
             <Button 
               type="submit" 
               disabled={!newMessage.trim()} 
-              className="h-[44px] min-w-[44px] px-3"
+              className="h-[44px] min-w-[44px] px-3 flex-shrink-0"
             >
               <Send className="h-5 w-5 sm:mr-2" />
               <span className="hidden sm:inline">Send</span>

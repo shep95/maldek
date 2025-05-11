@@ -23,7 +23,10 @@ export const useMessageActions = () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       // Provide feedback on mobile that the message was sent
       if (window.innerWidth < 768) {
-        navigator.vibrate?.(50); // Gentle vibration feedback if available
+        // Vibrate device if supported (mobile only)
+        if (navigator.vibrate) {
+          navigator.vibrate(50); // Gentle vibration feedback
+        }
       }
     },
     onError: (error) => {

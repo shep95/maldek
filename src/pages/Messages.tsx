@@ -124,7 +124,7 @@ const Messages: React.FC = () => {
   }) : requestedConversations;
   
   return (
-    <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 mx-0 w-[calc(100%+500px)] max-w-screen-2xl px-[25px]">
+    <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 w-full max-w-screen-2xl mx-auto">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 px-2">Messages</h1>
       
       {!isEncryptionInitialized && (
@@ -144,7 +144,7 @@ const Messages: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
         {/* Conversations sidebar - hide on mobile when viewing a conversation */}
         {(!isMobile || showConversations) && (
-          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-[250px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
+          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)]">
             {/* Conversations header */}
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="font-semibold flex items-center gap-2">

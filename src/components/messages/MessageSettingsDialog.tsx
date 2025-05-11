@@ -8,12 +8,20 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { 
+  Drawer, 
+  DrawerContent, 
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MessageSettingsDialogProps {
   isOpen: boolean;
@@ -25,6 +33,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
   const session = useSession();
   const [autoDeleteEnabled, setAutoDeleteEnabled] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSaveSettings = async () => {
     if (!session?.user?.id) return;
@@ -45,10 +54,71 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
       setIsSaving(false);
     }
   };
+
+  const DialogContent = (
+    <>
+      <div className="space-y-6 py-4">
+        <div className="flex items-center justify-between space-x-2">
+          <div className="flex-1">
+            <Label htmlFor="auto-delete" className="font-medium">Auto-delete messages</Label>
+            <p className="text-sm text-muted-foreground">
+              Automatically delete messages older than 3 hours
+            </p>
+          </div>
+          <Switch
+            id="auto-delete"
+            checked={autoDeleteEnabled}
+            onCheckedChange={setAutoDeleteEnabled}
+            className="touch-target"
+          />
+        </div>
+        
+        <div className="border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            When you delete messages, they will be removed for all participants in the conversation.
+          </p>
+        </div>
+      </div>
+      
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 justify-end">
+        <Button 
+          variant="outline" 
+          onClick={() => onOpenChange(false)}
+          className="w-full sm:w-auto min-h-[44px]"
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleSaveSettings} 
+          disabled={isSaving}
+          className="w-full sm:w-auto min-h-[44px]"
+        >
+          Save Changes
+        </Button>
+      </div>
+    </>
+  );
+  
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={onOpenChange}>
+        <DrawerContent className="px-4 pb-6 max-h-[85vh]">
+          <DrawerHeader className="pt-6 pb-2">
+            <DrawerTitle>Message Settings</DrawerTitle>
+            <DrawerDescription>
+              Configure your messaging preferences
+            </DrawerDescription>
+          </DrawerHeader>
+          
+          {DialogContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md mobile-dialog-content max-w-[95vw] mx-auto">
+      <DialogContent className="sm:max-w-md max-w-[95vw] mx-auto">
         <DialogHeader>
           <DialogTitle>Message Settings</DialogTitle>
           <DialogDescription>
@@ -56,45 +126,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
-          <div className="flex items-center justify-between space-x-2">
-            <div className="flex-1">
-              <Label htmlFor="auto-delete" className="font-medium">Auto-delete messages</Label>
-              <p className="text-sm text-muted-foreground">
-                Automatically delete messages older than 3 hours
-              </p>
-            </div>
-            <Switch
-              id="auto-delete"
-              checked={autoDeleteEnabled}
-              onCheckedChange={setAutoDeleteEnabled}
-              className="touch-target"
-            />
-          </div>
-          
-          <div className="border-t pt-4">
-            <p className="text-sm text-muted-foreground">
-              When you delete messages, they will be removed for all participants in the conversation.
-            </p>
-          </div>
-        </div>
-        
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto min-h-[44px]"
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSaveSettings} 
-            disabled={isSaving}
-            className="w-full sm:w-auto min-h-[44px]"
-          >
-            Save Changes
-          </Button>
-        </DialogFooter>
+        {DialogContent}
       </DialogContent>
     </Dialog>
   );
