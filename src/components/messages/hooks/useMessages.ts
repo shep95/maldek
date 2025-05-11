@@ -53,7 +53,7 @@ export const useMessages = () => {
           created_at: new Date(Date.now() - index * 3600000).toISOString(),
           is_read: Math.random() > 0.7 ? false : true,
           conversation_id: `conv-${profile.id}`,
-          is_encrypted: true // Always encrypted
+          is_encrypted: false
         }
       }));
 
@@ -101,7 +101,7 @@ export const useMessages = () => {
           created_at: new Date(Date.now() - index * 7200000).toISOString(),
           is_read: false,
           conversation_id: `req-${profile.id}`,
-          is_encrypted: true // Always encrypted
+          is_encrypted: false
         }
       }));
 
@@ -143,7 +143,7 @@ export const useMessages = () => {
           created_at: new Date(now - timeOffset).toISOString(),
           is_read: true,
           conversation_id: selectedConversationId,
-          is_encrypted: true // Always encrypted
+          is_encrypted: false
         });
       }
       
@@ -186,35 +186,23 @@ export const useMessages = () => {
     return `conv-${recipientId}`;
   };
 
-  // Send a message - always encrypted now
+  // Send a message
   const sendMessage = useMutation({
     mutationFn: async ({ 
       recipientId, 
       content, 
-      isEncrypted = true // Default to true - all messages are encrypted 
+      isEncrypted = false 
     }: { 
       recipientId: string; 
       content: string;
       isEncrypted?: boolean;
     }) => {
       if (!currentUserId) throw new Error('Not authenticated');
-      if (!isEncryptionInitialized) throw new Error('Encryption not initialized');
       
       try {
         // Get or create conversation
         const conversationId = await getOrCreateConversation(recipientId);
         if (!conversationId) throw new Error('Could not find or create conversation');
-        
-        // Always encrypt the content
-        let finalContent = content;
-        if (isEncryptionInitialized) {
-          const encryptedContent = await encryptText(content);
-          if (encryptedContent) {
-            finalContent = encryptedContent;
-          } else {
-            throw new Error('Failed to encrypt message');
-          }
-        }
         
         // In a real implementation, this would insert into the database
         // For now, we'll just pretend it worked
@@ -223,8 +211,8 @@ export const useMessages = () => {
           conversation_id: conversationId,
           sender_id: currentUserId,
           recipient_id: recipientId,
-          content: finalContent,
-          is_encrypted: true, // Always true
+          content,
+          is_encrypted: isEncrypted,
           is_read: false,
           created_at: new Date().toISOString()
         };
