@@ -20,7 +20,7 @@ const Messages = () => {
       
       try {
         await supabase
-          .from("conversations" as any)
+          .from("conversations")
           .update({ unread_count: 0 })
           .eq("id", selectedConversationId)
           .eq("user_id", session.user.id);
@@ -37,7 +37,7 @@ const Messages = () => {
     <div className="min-h-[100dvh] bg-background">
       <div className="w-full max-w-7xl mx-auto">
         <div className="md:grid md:grid-cols-[320px_1fr] h-[100dvh]">
-          <div className="flex flex-col border-r border-white/10 h-full">
+          <div className="hidden md:flex md:flex-col border-r border-white/10 h-full">
             <ConversationList
               selectedConversationId={selectedConversationId}
               onSelectConversation={setSelectedConversationId}

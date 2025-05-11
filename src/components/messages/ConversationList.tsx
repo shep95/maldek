@@ -30,24 +30,26 @@ export const ConversationList = ({
 
   useEffect(() => {
     const fetchConversations = async () => {
+      if (!session?.user?.id) return;
+      
       try {
-        if (!session?.user?.id) return;
-        
         setIsLoading(true);
         secureLog("Fetching conversations", { level: "info" });
         
-        // Use a more generic approach with type assertion
         const { data, error } = await supabase
-          .from("conversations" as any)
+          .from("conversations")
           .select("id, name, last_message, last_message_at, unread_count, encrypted_metadata, user_id, participant_id, is_group, created_at")
           .eq("user_id", session.user.id)
           .order("last_message_at", { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching conversations:", error);
+          throw error;
+        }
 
         // Process conversations and decrypt metadata if available
         const processedConversations = await Promise.all(
-          (data || []).map(async (conv: any) => {
+          (data || []).map(async (conv) => {
             try {
               if (conv.encrypted_metadata && encryption.isEncryptionInitialized) {
                 const decryptedMetadata = await encryption.decryptText(conv.encrypted_metadata);
@@ -58,6 +60,7 @@ export const ConversationList = ({
               }
               return conv as Conversation;
             } catch (err) {
+              console.error("Failed to decrypt conversation metadata:", err);
               secureLog(`Failed to decrypt conversation metadata: ${err}`, { level: "error" });
               return conv as Conversation;
             }
@@ -66,6 +69,7 @@ export const ConversationList = ({
 
         setConversations(processedConversations);
       } catch (error) {
+        console.error("Error in fetchConversations:", error);
         secureLog(error, { level: "error" });
       } finally {
         setIsLoading(false);

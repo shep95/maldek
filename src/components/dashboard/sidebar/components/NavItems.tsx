@@ -43,15 +43,17 @@ export const NavItems = ({
         }
       }
     }
-    if (path?.startsWith('http')) {
-      window.open(path, '_blank');
-    } else {
-      onNavigate(path);
+    
+    if (path) {
+      if (path.startsWith('http')) {
+        window.open(path, '_blank');
+      } else {
+        navigate(path);
+      }
     }
   };
 
   const handleCreatePost = () => {
-    console.log('Create post clicked');
     setIsCreatingPost(true);
   };
 
@@ -141,7 +143,7 @@ export const NavItems = ({
           key={item.label}
           {...item}
           subscription={subscription}
-          onNavigate={handleNavigation}
+          onNavigate={item.path ? () => handleNavigation(item.path) : item.onClick}
           collapsed={collapsed}
         />
       ))}

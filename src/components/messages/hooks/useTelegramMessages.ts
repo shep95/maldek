@@ -25,7 +25,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
       setError(null);
       
       const { data, error: fetchError } = await supabase
-        .from("conversation_messages" as any)
+        .from("conversation_messages")
         .select("*")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
@@ -33,27 +33,28 @@ export const useTelegramMessages = (conversationId: string | null) => {
       if (fetchError) throw fetchError;
 
       // Cast data to our Message type
-      setMessages((data || []) as unknown as Message[]);
+      setMessages((data || []) as Message[]);
       
       // Mark messages as read
-      const unreadMessages = (data as any[] || []).filter(
+      const unreadMessages = (data || []).filter(
         msg => !msg.is_read && msg.sender_id !== session.user?.id
       );
       
       if (unreadMessages.length > 0) {
         await supabase
-          .from("conversation_messages" as any)
+          .from("conversation_messages")
           .update({ is_read: true })
           .in("id", unreadMessages.map(msg => msg.id));
         
         // Update the conversation's unread count
         await supabase
-          .from("conversations" as any)
+          .from("conversations")
           .update({ unread_count: 0 })
           .eq("id", conversationId)
           .eq("user_id", session.user.id);
       }
     } catch (err) {
+      console.error("Error fetching messages:", err);
       secureLog(err, { level: "error" });
       setError(err instanceof Error ? err : new Error('Failed to fetch messages'));
     } finally {
@@ -80,7 +81,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            const newMessage = payload.new as unknown as Message;
+            const newMessage = payload.new as Message;
             
             setMessages(prevMessages => {
               // Check if the message already exists
@@ -93,19 +94,19 @@ export const useTelegramMessages = (conversationId: string | null) => {
             // Mark message as read if it's not from the current user
             if (newMessage.sender_id !== session?.user?.id) {
               supabase
-                .from("conversation_messages" as any)
+                .from("conversation_messages")
                 .update({ is_read: true })
                 .eq("id", newMessage.id);
               
               // Update the conversation's unread count
               supabase
-                .from("conversations" as any)
+                .from("conversations")
                 .update({ unread_count: 0 })
                 .eq("id", conversationId)
                 .eq("user_id", session?.user?.id);
             }
           } else if (payload.eventType === "UPDATE") {
-            const updatedMessage = payload.new as unknown as Message;
+            const updatedMessage = payload.new as Message;
             
             setMessages(prevMessages => 
               prevMessages.map(msg => 
@@ -132,7 +133,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
     try {
       // Get conversation details
       const { data: conversation } = await supabase
-        .from("conversations" as any)
+        .from("conversations")
         .select("*")
         .eq("id", conversationId)
         .single();
@@ -197,7 +198,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
       
       // Insert the new message
       const { data: message, error: messageError } = await supabase
-        .from("conversation_messages" as any)
+        .from("conversation_messages")
         .insert({
           conversation_id: conversationId,
           sender_id: session.user.id,
@@ -215,60 +216,57 @@ export const useTelegramMessages = (conversationId: string | null) => {
 
       // Update the conversation with last message
       await supabase
-        .from("conversations" as any)
+        .from("conversations")
         .update({
           last_message: content ? content.substring(0, 50) : "Sent an attachment",
           last_message_at: new Date().toISOString(),
-          unread_count: (conversation as any).user_id !== session.user.id
-            ? (conversation as any).unread_count + 1
-            : (conversation as any).unread_count
+          unread_count: conversation.user_id !== session.user.id
+            ? conversation.unread_count + 1
+            : conversation.unread_count
         })
         .eq("id", conversationId);
         
       // If there's a participant_id, update their copy of the conversation too
-      if ((conversation as any).participant_id) {
+      if (conversation.participant_id) {
         // Check if the participant has a copy of this conversation
         const { data: participantConvo } = await supabase
-          .from("conversations" as any)
+          .from("conversations")
           .select("*")
-          .eq("user_id", (conversation as any).participant_id)
+          .eq("user_id", conversation.participant_id)
           .eq("participant_id", session.user.id)
           .single();
           
         if (participantConvo) {
           // Update the participant's conversation
           await supabase
-            .from("conversations" as any)
+            .from("conversations")
             .update({
               last_message: content ? content.substring(0, 50) : "Sent an attachment",
               last_message_at: new Date().toISOString(),
-              unread_count: (participantConvo as any).unread_count + 1
+              unread_count: participantConvo.unread_count + 1
             })
-            .eq("id", (participantConvo as any).id);
+            .eq("id", participantConvo.id);
         } else {
           // Create a new conversation for the participant
           await supabase
-            .from("conversations" as any)
+            .from("conversations")
             .insert({
               name: session.user.email || session.user.id,
-              user_id: (conversation as any).participant_id,
+              user_id: conversation.participant_id,
               participant_id: session.user.id,
               last_message: content ? content.substring(0, 50) : "Sent an attachment",
               last_message_at: new Date().toISOString(),
               unread_count: 1,
-              encrypted_metadata: (conversation as any).encrypted_metadata,
-              is_group: (conversation as any).is_group
+              encrypted_metadata: conversation.encrypted_metadata,
+              is_group: conversation.is_group
             });
         }
       }
       
-      // Send Telegram notification using the edge function
-      // This would integrate with the Telegram API
-      // but for now we'll just log it
       secureLog(`Message sent to conversation ${conversationId}`, { level: "info" });
-      
       return true;
     } catch (err) {
+      console.error("Error sending message:", err);
       secureLog(err, { level: "error" });
       toast.error("Failed to send message");
       return false;
