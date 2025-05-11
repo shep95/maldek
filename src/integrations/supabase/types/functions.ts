@@ -33,4 +33,16 @@ export interface DbFunctions {
     }
     Returns: undefined
   }
+  delete_conversation_messages: {
+    Args: {
+      conversation_id: string
+    }
+    Returns: undefined
+  }
+  delete_conversation: {
+    Args: {
+      conversation_id: string
+    }
+    Returns: undefined
+  }
 }
