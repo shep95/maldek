@@ -48,7 +48,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
   
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md mobile-dialog-content max-w-[95vw] mx-auto">
         <DialogHeader>
           <DialogTitle>Message Settings</DialogTitle>
           <DialogDescription>
@@ -58,7 +58,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
         
         <div className="space-y-6 py-4">
           <div className="flex items-center justify-between space-x-2">
-            <div>
+            <div className="flex-1">
               <Label htmlFor="auto-delete" className="font-medium">Auto-delete messages</Label>
               <p className="text-sm text-muted-foreground">
                 Automatically delete messages older than 3 hours
@@ -68,6 +68,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
               id="auto-delete"
               checked={autoDeleteEnabled}
               onCheckedChange={setAutoDeleteEnabled}
+              className="touch-target"
             />
           </div>
           
@@ -78,11 +79,19 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
           </div>
         </div>
         
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="w-full sm:w-auto min-h-[44px]"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSaveSettings} disabled={isSaving}>
+          <Button 
+            onClick={handleSaveSettings} 
+            disabled={isSaving}
+            className="w-full sm:w-auto min-h-[44px]"
+          >
             Save Changes
           </Button>
         </DialogFooter>

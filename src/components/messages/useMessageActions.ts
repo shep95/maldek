@@ -21,6 +21,10 @@ export const useMessageActions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
+      // Provide feedback on mobile that the message was sent
+      if (window.innerWidth < 768) {
+        navigator.vibrate?.(50); // Gentle vibration feedback if available
+      }
     },
     onError: (error) => {
       console.error('Error sending message:', error);
@@ -29,6 +33,7 @@ export const useMessageActions = () => {
   });
 
   return {
-    sendMessage: sendMessageMutation.mutate
+    sendMessage: sendMessageMutation.mutate,
+    isSending: sendMessageMutation.isPending
   };
 };

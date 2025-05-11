@@ -56,9 +56,10 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={onBackClick}
-                className="mr-2 -ml-2"
+                className="mr-2 -ml-2 touch-target"
+                aria-label="Back to conversations"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-5 w-5" />
               </Button>
             )}
             <h2 className="font-semibold">
@@ -71,9 +72,10 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               variant="ghost" 
               size="sm"
               onClick={onDeleteConversation}
-              className="text-muted-foreground hover:text-destructive"
+              className="text-muted-foreground hover:text-destructive touch-target"
+              aria-label="Delete conversation"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
             </Button>
           )}
         </div>
@@ -83,16 +85,21 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         </div>
         
         {onSendMessage && (
-          <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t">
+          <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t pb-safe">
             <div className="flex gap-2">
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1"
+                className="flex-1 min-h-[44px]"
               />
-              <Button type="submit" disabled={!newMessage.trim()}>
-                <Send className="h-4 w-4" />
+              <Button 
+                type="submit" 
+                disabled={!newMessage.trim()} 
+                size="icon" 
+                className="h-[44px] w-[44px]"
+              >
+                <Send className="h-5 w-5" />
               </Button>
             </div>
           </form>
@@ -110,14 +117,15 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               variant="ghost"
               size="sm"
               onClick={onBackClick}
-              className="mr-2 -ml-2"
+              className="mr-2 -ml-2 touch-target"
+              aria-label="Back to conversations"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
           <div className="flex items-center gap-2">
             {recipient && (
-              <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src={recipient.avatar_url || undefined} />
                 <AvatarFallback>{recipient.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
               </Avatar>
@@ -133,15 +141,16 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
             variant="ghost" 
             size="sm"
             onClick={onDeleteConversation}
-            className="text-muted-foreground hover:text-destructive"
+            className="text-muted-foreground hover:text-destructive touch-target"
+            aria-label="Delete conversation"
             title="Delete conversation"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           </Button>
         )}
       </div>
 
-      <div className="flex-grow overflow-y-auto p-3 sm:p-4 md:p-6">
+      <div className="flex-grow overflow-y-auto p-3 sm:p-4 md:p-6 hide-scrollbar">
         <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto">
           {messages.map((message) => {
             const isSentByMe = message.sender_id === actualCurrentUserId;
@@ -157,7 +166,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                 key={message.id}
                 className={`flex ${isSentByMe ? "justify-end" : "justify-start"}`}
               >
-                <div className={`flex gap-2 max-w-[85%] ${isSentByMe ? "flex-row-reverse" : ""}`}>
+                <div className={`flex gap-2 max-w-[90%] ${isSentByMe ? "flex-row-reverse" : ""}`}>
                   {!isSentByMe && (
                     <Avatar className="h-8 w-8 hidden sm:flex mt-1">
                       <AvatarImage src={senderAvatar || undefined} />
@@ -199,16 +208,20 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       </div>
 
       {onSendMessage && (
-        <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 md:p-5 border-t">
+        <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 md:p-5 border-t pb-safe">
           <div className="flex gap-2 max-w-5xl mx-auto">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
             />
-            <Button type="submit" disabled={!newMessage.trim()}>
-              <Send className="h-4 w-4 sm:mr-2" />
+            <Button 
+              type="submit" 
+              disabled={!newMessage.trim()} 
+              className="h-[44px] min-w-[44px] px-3"
+            >
+              <Send className="h-5 w-5 sm:mr-2" />
               <span className="hidden sm:inline">Send</span>
             </Button>
           </div>
