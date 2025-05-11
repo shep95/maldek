@@ -46,30 +46,36 @@ export const useToast = () => {
   return mobileToast as typeof toast & CustomToast;
 };
 
-// Export a standalone toast object that can be used without hooks
-export const toast: CustomToast = {
-  // Re-export the basic shadcn toast function
-  ...(require("@/components/ui/toast").toast),
+// Get the original toast function
+const originalToast = require("@/components/ui/toast").toast;
+
+// Create our enhanced toast object with the custom methods
+const enhancedToast = {
+  // Spread the original toast function and its properties
+  ...originalToast,
   
   // Enhanced mobile-friendly toast functions
   info: (title: string, description?: string) => 
-    require("@/components/ui/toast").toast({
+    originalToast({
       title,
       description,
       className: "sm:w-full md:max-w-md fixed bottom-4 sm:bottom-auto sm:top-4 z-50 left-0 right-0 mx-auto",
     }),
   success: (title: string, description?: string) => 
-    require("@/components/ui/toast").toast({
+    originalToast({
       title,
       description,
       variant: "default",
       className: "sm:w-full md:max-w-md bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 fixed bottom-4 sm:bottom-auto sm:top-4 z-50 left-0 right-0 mx-auto",
     }),
   error: (title: string, description?: string) => 
-    require("@/components/ui/toast").toast({
+    originalToast({
       title,
       description,
       variant: "destructive",
       className: "sm:w-full md:max-w-md fixed bottom-4 sm:bottom-auto sm:top-4 z-50 left-0 right-0 mx-auto",
     })
 };
+
+// Export the enhanced toast with proper typing
+export const toast = enhancedToast as typeof originalToast & CustomToast;
