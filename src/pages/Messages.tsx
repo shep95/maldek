@@ -14,7 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSettingsDialog } from "@/components/messages/MessageSettingsDialog";
 import { NewMessageDialog } from "@/components/messages/NewMessageDialog";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);

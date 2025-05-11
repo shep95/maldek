@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useEncryption } from "@/providers/EncryptionProvider";
 import { Conversation, Message, User } from "../types/messageTypes";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 export const useMessages = () => {
   const session = useSession();

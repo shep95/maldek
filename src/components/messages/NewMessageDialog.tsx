@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useFollowStatus } from "./hooks/useFollowStatus";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 interface NewMessageDialogProps {
   isOpen: boolean;
