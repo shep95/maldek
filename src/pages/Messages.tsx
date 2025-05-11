@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -159,12 +158,12 @@ const Messages: React.FC = () => {
               onValueChange={(value) => setActiveTab(value as "all" | "requests")}
               className="w-full"
             >
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="all" className="flex items-center gap-1">
+              <TabsList className="flex flex-col space-y-1 mb-4">
+                <TabsTrigger value="all" className="flex items-center justify-start gap-1 w-full">
                   <Inbox className="h-4 w-4" />
                   <span>All</span>
                 </TabsTrigger>
-                <TabsTrigger value="requests" className="flex items-center gap-1">
+                <TabsTrigger value="requests" className="flex items-center justify-start gap-1 w-full">
                   <Clock className="h-4 w-4" />
                   <span>Requests</span>
                   {requestedConversations.length > 0 && (
