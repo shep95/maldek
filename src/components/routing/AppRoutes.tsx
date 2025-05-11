@@ -61,6 +61,7 @@ export const AppRoutes = () => {
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/privacy" element={<Navigate to="/profiles?tab=privacy" replace />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

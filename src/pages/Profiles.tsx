@@ -24,10 +24,15 @@ const Profiles = () => {
   const navigate = useNavigate();
   const { blockedUserIds, isLoadingBlocked } = useBlockedUsers();
 
+  // Extract tab from URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const defaultTab = searchParams.get('tab') || 'posts';
+
   console.log('=== Profile Page Debug Logs ===');
   console.log('Current pathname:', location.pathname);
   console.log('Username param:', username);
   console.log('Session user:', session?.user?.id);
+  console.log('Default tab:', defaultTab);
 
   useEffect(() => {
     console.log('Profile component mounted/updated');
@@ -201,7 +206,7 @@ const Profiles = () => {
         isLoading={profileLoading} 
       />
       <div className="max-w-4xl mx-auto px-4 mt-8">
-        <Tabs defaultValue="posts" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="w-full justify-start h-14 bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 p-1 mb-8 overflow-hidden">
             <TabsTrigger 
               value="posts" 

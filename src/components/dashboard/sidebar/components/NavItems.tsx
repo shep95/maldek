@@ -100,8 +100,8 @@ export const NavItems = ({
     {
       icon: Lock,
       label: "Privacy",
-      path: "/profiles",
-      active: location.pathname === "/profiles",
+      path: "/privacy",
+      active: location.pathname === "/privacy",
       description: "Access private posts",
       className: "text-accent hover:bg-accent/10"
     },

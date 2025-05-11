@@ -8,8 +8,8 @@ export interface TelegramMessage {
   id: string;
   content: string;
   created_at: string;
-  telegram_message_id: string | null;
-  telegram_chat_id: string | null;
+  telegram_message_id: string | number | null;
+  telegram_chat_id: string | number | null;
   is_encrypted: boolean;
   decrypted_content?: string;
   sender: {
@@ -83,10 +83,10 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         throw messagesError;
       }
 
-      // Add is_encrypted field based on content
+      // Process the messages to add is_encrypted field
       return messages.map(message => ({
         ...message,
-        is_encrypted: message.content.includes('.') // Simple heuristic: encrypted content contains a dot separator for IV
+        is_encrypted: typeof message.content === 'string' && message.content.includes('.') // Simple heuristic: encrypted content contains a dot separator for IV
       })) as TelegramMessage[];
     },
     enabled: !!currentUserId,
