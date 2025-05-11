@@ -9,18 +9,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { MessageFileUpload } from "./MessageFileUpload";
 import { useEncryption } from "@/providers/EncryptionProvider";
 import { toast } from "sonner";
-
-interface Message {
-  id: string;
-  sender_id: string;
-  content: string;
-  created_at: string;
-  is_read: boolean;
-  file_url?: string;
-  file_type?: string;
-  file_name?: string;
-  encrypted_metadata?: string;
-}
+import { Message } from "./types/messageTypes";
 
 interface MessagePanelProps {
   conversationId: string | null;
