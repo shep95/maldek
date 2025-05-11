@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +22,11 @@ export const ChatInput = ({ onSubmit, isLoading }: ChatInputProps) => {
     onSubmit(input.trim(), selectedImage);
     setInput("");
     setSelectedImage(null);
+    
+    // Reset file input to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -46,8 +52,8 @@ export const ChatInput = ({ onSubmit, isLoading }: ChatInputProps) => {
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
-              if (file.size > 5 * 1024 * 1024) {
-                toast.error("Image must be less than 5MB");
+              if (file.size > 100 * 1024 * 1024) {  // Increased to 100MB
+                toast.error("Image must be less than 100MB");
                 return;
               }
               if (!file.type.startsWith('image/')) {

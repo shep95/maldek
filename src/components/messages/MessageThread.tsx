@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message as MessageType, User } from "./types/messageTypes";
@@ -77,6 +76,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       setNewMessage("");
       setMediaFile(null);
       setMediaPreview(null);
+      
+      // Reset file input to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 

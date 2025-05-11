@@ -32,12 +32,12 @@ export async function downloadMedia(url: string, filename?: string) {
 
 // Validate media files for size and type
 export async function validateMediaFile(file: File, userId: string): Promise<{ isValid: boolean; error?: string }> {
-  // Check file size (max 50MB)
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  // Check file size (max 100MB)
+  const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB (increased from 50MB)
   if (file.size > MAX_FILE_SIZE) {
     return {
       isValid: false,
-      error: `File size exceeds the 50MB limit (${(file.size / (1024 * 1024)).toFixed(2)}MB)`
+      error: `File size exceeds the 100MB limit (${(file.size / (1024 * 1024)).toFixed(2)}MB)`
     };
   }
 

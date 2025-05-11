@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Image } from "lucide-react";
 
@@ -25,7 +26,7 @@ export const MediaUploadZone = ({ onFileSelect, dragActive, isProcessing }: Medi
       </Button>
       
       <div className="mt-2 text-sm text-muted-foreground text-center">
-        Supports images and videos up to 50MB
+        Supports images and videos up to 100MB
       </div>
     </div>
   );
