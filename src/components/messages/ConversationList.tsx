@@ -11,6 +11,16 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { secureLog } from "@/utils/secureLogging";
 import { useEncryption } from "@/providers/EncryptionProvider";
 
+type Conversation = {
+  id: string;
+  name: string;
+  last_message: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+  encrypted_metadata?: string | null;
+  metadata?: any;
+};
+
 interface ConversationListProps {
   selectedConversationId: string | null;
   onSelectConversation: (id: string) => void;
@@ -21,7 +31,7 @@ export const ConversationList = ({
   onSelectConversation,
 }: ConversationListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const session = useSession();

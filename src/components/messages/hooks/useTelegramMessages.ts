@@ -5,17 +5,19 @@ import { useEncryption } from "@/providers/EncryptionProvider";
 import { useSession } from "@supabase/auth-helpers-react";
 import { secureFetch, secureLog } from "@/utils/secureLogging";
 import { toast } from "sonner";
+import { Database } from "@/integrations/supabase/types/database";
 
+// Define types that match our database schema
 type Message = {
   id: string;
   sender_id: string;
   content: string;
   created_at: string;
   is_read: boolean;
-  file_url?: string;
-  file_type?: string;
-  file_name?: string;
-  encrypted_metadata?: string;
+  file_url?: string | null;
+  file_type?: string | null;
+  file_name?: string | null;
+  encrypted_metadata?: string | null;
 };
 
 export const useTelegramMessages = (conversationId: string | null) => {
@@ -43,7 +45,8 @@ export const useTelegramMessages = (conversationId: string | null) => {
 
       if (fetchError) throw fetchError;
 
-      setMessages(data as Message[] || []);
+      // Convert data to our Message type
+      setMessages((data || []) as Message[]);
       
       // Mark messages as read
       const unreadMessages = data?.filter(

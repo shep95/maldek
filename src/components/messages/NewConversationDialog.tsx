@@ -25,6 +25,25 @@ interface NewConversationDialogProps {
   onSelectConversation: (id: string) => void;
 }
 
+type Profile = {
+  id: string;
+  username: string;
+  avatar_url?: string | null;
+};
+
+type Conversation = {
+  id: string;
+  name: string;
+  user_id: string;
+  participant_id: string | null;
+  last_message: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+  encrypted_metadata: string | null;
+  is_group: boolean;
+  created_at: string;
+};
+
 export const NewConversationDialog = ({
   open,
   onOpenChange,
