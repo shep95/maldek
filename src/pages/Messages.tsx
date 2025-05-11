@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSettingsDialog } from "@/components/messages/MessageSettingsDialog";
+
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
@@ -86,7 +87,7 @@ const Messages: React.FC = () => {
     const otherParticipant = conv.participants.find(p => p.id !== currentUserId);
     return otherParticipant?.username.toLowerCase().includes(searchQuery.toLowerCase());
   }) : requestedConversations;
-  return <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 mx-0 w-full max-w-screen-2xl px-[25px]">
+  return <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 mx-0 w-[calc(100%+500px)] max-w-screen-2xl px-[25px]">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 px-2">Messages</h1>
       
       {!isEncryptionInitialized && <Alert className="mb-4 sm:mb-6">
