@@ -1,37 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ConversationList } from "../components/messages/ConversationList";
 import { MessagePanel } from "../components/messages/MessagePanel";
 import { useTelegramMessages } from "../components/messages/hooks/useTelegramMessages";
-import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@supabase/auth-helpers-react";
-import { secureLog } from "@/utils/secureLogging";
-import { toast } from "sonner";
 
 const Messages = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const { messages, isLoading, sendMessage } = useTelegramMessages(selectedConversationId);
-  const session = useSession();
-
-  // Reset unread count when selecting a conversation
-  useEffect(() => {
-    const resetUnreadCount = async () => {
-      if (!selectedConversationId || !session?.user?.id) return;
-      
-      try {
-        await supabase
-          .from("conversations")
-          .update({ unread_count: 0 })
-          .eq("id", selectedConversationId)
-          .eq("user_id", session.user.id);
-      } catch (error) {
-        secureLog(error, { level: "error" });
-        toast.error("Failed to update conversation status");
-      }
-    };
-    
-    resetUnreadCount();
-  }, [selectedConversationId, session?.user?.id]);
 
   return (
     <div className="min-h-[100dvh] bg-background">

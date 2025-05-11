@@ -1,14 +1,16 @@
-
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
-import { useState, useEffect } from "react";
-import { useEncryption } from "@/providers/EncryptionProvider";
 import { cn } from "@/lib/utils";
-import { Conversation } from "./types/messageTypes";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ConversationItemProps {
-  conversation: Conversation;
+  conversation: {
+    id: string;
+    name: string;
+    last_message: string | null;
+    last_message_at: string | null;
+    unread_count: number;
+    participant_id: string;
+  };
   isSelected: boolean;
   onClick: () => void;
 }
@@ -18,74 +20,91 @@ export const ConversationItem = ({
   isSelected,
   onClick,
 }: ConversationItemProps) => {
-  const [lastMessage, setLastMessage] = useState<string>(
-    conversation.last_message || "No messages yet"
-  );
-  const encryption = useEncryption();
-  
+  const [participantName, setParticipantName] = useState<string>("User");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Load participant details from their user ID
   useEffect(() => {
-    const decryptLastMessage = async () => {
+    const loadParticipantDetails = async () => {
       try {
-        if (!conversation.last_message || !encryption.isEncryptionInitialized) return;
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("username, avatar_url")
+          .eq("id", conversation.participant_id)
+          .single();
         
-        // If the message starts with "E2EE:" it's encrypted
-        if (conversation.last_message.startsWith("E2EE:")) {
-          const encryptedText = conversation.last_message.substring(5);
-          const decrypted = await encryption.decryptText(encryptedText);
-          if (decrypted) {
-            setLastMessage(decrypted);
-          } else {
-            setLastMessage("[Encrypted message]");
-          }
+        if (error) throw error;
+        
+        if (data) {
+          setParticipantName(data.username || "User");
+          setAvatarUrl(data.avatar_url);
         }
-      } catch (error) {
-        console.error("Failed to decrypt message:", error);
-        setLastMessage("[Encrypted message]");
+      } catch (err) {
+        console.error("Error loading participant details:", err);
       }
     };
     
-    decryptLastMessage();
-  }, [conversation.last_message, encryption]);
+    if (conversation.participant_id) {
+      loadParticipantDetails();
+    }
+  }, [conversation.participant_id]);
   
-  const formattedTime = conversation.last_message_at
-    ? formatDistanceToNow(new Date(conversation.last_message_at), { addSuffix: true })
-    : "";
-
-  // Get first letter of conversation name for avatar
-  const avatarInitial = conversation.name.charAt(0).toUpperCase();
-  
-  // Determine if this is a group chat from metadata
-  const isGroupChat = conversation.metadata?.isGroup || false;
+  // Format the timestamp
+  const formatTimestamp = (timestamp: string | null) => {
+    if (!timestamp) return "";
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    
+    // If today, show time only
+    if (date.toDateString() === now.toDateString()) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // If this year, show month and day
+    if (date.getFullYear() === now.getFullYear()) {
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+    
+    // Otherwise show full date
+    return date.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+  };
 
   return (
-    <div 
-      onClick={onClick} 
+    <div
+      onClick={onClick}
       className={cn(
-        "flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors",
-        isSelected ? "bg-accent/20" : "hover:bg-white/5"
+        "flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/5 transition-colors",
+        isSelected && "bg-white/10"
       )}
     >
-      <Avatar className={cn(
-        "h-12 w-12 text-white",
-        isGroupChat ? "bg-gradient-to-br from-purple-700 to-blue-500" : "bg-gradient-to-br from-accent to-accent/70"
-      )}>
-        <span>{avatarInitial}</span>
-      </Avatar>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start">
-          <h3 className="font-medium text-sm truncate">{conversation.name}</h3>
-          <span className="text-xs text-muted-foreground">{formattedTime}</span>
-        </div>
-        
-        <p className="text-xs text-muted-foreground mt-1 truncate">
-          {lastMessage}
-        </p>
+      <div className="w-10 h-10 bg-gray-700 rounded-full flex-shrink-0 flex items-center justify-center overflow-hidden">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={participantName} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-lg font-semibold text-white">
+            {participantName.charAt(0).toUpperCase()}
+          </span>
+        )}
       </div>
-      
-      {conversation.unread_count > 0 && (
-        <Badge className="bg-accent/90 hover:bg-accent text-white">{conversation.unread_count}</Badge>
-      )}
+      <div className="flex-grow min-w-0">
+        <div className="flex justify-between items-start">
+          <h3 className="font-semibold truncate">{participantName}</h3>
+          <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+            {formatTimestamp(conversation.last_message_at)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-400 truncate">
+            {conversation.last_message || "No messages yet"}
+          </p>
+          {conversation.unread_count > 0 && (
+            <div className="bg-accent text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-2">
+              {conversation.unread_count}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

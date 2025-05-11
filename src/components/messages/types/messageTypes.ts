@@ -7,25 +7,17 @@ export interface Conversation {
   last_message: string | null;
   last_message_at: string | null;
   unread_count: number;
-  encrypted_metadata: string | null;
-  is_group: boolean;
-  created_at: string;
-  metadata?: {
-    isGroup: boolean;
-    createdAt: string;
-    [key: string]: any;
-  };
+  is_group?: boolean;
+  created_at?: string;
 }
 
 export interface Message {
   id: string;
-  conversation_id: string;
+  conversation_id?: string;
   sender_id: string;
+  recipient_id: string;
   content: string;
-  is_read: boolean;
-  file_url: string | null;
-  file_type: string | null;
-  file_name: string | null;
-  encrypted_metadata: string | null;
+  read_at: string | null;
   created_at: string;
+  status: string;
 }

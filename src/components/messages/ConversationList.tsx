@@ -9,8 +9,6 @@ import { NewConversationDialog } from "./NewConversationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { secureLog } from "@/utils/secureLogging";
-import { useEncryption } from "@/providers/EncryptionProvider";
-import { Conversation } from "./types/messageTypes";
 
 interface ConversationListProps {
   selectedConversationId: string | null;
@@ -22,11 +20,10 @@ export const ConversationList = ({
   onSelectConversation,
 }: ConversationListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<any[]>([]);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const session = useSession();
-  const encryption = useEncryption();
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -37,37 +34,46 @@ export const ConversationList = ({
         secureLog("Fetching conversations", { level: "info" });
         
         const { data, error } = await supabase
-          .from("conversations")
-          .select("id, name, last_message, last_message_at, unread_count, encrypted_metadata, user_id, participant_id, is_group, created_at")
-          .eq("user_id", session.user.id)
-          .order("last_message_at", { ascending: false });
+          .from("messages")
+          .select("*")
+          .or(`sender_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
+          .order("created_at", { ascending: false });
 
         if (error) {
           console.error("Error fetching conversations:", error);
           throw error;
         }
 
-        // Process conversations and decrypt metadata if available
-        const processedConversations = await Promise.all(
-          (data || []).map(async (conv) => {
-            try {
-              if (conv.encrypted_metadata && encryption.isEncryptionInitialized) {
-                const decryptedMetadata = await encryption.decryptText(conv.encrypted_metadata);
-                if (decryptedMetadata) {
-                  const metadata = JSON.parse(decryptedMetadata);
-                  return { ...conv, metadata } as Conversation;
-                }
-              }
-              return conv as Conversation;
-            } catch (err) {
-              console.error("Failed to decrypt conversation metadata:", err);
-              secureLog(`Failed to decrypt conversation metadata: ${err}`, { level: "error" });
-              return conv as Conversation;
-            }
-          })
-        );
+        // Group messages by conversation
+        const conversationsMap = new Map();
+        
+        (data || []).forEach(message => {
+          const isUserSender = message.sender_id === session.user?.id;
+          const otherUserId = isUserSender ? message.recipient_id : message.sender_id;
+          
+          const conversationId = `${session.user?.id}-${otherUserId}`;
+          
+          if (!conversationsMap.has(conversationId)) {
+            conversationsMap.set(conversationId, {
+              id: conversationId,
+              name: isUserSender ? message.recipient_id : message.sender_id,
+              last_message: message.content,
+              last_message_at: message.created_at,
+              unread_count: !isUserSender && !message.read_at ? 1 : 0,
+              participant_id: otherUserId,
+              user_id: session.user?.id
+            });
+          } else if (!isUserSender && !message.read_at) {
+            // Update unread count for existing conversation
+            const existing = conversationsMap.get(conversationId);
+            conversationsMap.set(conversationId, {
+              ...existing,
+              unread_count: existing.unread_count + 1
+            });
+          }
+        });
 
-        setConversations(processedConversations);
+        setConversations(Array.from(conversationsMap.values()));
       } catch (error) {
         console.error("Error in fetchConversations:", error);
         secureLog(error, { level: "error" });
@@ -78,16 +84,16 @@ export const ConversationList = ({
 
     fetchConversations();
 
-    // Set up real-time subscription for new conversations
+    // Set up real-time subscription for new messages
     const channel = supabase
-      .channel("conversations-changes")
+      .channel("messages-changes")
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "conversations",
-          filter: `user_id=eq.${session?.user?.id}`,
+          table: "messages",
+          filter: `recipient_id=eq.${session?.user?.id},sender_id=eq.${session?.user?.id}`,
         },
         () => {
           fetchConversations();
@@ -98,7 +104,7 @@ export const ConversationList = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session?.user?.id, encryption.isEncryptionInitialized]);
+  }, [session?.user?.id]);
 
   const filteredConversations = conversations.filter((conv) =>
     conv.name.toLowerCase().includes(searchQuery.toLowerCase())

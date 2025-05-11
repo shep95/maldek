@@ -78,7 +78,7 @@ export const NavItems = ({
       label: "Messages",
       path: "/messages",
       active: location.pathname === "/messages",
-      description: "Secure encrypted messaging"
+      description: "Secure messaging"
     },
     { 
       icon: Bell, 

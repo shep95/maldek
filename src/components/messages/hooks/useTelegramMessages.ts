@@ -1,57 +1,66 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useEncryption } from "@/providers/EncryptionProvider";
 import { useSession } from "@supabase/auth-helpers-react";
-import { secureFetch, secureLog } from "@/utils/secureLogging";
+import { secureLog } from "@/utils/secureLogging";
 import { toast } from "sonner";
-import { Message } from "../types/messageTypes";
 
 export const useTelegramMessages = (conversationId: string | null) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const session = useSession();
-  const encryption = useEncryption();
+
+  // Parse the conversation ID to get user IDs
+  const parseConversationId = useCallback(() => {
+    if (!conversationId || !session?.user?.id) return null;
+    
+    const parts = conversationId.split('-');
+    if (parts.length !== 2) return null;
+    
+    const [userId1, userId2] = parts;
+    const otherUserId = userId1 === session.user.id ? userId2 : userId1;
+    
+    return {
+      currentUserId: session.user.id,
+      otherUserId
+    };
+  }, [conversationId, session?.user?.id]);
 
   // Fetch messages for the current conversation
   const fetchMessages = useCallback(async () => {
-    if (!conversationId || !session?.user?.id) {
-      return;
-    }
+    const parsedIds = parseConversationId();
+    if (!parsedIds) return;
+    
+    const { currentUserId, otherUserId } = parsedIds;
 
     try {
       setIsLoading(true);
       setError(null);
       
+      // Get messages between these two users
       const { data, error: fetchError } = await supabase
-        .from("conversation_messages")
+        .from("messages")
         .select("*")
-        .eq("conversation_id", conversationId)
+        .or(`and(sender_id.eq.${currentUserId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${currentUserId})`)
         .order("created_at", { ascending: true });
 
       if (fetchError) throw fetchError;
-
-      // Cast data to our Message type
-      setMessages((data || []) as Message[]);
       
-      // Mark messages as read
+      setMessages(data || []);
+      
+      // Mark messages from other user as read
       const unreadMessages = (data || []).filter(
-        msg => !msg.is_read && msg.sender_id !== session.user?.id
+        msg => !msg.read_at && msg.sender_id === otherUserId
       );
       
       if (unreadMessages.length > 0) {
-        await supabase
-          .from("conversation_messages")
-          .update({ is_read: true })
-          .in("id", unreadMessages.map(msg => msg.id));
-        
-        // Update the conversation's unread count
-        await supabase
-          .from("conversations")
-          .update({ unread_count: 0 })
-          .eq("id", conversationId)
-          .eq("user_id", session.user.id);
+        await Promise.all(unreadMessages.map(msg => 
+          supabase
+            .from("messages")
+            .update({ read_at: new Date().toISOString() })
+            .eq("id", msg.id)
+        ));
       }
     } catch (err) {
       console.error("Error fetching messages:", err);
@@ -60,11 +69,14 @@ export const useTelegramMessages = (conversationId: string | null) => {
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, session?.user?.id]);
+  }, [parseConversationId]);
 
   // Listen for new messages using Supabase Realtime
   useEffect(() => {
-    if (!conversationId) return;
+    const parsedIds = parseConversationId();
+    if (!parsedIds) return;
+    
+    const { currentUserId, otherUserId } = parsedIds;
     
     fetchMessages();
     
@@ -76,12 +88,12 @@ export const useTelegramMessages = (conversationId: string | null) => {
         {
           event: "*",
           schema: "public",
-          table: "conversation_messages",
-          filter: `conversation_id=eq.${conversationId}`
+          table: "messages",
+          filter: `or(and(sender_id.eq.${currentUserId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${currentUserId}))`
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            const newMessage = payload.new as Message;
+            const newMessage = payload.new as any;
             
             setMessages(prevMessages => {
               // Check if the message already exists
@@ -92,21 +104,14 @@ export const useTelegramMessages = (conversationId: string | null) => {
             });
             
             // Mark message as read if it's not from the current user
-            if (newMessage.sender_id !== session?.user?.id) {
+            if (newMessage.sender_id !== currentUserId) {
               supabase
-                .from("conversation_messages")
-                .update({ is_read: true })
+                .from("messages")
+                .update({ read_at: new Date().toISOString() })
                 .eq("id", newMessage.id);
-              
-              // Update the conversation's unread count
-              supabase
-                .from("conversations")
-                .update({ unread_count: 0 })
-                .eq("id", conversationId)
-                .eq("user_id", session?.user?.id);
             }
           } else if (payload.eventType === "UPDATE") {
-            const updatedMessage = payload.new as Message;
+            const updatedMessage = payload.new as any;
             
             setMessages(prevMessages => 
               prevMessages.map(msg => 
@@ -121,149 +126,32 @@ export const useTelegramMessages = (conversationId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, session?.user?.id, fetchMessages]);
+  }, [conversationId, fetchMessages, parseConversationId]);
 
   // Send message function
-  const sendMessage = async (content: string, fileData?: { file: File, previewUrl?: string }): Promise<boolean> => {
-    if (!conversationId || !session?.user?.id) {
+  const sendMessage = async (content: string): Promise<boolean> => {
+    const parsedIds = parseConversationId();
+    if (!parsedIds) {
       toast.error("Unable to send message");
       return false;
     }
+    
+    const { currentUserId, otherUserId } = parsedIds;
 
     try {
-      // Get conversation details
-      const { data: conversation } = await supabase
-        .from("conversations")
-        .select("*")
-        .eq("id", conversationId)
-        .single();
-      
-      if (!conversation) {
-        throw new Error("Conversation not found");
-      }
-      
-      let encryptedContent = content;
-      let fileUrl: string | null = null;
-      let fileType: string | null = null;
-      let fileName: string | null = null;
-      let encryptedMetadata = null;
-      
-      // Encrypt the message content if encryption is initialized
-      if (encryption.isEncryptionInitialized) {
-        if (content) {
-          const encrypted = await encryption.encryptText(content);
-          if (encrypted) {
-            encryptedContent = `E2EE:${encrypted}`;
-          }
-        }
-        
-        // Handle file upload if provided
-        if (fileData?.file) {
-          // Upload file with encryption
-          const file = fileData.file;
-          fileName = file.name;
-          fileType = file.type;
-          
-          // Generate encryption metadata
-          const metadata = {
-            fileName,
-            fileType,
-            encryptionIV: crypto.randomUUID(),
-            encryptionKey: crypto.randomUUID()
-          };
-          
-          // Encrypt file metadata
-          encryptedMetadata = await encryption.encryptText(JSON.stringify(metadata));
-          
-          // For a real implementation, we'd encrypt the file here
-          // and upload it to secure storage
-          // For this example, we're skipping actual encryption
-          
-          const { data: uploadResult } = await supabase
-            .storage
-            .from('messages')
-            .upload(`${session.user.id}/${crypto.randomUUID()}-${file.name}`, file);
-            
-          if (uploadResult?.path) {
-            // Get public URL
-            const { data: { publicUrl } } = supabase
-              .storage
-              .from('messages')
-              .getPublicUrl(uploadResult.path);
-              
-            fileUrl = publicUrl;
-          }
-        }
-      }
-      
       // Insert the new message
-      const { data: message, error: messageError } = await supabase
-        .from("conversation_messages")
+      const { error: messageError } = await supabase
+        .from("messages")
         .insert({
-          conversation_id: conversationId,
-          sender_id: session.user.id,
-          content: encryptedContent,
-          is_read: false,
-          file_url: fileUrl,
-          file_type: fileType,
-          file_name: fileName,
-          encrypted_metadata: encryptedMetadata
-        })
-        .select()
-        .single();
+          sender_id: currentUserId,
+          recipient_id: otherUserId,
+          content,
+          status: 'sent'
+        });
       
       if (messageError) throw messageError;
-
-      // Update the conversation with last message
-      await supabase
-        .from("conversations")
-        .update({
-          last_message: content ? content.substring(0, 50) : "Sent an attachment",
-          last_message_at: new Date().toISOString(),
-          unread_count: conversation.user_id !== session.user.id
-            ? conversation.unread_count + 1
-            : conversation.unread_count
-        })
-        .eq("id", conversationId);
-        
-      // If there's a participant_id, update their copy of the conversation too
-      if (conversation.participant_id) {
-        // Check if the participant has a copy of this conversation
-        const { data: participantConvo } = await supabase
-          .from("conversations")
-          .select("*")
-          .eq("user_id", conversation.participant_id)
-          .eq("participant_id", session.user.id)
-          .single();
-          
-        if (participantConvo) {
-          // Update the participant's conversation
-          await supabase
-            .from("conversations")
-            .update({
-              last_message: content ? content.substring(0, 50) : "Sent an attachment",
-              last_message_at: new Date().toISOString(),
-              unread_count: participantConvo.unread_count + 1
-            })
-            .eq("id", participantConvo.id);
-        } else {
-          // Create a new conversation for the participant
-          await supabase
-            .from("conversations")
-            .insert({
-              name: session.user.email || session.user.id,
-              user_id: conversation.participant_id,
-              participant_id: session.user.id,
-              last_message: content ? content.substring(0, 50) : "Sent an attachment",
-              last_message_at: new Date().toISOString(),
-              unread_count: 1,
-              encrypted_metadata: conversation.encrypted_metadata,
-              is_group: conversation.is_group
-            });
-        }
-      }
       
-      secureLog(`Message sent to conversation ${conversationId}`, { level: "info" });
+      secureLog(`Message sent to user ${otherUserId}`, { level: "info" });
       return true;
     } catch (err) {
       console.error("Error sending message:", err);

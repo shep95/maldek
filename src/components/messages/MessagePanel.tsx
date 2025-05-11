@@ -2,19 +2,15 @@
 import { useState, useRef, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip } from "lucide-react";
+import { Send } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageItem } from "./MessageItem";
 import { useSession } from "@supabase/auth-helpers-react";
-import { MessageFileUpload } from "./MessageFileUpload";
-import { useEncryption } from "@/providers/EncryptionProvider";
-import { toast } from "sonner";
-import { Message } from "./types/messageTypes";
 
 interface MessagePanelProps {
   conversationId: string | null;
-  messages: Message[];
-  onSendMessage: (content: string, fileData?: any) => Promise<boolean>;
+  messages: any[];
+  onSendMessage: (content: string) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -25,10 +21,6 @@ export const MessagePanel = ({
   isLoading,
 }: MessagePanelProps) => {
   const [message, setMessage] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [showFileUpload, setShowFileUpload] = useState(false);
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
-  const [filePreview, setFilePreview] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const session = useSession();
@@ -39,23 +31,11 @@ export const MessagePanel = ({
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!message.trim() && !fileToUpload) return;
+    if (!message.trim()) return;
     
-    try {
-      const success = await onSendMessage(message, fileToUpload ? {
-        file: fileToUpload,
-        previewUrl: filePreview
-      } : undefined);
-      
-      if (success) {
-        setMessage("");
-        setFileToUpload(null);
-        setFilePreview(null);
-        setShowFileUpload(false);
-      }
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      toast.error("Failed to send message");
+    const success = await onSendMessage(message);
+    if (success) {
+      setMessage("");
     }
   };
 
@@ -63,24 +43,6 @@ export const MessagePanel = ({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
-    }
-  };
-
-  const handleFileChange = (file: File | null) => {
-    setFileToUpload(file);
-    
-    if (file) {
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setFilePreview(e.target?.result as string);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setFilePreview(null);
-      }
-    } else {
-      setFilePreview(null);
     }
   };
 
@@ -134,21 +96,6 @@ export const MessagePanel = ({
         <div ref={messagesEndRef} />
       </ScrollArea>
 
-      {/* File upload area */}
-      {showFileUpload && (
-        <MessageFileUpload
-          onFileChange={handleFileChange}
-          previewUrl={filePreview}
-          file={fileToUpload}
-          onCancel={() => {
-            setShowFileUpload(false);
-            setFileToUpload(null);
-            setFilePreview(null);
-          }}
-          isUploading={isUploading}
-        />
-      )}
-
       {/* Input area */}
       <div className="p-4 border-t border-white/10">
         <div className="flex items-end gap-2">
@@ -160,30 +107,18 @@ export const MessagePanel = ({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || isUploading}
+              disabled={isLoading}
             />
           </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              className="text-muted-foreground border-white/10"
-              onClick={() => setShowFileUpload(!showFileUpload)}
-              disabled={isLoading || isUploading}
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              disabled={(!message.trim() && !fileToUpload) || isLoading || isUploading}
-              onClick={handleSendMessage}
-              className="bg-accent hover:bg-accent/90"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            type="button"
+            size="icon"
+            disabled={!message.trim() || isLoading}
+            onClick={handleSendMessage}
+            className="bg-accent hover:bg-accent/90"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </div>
