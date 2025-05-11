@@ -1,18 +1,29 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useSession } from "@supabase/auth-helpers-react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Shield } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ConversationList } from "@/components/messages/ConversationList";
+import { MessageThread } from "@/components/messages/MessageThread";
+import { useMessages } from "@/components/messages/hooks/useMessages";
 import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
 import { useEncryption } from "@/providers/EncryptionProvider";
-import { Button } from "@/components/ui/button";
-import { Shield, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useSession } from "@supabase/auth-helpers-react";
-import { useTelegramMessages } from "@/components/messages/hooks/useTelegramMessages";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const { isEncryptionInitialized, initializeEncryption } = useEncryption();
   const session = useSession();
-  const { data: messages, isLoading, error } = useTelegramMessages(session?.user?.id || null);
+  const currentUserId = session?.user?.id;
+  
+  const {
+    conversations,
+    messages,
+    users,
+    selectedConversationId,
+    setSelectedConversationId,
+    sendMessage
+  } = useMessages();
 
   const handleSecurityCodeVerified = async (securityCode: string) => {
     try {
@@ -25,9 +36,28 @@ const Messages: React.FC = () => {
     }
   };
 
+  // Find the current conversation recipient
+  const selectedConversation = conversations.find(
+    (conv) => conv.id === selectedConversationId
+  );
+  
+  const recipient = selectedConversation?.participants.find(
+    (p) => p.id !== currentUserId
+  );
+
+  const handleSendMessage = (content: string) => {
+    if (recipient) {
+      sendMessage({
+        recipientId: recipient.id,
+        content,
+        isEncrypted: false // Default to non-encrypted messages
+      });
+    }
+  };
+
   return (
     <div className="h-full min-h-screen p-4">
-      <h1 className="text-2xl font-bold mb-6">Secure Messages</h1>
+      <h1 className="text-2xl font-bold mb-6">Messages</h1>
       
       {!isEncryptionInitialized && (
         <Alert className="mb-6">
@@ -51,31 +81,33 @@ const Messages: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
         <div className="bg-card rounded-lg border p-4">
           <h2 className="font-semibold mb-4">Conversations</h2>
-          <p className="text-muted-foreground text-sm">
-            Your encrypted conversations will appear here.
-          </p>
+          <ConversationList 
+            conversations={conversations}
+            selectedConversationId={selectedConversationId || undefined}
+            onSelectConversation={(id) => setSelectedConversationId(id)}
+          />
         </div>
         
         <div className="md:col-span-2 bg-card rounded-lg border p-4">
-          <div className="flex flex-col h-full">
-            <div className="border-b pb-4 mb-4">
-              <h2 className="font-semibold">Messages</h2>
-            </div>
-            <div className="flex-grow">
-              {isEncryptionInitialized ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
+          {selectedConversationId && recipient && currentUserId ? (
+            <MessageThread
+              messages={messages}
+              currentUser={{ id: currentUserId, username: session?.user?.email?.split('@')[0] || 'User' }}
+              recipient={recipient}
+              onSendMessage={handleSendMessage}
+            />
+          ) : (
+            <div className="flex flex-col h-full">
+              <div className="border-b pb-4 mb-4">
+                <h2 className="font-semibold">Messages</h2>
+              </div>
+              <div className="flex-grow flex items-center justify-center">
+                <p className="text-center text-muted-foreground">
                   Select a conversation to view messages
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-4">
-                  <Shield className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-center text-muted-foreground">
-                    Enter your security code to view encrypted messages
-                  </p>
-                </div>
-              )}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

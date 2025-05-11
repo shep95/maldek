@@ -765,97 +765,6 @@ export type Database = {
           },
         ]
       }
-      messages: {
-        Row: {
-          content: string
-          created_at: string
-          deleted_at: string | null
-          deleted_by_recipient: boolean | null
-          deleted_by_sender: boolean | null
-          edited_at: string | null
-          encrypted_content: string | null
-          id: string
-          is_edited: boolean | null
-          media_urls: string[] | null
-          reactions: Json | null
-          read_at: string | null
-          recipient_id: string
-          removed_by_recipient: boolean | null
-          reply_to_id: string | null
-          sender_id: string
-          status: string
-          telegram_chat_id: number | null
-          telegram_message_id: number | null
-          translated_content: Json | null
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          deleted_at?: string | null
-          deleted_by_recipient?: boolean | null
-          deleted_by_sender?: boolean | null
-          edited_at?: string | null
-          encrypted_content?: string | null
-          id?: string
-          is_edited?: boolean | null
-          media_urls?: string[] | null
-          reactions?: Json | null
-          read_at?: string | null
-          recipient_id: string
-          removed_by_recipient?: boolean | null
-          reply_to_id?: string | null
-          sender_id: string
-          status?: string
-          telegram_chat_id?: number | null
-          telegram_message_id?: number | null
-          translated_content?: Json | null
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          deleted_at?: string | null
-          deleted_by_recipient?: boolean | null
-          deleted_by_sender?: boolean | null
-          edited_at?: string | null
-          encrypted_content?: string | null
-          id?: string
-          is_edited?: boolean | null
-          media_urls?: string[] | null
-          reactions?: Json | null
-          read_at?: string | null
-          recipient_id?: string
-          removed_by_recipient?: boolean | null
-          reply_to_id?: string | null
-          sender_id?: string
-          status?: string
-          telegram_chat_id?: number | null
-          telegram_message_id?: number | null
-          translated_content?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_recipient_id_fkey"
-            columns: ["recipient_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_reply_to_id_fkey"
-            columns: ["reply_to_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notification_preferences: {
         Row: {
           created_at: string | null
@@ -2019,36 +1928,6 @@ export type Database = {
           supports_gif_uploads?: boolean | null
           supports_nft_avatars?: boolean | null
           watermark_disabled?: boolean | null
-        }
-        Relationships: []
-      }
-      telegram_users: {
-        Row: {
-          access_hash: number | null
-          created_at: string
-          id: string
-          telegram_id: number
-          telegram_username: string | null
-          updated_at: string
-          user_id: string | null
-        }
-        Insert: {
-          access_hash?: number | null
-          created_at?: string
-          id?: string
-          telegram_id: number
-          telegram_username?: string | null
-          updated_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          access_hash?: number | null
-          created_at?: string
-          id?: string
-          telegram_id?: number
-          telegram_username?: string | null
-          updated_at?: string
-          user_id?: string | null
         }
         Relationships: []
       }
