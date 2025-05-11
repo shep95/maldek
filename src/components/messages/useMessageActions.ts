@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -255,22 +256,61 @@ export const useMessageActions = () => {
       try {
         console.log("Deleting conversation:", conversationId);
         
-        // Modified approach: delete messages first but without using RLS
-        const { error: messagesError } = await supabase
-          .rpc('delete_conversation_messages', { conversation_id: conversationId });
+        // Use a direct database function call to avoid RLS issues
+        // First, delete all messages in the conversation
+        const { error: messagesError, data: messagesResult } = await supabase
+          .from('messages')
+          .delete()
+          .eq('conversation_id', conversationId);
         
         if (messagesError) {
-          console.error("Error deleting messages:", messagesError);
-          throw messagesError;
+          console.error("Error with standard delete messages approach:", messagesError);
+          
+          // Try the function-based approach as a fallback
+          const { error: fnError } = await supabase.functions.invoke(
+            'delete-conversation-messages',
+            {
+              body: { conversation_id: conversationId }
+            }
+          );
+          
+          if (fnError) {
+            console.error("Edge function delete messages error:", fnError);
+            throw new Error(`Failed to delete messages: ${fnError.message}`);
+          }
         }
         
-        // Delete the conversation (which will cascade to conversation_participants due to our function)
+        // Delete the conversation participants
+        const { error: participantsError } = await supabase
+          .from('conversation_participants')
+          .delete()
+          .eq('conversation_id', conversationId);
+        
+        if (participantsError) {
+          console.error("Error deleting conversation participants:", participantsError);
+        }
+        
+        // Delete the conversation itself
         const { error: convError } = await supabase
-          .rpc('delete_conversation', { conversation_id: conversationId });
+          .from('conversations')
+          .delete()
+          .eq('id', conversationId);
         
         if (convError) {
-          console.error("Error deleting conversation:", convError);
-          throw convError;
+          console.error("Error with standard delete conversation approach:", convError);
+          
+          // Try the function-based approach as a fallback
+          const { error: fnError } = await supabase.functions.invoke(
+            'delete-conversation',
+            {
+              body: { conversation_id: conversationId }
+            }
+          );
+          
+          if (fnError) {
+            console.error("Edge function delete conversation error:", fnError);
+            throw new Error(`Failed to delete conversation: ${fnError.message}`);
+          }
         }
         
         console.log("Conversation deleted successfully");
