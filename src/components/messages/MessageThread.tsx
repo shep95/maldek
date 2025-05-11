@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message as MessageType, User } from "./types/messageTypes";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { isVideoFile } from "@/utils/mediaUtils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { MediaViewer } from "./MediaViewer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +48,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actualCurrentUserId = currentUser?.id || currentUserId;
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  // State for the media viewer
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerMediaUrl, setViewerMediaUrl] = useState<string>("");
+  const [isViewerMediaVideo, setIsViewerMediaVideo] = useState(false);
 
   useEffect(() => {
     // Scroll to the bottom when messages change
@@ -98,6 +105,12 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       onDeleteConversation();
     }
     setIsDeleteDialogOpen(false);
+  };
+
+  const openMediaViewer = (mediaUrl: string, isVideo: boolean) => {
+    setViewerMediaUrl(mediaUrl);
+    setIsViewerMediaVideo(isVideo);
+    setViewerOpen(true);
   };
 
   if (messages.length === 0) {
@@ -295,16 +308,26 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                       ) : null}
                       
                       {message.media_url && (
-                        <div className="mb-2 overflow-hidden rounded-xl">
+                        <div 
+                          className="mb-2 overflow-hidden rounded-xl cursor-pointer"
+                          onClick={() => openMediaViewer(message.media_url!, isVideoFile(message.media_url!))}
+                        >
                           {isVideoFile(message.media_url) ? (
                             <div className="relative w-full max-w-[240px]">
                               <AspectRatio ratio={16/9} className="rounded-xl overflow-hidden">
                                 <video 
                                   src={message.media_url} 
-                                  controls 
                                   className="w-full h-full object-cover"
+                                  // Don't include controls here since clicking opens the viewer
                                 />
                               </AspectRatio>
+                              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                <div className="p-2 rounded-full bg-black/60">
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 5V19L19 12L8 5Z" fill="white"/>
+                                  </svg>
+                                </div>
+                              </div>
                             </div>
                           ) : (
                             <div className="relative w-full max-w-[240px]">
@@ -431,6 +454,14 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Media Viewer */}
+      <MediaViewer 
+        open={viewerOpen}
+        mediaUrl={viewerMediaUrl}
+        isVideo={isViewerMediaVideo}
+        onClose={() => setViewerOpen(false)}
+      />
     </div>
   );
 };
