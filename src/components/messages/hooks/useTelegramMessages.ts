@@ -53,55 +53,90 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         return [];
       }
 
-      // Make sure we're selecting all required fields
-      const { data: messages, error: messagesError } = await supabase
-        .from('messages')
-        .select(`
-          id,
-          content,
-          created_at,
-          telegram_message_id,
-          telegram_chat_id,
-          sender:sender_id (
+      try {
+        // Explicitly cast the response to any first to safely transform it
+        const { data: messagesRaw, error: messagesError } = await supabase
+          .from('messages')
+          .select(`
             id,
-            username,
-            avatar_url,
-            follower_count
-          ),
-          recipient:recipient_id (
-            id,
-            username,
-            avatar_url,
-            follower_count
-          )
-        `)
-        .eq('telegram_chat_id', telegramUser.telegram_id)
-        .order('created_at', { ascending: false });
+            content,
+            created_at,
+            telegram_message_id,
+            telegram_chat_id,
+            sender:sender_id (
+              id,
+              username,
+              avatar_url,
+              follower_count
+            ),
+            recipient:recipient_id (
+              id,
+              username,
+              avatar_url,
+              follower_count
+            )
+          `)
+          .eq('telegram_chat_id', telegramUser.telegram_id)
+          .order('created_at', { ascending: false });
 
-      if (messagesError) {
-        console.error('Error fetching Telegram messages:', messagesError);
-        throw messagesError;
-      }
-
-      if (!messages || messages.length === 0) {
-        return [];
-      }
-
-      // Process the messages to add is_encrypted field and ensure proper casting
-      const processedMessages = messages.map(message => {
-        // Ensure we have the correct object structure
-        if (!message.sender || !message.recipient) {
-          console.error('Message missing sender or recipient:', message);
-          return null;
+        if (messagesError) {
+          console.error('Error fetching Telegram messages:', messagesError);
+          throw messagesError;
         }
 
-        return {
-          ...message,
-          is_encrypted: typeof message.content === 'string' && message.content.includes('.') // Simple heuristic
-        };
-      }).filter(Boolean) as TelegramMessage[]; // Filter out any nulls and cast to TelegramMessage[]
+        if (!messagesRaw || messagesRaw.length === 0) {
+          return [] as TelegramMessage[];
+        }
 
-      return processedMessages;
+        // Validate and transform each message
+        const validMessages = messagesRaw
+          .filter((msg: any) => {
+            // Filter out invalid messages
+            if (!msg || !msg.sender || !msg.recipient) {
+              console.error('Invalid message structure:', msg);
+              return false;
+            }
+            
+            // Check if sender and recipient have the required properties
+            const validSender = msg.sender && 
+              typeof msg.sender.id === 'string' && 
+              typeof msg.sender.username === 'string';
+            
+            const validRecipient = msg.recipient && 
+              typeof msg.recipient.id === 'string' && 
+              typeof msg.recipient.username === 'string';
+            
+            return validSender && validRecipient;
+          })
+          .map((msg: any) => {
+            // Transform to TelegramMessage format
+            return {
+              id: msg.id,
+              content: msg.content,
+              created_at: msg.created_at,
+              telegram_message_id: msg.telegram_message_id,
+              telegram_chat_id: msg.telegram_chat_id,
+              is_encrypted: typeof msg.content === 'string' && msg.content.includes('.'), // Simple heuristic
+              sender: {
+                id: msg.sender.id,
+                username: msg.sender.username,
+                avatar_url: msg.sender.avatar_url,
+                follower_count: msg.sender.follower_count || 0 // Provide default if missing
+              },
+              recipient: {
+                id: msg.recipient.id,
+                username: msg.recipient.username,
+                avatar_url: msg.recipient.avatar_url,
+                follower_count: msg.recipient.follower_count || 0 // Provide default if missing
+              }
+            } as TelegramMessage;
+          });
+
+        return validMessages;
+      } catch (error) {
+        console.error('Unexpected error processing messages:', error);
+        return [] as TelegramMessage[];
+      }
     },
     enabled: !!currentUserId,
   });
