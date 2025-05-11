@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -39,14 +40,16 @@ const Messages: React.FC = () => {
     requestedConversations,
     messages,
     selectedConversationId,
-    setSelectedConversationId
+    setSelectedConversationId,
+    refreshConversations
   } = useRealtimeMessages();
   
   // Use message actions
   const {
     sendMessage,
     deleteConversation,
-    startConversation
+    startConversation,
+    acceptMessageRequest
   } = useMessageActions();
   
   const handleSecurityCodeVerified = async (securityCode: string) => {
@@ -85,6 +88,16 @@ const Messages: React.FC = () => {
     if (isMobile) {
       setShowConversations(false);
     }
+  };
+
+  const handleAcceptRequest = (id: string) => {
+    acceptMessageRequest(id);
+    setSelectedConversationId(id);
+    setActiveTab("all");
+    if (isMobile) {
+      setShowConversations(false);
+    }
+    toast.success("Message request accepted");
   };
   
   const handleBackToList = () => {
@@ -227,6 +240,7 @@ const Messages: React.FC = () => {
                   conversations={filteredRequestedConversations}
                   selectedConversationId={selectedConversationId || undefined}
                   onSelectConversation={handleSelectConversation}
+                  onAcceptRequest={handleAcceptRequest}
                   isRequestTab 
                 />
               </TabsContent>

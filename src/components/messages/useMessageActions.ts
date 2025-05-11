@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -175,6 +176,47 @@ export const useMessageActions = () => {
     },
   });
 
+  // Accept a message request and move it to regular conversations
+  const acceptMessageRequest = useMutation({
+    mutationFn: async (conversationId: string) => {
+      if (!currentUserId) throw new Error('Not authenticated');
+      
+      try {
+        // Update conversation to mark it as not a request anymore
+        const { data, error } = await supabase
+          .from("conversations")
+          .update({ 
+            is_request: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', conversationId)
+          .select('participant_ids')
+          .single();
+          
+        if (error) throw error;
+        
+        return { 
+          success: true, 
+          conversationId,
+          participantIds: data.participant_ids
+        };
+      } catch (error) {
+        console.error('Error accepting message request:', error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      toast.success("Message request accepted");
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['message_requests'] });
+      return data.conversationId;
+    },
+    onError: (error) => {
+      toast.error("Failed to accept message request");
+      console.error('Accept message request error:', error);
+    }
+  });
+
   // Delete conversation
   const deleteConversation = useMutation({
     mutationFn: async (conversationId: string) => {
@@ -227,6 +269,7 @@ export const useMessageActions = () => {
     sendMessage: sendMessageMutation.mutate,
     isSending: sendMessageMutation.isPending,
     startConversation: startConversation.mutate,
+    acceptMessageRequest: acceptMessageRequest.mutate,
     deleteConversation: deleteConversation.mutate
   };
 };
