@@ -126,7 +126,8 @@ const Messages: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
         {/* Conversations sidebar - hide on mobile when viewing a conversation */}
         {(!isMobile || showConversations) && (
-          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-[50px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
+          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-[250px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
+            {/* Conversations header */}
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <MessagesSquare className="h-4 w-4" />
@@ -142,6 +143,7 @@ const Messages: React.FC = () => {
               </Button>
             </div>
             
+            {/* Search input */}
             <div className="relative mb-3 sm:mb-4">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -152,12 +154,14 @@ const Messages: React.FC = () => {
               />
             </div>
             
+            {/* Tabs for All and Requests */}
             <Tabs 
               defaultValue="all" 
               value={activeTab} 
               onValueChange={(value) => setActiveTab(value as "all" | "requests")}
               className="w-full"
             >
+              {/* Tabs content */}
               <TabsList className="grid grid-cols-2 mb-4">
                 <TabsTrigger value="all" className="flex items-center gap-1">
                   <Inbox className="h-4 w-4" />
