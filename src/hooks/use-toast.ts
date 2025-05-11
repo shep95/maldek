@@ -9,11 +9,13 @@ import { toast as toastOriginal } from "sonner";
 
 // Define the types for our toast functions
 type ToastFunction = typeof toastOriginal;
-interface ExtendedToastFunction extends ToastFunction {
-  error: (message: string) => void;
-  success: (message: string) => void;
-  info: (message: string) => void;
-}
+
+// We use type instead of interface to avoid extending issues
+export type ExtendedToastFunction = ToastFunction & {
+  error: (message: string) => string | number;
+  success: (message: string) => string | number;
+  info: (message: string) => string | number;
+};
 
 // Define the type for the hook return value
 type ToastReturnType = {

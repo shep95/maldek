@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AppWindow } from "lucide-react";
@@ -69,9 +70,7 @@ export const DownloadSection = () => {
       console.log("✅ App installed successfully");
       setIsInstalled(true);
       setDeferredPrompt(null);
-      toast({
-        description: "Bosley has been installed on your device!",
-      });
+      toast.success("Bosley has been installed on your device!");
     });
 
     return () => {

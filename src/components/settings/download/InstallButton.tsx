@@ -64,9 +64,7 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
           const result = await deferredPrompt.userChoice;
           
           if (result.outcome === 'accepted') {
-            toast({
-              description: "Bosley has been installed on your device!",
-            });
+            toast.success("Bosley has been installed on your device!");
           } else {
             clearInterval(progressInterval);
             setIsDownloading(false);
@@ -81,25 +79,17 @@ export const InstallButton = ({ deferredPrompt, setDeferredPrompt }: InstallButt
       if (versionInfo?.file_path) {
         simulateProgress();
         window.open(versionInfo.file_path, '_blank');
-        toast({
-          description: `Opening ${platform === 'ios' ? 'iOS' : 'Android'} app download page...`,
-        });
+        toast.success(`Opening ${platform === 'ios' ? 'iOS' : 'Android'} app download page...`);
         return;
       }
 
-      toast({
-        description: "Download link not available. Please try again later.",
-        variant: "destructive"
-      });
+      toast.error("Download link not available. Please try again later.");
 
     } catch (error) {
       console.error('Download error:', error);
       setIsDownloading(false);
       setProgress(0);
-      toast({
-        description: "There was an error downloading the app. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("There was an error downloading the app. Please try again.");
     }
   };
 

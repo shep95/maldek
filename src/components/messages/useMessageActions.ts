@@ -1,5 +1,5 @@
 
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface SendMessageParams {
@@ -24,11 +24,7 @@ export const useMessageActions = () => {
     },
     onError: (error) => {
       console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
+      toast.error("Failed to send message");
     },
   });
 

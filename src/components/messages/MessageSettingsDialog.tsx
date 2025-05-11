@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -35,19 +35,12 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
       // For now, we'll just show a toast notification
       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
       
-      toast({
-        title: "Settings saved",
-        description: `Auto-delete messages ${autoDeleteEnabled ? "enabled" : "disabled"}`,
-      });
+      toast.success(`Auto-delete messages ${autoDeleteEnabled ? "enabled" : "disabled"}`);
       
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save settings",
-        variant: "destructive",
-      });
+      toast.error("Failed to save settings");
     } finally {
       setIsSaving(false);
     }
