@@ -53,7 +53,7 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         return [];
       }
 
-      // Make sure we're only selecting columns that exist in the table
+      // Make sure we're selecting all required fields
       const { data: messages, error: messagesError } = await supabase
         .from('messages')
         .select(`
@@ -83,11 +83,25 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         throw messagesError;
       }
 
-      // Process the messages to add is_encrypted field
-      return messages.map(message => ({
-        ...message,
-        is_encrypted: typeof message.content === 'string' && message.content.includes('.') // Simple heuristic: encrypted content contains a dot separator for IV
-      })) as TelegramMessage[];
+      if (!messages || messages.length === 0) {
+        return [];
+      }
+
+      // Process the messages to add is_encrypted field and ensure proper casting
+      const processedMessages = messages.map(message => {
+        // Ensure we have the correct object structure
+        if (!message.sender || !message.recipient) {
+          console.error('Message missing sender or recipient:', message);
+          return null;
+        }
+
+        return {
+          ...message,
+          is_encrypted: typeof message.content === 'string' && message.content.includes('.') // Simple heuristic
+        };
+      }).filter(Boolean) as TelegramMessage[]; // Filter out any nulls and cast to TelegramMessage[]
+
+      return processedMessages;
     },
     enabled: !!currentUserId,
   });

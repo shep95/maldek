@@ -1,14 +1,18 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
 import { useEncryption } from "@/providers/EncryptionProvider";
 import { Button } from "@/components/ui/button";
 import { Shield, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useSession } from "@supabase/auth-helpers-react";
+import { useTelegramMessages } from "@/components/messages/hooks/useTelegramMessages";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const { isEncryptionInitialized, initializeEncryption } = useEncryption();
+  const session = useSession();
+  const { data: messages, isLoading, error } = useTelegramMessages(session?.user?.id || null);
 
   const handleSecurityCodeVerified = async (securityCode: string) => {
     try {
