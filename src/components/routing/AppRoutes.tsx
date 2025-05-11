@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from "react-router-dom";
 import Auth from "@/pages/Auth";
 import Dashboard from "@/pages/Dashboard";
@@ -16,12 +17,15 @@ import Spaces from "@/pages/Spaces";
 import HashtagPage from "@/pages/HashtagPage";
 import TermsOfService from "@/pages/TermsOfService";
 import Messages from "@/pages/Messages";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
 
 export const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/auth" replace />} />
       <Route path="/auth" element={<Auth />} />
+      
+      {/* Dashboard and related pages */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/videos" element={<Videos />} />
