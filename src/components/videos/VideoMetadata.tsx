@@ -1,5 +1,7 @@
+
 import { formatDistanceToNow } from "date-fns";
 import { Eye, Clock } from "lucide-react";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 interface VideoMetadataProps {
   views?: number;
@@ -18,7 +20,7 @@ export const VideoMetadata = ({ views = 0, createdAt, duration }: VideoMetadataP
     <div className="flex items-center gap-3 text-sm text-muted-foreground">
       <div className="flex items-center gap-1">
         <Eye className="h-4 w-4" />
-        <span>{views.toLocaleString()}</span>
+        <AnimatedCounter value={views} />
       </div>
       <div className="flex items-center gap-1">
         <Clock className="h-4 w-4" />

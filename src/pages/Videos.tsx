@@ -27,7 +27,11 @@ const Videos = () => {
       console.log('Fetching videos with search:', searchQuery);
       let query = supabase
         .from('videos')
-        .select('*, profiles:user_id(username, avatar_url)');
+        .select(`
+          *,
+          post_analytics(view_count),
+          profiles:user_id(username, avatar_url)
+        `);
 
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`);
@@ -39,7 +43,7 @@ const Videos = () => {
           query = query.order('created_at', { ascending: true });
           break;
         case 'views':
-          query = query.order('view_count', { ascending: false });
+          query = query.order('trending_score', { ascending: false });
           break;
         case 'newest':
         default:
@@ -54,8 +58,14 @@ const Videos = () => {
         throw error;
       }
 
-      console.log('Fetched videos:', data);
-      return data;
+      // Process video data to include view_count
+      const processedVideos = data.map(video => ({
+        ...video,
+        view_count: video.post_analytics?.reduce((sum, analytics) => sum + (analytics.view_count || 0), 0) || 0
+      }));
+
+      console.log('Fetched videos with views:', processedVideos);
+      return processedVideos;
     }
   });
 
@@ -74,6 +84,18 @@ const Videos = () => {
       console.error('Error deleting video:', error);
       toast.error('Failed to delete video');
     }
+  };
+
+  const handleVideoSelect = async (videoUrl: string, videoId: string) => {
+    // Increment view count when a video is selected
+    try {
+      await supabase.rpc('increment_post_view', { post_id: videoId });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
+    }
+    
+    setSelectedVideo(videoUrl);
   };
 
   const handleSearch = debounce((value: string) => {
@@ -141,7 +163,7 @@ const Videos = () => {
       ) : videos && videos.length > 0 ? (
         <VideoGrid
           videos={videos}
-          onVideoSelect={setSelectedVideo}
+          onVideoSelect={(url, id) => handleVideoSelect(url, id)}
           onDeleteVideo={handleDeleteVideo}
           viewMode={viewMode}
         />

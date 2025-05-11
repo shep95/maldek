@@ -6,10 +6,11 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Tilt } from "@/components/ui/tilt";
 import { Spotlight } from "@/components/ui/spotlight";
+import { VideoMetadata } from "@/components/videos/VideoMetadata";
 
 interface VideoGridProps {
   videos: any[];
-  onVideoSelect: (url: string) => void;
+  onVideoSelect: (url: string, videoId: string) => void;
   onDeleteVideo: (id: string) => void;
   viewMode?: 'grid' | 'list';
 }
@@ -40,7 +41,7 @@ export const VideoGrid = ({
       publicUrl = data.publicUrl;
     }
 
-    onVideoSelect(publicUrl);
+    onVideoSelect(publicUrl, video.id);
   };
 
   return (
@@ -118,13 +119,11 @@ export const VideoGrid = ({
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                       {video.description}
                     </p>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{video.view_count || 0} views</span>
-                      <span>•</span>
-                      <span>
-                        {new Date(video.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
+                    <VideoMetadata
+                      views={video.view_count}
+                      createdAt={video.created_at}
+                      duration={video.duration}
+                    />
                   </div>
                   
                   {session?.user?.id === video.user_id && (
