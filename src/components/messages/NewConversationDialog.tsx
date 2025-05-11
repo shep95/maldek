@@ -17,6 +17,7 @@ import { useEncryption } from "@/providers/EncryptionProvider";
 import { secureLog } from "@/utils/secureLogging";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface NewConversationDialogProps {
   open: boolean;

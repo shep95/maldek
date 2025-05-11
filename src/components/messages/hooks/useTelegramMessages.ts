@@ -43,7 +43,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
 
       if (fetchError) throw fetchError;
 
-      setMessages(data || []);
+      setMessages(data as Message[] || []);
       
       // Mark messages as read
       const unreadMessages = data?.filter(

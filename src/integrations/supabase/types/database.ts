@@ -738,6 +738,114 @@ export interface Database {
           }
         ]
       }
+      conversations: {
+        Row: {
+          id: string
+          name: string
+          user_id: string
+          participant_id: string | null
+          last_message: string | null
+          last_message_at: string | null
+          unread_count: number
+          encrypted_metadata: string | null
+          is_group: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          user_id: string
+          participant_id?: string | null
+          last_message?: string | null
+          last_message_at?: string | null
+          unread_count?: number
+          encrypted_metadata?: string | null
+          is_group?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          user_id?: string
+          participant_id?: string | null
+          last_message?: string | null
+          last_message_at?: string | null
+          unread_count?: number
+          encrypted_metadata?: string | null
+          is_group?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
+      messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          is_read: boolean
+          file_url: string | null
+          file_type: string | null
+          file_name: string | null
+          encrypted_metadata: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          sender_id: string
+          content: string
+          is_read?: boolean
+          file_url?: string | null
+          file_type?: string | null
+          file_name?: string | null
+          encrypted_metadata?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          sender_id?: string
+          content?: string
+          is_read?: boolean
+          file_url?: string | null
+          file_type?: string | null
+          file_name?: string | null
+          encrypted_metadata?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
