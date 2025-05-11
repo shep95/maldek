@@ -5,11 +5,11 @@ import { useEncryption } from "@/providers/EncryptionProvider";
 import { useSession } from "@supabase/auth-helpers-react";
 import { secureFetch, secureLog } from "@/utils/secureLogging";
 import { toast } from "sonner";
-import { Database } from "@/integrations/supabase/types/database";
 
 // Define types that match our database schema
 type Message = {
   id: string;
+  conversation_id: string;
   sender_id: string;
   content: string;
   created_at: string;
@@ -45,13 +45,13 @@ export const useTelegramMessages = (conversationId: string | null) => {
 
       if (fetchError) throw fetchError;
 
-      // Convert data to our Message type
-      setMessages((data || []) as Message[]);
+      // Cast data to our Message type
+      setMessages((data || []) as unknown as Message[]);
       
       // Mark messages as read
-      const unreadMessages = data?.filter(
+      const unreadMessages = (data as any[] || []).filter(
         msg => !msg.is_read && msg.sender_id !== session.user?.id
-      ) || [];
+      );
       
       if (unreadMessages.length > 0) {
         await supabase
@@ -93,7 +93,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            const newMessage = payload.new as Message;
+            const newMessage = payload.new as unknown as Message;
             
             setMessages(prevMessages => {
               // Check if the message already exists
@@ -118,7 +118,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
                 .eq("user_id", session?.user?.id);
             }
           } else if (payload.eventType === "UPDATE") {
-            const updatedMessage = payload.new as Message;
+            const updatedMessage = payload.new as unknown as Message;
             
             setMessages(prevMessages => 
               prevMessages.map(msg => 
@@ -232,7 +232,6 @@ export const useTelegramMessages = (conversationId: string | null) => {
         .update({
           last_message: content ? content.substring(0, 50) : "Sent an attachment",
           last_message_at: new Date().toISOString(),
-          // Increment unread count for the recipient
           unread_count: conversation.user_id !== session.user.id
             ? conversation.unread_count + 1
             : conversation.unread_count

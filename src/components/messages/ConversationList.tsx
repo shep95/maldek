@@ -11,6 +11,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { secureLog } from "@/utils/secureLogging";
 import { useEncryption } from "@/providers/EncryptionProvider";
 
+// Define types for our conversation
 type Conversation = {
   id: string;
   name: string;
@@ -19,6 +20,10 @@ type Conversation = {
   unread_count: number;
   encrypted_metadata?: string | null;
   metadata?: any;
+  user_id: string;
+  participant_id: string | null;
+  is_group: boolean;
+  created_at: string;
 };
 
 interface ConversationListProps {
@@ -47,7 +52,7 @@ export const ConversationList = ({
         
         const { data, error } = await supabase
           .from("conversations")
-          .select("id, name, last_message, last_message_at, unread_count, encrypted_metadata")
+          .select("id, name, last_message, last_message_at, unread_count, encrypted_metadata, user_id, participant_id, is_group, created_at")
           .eq("user_id", session.user.id)
           .order("last_message_at", { ascending: false });
 
@@ -55,19 +60,19 @@ export const ConversationList = ({
 
         // Process conversations and decrypt metadata if available
         const processedConversations = await Promise.all(
-          (data || []).map(async (conv) => {
+          (data || []).map(async (conv: any) => {
             try {
               if (conv.encrypted_metadata && encryption.isEncryptionInitialized) {
                 const decryptedMetadata = await encryption.decryptText(conv.encrypted_metadata);
                 if (decryptedMetadata) {
                   const metadata = JSON.parse(decryptedMetadata);
-                  return { ...conv, metadata };
+                  return { ...conv, metadata } as Conversation;
                 }
               }
-              return conv;
+              return conv as Conversation;
             } catch (err) {
               secureLog(`Failed to decrypt conversation metadata: ${err}`, { level: "error" });
-              return conv;
+              return conv as Conversation;
             }
           })
         );
