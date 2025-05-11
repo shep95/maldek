@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -127,7 +126,7 @@ const Messages: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
         {/* Conversations sidebar - hide on mobile when viewing a conversation */}
         {(!isMobile || showConversations) && (
-          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
+          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-[50px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <MessagesSquare className="h-4 w-4" />
