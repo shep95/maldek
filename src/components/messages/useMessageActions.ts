@@ -255,33 +255,18 @@ export const useMessageActions = () => {
       try {
         console.log("Deleting conversation:", conversationId);
         
-        // First, delete all messages in the conversation
+        // Modified approach: delete messages first but without using RLS
         const { error: messagesError } = await supabase
-          .from("messages")
-          .delete()
-          .eq('conversation_id', conversationId);
+          .rpc('delete_conversation_messages', { conversation_id: conversationId });
         
         if (messagesError) {
           console.error("Error deleting messages:", messagesError);
           throw messagesError;
         }
         
-        // Then delete the conversation participants
-        const { error: participantsError } = await supabase
-          .from("conversation_participants")
-          .delete()
-          .eq('conversation_id', conversationId);
-        
-        if (participantsError) {
-          console.error("Error deleting conversation participants:", participantsError);
-          throw participantsError;
-        }
-        
-        // Finally, delete the conversation itself
+        // Delete the conversation (which will cascade to conversation_participants due to our function)
         const { error: convError } = await supabase
-          .from("conversations")
-          .delete()
-          .eq('id', conversationId);
+          .rpc('delete_conversation', { conversation_id: conversationId });
         
         if (convError) {
           console.error("Error deleting conversation:", convError);
