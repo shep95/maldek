@@ -53,6 +53,7 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         return [];
       }
 
+      // Make sure we're only selecting columns that exist in the table
       const { data: messages, error: messagesError } = await supabase
         .from('messages')
         .select(`
@@ -61,7 +62,6 @@ export const useTelegramMessages = (currentUserId: string | null) => {
           created_at,
           telegram_message_id,
           telegram_chat_id,
-          is_encrypted,
           sender:sender_id (
             id,
             username,
@@ -83,7 +83,11 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         throw messagesError;
       }
 
-      return messages as TelegramMessage[];
+      // Add is_encrypted field based on content
+      return messages.map(message => ({
+        ...message,
+        is_encrypted: message.content.includes('.') // Simple heuristic: encrypted content contains a dot separator for IV
+      })) as TelegramMessage[];
     },
     enabled: !!currentUserId,
   });

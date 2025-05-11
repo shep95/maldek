@@ -46,7 +46,7 @@ export const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
       
-      <Route element={<DashboardLayout />}>
+      <Route path="/" element={<DashboardLayout />}>
         <Route path="/@:username" element={<Profiles />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/followers" element={<Followers />} />
