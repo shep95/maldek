@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSettingsDialog } from "@/components/messages/MessageSettingsDialog";
+import { toast } from "@/hooks/use-toast";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
@@ -40,7 +41,10 @@ const Messages: React.FC = () => {
     try {
       const success = await initializeEncryption(securityCode);
       if (!success) {
+        toast.error("Verification Failed", "Could not initialize encryption with the provided code");
         throw new Error("Could not initialize encryption with the provided code");
+      } else {
+        toast.success("Encryption Enabled", "You can now send and receive secure messages");
       }
     } catch (error) {
       console.error("Error initializing encryption:", error);
@@ -75,6 +79,7 @@ const Messages: React.FC = () => {
       if (isMobile) {
         setShowConversations(true);
       }
+      toast.success("Conversation Deleted", "The conversation has been removed");
     }
   };
 
@@ -87,7 +92,7 @@ const Messages: React.FC = () => {
     const otherParticipant = conv.participants.find(p => p.id !== currentUserId);
     return otherParticipant?.username.toLowerCase().includes(searchQuery.toLowerCase());
   }) : requestedConversations;
-  return <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 mx-0 w-[calc(100%+500px)] max-w-screen-2xl px-[25px]">
+  return <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 mx-auto w-[calc(100%+500px)] max-w-screen-2xl px-4 sm:px-[25px] pb-16 sm:pb-8">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 px-2">Messages</h1>
       
       {!isEncryptionInitialized && <Alert className="mb-4 sm:mb-6">
@@ -102,9 +107,9 @@ const Messages: React.FC = () => {
           </AlertDescription>
         </Alert>}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)] pb-14 sm:pb-0">
         {/* Conversations sidebar - hide on mobile when viewing a conversation */}
-        {(!isMobile || showConversations) && <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-[250px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
+        {(!isMobile || showConversations) && <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-2 sm:pl-[250px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
             {/* Conversations header */}
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="font-semibold flex items-center gap-2">
@@ -122,15 +127,15 @@ const Messages: React.FC = () => {
               <Input placeholder="Search conversations..." className="pl-9" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
             
-            {/* Tabs for All and Requests */}
+            {/* Tabs for All and Requests - more touch-friendly on mobile */}
             <Tabs defaultValue="all" value={activeTab} onValueChange={value => setActiveTab(value as "all" | "requests")} className="w-full">
               {/* Tabs content */}
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="all" className="flex items-center gap-1">
+              <TabsList className="grid grid-cols-2 mb-4 h-12 sm:h-10">
+                <TabsTrigger value="all" className="flex items-center gap-1 text-base sm:text-sm">
                   <Inbox className="h-4 w-4" />
                   <span>All</span>
                 </TabsTrigger>
-                <TabsTrigger value="requests" className="flex items-center gap-1">
+                <TabsTrigger value="requests" className="flex items-center gap-1 text-base sm:text-sm">
                   <Clock className="h-4 w-4" />
                   <span>Requests</span>
                   {requestedConversations.length > 0 && <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">

@@ -21,7 +21,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 }) => {
   if (conversations.length === 0) {
     return (
-      <div className="p-4 text-center text-muted-foreground">
+      <div className="p-4 text-center text-muted-foreground h-full flex items-center justify-center">
         {isRequestTab 
           ? "No message requests" 
           : "No conversations yet"}
@@ -31,7 +31,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   return (
     <ScrollArea className="h-full pr-2">
-      <div className="space-y-2 sm:space-y-3">
+      <div className="space-y-2 sm:space-y-3 pb-safe">
         {conversations.map((conversation) => {
           // Find the other participant (not the current user)
           const otherParticipant = conversation.participants[0];
@@ -42,15 +42,15 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               key={conversation.id}
               onClick={() => onSelectConversation(conversation.id)}
               className={cn(
-                "w-full flex items-center gap-3 p-2 sm:p-3 rounded-lg text-left transition-colors",
+                "w-full flex items-center gap-3 p-3 sm:p-3 rounded-lg text-left transition-colors min-h-[68px]",
                 selectedConversationId === conversation.id 
                   ? "bg-accent text-accent-foreground" 
-                  : "hover:bg-accent/10",
+                  : "hover:bg-accent/10 active:bg-accent/20",
                 hasUnread && "font-medium",
                 isRequestTab && "border-l-2 border-primary"
               )}
             >
-              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border">
+              <Avatar className="h-12 w-12 border">
                 <AvatarImage src={otherParticipant?.avatar_url || undefined} />
                 <AvatarFallback className="font-medium">
                   {otherParticipant?.username?.[0]?.toUpperCase() || "?"}
@@ -59,7 +59,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               
               <div className="flex-1 overflow-hidden min-w-0">
                 <div className="flex justify-between items-center">
-                  <span className={cn("truncate text-sm sm:text-base", hasUnread && "font-semibold")}>
+                  <span className={cn("truncate text-base", hasUnread && "font-semibold")}>
                     {otherParticipant?.username || "Unknown"}
                   </span>
                   {conversation.updated_at && (
@@ -71,7 +71,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 
                 {conversation.last_message && (
                   <p className={cn(
-                    "text-xs sm:text-sm truncate", 
+                    "text-sm truncate", 
                     hasUnread ? "text-foreground" : "text-muted-foreground"
                   )}>
                     {conversation.last_message.is_encrypted 
@@ -82,7 +82,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               </div>
               
               {hasUnread && (
-                <div className="h-2.5 w-2.5 rounded-full bg-primary shrink-0"></div>
+                <div className="h-3 w-3 rounded-full bg-primary shrink-0"></div>
               )}
             </button>
           );
@@ -92,7 +92,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   );
 };
 
-// Helper function to format time in a more human-readable way like the reference
+// Helper function to format time in a more human-readable way
 function formatTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
