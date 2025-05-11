@@ -512,13 +512,13 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Message</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this message. This action cannot be undone.
+              This will permanently delete this message for everyone in the conversation. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmMessageDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              Delete for Everyone
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -235,7 +235,8 @@ export const useMessageActions = () => {
           throw new Error("You can only delete your own messages");
         }
         
-        // Delete the message
+        // Permanently delete the message from the database
+        // This will remove it for all participants in the conversation
         const { error: deleteError } = await supabase
           .from('messages')
           .delete()
@@ -253,7 +254,7 @@ export const useMessageActions = () => {
       }
     },
     onSuccess: (data) => {
-      toast.success("Message deleted");
+      toast.success("Message deleted for everyone");
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       // Also update the conversation list to reflect changes in last_message
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
