@@ -187,7 +187,8 @@ export const useRealtimeMessages = () => {
       created_at: msg.created_at,
       is_read: msg.is_read,
       conversation_id: msg.conversation_id,
-      is_encrypted: msg.is_encrypted
+      is_encrypted: msg.is_encrypted,
+      media_url: msg.media_url // Make sure this is included
     };
   };
 
