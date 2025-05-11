@@ -21,15 +21,15 @@ export const useRealtimeMessages = () => {
     const fetchConversations = async () => {
       setIsLoading(true);
       try {
-        // Fetch regular conversations (with users who follow each other)
+        // Modified query to avoid using direct relationships between conversation_participants and profiles
+        // Instead, we'll first get the conversation data with participants
         const { data: regularConvData, error: regularError } = await supabase
           .from("conversations")
           .select(`
             id,
             created_at,
             updated_at,
-            participants:conversation_participants(user_id, profiles(id, username, avatar_url)),
-            last_message:messages(id, content, sender_id, recipient_id, created_at, is_read, conversation_id, is_encrypted)
+            participant_ids
           `)
           .eq('is_request', false)
           .contains('participant_ids', [currentUserId])
@@ -44,8 +44,7 @@ export const useRealtimeMessages = () => {
             id,
             created_at,
             updated_at,
-            participants:conversation_participants(user_id, profiles(id, username, avatar_url)),
-            last_message:messages(id, content, sender_id, recipient_id, created_at, is_read, conversation_id, is_encrypted)
+            participant_ids
           `)
           .eq('is_request', true)
           .contains('participant_ids', [currentUserId])
@@ -54,8 +53,8 @@ export const useRealtimeMessages = () => {
         if (requestError) throw requestError;
 
         // Process conversations to match our data structure
-        const processedRegularConversations = regularConvData?.map(processConversation) || [];
-        const processedRequestConversations = requestConvData?.map(processConversation) || [];
+        const processedRegularConversations = await Promise.all(regularConvData?.map(processConversation) || []);
+        const processedRequestConversations = await Promise.all(requestConvData?.map(processConversation) || []);
 
         setConversations(processedRegularConversations);
         setRequestedConversations(processedRequestConversations);
@@ -122,30 +121,56 @@ export const useRealtimeMessages = () => {
       supabase.removeChannel(conversationChannel);
       supabase.removeChannel(messageChannel);
     };
-  }, [currentUserId]);
+  }, [currentUserId, selectedConversationId]);
 
   // Helper function to process conversation data from Supabase
-  const processConversation = (conv: any): Conversation => {
-    // Find the other participant (not current user)
-    const participants = conv.participants.map((p: any) => ({
-      id: p.profiles.id,
-      username: p.profiles.username,
-      avatar_url: p.profiles.avatar_url
-    }));
-
-    // Calculate unread count
-    const unreadCount = conv.last_message?.filter((msg: any) => 
-      msg.recipient_id === currentUserId && !msg.is_read
-    ).length || 0;
+  const processConversation = async (conv: any): Promise<Conversation> => {
+    // Get the other participant (not current user)
+    const otherParticipantId = conv.participant_ids.find((id: string) => id !== currentUserId);
+    
+    // Fetch the other participant's profile data
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .eq("id", otherParticipantId)
+      .single();
+    
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+    }
+    
+    // Fetch unread messages count
+    const { data: unreadMessages, error: unreadError } = await supabase
+      .from("messages")
+      .select("id")
+      .eq("conversation_id", conv.id)
+      .eq("recipient_id", currentUserId)
+      .eq("is_read", false);
+    
+    if (unreadError) {
+      console.error('Error fetching unread count:', unreadError);
+    }
+    
+    // Fetch last message
+    const { data: lastMessages, error: lastMessageError } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", conv.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    
+    if (lastMessageError) {
+      console.error('Error fetching last message:', lastMessageError);
+    }
 
     return {
       id: conv.id,
       created_at: conv.created_at,
       updated_at: conv.updated_at,
-      participants: participants.filter((p: any) => p.id !== currentUserId),
-      unread_count: unreadCount,
-      last_message: conv.last_message && conv.last_message.length > 0 
-        ? formatMessage(conv.last_message[0]) 
+      participants: profileData ? [profileData] : [],
+      unread_count: unreadMessages?.length || 0,
+      last_message: lastMessages && lastMessages.length > 0 
+        ? formatMessage(lastMessages[0]) 
         : undefined
     };
   };
@@ -169,15 +194,14 @@ export const useRealtimeMessages = () => {
     if (!currentUserId) return;
 
     try {
-      // Same queries as in the initial fetch
+      // Same queries as in the initial fetch but with updated approach
       const { data: regularConvData } = await supabase
         .from("conversations")
         .select(`
           id,
           created_at,
           updated_at,
-          participants:conversation_participants(user_id, profiles(id, username, avatar_url)),
-          last_message:messages(id, content, sender_id, recipient_id, created_at, is_read, conversation_id, is_encrypted)
+          participant_ids
         `)
         .eq('is_request', false)
         .contains('participant_ids', [currentUserId])
@@ -189,16 +213,15 @@ export const useRealtimeMessages = () => {
           id,
           created_at,
           updated_at,
-          participants:conversation_participants(user_id, profiles(id, username, avatar_url)),
-          last_message:messages(id, content, sender_id, recipient_id, created_at, is_read, conversation_id, is_encrypted)
+          participant_ids
         `)
         .eq('is_request', true)
         .contains('participant_ids', [currentUserId])
         .order('updated_at', { ascending: false });
 
       // Process conversations
-      const processedRegularConversations = regularConvData?.map(processConversation) || [];
-      const processedRequestConversations = requestConvData?.map(processConversation) || [];
+      const processedRegularConversations = await Promise.all(regularConvData?.map(processConversation) || []);
+      const processedRequestConversations = await Promise.all(requestConvData?.map(processConversation) || []);
 
       setConversations(processedRegularConversations);
       setRequestedConversations(processedRequestConversations);
