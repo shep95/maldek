@@ -68,21 +68,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   )}
                 </div>
                 
-                {conversation.last_message && (
-                  <p className={cn(
-                    "text-sm truncate", 
-                    hasUnread ? "text-foreground" : "text-muted-foreground"
-                  )}>
-                    {conversation.last_message.is_encrypted 
-                      ? "🔒 Encrypted message"
-                      : conversation.last_message.content}
-                  </p>
+                {/* New message indicator dot instead of message preview text */}
+                {hasUnread && (
+                  <div className="h-3 w-3 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] animate-pulse mt-1"></div>
                 )}
               </div>
-              
-              {hasUnread && (
-                <div className="h-3 w-3 rounded-full bg-primary shrink-0"></div>
-              )}
             </button>
           );
         })}
