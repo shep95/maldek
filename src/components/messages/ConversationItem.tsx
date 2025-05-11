@@ -5,9 +5,10 @@ import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect } from "react";
 import { useEncryption } from "@/providers/EncryptionProvider";
 import { cn } from "@/lib/utils";
+import { Conversation } from "./types/messageTypes";
 
 interface ConversationItemProps {
-  conversation: any;
+  conversation: Conversation;
   isSelected: boolean;
   onClick: () => void;
 }

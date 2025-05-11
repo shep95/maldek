@@ -5,20 +5,7 @@ import { useEncryption } from "@/providers/EncryptionProvider";
 import { useSession } from "@supabase/auth-helpers-react";
 import { secureFetch, secureLog } from "@/utils/secureLogging";
 import { toast } from "sonner";
-
-// Define types that match our database schema
-type Message = {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  content: string;
-  created_at: string;
-  is_read: boolean;
-  file_url?: string | null;
-  file_type?: string | null;
-  file_name?: string | null;
-  encrypted_metadata?: string | null;
-};
+import { Message } from "../types/messageTypes";
 
 export const useTelegramMessages = (conversationId: string | null) => {
   const [messages, setMessages] = useState<Message[]>([]);

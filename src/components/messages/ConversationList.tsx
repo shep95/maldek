@@ -10,21 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { secureLog } from "@/utils/secureLogging";
 import { useEncryption } from "@/providers/EncryptionProvider";
-
-// Define types for our conversation
-type Conversation = {
-  id: string;
-  name: string;
-  last_message: string | null;
-  last_message_at: string | null;
-  unread_count: number;
-  encrypted_metadata?: string | null;
-  metadata?: any;
-  user_id: string;
-  participant_id: string | null;
-  is_group: boolean;
-  created_at: string;
-};
+import { Conversation } from "./types/messageTypes";
 
 interface ConversationListProps {
   selectedConversationId: string | null;

@@ -6,6 +6,7 @@ import { useTelegramMessages } from "../components/messages/hooks/useTelegramMes
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { secureLog } from "@/utils/secureLogging";
+import { toast } from "sonner";
 
 const Messages = () => {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
@@ -25,6 +26,7 @@ const Messages = () => {
           .eq("user_id", session.user.id);
       } catch (error) {
         secureLog(error, { level: "error" });
+        toast.error("Failed to update conversation status");
       }
     };
     
