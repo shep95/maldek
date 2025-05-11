@@ -9,6 +9,7 @@ export interface Message {
   id: string;
   content: string;
   created_at: string;
+  conversation_id: string;
   sender_id: string;
   recipient_id: string;
   is_read: boolean;
@@ -20,8 +21,9 @@ export interface Message {
 
 export interface Conversation {
   id: string;
-  last_message?: Message;
-  participants: User[];
+  created_at: string;
   updated_at: string;
+  participants: User[];
+  last_message?: Message;
   unread_count: number;
 }
