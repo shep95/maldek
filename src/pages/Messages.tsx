@@ -1,7 +1,8 @@
+
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Shield, MessagesSquare, Search, ArrowLeft, Settings, Clock, Inbox } from "lucide-react";
+import { AlertCircle, Shield, MessagesSquare, Search, ArrowLeft, Settings, Clock, Inbox, Plus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ConversationList } from "@/components/messages/ConversationList";
 import { MessageThread } from "@/components/messages/MessageThread";
@@ -12,10 +13,13 @@ import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSettingsDialog } from "@/components/messages/MessageSettingsDialog";
+import { NewMessageDialog } from "@/components/messages/NewMessageDialog";
+import { toast } from "sonner";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isNewMessageDialogOpen, setIsNewMessageDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showConversations, setShowConversations] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "requests">("all");
@@ -34,40 +38,51 @@ const Messages: React.FC = () => {
     selectedConversationId,
     setSelectedConversationId,
     sendMessage,
-    deleteConversation
+    deleteConversation,
+    startConversation
   } = useMessages();
+  
   const handleSecurityCodeVerified = async (securityCode: string) => {
     try {
       const success = await initializeEncryption(securityCode);
       if (!success) {
-        throw new Error("Could not initialize encryption with the provided code");
+        toast.error("Could not initialize encryption with the provided code");
+      } else {
+        toast.success("Encryption initialized successfully");
       }
     } catch (error) {
       console.error("Error initializing encryption:", error);
+      toast.error("Error initializing encryption");
     }
   };
 
   // Find the current conversation recipient
   const selectedConversation = [...conversations, ...requestedConversations].find(conv => conv.id === selectedConversationId);
   const recipient = selectedConversation?.participants.find(p => p.id !== currentUserId);
+  
   const handleSendMessage = (content: string) => {
     if (recipient) {
+      const isFollowing = conversations.some(c => c.participants.some(p => p.id === recipient.id));
       sendMessage({
         recipientId: recipient.id,
         content,
-        isEncrypted: false // Default to non-encrypted messages
+        isEncrypted: false, // Default to non-encrypted messages
+        isFollowing
       });
     }
   };
+  
   const handleSelectConversation = (id: string) => {
     setSelectedConversationId(id);
     if (isMobile) {
       setShowConversations(false);
     }
   };
+  
   const handleBackToList = () => {
     setShowConversations(true);
   };
+  
   const handleDeleteMessages = () => {
     if (selectedConversationId) {
       deleteConversation(selectedConversationId);
@@ -78,19 +93,42 @@ const Messages: React.FC = () => {
     }
   };
 
+  const handleSelectUser = (userId: string, username: string, isFollowing: boolean) => {
+    if (userId) {
+      startConversation({
+        recipientId: userId,
+        isFollowing
+      });
+      
+      if (isMobile) {
+        setShowConversations(false);
+      }
+      
+      toast.success(
+        isFollowing 
+          ? `Started conversation with ${username}` 
+          : `Sent message request to ${username}`
+      );
+    }
+  };
+
   // Filter conversations based on search query
   const filteredConversations = searchQuery ? conversations.filter(conv => {
     const otherParticipant = conv.participants.find(p => p.id !== currentUserId);
     return otherParticipant?.username.toLowerCase().includes(searchQuery.toLowerCase());
   }) : conversations;
+  
   const filteredRequestedConversations = searchQuery ? requestedConversations.filter(conv => {
     const otherParticipant = conv.participants.find(p => p.id !== currentUserId);
     return otherParticipant?.username.toLowerCase().includes(searchQuery.toLowerCase());
   }) : requestedConversations;
-  return <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 mx-0 w-[calc(100%+500px)] max-w-screen-2xl px-[25px]">
+  
+  return (
+    <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 mx-0 w-[calc(100%+500px)] max-w-screen-2xl px-[25px]">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 px-2">Messages</h1>
       
-      {!isEncryptionInitialized && <Alert className="mb-4 sm:mb-6">
+      {!isEncryptionInitialized && (
+        <Alert className="mb-4 sm:mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Encryption not enabled</AlertTitle>
           <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -100,30 +138,57 @@ const Messages: React.FC = () => {
               Enter Security Code
             </Button>
           </AlertDescription>
-        </Alert>}
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
         {/* Conversations sidebar - hide on mobile when viewing a conversation */}
-        {(!isMobile || showConversations) && <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-[250px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
+        {(!isMobile || showConversations) && (
+          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 pl-[250px] flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)] md:w-full">
             {/* Conversations header */}
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <MessagesSquare className="h-4 w-4" />
                 Chats
               </h2>
-              <Button variant="ghost" size="icon" onClick={() => setIsSettingsDialogOpen(true)} className="text-muted-foreground hover:text-foreground">
-                <Settings className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsNewMessageDialogOpen(true)} 
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsSettingsDialogOpen(true)} 
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             
             {/* Search input */}
             <div className="relative mb-3 sm:mb-4">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search conversations..." className="pl-9" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <Input 
+                placeholder="Search conversations..." 
+                className="pl-9" 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+              />
             </div>
             
             {/* Tabs for All and Requests */}
-            <Tabs defaultValue="all" value={activeTab} onValueChange={value => setActiveTab(value as "all" | "requests")} className="w-full">
+            <Tabs 
+              defaultValue="all" 
+              value={activeTab} 
+              onValueChange={value => setActiveTab(value as "all" | "requests")} 
+              className="w-full"
+            >
               {/* Tabs content */}
               <TabsList className="grid grid-cols-2 mb-4">
                 <TabsTrigger value="all" className="flex items-center gap-1">
@@ -133,31 +198,56 @@ const Messages: React.FC = () => {
                 <TabsTrigger value="requests" className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
                   <span>Requests</span>
-                  {requestedConversations.length > 0 && <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {requestedConversations.length > 0 && (
+                    <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
                       {requestedConversations.length}
-                    </span>}
+                    </span>
+                  )}
                 </TabsTrigger>
               </TabsList>
               
               <TabsContent value="all" className="flex-grow overflow-hidden m-0">
-                <ConversationList conversations={filteredConversations} selectedConversationId={selectedConversationId || undefined} onSelectConversation={handleSelectConversation} />
+                <ConversationList 
+                  conversations={filteredConversations} 
+                  selectedConversationId={selectedConversationId || undefined}
+                  onSelectConversation={handleSelectConversation} 
+                />
               </TabsContent>
               
               <TabsContent value="requests" className="flex-grow overflow-hidden m-0">
-                <ConversationList conversations={filteredRequestedConversations} selectedConversationId={selectedConversationId || undefined} onSelectConversation={handleSelectConversation} isRequestTab />
+                <ConversationList 
+                  conversations={filteredRequestedConversations}
+                  selectedConversationId={selectedConversationId || undefined}
+                  onSelectConversation={handleSelectConversation}
+                  isRequestTab 
+                />
               </TabsContent>
             </Tabs>
-          </div>}
+          </div>
+        )}
         
         {/* Message thread - full width on mobile, 2/3 on larger screens */}
-        {(!isMobile || !showConversations) && <div className="md:col-span-2 bg-card rounded-lg border shadow-md flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)]">
-            {selectedConversationId && recipient && currentUserId ? <MessageThread messages={messages} currentUserId={currentUserId} recipient={recipient} onSendMessage={handleSendMessage} onBackClick={isMobile ? handleBackToList : undefined} onDeleteConversation={handleDeleteMessages} /> : <div className="flex flex-col h-full">
-                {isMobile && !showConversations && <div className="border-b py-3 px-4">
+        {(!isMobile || !showConversations) && (
+          <div className="md:col-span-2 bg-card rounded-lg border shadow-md flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)]">
+            {selectedConversationId && recipient && currentUserId ? (
+              <MessageThread 
+                messages={messages}
+                currentUserId={currentUserId} 
+                recipient={recipient}
+                onSendMessage={handleSendMessage}
+                onBackClick={isMobile ? handleBackToList : undefined}
+                onDeleteConversation={handleDeleteMessages} 
+              />
+            ) : (
+              <div className="flex flex-col h-full">
+                {isMobile && !showConversations && (
+                  <div className="border-b py-3 px-4">
                     <Button variant="ghost" size="sm" onClick={handleBackToList} className="mr-2">
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <span className="font-semibold">Back to messages</span>
-                  </div>}
+                  </div>
+                )}
                 <div className="flex-grow flex items-center justify-center">
                   <div className="text-center p-6">
                     <MessagesSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
@@ -166,13 +256,31 @@ const Messages: React.FC = () => {
                     </p>
                   </div>
                 </div>
-              </div>}
-          </div>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <SecurityCodeDialog isOpen={isSecurityDialogOpen} onOpenChange={setIsSecurityDialogOpen} action="verify" onSuccess={handleSecurityCodeVerified} />
+      <SecurityCodeDialog 
+        isOpen={isSecurityDialogOpen} 
+        onOpenChange={setIsSecurityDialogOpen} 
+        action="verify" 
+        onSuccess={handleSecurityCodeVerified} 
+      />
 
-      <MessageSettingsDialog isOpen={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen} />
-    </div>;
+      <MessageSettingsDialog 
+        isOpen={isSettingsDialogOpen} 
+        onOpenChange={setIsSettingsDialogOpen} 
+      />
+
+      <NewMessageDialog 
+        isOpen={isNewMessageDialogOpen}
+        onOpenChange={setIsNewMessageDialogOpen}
+        onSelectUser={handleSelectUser}
+      />
+    </div>
+  );
 };
+
 export default Messages;

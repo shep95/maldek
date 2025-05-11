@@ -178,30 +178,71 @@ export const useMessages = () => {
   });
 
   // Function to get or create a conversation with a user
-  const getOrCreateConversation = async (recipientId: string): Promise<string | null> => {
+  const getOrCreateConversation = async (recipientId: string, isFollowing: boolean): Promise<string | null> => {
     if (!currentUserId) return null;
 
     // In a real implementation, this would check the database
-    // For now, we'll just return a deterministic conversation ID
-    return `conv-${recipientId}`;
+    // For now, we'll create different IDs based on follow status
+    return isFollowing ? `conv-${recipientId}` : `req-${recipientId}`;
   };
+
+  // Start a new conversation with a user
+  const startConversation = useMutation({
+    mutationFn: async ({ 
+      recipientId, 
+      isFollowing 
+    }: { 
+      recipientId: string; 
+      isFollowing: boolean;
+    }) => {
+      if (!currentUserId) throw new Error('Not authenticated');
+      
+      try {
+        // Get or create conversation based on follow status
+        const conversationId = await getOrCreateConversation(recipientId, isFollowing);
+        if (!conversationId) throw new Error('Could not create conversation');
+        
+        return { 
+          success: true, 
+          conversationId
+        };
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      setSelectedConversationId(data.conversationId);
+      
+      // If this is a mobile view, also hide the conversations list
+      if (window.innerWidth < 768) {
+        // This would be handled in the Messages component
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to start conversation');
+      console.error('Start conversation error:', error);
+    }
+  });
 
   // Send a message
   const sendMessage = useMutation({
     mutationFn: async ({ 
       recipientId, 
       content, 
-      isEncrypted = false 
+      isEncrypted = false,
+      isFollowing = false
     }: { 
       recipientId: string; 
       content: string;
       isEncrypted?: boolean;
+      isFollowing?: boolean;
     }) => {
       if (!currentUserId) throw new Error('Not authenticated');
       
       try {
-        // Get or create conversation
-        const conversationId = await getOrCreateConversation(recipientId);
+        // Get or create conversation based on whether recipient follows current user
+        const conversationId = await getOrCreateConversation(recipientId, isFollowing);
         if (!conversationId) throw new Error('Could not find or create conversation');
         
         // In a real implementation, this would insert into the database
@@ -238,6 +279,7 @@ export const useMessages = () => {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['messages', data.conversationId] });
       queryClient.invalidateQueries({ queryKey: ['conversations', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['message_requests', currentUserId] });
     },
     onError: (error) => {
       toast.error('Failed to send message');
@@ -285,6 +327,7 @@ export const useMessages = () => {
     isLoadingUsers,
     selectedConversationId,
     setSelectedConversationId,
+    startConversation: startConversation.mutate,
     sendMessage: sendMessage.mutate,
     deleteConversation: deleteConversation.mutate,
     isEncryptionInitialized
