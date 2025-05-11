@@ -112,8 +112,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto">
-        <div className="flex flex-col gap-3 p-3 sm:p-4">
+      <div className="flex-grow overflow-y-auto p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto">
           {messages.map((message) => {
             const isSentByMe = message.sender_id === actualCurrentUserId;
             const sender = isSentByMe 
@@ -130,7 +130,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               >
                 <div className={`flex gap-2 max-w-[85%] ${isSentByMe ? "flex-row-reverse" : ""}`}>
                   {!isSentByMe && (
-                    <Avatar className="h-8 w-8 hidden sm:flex">
+                    <Avatar className="h-8 w-8 hidden sm:flex mt-1">
                       <AvatarImage src={senderAvatar || undefined} />
                       <AvatarFallback>{sender[0]?.toUpperCase() || "?"}</AvatarFallback>
                     </Avatar>
@@ -170,8 +170,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       </div>
 
       {onSendMessage && (
-        <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t">
-          <div className="flex gap-2">
+        <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 md:p-5 border-t">
+          <div className="flex gap-2 max-w-5xl mx-auto">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -179,7 +179,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               className="flex-1"
             />
             <Button type="submit" disabled={!newMessage.trim()}>
-              <Send className="h-4 w-4" />
+              <Send className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Send</span>
             </Button>
           </div>
         </form>

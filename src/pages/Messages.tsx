@@ -80,7 +80,7 @@ const Messages: React.FC = () => {
     : conversations;
 
   return (
-    <div className="h-full min-h-screen-dynamic p-2 sm:p-4">
+    <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 px-2">Messages</h1>
       
       {!isEncryptionInitialized && (
@@ -101,10 +101,10 @@ const Messages: React.FC = () => {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
         {/* Conversations sidebar - hide on mobile when viewing a conversation */}
         {(!isMobile || showConversations) && (
-          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 flex flex-col">
+          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)]">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <h2 className="font-semibold flex items-center gap-2">
                 <MessagesSquare className="h-4 w-4" />
@@ -134,7 +134,7 @@ const Messages: React.FC = () => {
         
         {/* Message thread - full width on mobile, 2/3 on larger screens */}
         {(!isMobile || !showConversations) && (
-          <div className="md:col-span-2 bg-card rounded-lg border shadow-md flex flex-col">
+          <div className="md:col-span-2 bg-card rounded-lg border shadow-md flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)]">
             {selectedConversationId && recipient && currentUserId ? (
               <MessageThread
                 messages={messages}

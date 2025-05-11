@@ -26,8 +26,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="space-y-2">
+    <ScrollArea className="h-full pr-2">
+      <div className="space-y-2 sm:space-y-3">
         {conversations.map((conversation) => {
           // Find the other participant (not the current user)
           const otherParticipant = conversation.participants[0];
@@ -45,7 +45,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 hasUnread && "font-medium"
               )}
             >
-              <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border">
                 <AvatarImage src={otherParticipant?.avatar_url || undefined} />
                 <AvatarFallback className="font-medium">
                   {otherParticipant?.username?.[0]?.toUpperCase() || "?"}
@@ -77,7 +77,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               </div>
               
               {hasUnread && (
-                <div className="h-2 w-2 rounded-full bg-accent shrink-0"></div>
+                <div className="h-2.5 w-2.5 rounded-full bg-primary shrink-0"></div>
               )}
             </button>
           );
