@@ -1,8 +1,6 @@
-
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
 import { Conversation } from "./types/messageTypes";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +9,7 @@ interface ConversationListProps {
   selectedConversationId?: string;
   onSelectConversation: (conversationId: string) => void;
   isRequestTab?: boolean;
+  showPreview?: boolean;
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
@@ -18,6 +17,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   selectedConversationId,
   onSelectConversation,
   isRequestTab = false,
+  showPreview = true,
 }) => {
   if (conversations.length === 0) {
     return (
@@ -50,7 +50,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 isRequestTab && "border-l-2 border-primary"
               )}
             >
-              <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border">
+              <Avatar className="h-10 w-10 border">
                 <AvatarImage src={otherParticipant?.avatar_url || undefined} />
                 <AvatarFallback className="font-medium">
                   {otherParticipant?.username?.[0]?.toUpperCase() || "?"}
@@ -62,28 +62,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                   <span className={cn("truncate text-sm sm:text-base", hasUnread && "font-semibold")}>
                     {otherParticipant?.username || "Unknown"}
                   </span>
-                  {conversation.updated_at && (
-                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                      {formatTime(conversation.updated_at)}
-                    </span>
+                  {hasUnread && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-primary shrink-0 ml-2"></div>
                   )}
                 </div>
-                
-                {conversation.last_message && (
-                  <p className={cn(
-                    "text-xs sm:text-sm truncate", 
-                    hasUnread ? "text-foreground" : "text-muted-foreground"
-                  )}>
-                    {conversation.last_message.is_encrypted 
-                      ? "🔒 Encrypted message"
-                      : conversation.last_message.content}
-                  </p>
-                )}
               </div>
-              
-              {hasUnread && (
-                <div className="h-2.5 w-2.5 rounded-full bg-primary shrink-0"></div>
-              )}
             </button>
           );
         })}
