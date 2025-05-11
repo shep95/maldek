@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 const Videos = () => {
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('newest');
@@ -25,13 +26,11 @@ const Videos = () => {
     queryKey: ['videos', searchQuery, sortBy],
     queryFn: async () => {
       console.log('Fetching videos with search:', searchQuery);
+      
+      // First, fetch videos with basic information
       let query = supabase
         .from('videos')
-        .select(`
-          *,
-          post_analytics(view_count),
-          profiles:user_id(username, avatar_url)
-        `);
+        .select('*, profiles:user_id(username, avatar_url)');
 
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`);
@@ -58,14 +57,29 @@ const Videos = () => {
         throw error;
       }
 
-      // Process video data to include view_count
-      const processedVideos = data.map(video => ({
-        ...video,
-        view_count: video.post_analytics?.reduce((sum, analytics) => sum + (analytics.view_count || 0), 0) || 0
+      // Get view counts separately for each video
+      const videosWithViewCounts = await Promise.all(data.map(async (video) => {
+        const { data: analyticsData, error: analyticsError } = await supabase
+          .from('post_analytics')
+          .select('view_count')
+          .eq('post_id', video.id);
+        
+        if (analyticsError) {
+          console.error('Error fetching analytics for video:', video.id, analyticsError);
+        }
+        
+        const viewCount = analyticsData 
+          ? analyticsData.reduce((sum, item) => sum + (item.view_count || 0), 0) 
+          : 0;
+        
+        return {
+          ...video,
+          view_count: viewCount
+        };
       }));
 
-      console.log('Fetched videos with views:', processedVideos);
-      return processedVideos;
+      console.log('Fetched videos with views:', videosWithViewCounts);
+      return videosWithViewCounts;
     }
   });
 
@@ -87,6 +101,9 @@ const Videos = () => {
   };
 
   const handleVideoSelect = async (videoUrl: string, videoId: string) => {
+    // Store the selected video ID
+    setSelectedVideoId(videoId);
+    
     // Increment view count when a video is selected
     try {
       await supabase.rpc('increment_post_view', { post_id: videoId });
