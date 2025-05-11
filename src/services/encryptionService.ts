@@ -1,4 +1,3 @@
-
 import {
   generateEncryptionKey,
   exportKey,
@@ -302,6 +301,77 @@ class EncryptionService {
     } catch (error) {
       console.error("Error downloading and decrypting file:", error);
       toast.error("Failed to download and decrypt file");
+      return null;
+    }
+  }
+
+  /**
+   * Securely obfuscate sensitive information in logs or errors
+   * This redacts sensitive information before logging
+   */
+  obfuscateSensitiveData(data: string): string {
+    if (!data) return data;
+    
+    // Regular expressions for identifying sensitive data patterns
+    const patterns = [
+      // URLs with credentials
+      /https?:\/\/[^:@\/]+:[^:@\/]+@/g,
+      // Supabase URLs
+      /(https:\/\/[a-z0-9-]+\.supabase\.co)/g,
+      // API Keys (common formats)
+      /(['"]?(?:api[_-]?key|x[_-]?api[_-]?key)['"]?\s*[:=]\s*['"])[^'"]+(['"])/gi,
+      // JWT Tokens
+      /eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g,
+      // Database connection strings
+      /(['"]?(?:connection[_-]?string|conn[_-]?str|db[_-]?url)['"]?\s*[:=]\s*['"])[^'"]+(['"])/gi,
+      // IP addresses
+      /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g,
+      // Email addresses
+      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
+    ];
+    
+    // Replace sensitive patterns with redacted text
+    let redactedData = data;
+    patterns.forEach(pattern => {
+      redactedData = redactedData.replace(pattern, (match, p1, p2) => {
+        // If it's a key-value pattern with capture groups
+        if (p1 && p2) {
+          return `${p1}[REDACTED]${p2}`;
+        }
+        // Otherwise just redact the whole match
+        return '[REDACTED]';
+      });
+    });
+    
+    return redactedData;
+  }
+
+  /**
+   * Encrypt connection information for secure sharing
+   */
+  async secureConnectionInfo(connectionInfo: {
+    urls: string[],
+    apiKeys: string[],
+    hosts: string[],
+    credentials: Record<string, string>
+  }): Promise<string | null> {
+    if (!this.initialized || !this.masterKey) {
+      toast.error("Encryption service not initialized");
+      return null;
+    }
+    
+    try {
+      // Add an expiration time (24 hours)
+      const securePackage = {
+        ...connectionInfo,
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+        accessId: crypto.randomUUID()
+      };
+      
+      return this.encryptText(JSON.stringify(securePackage));
+    } catch (error) {
+      console.error("Error securing connection information:", error);
+      toast.error("Failed to secure connection information");
       return null;
     }
   }
