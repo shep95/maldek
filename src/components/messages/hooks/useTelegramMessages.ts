@@ -38,7 +38,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
       setError(null);
       
       const { data, error: fetchError } = await supabase
-        .from("messages")
+        .from("messages" as any)
         .select("*")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
@@ -55,13 +55,13 @@ export const useTelegramMessages = (conversationId: string | null) => {
       
       if (unreadMessages.length > 0) {
         await supabase
-          .from("messages")
+          .from("messages" as any)
           .update({ is_read: true })
           .in("id", unreadMessages.map(msg => msg.id));
         
         // Update the conversation's unread count
         await supabase
-          .from("conversations")
+          .from("conversations" as any)
           .update({ unread_count: 0 })
           .eq("id", conversationId)
           .eq("user_id", session.user.id);
@@ -106,13 +106,13 @@ export const useTelegramMessages = (conversationId: string | null) => {
             // Mark message as read if it's not from the current user
             if (newMessage.sender_id !== session?.user?.id) {
               supabase
-                .from("messages")
+                .from("messages" as any)
                 .update({ is_read: true })
                 .eq("id", newMessage.id);
               
               // Update the conversation's unread count
               supabase
-                .from("conversations")
+                .from("conversations" as any)
                 .update({ unread_count: 0 })
                 .eq("id", conversationId)
                 .eq("user_id", session?.user?.id);
@@ -145,7 +145,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
     try {
       // Get conversation details
       const { data: conversation } = await supabase
-        .from("conversations")
+        .from("conversations" as any)
         .select("*")
         .eq("id", conversationId)
         .single();
@@ -210,7 +210,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
       
       // Insert the new message
       const { data: message, error: messageError } = await supabase
-        .from("messages")
+        .from("messages" as any)
         .insert({
           conversation_id: conversationId,
           sender_id: session.user.id,
@@ -228,49 +228,49 @@ export const useTelegramMessages = (conversationId: string | null) => {
 
       // Update the conversation with last message
       await supabase
-        .from("conversations")
+        .from("conversations" as any)
         .update({
           last_message: content ? content.substring(0, 50) : "Sent an attachment",
           last_message_at: new Date().toISOString(),
-          unread_count: conversation.user_id !== session.user.id
-            ? conversation.unread_count + 1
-            : conversation.unread_count
+          unread_count: (conversation as any).user_id !== session.user.id
+            ? (conversation as any).unread_count + 1
+            : (conversation as any).unread_count
         })
         .eq("id", conversationId);
         
       // If there's a participant_id, update their copy of the conversation too
-      if (conversation.participant_id) {
+      if ((conversation as any).participant_id) {
         // Check if the participant has a copy of this conversation
         const { data: participantConvo } = await supabase
-          .from("conversations")
+          .from("conversations" as any)
           .select("*")
-          .eq("user_id", conversation.participant_id)
+          .eq("user_id", (conversation as any).participant_id)
           .eq("participant_id", session.user.id)
           .single();
           
         if (participantConvo) {
           // Update the participant's conversation
           await supabase
-            .from("conversations")
+            .from("conversations" as any)
             .update({
               last_message: content ? content.substring(0, 50) : "Sent an attachment",
               last_message_at: new Date().toISOString(),
-              unread_count: participantConvo.unread_count + 1
+              unread_count: (participantConvo as any).unread_count + 1
             })
-            .eq("id", participantConvo.id);
+            .eq("id", (participantConvo as any).id);
         } else {
           // Create a new conversation for the participant
           await supabase
-            .from("conversations")
+            .from("conversations" as any)
             .insert({
               name: session.user.email || session.user.id,
-              user_id: conversation.participant_id,
+              user_id: (conversation as any).participant_id,
               participant_id: session.user.id,
               last_message: content ? content.substring(0, 50) : "Sent an attachment",
               last_message_at: new Date().toISOString(),
               unread_count: 1,
-              encrypted_metadata: conversation.encrypted_metadata,
-              is_group: conversation.is_group
+              encrypted_metadata: (conversation as any).encrypted_metadata,
+              is_group: (conversation as any).is_group
             });
         }
       }

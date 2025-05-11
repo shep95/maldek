@@ -50,8 +50,9 @@ export const ConversationList = ({
         setIsLoading(true);
         secureLog("Fetching conversations", { level: "info" });
         
+        // Use a more generic approach with type assertion
         const { data, error } = await supabase
-          .from("conversations")
+          .from("conversations" as any)
           .select("id, name, last_message, last_message_at, unread_count, encrypted_metadata, user_id, participant_id, is_group, created_at")
           .eq("user_id", session.user.id)
           .order("last_message_at", { ascending: false });

@@ -83,7 +83,7 @@ export const NewConversationDialog = ({
       
       if (!isGroupChat) {
         const { data: participant, error: participantError } = await supabase
-          .from("profiles")
+          .from("profiles" as any)
           .select("id")
           .eq("username", participantUsername.toLowerCase())
           .single();
@@ -98,7 +98,7 @@ export const NewConversationDialog = ({
 
         // Check if conversation already exists
         const { data: existingConvo, error: convoError } = await supabase
-          .from("conversations")
+          .from("conversations" as any)
           .select("id")
           .eq("user_id", session.user.id)
           .eq("participant_id", participantId)
@@ -124,7 +124,7 @@ export const NewConversationDialog = ({
 
       // Create conversation
       const { data: conversation, error: createError } = await supabase
-        .from("conversations")
+        .from("conversations" as any)
         .insert({
           name: conversationName,
           user_id: session.user.id,
@@ -141,7 +141,7 @@ export const NewConversationDialog = ({
 
       // If it's a group, we might add functionality to add multiple participants here
 
-      onSelectConversation(conversation.id);
+      onSelectConversation((conversation as any).id);
       toast.success("Conversation created");
       onOpenChange(false);
     } catch (error) {
