@@ -13,10 +13,6 @@ interface EncryptionContextType {
   decryptFile: (file: File | Blob, metadata: string) => Promise<File | null>;
   uploadEncryptedFile: (file: File, bucket: string, folder: string) => Promise<{filePath: string, metadata: string} | null>;
   downloadAndDecryptFile: (filePath: string, bucket: string, metadata: string) => Promise<File | null>;
-  encryptConfig: (configData: Record<string, any>) => Promise<string | null>;
-  decryptConfig: (encryptedConfig: string) => Promise<Record<string, any> | null>;
-  secureStore: (key: string, value: string) => Promise<boolean>;
-  secureRetrieve: (key: string) => Promise<string | null>;
 }
 
 const EncryptionContext = createContext<EncryptionContextType | null>(null);
@@ -79,55 +75,6 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
   const downloadAndDecryptFile = (filePath: string, bucket: string, metadata: string) => 
     encryptionService.downloadAndDecryptFile(filePath, bucket, metadata);
 
-  // New methods for encrypting configuration and sensitive data
-  const encryptConfig = async (configData: Record<string, any>) => {
-    try {
-      const configStr = JSON.stringify(configData);
-      return await encryptionService.encryptText(configStr);
-    } catch (error) {
-      console.error("Error encrypting configuration data:", error);
-      toast.error("Failed to secure configuration data");
-      return null;
-    }
-  };
-
-  const decryptConfig = async (encryptedConfig: string) => {
-    try {
-      const decryptedStr = await encryptionService.decryptText(encryptedConfig);
-      return decryptedStr ? JSON.parse(decryptedStr) : null;
-    } catch (error) {
-      console.error("Error decrypting configuration data:", error);
-      toast.error("Failed to access secure configuration data");
-      return null;
-    }
-  };
-
-  // Secure local storage with encryption
-  const secureStore = async (key: string, value: string) => {
-    try {
-      const encryptedValue = await encryptionService.encryptText(value);
-      if (encryptedValue) {
-        localStorage.setItem(`secure_${key}`, encryptedValue);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("Error securely storing data:", error);
-      return false;
-    }
-  };
-
-  const secureRetrieve = async (key: string) => {
-    try {
-      const encryptedValue = localStorage.getItem(`secure_${key}`);
-      if (!encryptedValue) return null;
-      return await encryptionService.decryptText(encryptedValue);
-    } catch (error) {
-      console.error("Error retrieving secure data:", error);
-      return null;
-    }
-  };
-
   const value = {
     isEncryptionInitialized,
     initializeEncryption,
@@ -136,11 +83,7 @@ export const EncryptionProvider = ({ children }: { children: ReactNode }) => {
     encryptFile,
     decryptFile,
     uploadEncryptedFile,
-    downloadAndDecryptFile,
-    encryptConfig,
-    decryptConfig,
-    secureStore,
-    secureRetrieve
+    downloadAndDecryptFile
   };
 
   return (
