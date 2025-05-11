@@ -52,8 +52,8 @@ export const ChatInput = ({ onSubmit, isLoading }: ChatInputProps) => {
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file) {
-              if (file.size > 100 * 1024 * 1024) {  // Increased to 100MB
-                toast.error("Image must be less than 100MB");
+              if (file.size > 100 * 1024) {  // Changed to 100KB
+                toast.error("Image must be less than 100KB");
                 return;
               }
               if (!file.type.startsWith('image/')) {

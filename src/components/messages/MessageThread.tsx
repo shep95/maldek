@@ -87,9 +87,9 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      // Validate file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        alert("File size should be less than 10MB");
+      // Validate file size (100KB max)
+      if (file.size > 100 * 1024) {
+        alert("File size should be less than 100KB");
         return;
       }
       setMediaFile(file);

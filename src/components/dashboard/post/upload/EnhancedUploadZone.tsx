@@ -68,14 +68,14 @@ export const EnhancedUploadZone = ({
     
     for (const file of files) {
       const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
-      const isValidSize = file.size <= 100 * 1024 * 1024; // 100MB limit (increased from 50MB)
+      const isValidSize = file.size <= 100 * 1024; // 100KB limit (decreased from 100MB)
       
       if (!isValid) {
         setError('Invalid file type. Only images and videos are allowed.');
         continue;
       }
       if (!isValidSize) {
-        setError('File too large. Maximum size is 100MB.');
+        setError('File too large. Maximum size is 100KB.');
         continue;
       }
       
@@ -232,7 +232,7 @@ export const EnhancedUploadZone = ({
         )}
 
         <p className="mt-2 text-sm text-muted-foreground text-center">
-          Supports up to 6 images/videos (max 100MB each)
+          Supports up to 6 images/videos (max 100KB each)
           <br />
           <span className="text-xs opacity-75">
             You can also paste images from clipboard

@@ -9,7 +9,7 @@ export const handleImageUpload = async (file: File, userId: string, onProgress?:
     console.log('Starting media upload for user:', userId);
     console.log('File details:', { 
       name: file.name, 
-      size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`, 
+      size: `${(file.size / 1024).toFixed(2)}KB`, 
       type: file.type,
       lastModified: new Date(file.lastModified).toISOString()
     });
