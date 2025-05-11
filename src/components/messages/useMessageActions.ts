@@ -155,18 +155,25 @@ export const useMessageActions = () => {
           }
         }
         
+        // Prepare message data
+        const messageData: any = {
+          conversation_id: finalConversationId,
+          sender_id: currentUserId,
+          recipient_id: recipientId,
+          content,
+          is_encrypted: isEncrypted,
+          is_read: false
+        };
+        
+        // Only add media_url if we have one
+        if (mediaUrl) {
+          messageData.media_url = mediaUrl;
+        }
+        
         // Send message
         const { data: newMessage, error } = await supabase
           .from("messages")
-          .insert({
-            conversation_id: finalConversationId,
-            sender_id: currentUserId,
-            recipient_id: recipientId,
-            content,
-            is_encrypted: isEncrypted,
-            is_read: false,
-            media_url: mediaUrl || null
-          })
+          .insert(messageData)
           .select()
           .single();
           
@@ -256,9 +263,8 @@ export const useMessageActions = () => {
       try {
         console.log("Deleting conversation:", conversationId);
         
-        // Use a direct database function call to avoid RLS issues
-        // First, delete all messages in the conversation
-        const { error: messagesError, data: messagesResult } = await supabase
+        // First delete all messages in the conversation
+        const { error: messagesError } = await supabase
           .from('messages')
           .delete()
           .eq('conversation_id', conversationId);
@@ -266,7 +272,7 @@ export const useMessageActions = () => {
         if (messagesError) {
           console.error("Error with standard delete messages approach:", messagesError);
           
-          // Try the function-based approach as a fallback
+          // Try edge function as a fallback
           const { error: fnError } = await supabase.functions.invoke(
             'delete-conversation-messages',
             {
@@ -299,7 +305,7 @@ export const useMessageActions = () => {
         if (convError) {
           console.error("Error with standard delete conversation approach:", convError);
           
-          // Try the function-based approach as a fallback
+          // Try edge function as a fallback
           const { error: fnError } = await supabase.functions.invoke(
             'delete-conversation',
             {
