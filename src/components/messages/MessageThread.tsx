@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message as MessageType, User } from "./types/messageTypes";
 import { format } from "date-fns";
-import { ArrowLeft, Lock, Send, Trash2, Image } from "lucide-react";
+import { ArrowLeft, Lock, Send, Trash2, Image, MoreHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { isVideoFile } from "@/utils/mediaUtils";
@@ -18,6 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MessageThreadProps {
   messages: MessageType[];
@@ -28,6 +34,7 @@ interface MessageThreadProps {
   onSendMessage?: (content: string, mediaFile?: File) => void;
   onBackClick?: () => void;
   onDeleteConversation?: () => void;
+  onDeleteMessage?: (messageId: string) => void;
 }
 
 export const MessageThread: React.FC<MessageThreadProps> = ({
@@ -38,7 +45,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   users = {},
   onSendMessage,
   onBackClick,
-  onDeleteConversation
+  onDeleteConversation,
+  onDeleteMessage
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -47,6 +55,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actualCurrentUserId = currentUser?.id || currentUserId;
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isMessageDeleteDialogOpen, setIsMessageDeleteDialogOpen] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   
   // State for the media viewer
   const [viewerOpen, setViewerOpen] = useState(false);
@@ -103,12 +113,25 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const handleDeleteClick = () => {
     setIsDeleteDialogOpen(true);
   };
+
+  const handleMessageDeleteClick = (messageId: string) => {
+    setMessageToDelete(messageId);
+    setIsMessageDeleteDialogOpen(true);
+  };
   
   const confirmDelete = () => {
     if (onDeleteConversation) {
       onDeleteConversation();
     }
     setIsDeleteDialogOpen(false);
+  };
+
+  const confirmMessageDelete = () => {
+    if (onDeleteMessage && messageToDelete) {
+      onDeleteMessage(messageToDelete);
+    }
+    setIsMessageDeleteDialogOpen(false);
+    setMessageToDelete(null);
   };
 
   const openMediaViewer = (mediaUrl: string, isVideo: boolean) => {
@@ -298,7 +321,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                   )}
                   <div>
                     <div
-                      className={`rounded-2xl px-3 py-2 ${
+                      className={`rounded-2xl px-3 py-2 relative group ${
                         isSentByMe
                           ? "bg-primary text-primary-foreground rounded-tr-none"
                           : "bg-muted rounded-tl-none"
@@ -351,6 +374,29 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                         <p className="whitespace-pre-wrap break-words text-sm">
                           {message.decrypted_content || message.content}
                         </p>
+                      )}
+
+                      {/* Message options (only show for my messages) */}
+                      {isSentByMe && onDeleteMessage && (
+                        <div className="absolute -right-1 -top-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-background/80 backdrop-blur-sm">
+                                <MoreHorizontal className="h-3 w-3" />
+                                <span className="sr-only">Message options</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive" 
+                                onClick={() => handleMessageDeleteClick(message.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Message
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       )}
                     </div>
                     <div
@@ -442,6 +488,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         </form>
       )}
 
+      {/* Dialog for conversation deletion */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -453,6 +500,24 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      {/* Dialog for message deletion */}
+      <AlertDialog open={isMessageDeleteDialogOpen} onOpenChange={setIsMessageDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Message</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this message. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmMessageDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

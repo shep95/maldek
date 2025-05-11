@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -214,6 +213,58 @@ export const useMessageActions = () => {
     },
   });
 
+  // Delete a single message
+  const deleteMessageMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      if (!currentUserId) throw new Error('Not authenticated');
+      
+      try {
+        console.log("Deleting message:", messageId);
+        
+        // Get the message to check if current user is the sender
+        const { data: message, error: fetchError } = await supabase
+          .from('messages')
+          .select('sender_id, conversation_id')
+          .eq('id', messageId)
+          .single();
+          
+        if (fetchError) throw fetchError;
+        
+        // Verify user owns the message
+        if (message.sender_id !== currentUserId) {
+          throw new Error("You can only delete your own messages");
+        }
+        
+        // Delete the message
+        const { error: deleteError } = await supabase
+          .from('messages')
+          .delete()
+          .eq('id', messageId);
+          
+        if (deleteError) throw deleteError;
+        
+        return { 
+          success: true,
+          conversationId: message.conversation_id
+        };
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      toast.success("Message deleted");
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      // Also update the conversation list to reflect changes in last_message
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['message_requests'] });
+    },
+    onError: (error) => {
+      toast.error("Failed to delete message");
+      console.error('Delete message error:', error);
+    }
+  });
+
   // Accept a message request and move it to regular conversations
   const acceptMessageRequest = useMutation({
     mutationFn: async (conversationId: string) => {
@@ -343,6 +394,7 @@ export const useMessageActions = () => {
     isSending: sendMessageMutation.isPending,
     startConversation: startConversation.mutate,
     acceptMessageRequest: acceptMessageRequest.mutate,
+    deleteMessage: deleteMessageMutation.mutate,
     deleteConversation: deleteConversation.mutate
   };
 };

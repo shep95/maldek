@@ -46,6 +46,7 @@ const Messages: React.FC = () => {
   // Use message actions
   const {
     sendMessage,
+    deleteMessage,
     deleteConversation,
     startConversation,
     acceptMessageRequest
@@ -84,6 +85,10 @@ const Messages: React.FC = () => {
       });
     }
   };
+
+  const handleDeleteMessage = (messageId: string) => {
+    deleteMessage(messageId);
+  };
   
   const handleSelectConversation = (id: string) => {
     setSelectedConversationId(id);
@@ -106,7 +111,7 @@ const Messages: React.FC = () => {
     setShowConversations(true);
   };
   
-  const handleDeleteMessages = () => {
+  const handleDeleteConversation = () => {
     if (selectedConversationId) {
       deleteConversation(selectedConversationId);
       setSelectedConversationId(null);
@@ -260,7 +265,8 @@ const Messages: React.FC = () => {
                 recipient={recipient}
                 onSendMessage={handleSendMessage}
                 onBackClick={isMobile ? handleBackToList : undefined}
-                onDeleteConversation={handleDeleteMessages} 
+                onDeleteConversation={handleDeleteConversation} 
+                onDeleteMessage={handleDeleteMessage}
               />
             ) : (
               <div className="flex flex-col h-full">
