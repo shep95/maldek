@@ -16,7 +16,6 @@ import Analytics from "@/pages/Analytics";
 import TermsOfService from "@/pages/TermsOfService";
 import Features from "@/pages/Features";
 import HashtagPage from "@/pages/HashtagPage";
-import Messages from "@/pages/Messages";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -60,7 +59,6 @@ export const AppRoutes = () => {
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
-        <Route path="/messages" element={<Messages />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

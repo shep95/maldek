@@ -1,14 +1,12 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEncryption } from "@/providers/EncryptionProvider";
 
 export const useTelegramMessages = (currentUserId: string | null) => {
-  const { isEncryptionInitialized, decryptText } = useEncryption();
-  
   return useQuery({
-    queryKey: ['telegram_messages', currentUserId, isEncryptionInitialized],
+    queryKey: ['telegram_messages', currentUserId],
     queryFn: async () => {
-      if (!currentUserId || !isEncryptionInitialized) return [];
+      if (!currentUserId) return [];
       
       console.log('Fetching Telegram messages for user:', currentUserId);
       
@@ -33,7 +31,6 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         .select(`
           id,
           content,
-          encrypted_content,
           created_at,
           telegram_message_id,
           telegram_chat_id,
@@ -58,25 +55,8 @@ export const useTelegramMessages = (currentUserId: string | null) => {
         throw messagesError;
       }
 
-      // Decrypt messages if they have encrypted_content
-      if (messages && isEncryptionInitialized) {
-        for (const message of messages) {
-          if (message.encrypted_content) {
-            try {
-              const decryptedContent = await decryptText(message.encrypted_content);
-              if (decryptedContent) {
-                message.content = decryptedContent;
-              }
-            } catch (err) {
-              console.error('Failed to decrypt message:', err);
-              // Keep original content if decryption fails
-            }
-          }
-        }
-      }
-
       return messages;
     },
-    enabled: !!currentUserId && isEncryptionInitialized,
+    enabled: !!currentUserId,
   });
 };
