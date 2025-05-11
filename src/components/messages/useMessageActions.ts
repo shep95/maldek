@@ -253,13 +253,18 @@ export const useMessageActions = () => {
       if (!currentUserId) throw new Error('Not authenticated');
       
       try {
+        console.log("Deleting conversation:", conversationId);
+        
         // First, delete all messages in the conversation
         const { error: messagesError } = await supabase
           .from("messages")
           .delete()
           .eq('conversation_id', conversationId);
         
-        if (messagesError) throw messagesError;
+        if (messagesError) {
+          console.error("Error deleting messages:", messagesError);
+          throw messagesError;
+        }
         
         // Then delete the conversation participants
         const { error: participantsError } = await supabase
@@ -267,7 +272,10 @@ export const useMessageActions = () => {
           .delete()
           .eq('conversation_id', conversationId);
         
-        if (participantsError) throw participantsError;
+        if (participantsError) {
+          console.error("Error deleting conversation participants:", participantsError);
+          throw participantsError;
+        }
         
         // Finally, delete the conversation itself
         const { error: convError } = await supabase
@@ -275,8 +283,12 @@ export const useMessageActions = () => {
           .delete()
           .eq('id', conversationId);
         
-        if (convError) throw convError;
+        if (convError) {
+          console.error("Error deleting conversation:", convError);
+          throw convError;
+        }
         
+        console.log("Conversation deleted successfully");
         return { success: true };
       } catch (error) {
         console.error('Error deleting conversation:', error);

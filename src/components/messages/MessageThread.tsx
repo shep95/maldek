@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message as MessageType, User } from "./types/messageTypes";
@@ -8,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { isVideoFile } from "@/utils/mediaUtils";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface MessageThreadProps {
   messages: MessageType[];
@@ -36,6 +45,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actualCurrentUserId = currentUser?.id || currentUserId;
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     // Scroll to the bottom when messages change
@@ -77,6 +87,17 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 
   const openFileDialog = () => {
     fileInputRef.current?.click();
+  };
+  
+  const handleDeleteClick = () => {
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDelete = () => {
+    if (onDeleteConversation) {
+      onDeleteConversation();
+    }
+    setIsDeleteDialogOpen(false);
   };
 
   if (messages.length === 0) {
@@ -225,7 +246,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={onDeleteConversation}
+            onClick={handleDeleteClick}
             className="text-muted-foreground hover:text-destructive touch-target"
             aria-label="Delete conversation"
             title="Delete conversation"
@@ -393,6 +414,23 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           </div>
         </form>
       )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this conversation and all its messages. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
