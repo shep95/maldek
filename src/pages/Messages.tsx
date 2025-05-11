@@ -92,7 +92,7 @@ const Messages: React.FC = () => {
           {selectedConversationId && recipient && currentUserId ? (
             <MessageThread
               messages={messages}
-              currentUser={{ id: currentUserId, username: session?.user?.email?.split('@')[0] || 'User' }}
+              currentUserId={currentUserId}
               recipient={recipient}
               onSendMessage={handleSendMessage}
             />
