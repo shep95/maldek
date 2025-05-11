@@ -1,20 +1,20 @@
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message as MessageType, User } from "./types/messageTypes";
 import { format } from "date-fns";
-import { ArrowLeft, Lock, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Lock, Send, Trash2, Image } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { isVideoFile } from "@/utils/mediaUtils";
 
 interface MessageThreadProps {
   messages: MessageType[];
   currentUserId?: string;
-  currentUser?: { id: string; username: string }; // Make this optional to support both prop formats
+  currentUser?: { id: string; username: string };
   recipient?: User;
   users?: Record<string, User>;
-  onSendMessage?: (content: string) => void;
+  onSendMessage?: (content: string, mediaFile?: File) => void;
   onBackClick?: () => void;
   onDeleteConversation?: () => void;
 }
@@ -31,6 +31,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const actualCurrentUserId = currentUser?.id || currentUserId;
 
   useEffect(() => {
@@ -40,10 +42,27 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim() && onSendMessage) {
-      onSendMessage(newMessage);
+    if ((newMessage.trim() || mediaFile) && onSendMessage) {
+      onSendMessage(newMessage, mediaFile || undefined);
       setNewMessage("");
+      setMediaFile(null);
     }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        alert("File size should be less than 10MB");
+        return;
+      }
+      setMediaFile(file);
+    }
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
   };
 
   if (messages.length === 0) {
@@ -86,21 +105,51 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         
         {onSendMessage && (
           <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t pb-safe">
-            <div className="flex gap-2 max-w-5xl mx-auto">
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 min-h-[44px]"
+            <div className="flex flex-col gap-2 max-w-5xl mx-auto">
+              {mediaFile && (
+                <div className="bg-muted/50 p-2 rounded-md flex items-center justify-between">
+                  <span className="text-sm truncate">{mediaFile.name}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setMediaFile(null)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={openFileDialog}
+                  className="h-[44px] w-[44px]"
+                >
+                  <Image className="h-5 w-5" />
+                </Button>
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 min-h-[44px]"
+                />
+                <Button 
+                  type="submit" 
+                  disabled={!newMessage.trim() && !mediaFile} 
+                  size="icon" 
+                  className="h-[44px] w-[44px]"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleFileSelect}
+                className="hidden"
               />
-              <Button 
-                type="submit" 
-                disabled={!newMessage.trim()} 
-                size="icon" 
-                className="h-[44px] w-[44px]"
-              >
-                <Send className="h-5 w-5" />
-              </Button>
             </div>
           </form>
         )}
@@ -187,9 +236,30 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                           <span>Encrypted message</span>
                         </div>
                       ) : null}
-                      <p className="whitespace-pre-wrap break-words text-sm">
-                        {message.decrypted_content || message.content}
-                      </p>
+                      
+                      {message.media_url && (
+                        <div className="mb-2 rounded-lg overflow-hidden">
+                          {isVideoFile(message.media_url) ? (
+                            <video 
+                              src={message.media_url} 
+                              controls 
+                              className="max-w-full max-h-[300px] rounded"
+                            />
+                          ) : (
+                            <img 
+                              src={message.media_url} 
+                              alt="Media" 
+                              className="max-w-full max-h-[300px] rounded object-cover"
+                            />
+                          )}
+                        </div>
+                      )}
+                      
+                      {message.content && (
+                        <p className="whitespace-pre-wrap break-words text-sm">
+                          {message.decrypted_content || message.content}
+                        </p>
+                      )}
                     </div>
                     <div
                       className={`text-xs text-muted-foreground mt-1 flex items-center ${
@@ -209,21 +279,51 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 
       {onSendMessage && (
         <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t pb-safe">
-          <div className="flex gap-2 max-w-5xl mx-auto">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 min-h-[44px]"
+          <div className="flex flex-col gap-2 max-w-5xl mx-auto">
+            {mediaFile && (
+              <div className="bg-muted/50 p-2 rounded-md flex items-center justify-between">
+                <span className="text-sm truncate">{mediaFile.name}</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setMediaFile(null)}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="icon" 
+                onClick={openFileDialog}
+                className="h-[44px] w-[44px]"
+              >
+                <Image className="h-5 w-5" />
+              </Button>
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 min-h-[44px]"
+              />
+              <Button 
+                type="submit" 
+                disabled={!newMessage.trim() && !mediaFile} 
+                className="h-[44px] min-w-[44px] px-3 flex-shrink-0"
+              >
+                <Send className="h-5 w-5 sm:mr-2" />
+                <span className="hidden sm:inline">Send</span>
+              </Button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileSelect}
+              className="hidden"
             />
-            <Button 
-              type="submit" 
-              disabled={!newMessage.trim()} 
-              className="h-[44px] min-w-[44px] px-3 flex-shrink-0"
-            >
-              <Send className="h-5 w-5 sm:mr-2" />
-              <span className="hidden sm:inline">Send</span>
-            </Button>
           </div>
         </form>
       )}

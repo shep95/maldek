@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -70,7 +69,7 @@ const Messages: React.FC = () => {
   const selectedConversation = [...conversations, ...requestedConversations].find(conv => conv.id === selectedConversationId);
   const recipient = selectedConversation?.participants.find(p => p.id !== currentUserId);
   
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = (content: string, mediaFile?: File) => {
     if (recipient) {
       // Check if this conversation is in the main conversations list (not a request)
       const isInMainConversations = conversations.some(c => c.id === selectedConversationId);
@@ -80,7 +79,8 @@ const Messages: React.FC = () => {
         content,
         conversationId: selectedConversationId || undefined,
         isEncrypted: false, // Default to non-encrypted messages
-        isFollowing: isInMainConversations // If in main conversations, we treat as following
+        isFollowing: isInMainConversations, // If in main conversations, we treat as following
+        mediaFile
       });
     }
   };

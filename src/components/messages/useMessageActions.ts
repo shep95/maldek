@@ -1,8 +1,8 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
+import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
 
 interface SendMessageParams {
   recipientId: string;
@@ -10,6 +10,7 @@ interface SendMessageParams {
   conversationId?: string;
   isEncrypted?: boolean;
   isFollowing?: boolean;
+  mediaFile?: File;
 }
 
 interface CreateConversationParams {
@@ -106,6 +107,24 @@ export const useMessageActions = () => {
     }
   });
 
+  // Upload media and get URL
+  const uploadMedia = async (file: File): Promise<string | null> => {
+    if (!currentUserId) return null;
+    
+    try {
+      toast.info("Uploading media...");
+      const mediaUrl = await handleImageUpload(file, currentUserId);
+      if (!mediaUrl) {
+        throw new Error("Failed to upload media");
+      }
+      return mediaUrl;
+    } catch (error) {
+      console.error("Error uploading media:", error);
+      toast.error("Failed to upload media");
+      return null;
+    }
+  };
+
   // Send a message
   const sendMessageMutation = useMutation({
     mutationFn: async ({ 
@@ -113,7 +132,8 @@ export const useMessageActions = () => {
       content, 
       conversationId,
       isEncrypted = false,
-      isFollowing = false
+      isFollowing = false,
+      mediaFile
     }: SendMessageParams) => {
       if (!currentUserId) throw new Error('Not authenticated');
       
@@ -125,6 +145,15 @@ export const useMessageActions = () => {
             !isFollowing // is_request is true if they don't follow each other
           );
         
+        // Upload media if provided
+        let mediaUrl: string | null = null;
+        if (mediaFile) {
+          mediaUrl = await uploadMedia(mediaFile);
+          if (!mediaUrl) {
+            throw new Error("Media upload failed");
+          }
+        }
+        
         // Send message
         const { data: newMessage, error } = await supabase
           .from("messages")
@@ -134,7 +163,8 @@ export const useMessageActions = () => {
             recipient_id: recipientId,
             content,
             is_encrypted: isEncrypted,
-            is_read: false
+            is_read: false,
+            media_url: mediaUrl || null
           })
           .select()
           .single();
