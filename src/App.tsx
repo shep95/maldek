@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +10,7 @@ import { AuthenticationWrapper } from "@/components/auth/AuthenticationWrapper";
 import { AppRoutes } from "@/components/routing/AppRoutes";
 import { useEffect } from "react";
 import { BackgroundMusicProvider } from "@/components/providers/BackgroundMusicProvider";
+import { EncryptionProvider } from "@/providers/EncryptionProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,9 +43,11 @@ const App = () => {
         <BrowserRouter>
           <TooltipProvider>
             <BackgroundMusicProvider>
-              <AuthenticationWrapper>
-                <AppRoutes />
-              </AuthenticationWrapper>
+              <EncryptionProvider>
+                <AuthenticationWrapper>
+                  <AppRoutes />
+                </AuthenticationWrapper>
+              </EncryptionProvider>
             </BackgroundMusicProvider>
             <Toaster />
             <Sonner />
