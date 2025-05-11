@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Conversation, Message } from "../types/messageTypes";
 import { supabase } from "@/integrations/supabase/client";
@@ -259,7 +258,7 @@ export const useRealtimeMessages = () => {
       
       setMessages(data?.map(formatMessage) || []);
 
-      // Mark messages as read
+      // Mark messages as read when viewed
       await supabase
         .from("messages")
         .update({ is_read: true })

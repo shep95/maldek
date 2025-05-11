@@ -1,4 +1,3 @@
-
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -7,6 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useMessageNotificationCount } from "@/hooks/useMessageNotificationCount";
 
 interface NavItemsProps {
   subscription: any;
@@ -29,6 +29,7 @@ export const NavItems = ({
 }: NavItemsProps) => {
   const location = useLocation();
   const unreadCount = useNotificationCount(userId);
+  const unreadMessageCount = useMessageNotificationCount();
   const isMobile = useIsMobile();
   const session = useSession();
   const navigate = useNavigate();
@@ -83,7 +84,8 @@ export const NavItems = ({
       label: "Messages", 
       path: "/messages", 
       active: location.pathname === "/messages",
-      description: "View your messages" 
+      description: "View your messages",
+      badge: unreadMessageCount > 0 ? unreadMessageCount : undefined
     },
     { 
       icon: Video, 
