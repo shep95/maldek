@@ -1,10 +1,10 @@
-
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { Conversation } from "./types/messageTypes";
 import { cn } from "@/lib/utils";
+import { Lock } from "lucide-react";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -71,12 +71,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 
                 {conversation.last_message && (
                   <p className={cn(
-                    "text-xs sm:text-sm truncate", 
+                    "text-xs sm:text-sm truncate flex items-center gap-1", 
                     hasUnread ? "text-foreground" : "text-muted-foreground"
                   )}>
-                    {conversation.last_message.is_encrypted 
-                      ? "🔒 Encrypted message"
-                      : conversation.last_message.content}
+                    {/* Always show the lock icon for all messages */}
+                    <Lock className="h-3 w-3" />
+                    <span>Encrypted message</span>
                   </p>
                 )}
               </div>

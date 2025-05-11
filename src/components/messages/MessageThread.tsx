@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message as MessageType, User } from "./types/messageTypes";
@@ -172,12 +171,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                           : "bg-muted rounded-tl-none"
                       }`}
                     >
-                      {message.is_encrypted ? (
-                        <div className="flex items-center gap-1 text-xs">
-                          <Lock size={12} />
-                          <span>Encrypted message</span>
-                        </div>
-                      ) : null}
+                      {/* All messages now display the lock icon to indicate encryption */}
+                      <div className="flex items-center gap-1 text-xs mb-1">
+                        <Lock size={12} />
+                        <span>Encrypted message</span>
+                      </div>
                       <p className="whitespace-pre-wrap break-words text-sm sm:text-base">
                         {message.decrypted_content || message.content}
                       </p>

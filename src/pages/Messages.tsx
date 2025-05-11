@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Shield, MessagesSquare, Search, ArrowLeft, Settings, Clock, Inbox } from "lucide-react";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSettingsDialog } from "@/components/messages/MessageSettingsDialog";
+import { useEncryptedMessages } from "@/components/messages/hooks/useEncryptedMessages";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
@@ -31,9 +33,18 @@ const Messages: React.FC = () => {
     users,
     selectedConversationId,
     setSelectedConversationId,
-    sendMessage,
     deleteConversation
   } = useMessages();
+
+  // Use encrypted messages hook for all message sending
+  const { sendEncryptedMessage, isEncryptionInitialized: isEncMessageReady } = useEncryptedMessages();
+
+  useEffect(() => {
+    // If encryption is not initialized, show the security dialog immediately
+    if (!isEncryptionInitialized && currentUserId) {
+      setIsSecurityDialogOpen(true);
+    }
+  }, [isEncryptionInitialized, currentUserId]);
 
   const handleSecurityCodeVerified = async (securityCode: string) => {
     try {
@@ -57,10 +68,10 @@ const Messages: React.FC = () => {
 
   const handleSendMessage = (content: string) => {
     if (recipient) {
-      sendMessage({
+      // Always use encrypted messages
+      sendEncryptedMessage({
         recipientId: recipient.id,
-        content,
-        isEncrypted: false // Default to non-encrypted messages
+        content
       });
     }
   };
