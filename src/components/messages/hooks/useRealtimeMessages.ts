@@ -13,6 +13,9 @@ export const useRealtimeMessages = () => {
   const session = useSession();
   const currentUserId = session?.user?.id;
   const { toast } = useToast();
+  
+  // State for selected conversation - moved up before it's used in the useEffect below
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
   // Fetch initial conversations data
   useEffect(() => {
@@ -259,9 +262,6 @@ export const useRealtimeMessages = () => {
       toast.error('Failed to load messages');
     }
   };
-
-  // State for selected conversation
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
   // Update messages when selected conversation changes
   useEffect(() => {
