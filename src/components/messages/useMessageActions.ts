@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,11 +100,7 @@ export const useMessageActions = () => {
       return data.conversationId;
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to start conversation",
-        variant: "destructive"
-      });
+      toast.error("Failed to start conversation");
       console.error('Start conversation error:', error);
     }
   });
@@ -176,11 +171,7 @@ export const useMessageActions = () => {
     },
     onError: (error) => {
       console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
-      });
+      toast.error("Failed to send message");
     },
   });
 
@@ -221,20 +212,13 @@ export const useMessageActions = () => {
       }
     },
     onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Conversation deleted",
-      });
+      toast.success("Conversation deleted");
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       queryClient.invalidateQueries({ queryKey: ['message_requests'] });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to delete conversation",
-        variant: "destructive"
-      });
+      toast.error("Failed to delete conversation");
       console.error('Delete conversation error:', error);
     }
   });
