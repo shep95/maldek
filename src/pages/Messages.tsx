@@ -2,16 +2,18 @@
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Shield } from "lucide-react";
+import { AlertCircle, Shield, MessagesSquare, Search } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ConversationList } from "@/components/messages/ConversationList";
 import { MessageThread } from "@/components/messages/MessageThread";
 import { useMessages } from "@/components/messages/hooks/useMessages";
 import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
 import { useEncryption } from "@/providers/EncryptionProvider";
+import { Input } from "@/components/ui/input";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { isEncryptionInitialized, initializeEncryption } = useEncryption();
   const session = useSession();
   const currentUserId = session?.user?.id;
@@ -55,6 +57,14 @@ const Messages: React.FC = () => {
     }
   };
 
+  // Filter conversations based on search query
+  const filteredConversations = searchQuery
+    ? conversations.filter(conv => {
+        const otherParticipant = conv.participants.find(p => p.id !== currentUserId);
+        return otherParticipant?.username.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : conversations;
+
   return (
     <div className="h-full min-h-screen p-4">
       <h1 className="text-2xl font-bold mb-6">Messages</h1>
@@ -79,16 +89,34 @@ const Messages: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
-        <div className="bg-card rounded-lg border p-4">
-          <h2 className="font-semibold mb-4">Conversations</h2>
-          <ConversationList 
-            conversations={conversations}
-            selectedConversationId={selectedConversationId || undefined}
-            onSelectConversation={(id) => setSelectedConversationId(id)}
-          />
+        <div className="bg-card rounded-lg border shadow-md p-4 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold flex items-center gap-2">
+              <MessagesSquare className="h-4 w-4" />
+              Chats
+            </h2>
+          </div>
+          
+          <div className="relative mb-4">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search conversations..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex-grow overflow-hidden">
+            <ConversationList 
+              conversations={filteredConversations}
+              selectedConversationId={selectedConversationId || undefined}
+              onSelectConversation={(id) => setSelectedConversationId(id)}
+            />
+          </div>
         </div>
         
-        <div className="md:col-span-2 bg-card rounded-lg border p-4">
+        <div className="md:col-span-2 bg-card rounded-lg border shadow-md">
           {selectedConversationId && recipient && currentUserId ? (
             <MessageThread
               messages={messages}
@@ -98,13 +126,16 @@ const Messages: React.FC = () => {
             />
           ) : (
             <div className="flex flex-col h-full">
-              <div className="border-b pb-4 mb-4">
+              <div className="border-b py-4 px-4">
                 <h2 className="font-semibold">Messages</h2>
               </div>
               <div className="flex-grow flex items-center justify-center">
-                <p className="text-center text-muted-foreground">
-                  Select a conversation to view messages
-                </p>
+                <div className="text-center p-6">
+                  <MessagesSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                  <p className="text-muted-foreground">
+                    Select a conversation to view messages
+                  </p>
+                </div>
               </div>
             </div>
           )}

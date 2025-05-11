@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { Conversation } from "./types/messageTypes";
+import { cn } from "@/lib/utils";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -26,52 +26,58 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   return (
     <ScrollArea className="h-full">
-      <div className="space-y-1 p-2">
+      <div className="space-y-1">
         {conversations.map((conversation) => {
           // Find the other participant (not the current user)
           const otherParticipant = conversation.participants[0];
+          const hasUnread = conversation.unread_count > 0;
           
           return (
             <button
               key={conversation.id}
               onClick={() => onSelectConversation(conversation.id)}
-              className={`w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent/50 transition-colors ${
-                selectedConversationId === conversation.id ? "bg-accent" : ""
-              }`}
+              className={cn(
+                "w-full flex items-center gap-3 p-3 rounded-md text-left transition-colors",
+                selectedConversationId === conversation.id 
+                  ? "bg-accent text-accent-foreground" 
+                  : "hover:bg-accent/10",
+                hasUnread && "font-medium"
+              )}
             >
-              <Avatar className="h-10 w-10">
+              <Avatar className="h-10 w-10 border">
                 <AvatarImage src={otherParticipant?.avatar_url || undefined} />
-                <AvatarFallback>
+                <AvatarFallback className="font-medium">
                   {otherParticipant?.username?.[0]?.toUpperCase() || "?"}
                 </AvatarFallback>
               </Avatar>
               
-              <div className="flex-1 text-left overflow-hidden">
+              <div className="flex-1 overflow-hidden min-w-0">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium truncate">
+                  <span className={cn("truncate", hasUnread && "font-semibold")}>
                     {otherParticipant?.username || "Unknown"}
                   </span>
                   {conversation.updated_at && (
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(conversation.updated_at), { addSuffix: true })}
+                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                      {formatTime(conversation.updated_at)}
                     </span>
                   )}
                 </div>
                 
                 {conversation.last_message && (
-                  <p className="text-sm text-muted-foreground truncate">
+                  <p className={cn(
+                    "text-sm truncate", 
+                    hasUnread ? "text-foreground" : "text-muted-foreground"
+                  )}>
                     {conversation.last_message.is_encrypted 
                       ? "🔒 Encrypted message"
                       : conversation.last_message.content}
                   </p>
                 )}
-                
-                {conversation.unread_count > 0 && (
-                  <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-xs text-primary-foreground">
-                    {conversation.unread_count}
-                  </div>
-                )}
               </div>
+              
+              {hasUnread && (
+                <div className="h-2 w-2 rounded-full bg-accent shrink-0"></div>
+              )}
             </button>
           );
         })}
@@ -79,3 +85,29 @@ export const ConversationList: React.FC<ConversationListProps> = ({
     </ScrollArea>
   );
 };
+
+// Helper function to format time in a more human-readable way like the reference
+function formatTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  
+  // If it's today, show the time
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  // If it's yesterday, show "Yesterday"
+  if (date.toDateString() === yesterday.toDateString()) {
+    return "Yesterday";
+  }
+  
+  // If it's this week, show the day name
+  if (now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
+    return date.toLocaleDateString([], { weekday: 'long' });
+  }
+  
+  // Otherwise, show the date
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
