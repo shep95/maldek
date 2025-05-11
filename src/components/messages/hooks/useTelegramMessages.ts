@@ -38,7 +38,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
       setError(null);
       
       const { data, error: fetchError } = await supabase
-        .from("messages" as any)
+        .from("conversation_messages" as any)
         .select("*")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
@@ -55,7 +55,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
       
       if (unreadMessages.length > 0) {
         await supabase
-          .from("messages" as any)
+          .from("conversation_messages" as any)
           .update({ is_read: true })
           .in("id", unreadMessages.map(msg => msg.id));
         
@@ -88,7 +88,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
         {
           event: "*",
           schema: "public",
-          table: "messages",
+          table: "conversation_messages",
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
@@ -106,7 +106,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
             // Mark message as read if it's not from the current user
             if (newMessage.sender_id !== session?.user?.id) {
               supabase
-                .from("messages" as any)
+                .from("conversation_messages" as any)
                 .update({ is_read: true })
                 .eq("id", newMessage.id);
               
@@ -210,7 +210,7 @@ export const useTelegramMessages = (conversationId: string | null) => {
       
       // Insert the new message
       const { data: message, error: messageError } = await supabase
-        .from("messages" as any)
+        .from("conversation_messages" as any)
         .insert({
           conversation_id: conversationId,
           sender_id: session.user.id,

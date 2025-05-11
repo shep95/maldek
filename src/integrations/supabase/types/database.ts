@@ -792,7 +792,7 @@ export interface Database {
           }
         ]
       },
-      messages: {
+      conversation_messages: {
         Row: {
           id: string
           conversation_id: string

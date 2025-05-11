@@ -2,14 +2,12 @@
 import { useState, useRef, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Send, Paperclip, Image } from "lucide-react";
+import { Send, Paperclip } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageItem } from "./MessageItem";
-import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { MessageFileUpload } from "./MessageFileUpload";
 import { useEncryption } from "@/providers/EncryptionProvider";
-import { secureFetch } from "@/utils/secureLogging";
 import { toast } from "sonner";
 
 interface Message {
@@ -45,7 +43,6 @@ export const MessagePanel = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const session = useSession();
-  const encryption = useEncryption();
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -115,7 +112,7 @@ export const MessagePanel = ({
     <div className="flex flex-col h-full">
       {/* Conversation header */}
       <div className="p-4 border-b border-white/10">
-        <h2 className="font-semibold">Conversation Name</h2>
+        <h2 className="font-semibold">Conversation</h2>
       </div>
 
       {/* Message list */}
