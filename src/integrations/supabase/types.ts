@@ -826,6 +826,7 @@ export type Database = {
           id: string
           is_encrypted: boolean | null
           is_read: boolean | null
+          media_url: string | null
           recipient_id: string | null
           sender_id: string | null
         }
@@ -836,6 +837,7 @@ export type Database = {
           id?: string
           is_encrypted?: boolean | null
           is_read?: boolean | null
+          media_url?: string | null
           recipient_id?: string | null
           sender_id?: string | null
         }
@@ -846,6 +848,7 @@ export type Database = {
           id?: string
           is_encrypted?: boolean | null
           is_read?: boolean | null
+          media_url?: string | null
           recipient_id?: string | null
           sender_id?: string | null
         }
