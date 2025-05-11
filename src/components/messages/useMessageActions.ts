@@ -1,26 +1,167 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface SendMessageParams {
   recipientId: string;
   content: string;
+  conversationId?: string;
+  isEncrypted?: boolean;
+  isFollowing?: boolean;
+}
+
+interface CreateConversationParams {
+  recipientId: string;
+  isRequest: boolean;
 }
 
 export const useMessageActions = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const session = useSession();
+  const currentUserId = session?.user?.id;
 
-  // This is a simplified version that works with our mock implementation
-  const sendMessageMutation = useMutation({
-    mutationFn: async ({ recipientId, content }: SendMessageParams) => {
-      // In a real implementation, this would send the message
-      console.log("Sending message to", recipientId, ":", content);
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+  // Helper function to get or create a conversation
+  const getOrCreateConversation = async (recipientId: string, isRequest: boolean): Promise<string> => {
+    if (!currentUserId) throw new Error('Not authenticated');
+
+    // Check if conversation exists
+    const { data: existingConv, error: convCheckError } = await supabase
+      .from('conversations')
+      .select('id')
+      .contains('participant_ids', [currentUserId, recipientId])
+      .eq('is_request', isRequest)
+      .single();
+
+    if (convCheckError && convCheckError.code !== 'PGRST116') { // PGRST116 is "not found" error
+      throw convCheckError;
+    }
+
+    // If conversation exists, return it
+    if (existingConv) {
+      return existingConv.id;
+    }
+
+    // Create new conversation
+    const { data: newConv, error: createError } = await supabase
+      .from('conversations')
+      .insert({
+        participant_ids: [currentUserId, recipientId],
+        is_request: isRequest,
+        created_by: currentUserId
+      })
+      .select()
+      .single();
+
+    if (createError) throw createError;
+    if (!newConv) throw new Error('Failed to create conversation');
+
+    // Add participants to conversation_participants table
+    await Promise.all([
+      supabase
+        .from('conversation_participants')
+        .insert({ conversation_id: newConv.id, user_id: currentUserId }),
+      supabase
+        .from('conversation_participants')
+        .insert({ conversation_id: newConv.id, user_id: recipientId })
+    ]);
+
+    return newConv.id;
+  };
+
+  // Start a new conversation with a user
+  const startConversation = useMutation({
+    mutationFn: async ({ 
+      recipientId, 
+      isFollowing 
+    }: CreateConversationParams) => {
+      if (!currentUserId) throw new Error('Not authenticated');
+      
+      try {
+        // Get or create conversation based on follow status
+        const conversationId = await getOrCreateConversation(
+          recipientId, 
+          !isFollowing // is_request is true if they don't follow each other
+        );
+        
+        return { 
+          success: true, 
+          conversationId
+        };
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['message_requests'] });
+      return data.conversationId;
+    },
+    onError: (error) => {
+      toast.error('Failed to start conversation');
+      console.error('Start conversation error:', error);
+    }
+  });
+
+  // Send a message
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ 
+      recipientId, 
+      content, 
+      conversationId,
+      isEncrypted = false,
+      isFollowing = false
+    }: SendMessageParams) => {
+      if (!currentUserId) throw new Error('Not authenticated');
+      
+      try {
+        // Get or create conversation if no conversationId is provided
+        const finalConversationId = conversationId || 
+          await getOrCreateConversation(
+            recipientId, 
+            !isFollowing // is_request is true if they don't follow each other
+          );
+        
+        // Send message
+        const { data: newMessage, error } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: finalConversationId,
+            sender_id: currentUserId,
+            recipient_id: recipientId,
+            content,
+            is_encrypted: isEncrypted,
+            is_read: false
+          })
+          .select()
+          .single();
+          
+        if (error) throw error;
+        
+        // Update conversation's updated_at timestamp
+        await supabase
+          .from('conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', finalConversationId);
+        
+        return { 
+          success: true, 
+          message: newMessage,
+          conversationId: finalConversationId
+        };
+      } catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['message_requests'] });
+      
       // Provide feedback on mobile that the message was sent
       if (window.innerWidth < 768) {
         // Vibrate device if supported (mobile only)
@@ -35,8 +176,58 @@ export const useMessageActions = () => {
     },
   });
 
+  // Delete conversation
+  const deleteConversation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      if (!currentUserId) throw new Error('Not authenticated');
+      
+      try {
+        // First, delete all messages in the conversation
+        const { error: messagesError } = await supabase
+          .from('messages')
+          .delete()
+          .eq('conversation_id', conversationId);
+        
+        if (messagesError) throw messagesError;
+        
+        // Then delete the conversation participants
+        const { error: participantsError } = await supabase
+          .from('conversation_participants')
+          .delete()
+          .eq('conversation_id', conversationId);
+        
+        if (participantsError) throw participantsError;
+        
+        // Finally, delete the conversation itself
+        const { error: convError } = await supabase
+          .from('conversations')
+          .delete()
+          .eq('id', conversationId);
+        
+        if (convError) throw convError;
+        
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success('Conversation deleted');
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['message_requests'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete conversation');
+      console.error('Delete conversation error:', error);
+    }
+  });
+
   return {
     sendMessage: sendMessageMutation.mutate,
-    isSending: sendMessageMutation.isPending
+    isSending: sendMessageMutation.isPending,
+    startConversation: startConversation.mutate,
+    deleteConversation: deleteConversation.mutate
   };
 };

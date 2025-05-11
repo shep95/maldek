@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,6 @@ import { AlertCircle, Shield, MessagesSquare, Search, ArrowLeft, Settings, Clock
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ConversationList } from "@/components/messages/ConversationList";
 import { MessageThread } from "@/components/messages/MessageThread";
-import { useMessages } from "@/components/messages/hooks/useMessages";
-import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
 import { useEncryption } from "@/providers/EncryptionProvider";
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MessageSettingsDialog } from "@/components/messages/MessageSettingsDialog";
 import { NewMessageDialog } from "@/components/messages/NewMessageDialog";
 import { toast } from "@/components/ui/use-toast";
+import { useRealtimeMessages } from "@/components/messages/hooks/useRealtimeMessages";
+import { useMessageActions } from "@/components/messages/useMessageActions";
+import { SecurityCodeDialog } from "@/components/settings/SecurityCodeDialog";
 
 const Messages: React.FC = () => {
   const [isSecurityDialogOpen, setIsSecurityDialogOpen] = useState(false);
@@ -23,24 +23,31 @@ const Messages: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showConversations, setShowConversations] = useState(true);
   const [activeTab, setActiveTab] = useState<"all" | "requests">("all");
+  
   const {
     isEncryptionInitialized,
     initializeEncryption
   } = useEncryption();
+  
   const session = useSession();
   const currentUserId = session?.user?.id;
   const isMobile = useIsMobile();
+  
+  // Use our real-time messages hook
   const {
     conversations,
     requestedConversations,
     messages,
-    users,
     selectedConversationId,
-    setSelectedConversationId,
+    setSelectedConversationId
+  } = useRealtimeMessages();
+  
+  // Use message actions
+  const {
     sendMessage,
     deleteConversation,
     startConversation
-  } = useMessages();
+  } = useMessageActions();
   
   const handleSecurityCodeVerified = async (securityCode: string) => {
     try {
@@ -66,6 +73,7 @@ const Messages: React.FC = () => {
       sendMessage({
         recipientId: recipient.id,
         content,
+        conversationId: selectedConversationId || undefined,
         isEncrypted: false, // Default to non-encrypted messages
         isFollowing
       });
@@ -97,7 +105,7 @@ const Messages: React.FC = () => {
     if (userId) {
       startConversation({
         recipientId: userId,
-        isFollowing
+        isRequest: !isFollowing
       });
       
       if (isMobile) {
