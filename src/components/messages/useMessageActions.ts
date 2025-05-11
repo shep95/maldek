@@ -29,7 +29,7 @@ export const useMessageActions = () => {
 
     // Check if conversation exists
     const { data: existingConv, error: convCheckError } = await supabase
-      .from('conversations')
+      .from("conversations")
       .select('id')
       .contains('participant_ids', [currentUserId, recipientId])
       .eq('is_request', isRequest)
@@ -46,7 +46,7 @@ export const useMessageActions = () => {
 
     // Create new conversation
     const { data: newConv, error: createError } = await supabase
-      .from('conversations')
+      .from("conversations")
       .insert({
         participant_ids: [currentUserId, recipientId],
         is_request: isRequest,
@@ -61,10 +61,10 @@ export const useMessageActions = () => {
     // Add participants to conversation_participants table
     await Promise.all([
       supabase
-        .from('conversation_participants')
+        .from("conversation_participants")
         .insert({ conversation_id: newConv.id, user_id: currentUserId }),
       supabase
-        .from('conversation_participants')
+        .from("conversation_participants")
         .insert({ conversation_id: newConv.id, user_id: recipientId })
     ]);
 
@@ -75,7 +75,7 @@ export const useMessageActions = () => {
   const startConversation = useMutation({
     mutationFn: async ({ 
       recipientId, 
-      isFollowing 
+      isRequest 
     }: CreateConversationParams) => {
       if (!currentUserId) throw new Error('Not authenticated');
       
@@ -83,7 +83,7 @@ export const useMessageActions = () => {
         // Get or create conversation based on follow status
         const conversationId = await getOrCreateConversation(
           recipientId, 
-          !isFollowing // is_request is true if they don't follow each other
+          isRequest
         );
         
         return { 
@@ -101,7 +101,11 @@ export const useMessageActions = () => {
       return data.conversationId;
     },
     onError: (error) => {
-      toast.error('Failed to start conversation');
+      toast({
+        title: "Error",
+        description: "Failed to start conversation",
+        variant: "destructive"
+      });
       console.error('Start conversation error:', error);
     }
   });
@@ -127,7 +131,7 @@ export const useMessageActions = () => {
         
         // Send message
         const { data: newMessage, error } = await supabase
-          .from('messages')
+          .from("messages")
           .insert({
             conversation_id: finalConversationId,
             sender_id: currentUserId,
@@ -143,7 +147,7 @@ export const useMessageActions = () => {
         
         // Update conversation's updated_at timestamp
         await supabase
-          .from('conversations')
+          .from("conversations")
           .update({ updated_at: new Date().toISOString() })
           .eq('id', finalConversationId);
         
@@ -172,7 +176,11 @@ export const useMessageActions = () => {
     },
     onError: (error) => {
       console.error('Error sending message:', error);
-      toast.error("Failed to send message");
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
+      });
     },
   });
 
@@ -184,7 +192,7 @@ export const useMessageActions = () => {
       try {
         // First, delete all messages in the conversation
         const { error: messagesError } = await supabase
-          .from('messages')
+          .from("messages")
           .delete()
           .eq('conversation_id', conversationId);
         
@@ -192,7 +200,7 @@ export const useMessageActions = () => {
         
         // Then delete the conversation participants
         const { error: participantsError } = await supabase
-          .from('conversation_participants')
+          .from("conversation_participants")
           .delete()
           .eq('conversation_id', conversationId);
         
@@ -200,7 +208,7 @@ export const useMessageActions = () => {
         
         // Finally, delete the conversation itself
         const { error: convError } = await supabase
-          .from('conversations')
+          .from("conversations")
           .delete()
           .eq('id', conversationId);
         
@@ -213,13 +221,20 @@ export const useMessageActions = () => {
       }
     },
     onSuccess: () => {
-      toast.success('Conversation deleted');
+      toast({
+        title: "Success",
+        description: "Conversation deleted",
+      });
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       queryClient.invalidateQueries({ queryKey: ['message_requests'] });
     },
     onError: (error) => {
-      toast.error('Failed to delete conversation');
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive"
+      });
       console.error('Delete conversation error:', error);
     }
   });

@@ -23,7 +23,7 @@ export const useRealtimeMessages = () => {
       try {
         // Fetch regular conversations (with users who follow each other)
         const { data: regularConvData, error: regularError } = await supabase
-          .from('conversations')
+          .from("conversations")
           .select(`
             id,
             created_at,
@@ -39,7 +39,7 @@ export const useRealtimeMessages = () => {
 
         // Fetch message requests (conversations where users don't follow each other)
         const { data: requestConvData, error: requestError } = await supabase
-          .from('conversations')
+          .from("conversations")
           .select(`
             id,
             created_at,
@@ -171,7 +171,7 @@ export const useRealtimeMessages = () => {
     try {
       // Same queries as in the initial fetch
       const { data: regularConvData } = await supabase
-        .from('conversations')
+        .from("conversations")
         .select(`
           id,
           created_at,
@@ -184,7 +184,7 @@ export const useRealtimeMessages = () => {
         .order('updated_at', { ascending: false });
 
       const { data: requestConvData } = await supabase
-        .from('conversations')
+        .from("conversations")
         .select(`
           id,
           created_at,
@@ -213,7 +213,7 @@ export const useRealtimeMessages = () => {
 
     try {
       const { data, error } = await supabase
-        .from('messages')
+        .from("messages")
         .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
@@ -224,7 +224,7 @@ export const useRealtimeMessages = () => {
 
       // Mark messages as read
       await supabase
-        .from('messages')
+        .from("messages")
         .update({ is_read: true })
         .eq('conversation_id', conversationId)
         .eq('recipient_id', currentUserId);
@@ -259,4 +259,3 @@ export const useRealtimeMessages = () => {
     refreshConversations
   };
 };
-
