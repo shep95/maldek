@@ -101,7 +101,7 @@ export const useRealtimeMessages = () => {
       .on(
         'postgres_changes',
         {
-          event: '*', // Changed from 'INSERT' to '*' to catch all events including DELETE
+          event: '*', // Listening to all events including DELETE
           schema: 'public',
           table: 'messages'
         },
@@ -112,14 +112,25 @@ export const useRealtimeMessages = () => {
             const newMessage = payload.new as any;
             // If the message belongs to the currently selected conversation, add it to the messages state
             if (newMessage.conversation_id === selectedConversationId) {
-              setMessages(prev => [...prev, formatMessage(newMessage)]);
+              setMessages(prev => {
+                // Check if message already exists to prevent duplicates
+                if (prev.some(msg => msg.id === newMessage.id)) {
+                  return prev;
+                }
+                return [...prev, formatMessage(newMessage)];
+              });
             }
           } else if (payload.eventType === 'DELETE') {
             const deletedMessage = payload.old as any;
+            console.log('Message deleted from database:', deletedMessage.id);
+            
             // If the deleted message belongs to the currently selected conversation, remove it
             if (deletedMessage.conversation_id === selectedConversationId) {
-              setMessages(prev => prev.filter(msg => msg.id !== deletedMessage.id));
-              console.log('Message removed from UI:', deletedMessage.id);
+              setMessages(prev => {
+                const filtered = prev.filter(msg => msg.id !== deletedMessage.id);
+                console.log(`Removed message ${deletedMessage.id} from UI. Before: ${prev.length}, After: ${filtered.length}`);
+                return filtered;
+              });
             }
           }
           
@@ -295,8 +306,11 @@ export const useRealtimeMessages = () => {
 
   // Function to manually remove a message from the UI after deletion
   const removeMessage = (messageId: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
-    console.log('Manually removed message:', messageId);
+    setMessages(prev => {
+      const filtered = prev.filter(msg => msg.id !== messageId);
+      console.log(`Manually removed message ${messageId} from UI. Before: ${prev.length}, After: ${filtered.length}`);
+      return filtered;
+    });
   };
 
   return {

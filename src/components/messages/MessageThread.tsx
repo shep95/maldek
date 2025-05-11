@@ -119,19 +119,19 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
     setIsMessageDeleteDialogOpen(true);
   };
   
-  const confirmDelete = () => {
-    if (onDeleteConversation) {
-      onDeleteConversation();
-    }
-    setIsDeleteDialogOpen(false);
-  };
-
   const confirmMessageDelete = () => {
     if (onDeleteMessage && messageToDelete) {
       onDeleteMessage(messageToDelete);
     }
     setIsMessageDeleteDialogOpen(false);
     setMessageToDelete(null);
+  };
+
+  const confirmDelete = () => {
+    if (onDeleteConversation) {
+      onDeleteConversation();
+    }
+    setIsDeleteDialogOpen(false);
   };
 
   const openMediaViewer = (mediaUrl: string, isVideo: boolean) => {
@@ -327,6 +327,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                           : "bg-muted rounded-tl-none"
                       }`}
                     >
+                      
                       {message.is_encrypted ? (
                         <div className="flex items-center gap-1 text-xs">
                           <Lock size={12} />

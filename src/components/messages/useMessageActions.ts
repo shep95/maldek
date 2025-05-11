@@ -243,11 +243,17 @@ export const useMessageActions = () => {
           .delete()
           .eq('id', messageId);
           
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          console.error("Error deleting message:", deleteError);
+          throw deleteError;
+        }
+        
+        console.log("Message successfully deleted from database");
         
         return { 
           success: true,
-          conversationId: message.conversation_id
+          conversationId: message.conversation_id,
+          messageId
         };
       } catch (error) {
         console.error('Error deleting message:', error);
