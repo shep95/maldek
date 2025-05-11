@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Conversation, Message } from "../types/messageTypes";
 import { supabase } from "@/integrations/supabase/client";
@@ -100,17 +101,26 @@ export const useRealtimeMessages = () => {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Changed from 'INSERT' to '*' to catch all events including DELETE
           schema: 'public',
           table: 'messages'
         },
         (payload) => {
-          console.log('New message received:', payload);
-          const newMessage = payload.new as any;
+          console.log('Message event received:', payload);
           
-          // If the message belongs to the currently selected conversation, add it to the messages state
-          if (newMessage.conversation_id === selectedConversationId) {
-            setMessages(prev => [...prev, formatMessage(newMessage)]);
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as any;
+            // If the message belongs to the currently selected conversation, add it to the messages state
+            if (newMessage.conversation_id === selectedConversationId) {
+              setMessages(prev => [...prev, formatMessage(newMessage)]);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            const deletedMessage = payload.old as any;
+            // If the deleted message belongs to the currently selected conversation, remove it
+            if (deletedMessage.conversation_id === selectedConversationId) {
+              setMessages(prev => prev.filter(msg => msg.id !== deletedMessage.id));
+              console.log('Message removed from UI:', deletedMessage.id);
+            }
           }
           
           // Update unread count and update conversations
@@ -283,6 +293,12 @@ export const useRealtimeMessages = () => {
     }
   }, [selectedConversationId]);
 
+  // Function to manually remove a message from the UI after deletion
+  const removeMessage = (messageId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    console.log('Manually removed message:', messageId);
+  };
+
   return {
     conversations,
     requestedConversations,
@@ -290,6 +306,7 @@ export const useRealtimeMessages = () => {
     isLoading,
     selectedConversationId,
     setSelectedConversationId,
-    refreshConversations
+    refreshConversations,
+    removeMessage
   };
 };

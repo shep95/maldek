@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,8 @@ const Messages: React.FC = () => {
     messages,
     selectedConversationId,
     setSelectedConversationId,
-    refreshConversations
+    refreshConversations,
+    removeMessage
   } = useRealtimeMessages();
   
   // Use message actions
@@ -88,6 +90,8 @@ const Messages: React.FC = () => {
 
   const handleDeleteMessage = (messageId: string) => {
     deleteMessage(messageId);
+    // Immediately remove the message from UI
+    removeMessage(messageId);
   };
   
   const handleSelectConversation = (id: string) => {

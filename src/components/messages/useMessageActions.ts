@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -255,8 +256,9 @@ export const useMessageActions = () => {
     },
     onSuccess: (data) => {
       toast.success("Message deleted for everyone");
+      
+      // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['messages'] });
-      // Also update the conversation list to reflect changes in last_message
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       queryClient.invalidateQueries({ queryKey: ['message_requests'] });
     },
