@@ -7,6 +7,7 @@ import { ArrowLeft, Lock, Send, Trash2, Image } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { isVideoFile } from "@/utils/mediaUtils";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface MessageThreadProps {
   messages: MessageType[];
@@ -32,6 +33,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const actualCurrentUserId = currentUser?.id || currentUserId;
 
@@ -40,12 +42,24 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Create object URL for media preview
+  useEffect(() => {
+    if (mediaFile) {
+      const objectUrl = URL.createObjectURL(mediaFile);
+      setMediaPreview(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setMediaPreview(null);
+    }
+  }, [mediaFile]);
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if ((newMessage.trim() || mediaFile) && onSendMessage) {
       onSendMessage(newMessage, mediaFile || undefined);
       setNewMessage("");
       setMediaFile(null);
+      setMediaPreview(null);
     }
   };
 
@@ -106,15 +120,37 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         {onSendMessage && (
           <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t pb-safe">
             <div className="flex flex-col gap-2 max-w-5xl mx-auto">
-              {mediaFile && (
-                <div className="bg-muted/50 p-2 rounded-md flex items-center justify-between">
-                  <span className="text-sm truncate">{mediaFile.name}</span>
+              {mediaPreview && (
+                <div className="relative rounded-lg overflow-hidden bg-muted/50 border">
+                  <div className="max-w-[200px] mx-auto my-2">
+                    <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden">
+                      {isVideoFile(mediaFile?.name || '') ? (
+                        <video 
+                          src={mediaPreview} 
+                          className="w-full h-full object-cover rounded-lg" 
+                          controls
+                        />
+                      ) : (
+                        <img 
+                          src={mediaPreview} 
+                          alt="Media preview" 
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      )}
+                    </AspectRatio>
+                  </div>
                   <Button 
-                    variant="ghost" 
+                    type="button" 
                     size="sm" 
-                    onClick={() => setMediaFile(null)}
+                    variant="ghost"
+                    onClick={() => {
+                      setMediaFile(null);
+                      setMediaPreview(null);
+                    }}
+                    className="absolute top-2 right-2 h-8 w-8 p-0"
                   >
-                    Remove
+                    <span className="sr-only">Remove</span>
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               )}
@@ -238,19 +274,27 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                       ) : null}
                       
                       {message.media_url && (
-                        <div className="mb-2 rounded-lg overflow-hidden">
+                        <div className="mb-2 overflow-hidden rounded-xl">
                           {isVideoFile(message.media_url) ? (
-                            <video 
-                              src={message.media_url} 
-                              controls 
-                              className="max-w-full max-h-[300px] rounded"
-                            />
+                            <div className="relative w-full max-w-[240px]">
+                              <AspectRatio ratio={16/9} className="rounded-xl overflow-hidden">
+                                <video 
+                                  src={message.media_url} 
+                                  controls 
+                                  className="w-full h-full object-cover"
+                                />
+                              </AspectRatio>
+                            </div>
                           ) : (
-                            <img 
-                              src={message.media_url} 
-                              alt="Media" 
-                              className="max-w-full max-h-[300px] rounded object-cover"
-                            />
+                            <div className="relative w-full max-w-[240px]">
+                              <AspectRatio ratio={4/3} className="rounded-xl overflow-hidden">
+                                <img 
+                                  src={message.media_url} 
+                                  alt="Media" 
+                                  className="w-full h-full object-cover"
+                                />
+                              </AspectRatio>
+                            </div>
                           )}
                         </div>
                       )}
@@ -280,15 +324,37 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       {onSendMessage && (
         <form onSubmit={handleSendMessage} className="mt-auto p-3 sm:p-4 border-t pb-safe">
           <div className="flex flex-col gap-2 max-w-5xl mx-auto">
-            {mediaFile && (
-              <div className="bg-muted/50 p-2 rounded-md flex items-center justify-between">
-                <span className="text-sm truncate">{mediaFile.name}</span>
+            {mediaPreview && (
+              <div className="relative rounded-lg overflow-hidden bg-muted/50 border">
+                <div className="max-w-[200px] mx-auto my-2">
+                  <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden">
+                    {isVideoFile(mediaFile?.name || '') ? (
+                      <video 
+                        src={mediaPreview} 
+                        className="w-full h-full object-cover rounded-lg" 
+                        controls
+                      />
+                    ) : (
+                      <img 
+                        src={mediaPreview} 
+                        alt="Media preview" 
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    )}
+                  </AspectRatio>
+                </div>
                 <Button 
-                  variant="ghost" 
+                  type="button" 
                   size="sm" 
-                  onClick={() => setMediaFile(null)}
+                  variant="ghost"
+                  onClick={() => {
+                    setMediaFile(null);
+                    setMediaPreview(null);
+                  }}
+                  className="absolute top-2 right-2 h-8 w-8 p-0"
                 >
-                  Remove
+                  <span className="sr-only">Remove</span>
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             )}
