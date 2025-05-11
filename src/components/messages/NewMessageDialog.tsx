@@ -71,7 +71,7 @@ export const NewMessageDialog: React.FC<NewMessageDialogProps> = ({
     setSelectedUserId(null);
   };
 
-  const DialogContent = (
+  const dialogContentElement = (
     <>
       <div className="relative mb-4">
         <Search className="absolute left-2.5 top-[14px] h-4 w-4 text-muted-foreground" />
@@ -126,7 +126,7 @@ export const NewMessageDialog: React.FC<NewMessageDialogProps> = ({
             </DrawerDescription>
           </DrawerHeader>
           
-          {DialogContent}
+          {dialogContentElement}
           
           <DrawerFooter className="pt-4">
             <Button 
@@ -152,7 +152,7 @@ export const NewMessageDialog: React.FC<NewMessageDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        {DialogContent}
+        {dialogContentElement}
 
         <DialogFooter>
           <Button 

@@ -55,7 +55,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
     }
   };
 
-  const DialogContent = (
+  const dialogContentElement = (
     <>
       <div className="space-y-6 py-4">
         <div className="flex items-center justify-between space-x-2">
@@ -110,7 +110,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
             </DrawerDescription>
           </DrawerHeader>
           
-          {DialogContent}
+          {dialogContentElement}
         </DrawerContent>
       </Drawer>
     );
@@ -126,7 +126,7 @@ export const MessageSettingsDialog: React.FC<MessageSettingsDialogProps> = ({ is
           </DialogDescription>
         </DialogHeader>
         
-        {DialogContent}
+        {dialogContentElement}
       </DialogContent>
     </Dialog>
   );
