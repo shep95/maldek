@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Message as MessageType, User } from "./types/messageTypes";
 import { format } from "date-fns";
-import { ArrowLeft, Lock, Send } from "lucide-react";
+import { ArrowLeft, Lock, Send, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -16,6 +16,7 @@ interface MessageThreadProps {
   users?: Record<string, User>;
   onSendMessage?: (content: string) => void;
   onBackClick?: () => void;
+  onDeleteConversation?: () => void;
 }
 
 export const MessageThread: React.FC<MessageThreadProps> = ({
@@ -25,7 +26,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   recipient,
   users = {},
   onSendMessage,
-  onBackClick
+  onBackClick,
+  onDeleteConversation
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -47,20 +49,33 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   if (messages.length === 0) {
     return (
       <div className="flex flex-col h-full">
-        <div className="border-b py-3 px-4 flex items-center">
-          {onBackClick && (
-            <Button
-              variant="ghost"
+        <div className="border-b py-3 px-4 flex items-center justify-between">
+          <div className="flex items-center">
+            {onBackClick && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onBackClick}
+                className="mr-2 -ml-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <h2 className="font-semibold">
+              {recipient ? `Chat with ${recipient.username}` : "Messages"}
+            </h2>
+          </div>
+          
+          {onDeleteConversation && (
+            <Button 
+              variant="ghost" 
               size="sm"
-              onClick={onBackClick}
-              className="mr-2 -ml-2"
+              onClick={onDeleteConversation}
+              className="text-muted-foreground hover:text-destructive"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             </Button>
           )}
-          <h2 className="font-semibold">
-            {recipient ? `Chat with ${recipient.username}` : "Messages"}
-          </h2>
         </div>
         <div className="flex-grow flex flex-col items-center justify-center h-full text-muted-foreground p-4">
           <p>No messages yet</p>
@@ -88,28 +103,42 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="border-b py-3 px-4 flex items-center">
-        {onBackClick && (
-          <Button
-            variant="ghost"
+      <div className="border-b py-3 px-4 flex items-center justify-between">
+        <div className="flex items-center">
+          {onBackClick && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackClick}
+              className="mr-2 -ml-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <div className="flex items-center gap-2">
+            {recipient && (
+              <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                <AvatarImage src={recipient.avatar_url || undefined} />
+                <AvatarFallback>{recipient.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+              </Avatar>
+            )}
+            <h2 className="font-semibold">
+              {recipient ? recipient.username : "Messages"}
+            </h2>
+          </div>
+        </div>
+        
+        {onDeleteConversation && (
+          <Button 
+            variant="ghost" 
             size="sm"
-            onClick={onBackClick}
-            className="mr-2 -ml-2"
+            onClick={onDeleteConversation}
+            className="text-muted-foreground hover:text-destructive"
+            title="Delete conversation"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         )}
-        <div className="flex items-center gap-2">
-          {recipient && (
-            <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-              <AvatarImage src={recipient.avatar_url || undefined} />
-              <AvatarFallback>{recipient.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
-            </Avatar>
-          )}
-          <h2 className="font-semibold">
-            {recipient ? recipient.username : "Messages"}
-          </h2>
-        </div>
       </div>
 
       <div className="flex-grow overflow-y-auto p-3 sm:p-4 md:p-6">
@@ -154,11 +183,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                       </p>
                     </div>
                     <div
-                      className={`text-xs text-muted-foreground mt-1 ${
-                        isSentByMe ? "text-right" : ""
+                      className={`text-xs text-muted-foreground mt-1 flex items-center ${
+                        isSentByMe ? "justify-end" : ""
                       }`}
                     >
-                      {format(new Date(message.created_at), "HH:mm")}
+                      {format(new Date(message.created_at), "MMM d, h:mm a")}
                     </div>
                   </div>
                 </div>

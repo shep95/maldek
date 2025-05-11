@@ -25,7 +25,7 @@ export const useMessages = () => {
         .from('profiles')
         .select('id, username, avatar_url')
         .neq('id', currentUserId)
-        .limit(10);
+        .limit(8);
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
@@ -33,10 +33,10 @@ export const useMessages = () => {
       }
 
       // Create mock conversations from available profiles
-      const mockConversations: Conversation[] = profiles.map(profile => ({
+      const mockConversations: Conversation[] = profiles.map((profile, index) => ({
         id: `conv-${profile.id}`,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        updated_at: new Date(Date.now() - index * 3600000).toISOString(),
         participants: [
           {
             id: profile.id,
@@ -44,10 +44,68 @@ export const useMessages = () => {
             avatar_url: profile.avatar_url
           }
         ],
-        unread_count: 0
+        unread_count: Math.random() > 0.7 ? 1 : 0,
+        last_message: {
+          id: `msg-last-${profile.id}`,
+          content: `Latest message from ${profile.username}`,
+          sender_id: profile.id,
+          recipient_id: currentUserId,
+          created_at: new Date(Date.now() - index * 3600000).toISOString(),
+          is_read: Math.random() > 0.7 ? false : true,
+          conversation_id: `conv-${profile.id}`,
+          is_encrypted: false
+        }
       }));
 
       return mockConversations;
+    },
+    enabled: !!currentUserId,
+  });
+
+  // Get message requests (messages from users you don't follow)
+  const { data: requestedConversations = [], isLoading: isLoadingRequests } = useQuery({
+    queryKey: ['message_requests', currentUserId],
+    queryFn: async () => {
+      if (!currentUserId) return [];
+
+      // Mock data for message requests
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .neq('id', currentUserId)
+        .limit(3);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        return [];
+      }
+
+      // Create mock requested conversations
+      const mockRequestedConversations: Conversation[] = profiles.map((profile, index) => ({
+        id: `req-${profile.id}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date(Date.now() - index * 7200000).toISOString(),
+        participants: [
+          {
+            id: `request-${profile.id}`,
+            username: `Request_${profile.username}`,
+            avatar_url: profile.avatar_url
+          }
+        ],
+        unread_count: 1,
+        last_message: {
+          id: `msg-req-${profile.id}`,
+          content: `Hi there! Can we connect?`,
+          sender_id: `request-${profile.id}`,
+          recipient_id: currentUserId,
+          created_at: new Date(Date.now() - index * 7200000).toISOString(),
+          is_read: false,
+          conversation_id: `req-${profile.id}`,
+          is_encrypted: false
+        }
+      }));
+
+      return mockRequestedConversations;
     },
     enabled: !!currentUserId,
   });
@@ -58,9 +116,38 @@ export const useMessages = () => {
     queryFn: async () => {
       if (!currentUserId || !selectedConversationId) return [];
 
-      // Since we don't have actual messages table, return mock data
-      // In a real implementation, this would fetch from the messages table
-      return [] as Message[];
+      // Generate mock messages for the selected conversation
+      const allConversations = [...conversations, ...requestedConversations];
+      const selectedConv = allConversations.find(c => c.id === selectedConversationId);
+      
+      if (!selectedConv) return [];
+      
+      const otherUser = selectedConv.participants[0];
+      
+      // Generate mock message history
+      const mockMessages: Message[] = [];
+      const messageCount = Math.floor(Math.random() * 10) + 3; // 3-12 messages
+      const now = Date.now();
+      
+      for (let i = 0; i < messageCount; i++) {
+        const isFromOther = i % 2 === 0;
+        const timeOffset = (messageCount - i) * 10 * 60 * 1000; // 10 minutes between messages
+        
+        mockMessages.push({
+          id: `msg-${selectedConversationId}-${i}`,
+          content: isFromOther 
+            ? `Message ${i + 1} from ${otherUser.username}`
+            : `My reply ${i + 1}`,
+          sender_id: isFromOther ? otherUser.id : currentUserId,
+          recipient_id: isFromOther ? currentUserId : otherUser.id,
+          created_at: new Date(now - timeOffset).toISOString(),
+          is_read: true,
+          conversation_id: selectedConversationId,
+          is_encrypted: false
+        });
+      }
+      
+      return mockMessages;
     },
     enabled: !!currentUserId && !!selectedConversationId,
   });
@@ -158,8 +245,39 @@ export const useMessages = () => {
     }
   });
 
+  // Delete conversation
+  const deleteConversation = useMutation({
+    mutationFn: async (conversationId: string) => {
+      if (!currentUserId) throw new Error('Not authenticated');
+      
+      try {
+        // In a real implementation, this would delete from the database
+        // For now, we'll just pretend it worked
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+        
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        throw error;
+      }
+    },
+    onSuccess: (data, conversationId) => {
+      toast.success('Conversation deleted for all participants');
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['message_requests', currentUserId] });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete conversation');
+      console.error('Delete conversation error:', error);
+    }
+  });
+
   return {
     conversations,
+    requestedConversations,
     messages,
     users,
     isLoadingConversations,
@@ -168,6 +286,7 @@ export const useMessages = () => {
     selectedConversationId,
     setSelectedConversationId,
     sendMessage: sendMessage.mutate,
+    deleteConversation: deleteConversation.mutate,
     isEncryptionInitialized
   };
 };

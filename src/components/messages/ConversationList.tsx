@@ -10,17 +10,21 @@ interface ConversationListProps {
   conversations: Conversation[];
   selectedConversationId?: string;
   onSelectConversation: (conversationId: string) => void;
+  isRequestTab?: boolean;
 }
 
 export const ConversationList: React.FC<ConversationListProps> = ({
   conversations,
   selectedConversationId,
   onSelectConversation,
+  isRequestTab = false,
 }) => {
   if (conversations.length === 0) {
     return (
       <div className="p-4 text-center text-muted-foreground">
-        No conversations yet
+        {isRequestTab 
+          ? "No message requests" 
+          : "No conversations yet"}
       </div>
     );
   }
@@ -42,7 +46,8 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 selectedConversationId === conversation.id 
                   ? "bg-accent text-accent-foreground" 
                   : "hover:bg-accent/10",
-                hasUnread && "font-medium"
+                hasUnread && "font-medium",
+                isRequestTab && "border-l-2 border-primary"
               )}
             >
               <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border">
