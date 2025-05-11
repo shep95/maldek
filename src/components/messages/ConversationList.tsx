@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +27,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
 
   return (
     <ScrollArea className="h-full">
-      <div className="space-y-1">
+      <div className="space-y-2">
         {conversations.map((conversation) => {
           // Find the other participant (not the current user)
           const otherParticipant = conversation.participants[0];
@@ -37,14 +38,14 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               key={conversation.id}
               onClick={() => onSelectConversation(conversation.id)}
               className={cn(
-                "w-full flex items-center gap-3 p-3 rounded-md text-left transition-colors",
+                "w-full flex items-center gap-3 p-2 sm:p-3 rounded-lg text-left transition-colors",
                 selectedConversationId === conversation.id 
                   ? "bg-accent text-accent-foreground" 
                   : "hover:bg-accent/10",
                 hasUnread && "font-medium"
               )}
             >
-              <Avatar className="h-10 w-10 border">
+              <Avatar className="h-9 w-9 sm:h-10 sm:w-10 border">
                 <AvatarImage src={otherParticipant?.avatar_url || undefined} />
                 <AvatarFallback className="font-medium">
                   {otherParticipant?.username?.[0]?.toUpperCase() || "?"}
@@ -53,7 +54,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               
               <div className="flex-1 overflow-hidden min-w-0">
                 <div className="flex justify-between items-center">
-                  <span className={cn("truncate", hasUnread && "font-semibold")}>
+                  <span className={cn("truncate text-sm sm:text-base", hasUnread && "font-semibold")}>
                     {otherParticipant?.username || "Unknown"}
                   </span>
                   {conversation.updated_at && (
@@ -65,7 +66,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 
                 {conversation.last_message && (
                   <p className={cn(
-                    "text-sm truncate", 
+                    "text-xs sm:text-sm truncate", 
                     hasUnread ? "text-foreground" : "text-muted-foreground"
                   )}>
                     {conversation.last_message.is_encrypted 
