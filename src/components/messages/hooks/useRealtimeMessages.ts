@@ -226,6 +226,17 @@ export const useRealtimeMessages = () => {
       const processedRegularConversations = await Promise.all(regularConvData?.map(processConversation) || []);
       const processedRequestConversations = await Promise.all(requestConvData?.map(processConversation) || []);
 
+      // If the selected conversation was a request and now it's not, update the state
+      if (selectedConversationId) {
+        const wasRequest = requestedConversations.some(c => c.id === selectedConversationId);
+        const isNowRegular = processedRegularConversations.some(c => c.id === selectedConversationId);
+        
+        if (wasRequest && isNowRegular) {
+          // Reload messages for this conversation as it transitioned from request to regular
+          loadMessages(selectedConversationId);
+        }
+      }
+
       setConversations(processedRegularConversations);
       setRequestedConversations(processedRequestConversations);
     } catch (error) {

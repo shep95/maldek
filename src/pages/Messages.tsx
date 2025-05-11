@@ -72,13 +72,15 @@ const Messages: React.FC = () => {
   
   const handleSendMessage = (content: string) => {
     if (recipient) {
-      const isFollowing = conversations.some(c => c.participants.some(p => p.id === recipient.id));
+      // Check if this conversation is in the main conversations list (not a request)
+      const isInMainConversations = conversations.some(c => c.id === selectedConversationId);
+      
       sendMessage({
         recipientId: recipient.id,
         content,
         conversationId: selectedConversationId || undefined,
         isEncrypted: false, // Default to non-encrypted messages
-        isFollowing
+        isFollowing: isInMainConversations // If in main conversations, we treat as following
       });
     }
   };
