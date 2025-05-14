@@ -21,7 +21,7 @@ export const SidebarHeader = ({ collapsed }: SidebarHeaderProps) => {
             <img 
               src="/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png"
               alt="Bosley Logo"
-              className="w-full h-full object-contain rounded-full bg-[#101010]"
+              className="w-full h-full object-contain rounded-full bg-black"
             />
           </div>
         </StoryRing>
@@ -30,7 +30,7 @@ export const SidebarHeader = ({ collapsed }: SidebarHeaderProps) => {
           <img 
             src="/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png"
             alt="Bosley Logo"
-            className="w-full h-full object-contain rounded-full bg-[#101010]"
+            className="w-full h-full object-contain rounded-full bg-black"
           />
         </div>
       )}

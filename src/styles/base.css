@@ -49,15 +49,15 @@
   }
 
   .dark {
-    --background: 0 0% 6.3%;  /* #101010 instead of pure black */
+    --background: 0 0% 0%;  /* Pure black in dark mode */
     --foreground: 0 0% 98%;
-    --card: 0 0% 6.3%;  /* #101010 instead of pure black */
+    --card: 0 0% 3%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 6.3%;  /* #101010 instead of pure black */
+    --popover: 0 0% 3%;
     --popover-foreground: 0 0% 98%;
     --primary: #171717;  /* Updated light color theme */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 6.3%;  /* #101010 instead of #0d0d0d */
+    --secondary: 240 3.7% 5.1%;  /* #0d0d0d in dark mode */
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 15%;
     --muted-foreground: 240 5% 64.9%;
@@ -86,7 +86,7 @@
     padding-right: var(--safe-area-right);
     min-height: 100vh;
     min-height: -webkit-fill-available;
-    background-color: #101010;  /* Changed from #000000 to #101010 */
+    background-color: #000000;
   }
 
   html {
@@ -120,7 +120,7 @@
   }
   
   .neo-blur {
-    @apply backdrop-blur-2xl bg-[#101010]/40 border border-white/10;  /* Changed from black/40 to #101010/40 */
+    @apply backdrop-blur-2xl bg-black/40 border border-white/10;
   }
   
   .text-gradient {
