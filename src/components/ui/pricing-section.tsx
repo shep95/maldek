@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -60,6 +59,11 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
     "text-white dark:text-zinc-900",
     "border-none shadow-lg",
   )
+
+  // Format price to ensure it displays properly
+  const formatPrice = (price: number) => {
+    return price % 1 === 0 ? price.toString() : price.toFixed(2);
+  }
 
   return (
     <section
@@ -156,7 +160,7 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
                   <div className="mb-6">
                     <div className="flex items-baseline gap-2">
                       <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
-                        ${isYearly ? tier.price.yearly : tier.price.monthly}
+                        ${formatPrice(isYearly ? tier.price.yearly : tier.price.monthly)}
                       </span>
                       <span className="text-sm text-zinc-500 dark:text-zinc-400">
                         /{isYearly ? "year" : "month"}
