@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRightIcon, CheckIcon } from "@radix-ui/react-icons"
 import { cn } from "@/lib/utils"
+import { useSession } from "@supabase/auth-helpers-react"
+import { useSubscription } from "@/hooks/useSubscription"
+import { toast } from "sonner"
 
 interface Feature {
   name: string
@@ -33,6 +36,15 @@ interface PricingSectionProps {
 
 function PricingSection({ tiers, className }: PricingSectionProps) {
   const [isYearly, setIsYearly] = useState(false)
+  const session = useSession()
+  const { 
+    subscribed,
+    subscription_tier,
+    subscription_end,
+    isLoading,
+    createCheckoutSession,
+    openCustomerPortal
+  } = useSubscription()
 
   const buttonStyles = {
     default: cn(
@@ -81,6 +93,21 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
       price: formatPrice(isYearly ? tier.price.yearly : tier.price.monthly),
       period: isYearly ? "year" : "month"
     };
+  }
+
+  const handleSubscribeClick = (tier: PricingTier) => {
+    if (!session) {
+      toast.error("Please sign in to subscribe", {
+        description: "You need to be logged in to purchase a subscription"
+      });
+      return;
+    }
+
+    createCheckoutSession(tier.name);
+  }
+
+  const isCurrentPlan = (tierName: string) => {
+    return subscription_tier === tierName;
   }
 
   return (
@@ -157,6 +184,12 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
                     <Badge className={badgeStyles}>{tier.badge}</Badge>
                   </div>
                 )}
+                
+                {isCurrentPlan(tier.name) && (
+                  <div className="absolute -top-4 right-6">
+                    <Badge className={cn(badgeStyles, "bg-green-600 dark:bg-green-500")}>Current Plan</Badge>
+                  </div>
+                )}
 
                 <div className="p-8 flex-1">
                   <div className="flex items-center justify-between mb-4">
@@ -217,28 +250,46 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
                 </div>
 
                 <div className="p-8 pt-0 mt-auto">
-                  <Button
-                    className={cn(
-                      "w-full relative transition-all duration-300",
-                      tier.highlight
-                        ? buttonStyles.highlight
-                        : buttonStyles.default,
-                    )}
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-2">
-                      {tier.highlight ? (
-                        <>
-                          Buy now
-                          <ArrowRightIcon className="w-4 h-4" />
-                        </>
-                      ) : (
-                        <>
-                          Get started
-                          <ArrowRightIcon className="w-4 h-4" />
-                        </>
+                  {isCurrentPlan(tier.name) ? (
+                    <Button
+                      className={cn(
+                        "w-full relative transition-all duration-300",
+                        tier.highlight
+                          ? buttonStyles.highlight
+                          : buttonStyles.default,
                       )}
-                    </span>
-                  </Button>
+                      onClick={openCustomerPortal}
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        Manage Subscription
+                        <ArrowRightIcon className="w-4 h-4" />
+                      </span>
+                    </Button>
+                  ) : (
+                    <Button
+                      className={cn(
+                        "w-full relative transition-all duration-300",
+                        tier.highlight
+                          ? buttonStyles.highlight
+                          : buttonStyles.default,
+                      )}
+                      onClick={() => handleSubscribeClick(tier)}
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2">
+                        {tier.highlight ? (
+                          <>
+                            Subscribe
+                            <ArrowRightIcon className="w-4 h-4" />
+                          </>
+                        ) : (
+                          <>
+                            Subscribe
+                            <ArrowRightIcon className="w-4 h-4" />
+                          </>
+                        )}
+                      </span>
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
