@@ -1,5 +1,4 @@
 
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 interface CoinData {
@@ -21,56 +20,78 @@ interface ChartData {
   volume: number;
 }
 
-// We're using Solana as a base for our price trends, but will mock the actual values
-// to represent our fictional "Bosley Coin"
+// We're using Solana as a reference for price trends, but customizing the data
+// to represent our fictional "Bosley Coin" meme coin with more realistic values
 const REFERENCE_COIN_ID = "solana";
+
+// Scaling factor to get a realistic meme coin price range (around $0.0000xx)
+const PRICE_SCALING_FACTOR = 0.00000190;
 
 export function useCoinData() {
   const fetchCoinData = async (): Promise<CoinData> => {
     try {
       const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/${REFERENCE_COIN_ID}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`
+        `https://api.coingecko.com/api/v3/coins/${REFERENCE_COIN_ID}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`,
+        { cache: "no-store" }
       );
       
       if (!response.ok) {
-        throw new Error("Failed to fetch coin data");
+        throw new Error(`Failed to fetch coin data: ${response.status}`);
       }
       
       const data = await response.json();
       
-      // Calculate a base price that's much smaller (typical for meme coins)
-      // We'll use the real trend data from Solana, but scale it to meme coin levels
-      const solPrice = data.market_data.current_price.usd;
-      const bosleyPrice = solPrice * 0.0000019; // Scaling factor to get a small price
+      // Calculate a base price typical for meme coins
+      const basePrice = data.market_data.current_price.usd * PRICE_SCALING_FACTOR;
       
-      // Apply the same percentage changes from the real data
+      // Use actual percentage changes but apply them to our meme coin price
+      const priceChange24h = data.market_data.price_change_percentage_24h || 12.4;
+      const priceChange7d = data.market_data.price_change_percentage_7d || 18.2;
+      const priceChange30d = data.market_data.price_change_percentage_30d || 42.7;
+      
+      // Calculate high/low based on the actual percentage changes
+      const high24h = basePrice * (1 + Math.abs(priceChange24h / 100) * 1.2);
+      const low24h = basePrice * (1 - Math.abs(priceChange24h / 100) * 0.8);
+      
+      // Total supply is fixed at 10 billion (typical for meme coins)
+      const totalSupply = 10000000000;
+      
+      // Circulating supply is 51% of total (also typical)
+      const circulatingSupply = 5100000000;
+      
+      // Market cap is price * circulating supply
+      const marketCap = basePrice * circulatingSupply;
+      
+      // Daily volume is typically 10-30% of market cap for active meme coins
+      const volume24h = marketCap * (0.15 + (Math.random() * 0.15));
+      
       return {
-        price: bosleyPrice,
-        priceChange24h: data.market_data.price_change_percentage_24h || 12.4,
-        priceChange7d: data.market_data.price_change_percentage_7d || 18.2,
-        priceChange30d: data.market_data.price_change_percentage_30d || 42.7,
-        marketCap: bosleyPrice * 10000000000, // 10B supply
-        volume24h: bosleyPrice * 10000000000 * 0.15, // Typical volume is ~15% of market cap
-        circulatingSupply: 5100000000,
-        totalSupply: 10000000000,
-        high24h: bosleyPrice * (1 + (data.market_data.price_change_percentage_24h / 100) * 1.2),
-        low24h: bosleyPrice * (1 - (data.market_data.price_change_percentage_24h / 100) * 0.8),
+        price: basePrice,
+        priceChange24h,
+        priceChange7d,
+        priceChange30d,
+        marketCap,
+        volume24h,
+        circulatingSupply,
+        totalSupply,
+        high24h,
+        low24h,
       };
     } catch (error) {
       console.error("Error fetching coin data:", error);
       
-      // Return fallback data if API fails
+      // Return realistic fallback data for a meme coin
       return {
-        price: 0.000323,
+        price: 0.0000032,
         priceChange24h: 12.4,
         priceChange7d: 18.2,
         priceChange30d: 42.7,
-        marketCap: 3230000,
-        volume24h: 484500,
+        marketCap: 16320000,
+        volume24h: 2448000,
         circulatingSupply: 5100000000,
         totalSupply: 10000000000,
-        high24h: 0.000341,
-        low24h: 0.000298,
+        high24h: 0.0000034,
+        low24h: 0.0000029,
       };
     }
   };
@@ -78,48 +99,62 @@ export function useCoinData() {
   const fetchChartData = async (): Promise<ChartData[]> => {
     try {
       const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/${REFERENCE_COIN_ID}/market_chart?vs_currency=usd&days=14&interval=daily`
+        `https://api.coingecko.com/api/v3/coins/${REFERENCE_COIN_ID}/market_chart?vs_currency=usd&days=14&interval=daily`,
+        { cache: "no-store" }
       );
       
       if (!response.ok) {
-        throw new Error("Failed to fetch chart data");
+        throw new Error(`Failed to fetch chart data: ${response.status}`);
       }
       
       const data = await response.json();
       
-      // Scale the real price data to meme coin level
-      const scaleFactor = 0.0000019;
+      if (!data.prices || !Array.isArray(data.prices) || data.prices.length === 0) {
+        throw new Error('Invalid price data structure received');
+      }
       
-      // Format the data for Recharts, applying our scaling
+      // Format the data for Recharts, applying our meme coin scaling
       return data.prices.map((item: [number, number], index: number) => {
-        const date = new Date(item[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const price = item[1] * scaleFactor; // Scale the real price data
-        // Use volume data if available or generate mock volume
-        const volume = data.total_volumes && data.total_volumes[index] 
-          ? data.total_volumes[index][1] * scaleFactor * 10000 
-          : price * (5000 + Math.random() * 15000);
+        const timestamp = item[0];
+        const date = new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        // Scale the price to meme coin levels
+        const price = item[1] * PRICE_SCALING_FACTOR;
+        
+        // Use actual volume data if available, or generate realistic volume
+        let volume = price * (5000000 + Math.random() * 15000000);
+        if (data.total_volumes && Array.isArray(data.total_volumes) && data.total_volumes[index]) {
+          volume = data.total_volumes[index][1] * PRICE_SCALING_FACTOR * 5000;
+        }
         
         return { date, price, volume };
       });
     } catch (error) {
       console.error("Error fetching chart data:", error);
       
-      // Return fallback data if API fails
+      // Return realistic fallback data for a meme coin chart
       const today = new Date();
+      const basePrice = 0.0000032;
+      
       return Array(14).fill(0).map((_, i) => {
         const date = new Date(today);
         date.setDate(date.getDate() - (13 - i));
         const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         
-        // Generate a somewhat realistic price movement
-        const basePrice = 0.000323;
-        const variance = (Math.sin(i / 2) + Math.random() - 0.5) * 0.00002;
-        const price = basePrice + variance * (i + 1);
+        // Generate a somewhat realistic price movement with upward trend
+        const trendFactor = Math.sin(i / 2) + (i / 14) * 0.8;
+        const randomFactor = (Math.random() - 0.3) * 0.2;
+        const price = basePrice * (0.85 + trendFactor * 0.15 + randomFactor);
+        
+        // Volume typically correlates somewhat with price changes
+        const priceChangeRatio = i > 0 ? price / basePrice : 1;
+        const volumeFactor = 1 + Math.abs(priceChangeRatio - 1) * 5;
+        const volume = basePrice * 5000000 * volumeFactor;
         
         return {
           date: dateStr,
           price,
-          volume: price * (8000 + Math.random() * 12000)
+          volume
         };
       });
     }
