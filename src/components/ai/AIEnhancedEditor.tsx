@@ -1,11 +1,11 @@
+
 import { useState } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { PremiumFeatureNotice } from './components/PremiumFeatureNotice';
 import { AIActionButtons } from './components/AIActionButtons';
 import { useAIOperations } from './hooks/useAIOperations';
+import { PremiumFeatureNotice } from './components/PremiumFeatureNotice';
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface AIEnhancedEditorProps {
   value: string;
@@ -22,28 +22,7 @@ export const AIEnhancedEditor = ({
 }: AIEnhancedEditorProps) => {
   const session = useSession();
   const [targetLanguage] = useState('es');
-
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*, tier:subscription_tiers(*)')
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (error) {
-        console.error('Error fetching subscription:', error);
-        return null;
-      }
-
-      return data;
-    },
-    enabled: !!session?.user?.id
-  });
+  const { subscribed, features } = useSubscription();
 
   const {
     isLoading,
@@ -57,10 +36,10 @@ export const AIEnhancedEditor = ({
     onChange,
     onImageGenerate,
     onAudioGenerate,
-    subscription
+    hasSubscription: subscribed
   });
 
-  if (!subscription) {
+  if (!subscribed || !features.canUseAI) {
     return <PremiumFeatureNotice />;
   }
 

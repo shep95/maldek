@@ -1,12 +1,12 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { PricingSectionDemo } from "@/components/ui/pricing-demo";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { format } from "date-fns";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Check } from "lucide-react";
 
 const Subscription = () => {
   const session = useSession();
@@ -16,6 +16,7 @@ const Subscription = () => {
     subscription_end, 
     isLoading, 
     error, 
+    features,
     checkSubscription,
     openCustomerPortal
   } = useSubscription();
@@ -25,12 +26,12 @@ const Subscription = () => {
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (success) {
       // Refresh subscription status when returning from successful checkout
       checkSubscription();
     }
-  }, [success]);
+  }, [success, checkSubscription]);
   
   return (
     <div className="container py-8 space-y-8 animate-fade-in">
@@ -62,7 +63,7 @@ const Subscription = () => {
             Subscription Successful
           </h2>
           <p>
-            Thank you for your subscription! Your account has been upgraded.
+            Thank you for your subscription! Your account has been upgraded and premium features are now available.
           </p>
         </Card>
       )}
@@ -91,6 +92,46 @@ const Subscription = () => {
               <> Your subscription renews on {format(new Date(subscription_end), 'MMMM d, yyyy')}.</>
             )}
           </p>
+          <div className="mb-4">
+            <h3 className="text-lg font-medium mb-2">Your Active Features</h3>
+            <ul className="space-y-2">
+              {features.canUseAI && (
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> AI Chat & Content Tools
+                </li>
+              )}
+              {features.canUploadGifs && (
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> GIF Upload Support
+                </li>
+              )}
+              {features.canUseAnimatedAvatar && (
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Animated Avatar Support
+                </li>
+              )}
+              {features.canUseNFTAvatar && (
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> NFT Avatar Support
+                </li>
+              )}
+              {features.hasWatermarkFree && (
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Watermark-Free Media
+                </li>
+              )}
+              {features.hasPrivacyFeatures && (
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Private Posts & Privacy Features
+                </li>
+              )}
+              {features.hasPrioritySupport && (
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Priority Customer Support
+                </li>
+              )}
+            </ul>
+          </div>
           <Button 
             variant="outline" 
             onClick={openCustomerPortal}

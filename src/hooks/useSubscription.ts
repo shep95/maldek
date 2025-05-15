@@ -12,6 +12,20 @@ export type SubscriptionData = {
   error: string | null;
 };
 
+export type SubscriptionFeatures = {
+  canUseAI: boolean;
+  canUploadGifs: boolean;
+  canUseAnimatedAvatar: boolean;
+  canUseNFTAvatar: boolean;
+  hasWatermarkFree: boolean;
+  hasSecurityFolder: boolean;
+  canStartSpaces: boolean;
+  hasPrioritySupport: boolean;
+  hasScheduledPosts: boolean;
+  hasExtendedHistory: boolean;
+  hasPrivacyFeatures: boolean;
+};
+
 export function useSubscription() {
   const session = useSession();
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData>({
@@ -21,6 +35,21 @@ export function useSubscription() {
     isLoading: true,
     error: null,
   });
+
+  // Calculate available features based on subscription tier
+  const subscriptionFeatures: SubscriptionFeatures = {
+    canUseAI: subscriptionData.subscribed,
+    canUploadGifs: subscriptionData.subscribed,
+    canUseAnimatedAvatar: subscriptionData.subscribed,
+    canUseNFTAvatar: subscriptionData.subscribed,
+    hasWatermarkFree: subscriptionData.subscribed,
+    hasSecurityFolder: subscriptionData.subscribed,
+    canStartSpaces: subscriptionData.subscribed,
+    hasPrioritySupport: subscriptionData.subscribed,
+    hasScheduledPosts: subscriptionData.subscription_tier === 'Creator' || subscriptionData.subscription_tier === 'Pro',
+    hasExtendedHistory: subscriptionData.subscription_tier === 'Creator' || subscriptionData.subscription_tier === 'Pro',
+    hasPrivacyFeatures: subscriptionData.subscription_tier === 'Creator' || subscriptionData.subscription_tier === 'Pro',
+  };
 
   const checkSubscription = async () => {
     if (!session?.access_token) return;
@@ -131,6 +160,7 @@ export function useSubscription() {
 
   return {
     ...subscriptionData,
+    features: subscriptionFeatures,
     checkSubscription,
     createCheckoutSession,
     openCustomerPortal,

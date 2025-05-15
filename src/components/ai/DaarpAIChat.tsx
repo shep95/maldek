@@ -1,9 +1,8 @@
+
 import { useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { useSession } from "@supabase/auth-helpers-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Message } from "./types/messageTypes";
@@ -15,40 +14,20 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useChatState } from "./hooks/useChatState";
 import { handleImageUpload } from "./utils/imageUploadUtils";
 import { isImageGenerationRequest } from "./utils/imageGenerationUtils";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export const DaarpAIChat = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const session = useSession();
   const isMobile = useIsMobile();
   const { messages, setMessages, isLoading, setIsLoading } = useChatState();
-
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*, tier:subscription_tiers(*)')
-        .eq('user_id', session.user.id)
-        .eq('status', 'active')
-        .single();
-
-      if (error) {
-        console.error('Error fetching subscription:', error);
-        return null;
-      }
-
-      return data;
-    },
-    enabled: !!session?.user?.id
-  });
+  const { subscribed, features } = useSubscription();
 
   const handleSubmit = async (content: string, image: File | null) => {
     if ((!content && !image) || isLoading) return;
 
-    if (!subscription) {
-      toast.error("This feature is only available for premium users");
+    if (!subscribed || !features.canUseAI) {
+      toast.error("This feature is only available for subscribers");
       return;
     }
 
@@ -97,7 +76,7 @@ export const DaarpAIChat = () => {
     }
   };
 
-  if (!subscription) {
+  if (!subscribed) {
     return <PremiumFeatureNotice />;
   }
 

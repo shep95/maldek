@@ -1,107 +1,106 @@
 
-"use client"
-
-import { Sparkles, Zap, ArrowDownToDot } from "lucide-react"
 import { PricingSection } from "@/components/ui/pricing-section"
+import { BadgeCheck, Sparkles } from "lucide-react"
 
-const defaultTiers = [
-  {
-    name: "Creator",
-    price: {
-      monthly: 3.50,
-      yearly: 35,
-    },
-    description: "Perfect for individuals and small projects",
-    icon: (
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-500/30 to-gray-500/30 blur-2xl rounded-full" />
-        <Zap className="w-7 h-7 relative z-10 text-gray-500 dark:text-gray-400 animate-[float_3s_ease-in-out_infinite]" />
-      </div>
-    ),
-    features: [
-      {
-        name: "Verified Badge",
-        description: "Instant verification with Premium",
-        included: true,
-      },
-      {
-        name: "Bosley Spaces Priority",
-        description: "Get priority access to Spaces features",
-        included: true,
-      },
-      {
-        name: "Reply Boost",
-        description: "Increase visibility of your replies",
-        included: true,
-      },
-      {
-        name: "Faster Media Downloads",
-        description: "Experience quicker download speeds",
-        included: true,
-      },
-      {
-        name: "Faster Uploads",
-        description: "Enjoy enhanced upload speeds",
-        included: true,
-      },
-      {
-        name: "Hosting Spaces",
-        description: "Create and host your own Spaces",
-        included: true,
-      },
-    ],
-  },
-  {
-    name: "Pro",
-    price: {
-      monthly: 28.00, // Fixed to show $28.00/year in the UI
-      yearly: 28.00,
-    },
-    description: "Ideal for growing teams and businesses",
-    highlight: true,
-    badge: "Most Popular",
-    icon: (
-      <div className="relative">
-        <ArrowDownToDot className="w-7 h-7 relative z-10" />
-      </div>
-    ),
-    features: [
-      {
-        name: "Verified Badge",
-        description: "Instant verification with Premium",
-        included: true,
-      },
-      {
-        name: "Bosley Spaces Priority",
-        description: "Get priority access to Spaces features",
-        included: true,
-      },
-      {
-        name: "Reply Boost",
-        description: "Increase visibility of your replies",
-        included: true,
-      },
-      {
-        name: "Faster Media Downloads",
-        description: "Experience quicker download speeds",
-        included: true,
-      },
-      {
-        name: "Faster Uploads",
-        description: "Enjoy enhanced upload speeds",
-        included: true,
-      },
-      {
-        name: "Hosting Spaces",
-        description: "Create and host your own Spaces",
-        included: true,
-      },
-    ],
-  },
-]
-
-function PricingSectionDemo() {
-  return <PricingSection tiers={defaultTiers} />
+export function PricingSectionDemo() {
+  return (
+    <PricingSection
+      tiers={[
+        {
+          name: "Creator",
+          price: {
+            monthly: 3.5,
+            yearly: 36.0
+          },
+          description: "Perfect for individuals and small projects",
+          highlight: true,
+          badge: "Popular",
+          icon: <BadgeCheck className="w-5 h-5" />,
+          features: [
+            {
+              name: "All Free Features",
+              description: "Access to all standard platform functionality",
+              included: true,
+            },
+            {
+              name: "AI Chat & Tools",
+              description: "Access the AI assistant and content enhancement tools",
+              included: true,
+            },
+            {
+              name: "GIF Upload Support",
+              description: "Upload and share GIFs on your posts and comments",
+              included: true,
+            },
+            {
+              name: "Animated Avatar Support",
+              description: "Use animated avatars on your profile",
+              included: true,
+            },
+            {
+              name: "Media Without Watermark",
+              description: "All your uploaded media is watermark-free",
+              included: true,
+            },
+            {
+              name: "Private Posts & Privacy Features",
+              description: "Enhanced privacy controls for your content",
+              included: true,
+            },
+            {
+              name: "Priority Support",
+              description: "Get help faster when you need it",
+              included: true,
+            },
+          ],
+        },
+        {
+          name: "Pro",
+          price: {
+            monthly: 28,
+            yearly: 280
+          },
+          description: "For serious content creators and growing businesses",
+          icon: <Sparkles className="w-5 h-5" />,
+          features: [
+            {
+              name: "Everything in Creator",
+              description: "All features from the Creator plan",
+              included: true,
+            },
+            {
+              name: "NFT Avatar Support",
+              description: "Use your NFTs as profile pictures",
+              included: true,
+            },
+            {
+              name: "Start and Host Spaces",
+              description: "Create and manage your own audio spaces",
+              included: true,
+            },
+            {
+              name: "Advanced Analytics",
+              description: "Detailed insights and performance metrics",
+              included: true,
+            },
+            {
+              name: "More Storage",
+              description: "Double the media storage capacity",
+              included: true,
+            },
+            {
+              name: "Larger File Uploads",
+              description: "Upload larger files and longer videos",
+              included: true,
+            },
+            {
+              name: "Free Safety Folder",
+              description: "Extra security for your private content",
+              included: true,
+            },
+          ],
+        },
+      ]}
+    />
+  )
 }
-
-export { PricingSectionDemo }

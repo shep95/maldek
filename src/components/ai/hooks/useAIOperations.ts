@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useAIServices } from '@/hooks/useAIServices';
 import { toast } from 'sonner';
@@ -7,7 +8,7 @@ interface UseAIOperationsProps {
   onChange: (value: string) => void;
   onImageGenerate?: (imageUrl: string) => void;
   onAudioGenerate?: (audioUrl: string) => void;
-  subscription: any | null;
+  hasSubscription: boolean;
 }
 
 export const useAIOperations = ({
@@ -15,7 +16,7 @@ export const useAIOperations = ({
   onChange,
   onImageGenerate,
   onAudioGenerate,
-  subscription
+  hasSubscription
 }: UseAIOperationsProps) => {
   const { 
     isLoading,
@@ -27,12 +28,12 @@ export const useAIOperations = ({
   } = useAIServices();
 
   const checkSubscription = useCallback(() => {
-    if (!subscription) {
-      toast.error("This feature is only available for premium users");
+    if (!hasSubscription) {
+      toast.error("This feature is only available for subscribers");
       return false;
     }
     return true;
-  }, [subscription]);
+  }, [hasSubscription]);
 
   const handleEnhance = useCallback(async () => {
     if (!checkSubscription()) return;
