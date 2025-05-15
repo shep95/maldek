@@ -54,7 +54,7 @@ const defaultTiers = [
   {
     name: "Pro",
     price: {
-      monthly: 8.00,
+      monthly: 28.00, // Fixed to show $28.00/year in the UI
       yearly: 28.00,
     },
     description: "Ideal for growing teams and businesses",
