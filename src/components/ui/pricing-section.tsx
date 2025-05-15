@@ -4,7 +4,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRightIcon, CheckIcon } from "lucide-react"
+import { ArrowRightIcon, CheckIcon } from "@radix-ui/react-icons"
 import { cn } from "@/lib/utils"
 
 interface Feature {
@@ -76,13 +76,13 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
             Simple, transparent pricing
           </h2>
           <div className="inline-flex items-center p-1.5 bg-white dark:bg-zinc-800/50 rounded-full border border-zinc-200 dark:border-zinc-700 shadow-sm">
-            {["Monthly", "Yearly"].map((period) => (
+            {["Subscriptions", "Investors"].map((period) => (
               <button
                 key={period}
-                onClick={() => setIsYearly(period === "Yearly")}
+                onClick={() => setIsYearly(period === "Investors")}
                 className={cn(
                   "px-8 py-2.5 text-sm font-medium rounded-full transition-all duration-300",
-                  (period === "Yearly") === isYearly
+                  (period === "Investors") === isYearly
                     ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-lg"
                     : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100",
                 )}

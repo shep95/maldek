@@ -6,10 +6,10 @@ import { PricingSection } from "@/components/ui/pricing-section"
 
 const defaultTiers = [
   {
-    name: "Starter",
+    name: "Creator",
     price: {
-      monthly: 15,
-      yearly: 144,
+      monthly: 3.50,
+      yearly: 35,
     },
     description: "Perfect for individuals and small projects",
     icon: (
@@ -44,8 +44,8 @@ const defaultTiers = [
   {
     name: "Pro",
     price: {
-      monthly: 49,
-      yearly: 470,
+      monthly: 28.00,
+      yearly: 280,
     },
     description: "Ideal for growing teams and businesses",
     highlight: true,
