@@ -32,25 +32,30 @@ const defaultTiers = [
       {
         name: "Reply Boost",
         description: "Increase visibility of your replies",
-        included: false,
+        included: true,
       },
       {
         name: "Faster Media Downloads",
         description: "Experience quicker download speeds",
-        included: false,
+        included: true,
       },
       {
         name: "Faster Uploads",
         description: "Enjoy enhanced upload speeds",
-        included: false,
+        included: true,
+      },
+      {
+        name: "Hosting Spaces",
+        description: "Create and host your own Spaces",
+        included: true,
       },
     ],
   },
   {
     name: "Pro",
     price: {
-      monthly: 28.00,
-      yearly: 280,
+      monthly: 8.00,
+      yearly: 28.00,
     },
     description: "Ideal for growing teams and businesses",
     highlight: true,
@@ -84,6 +89,11 @@ const defaultTiers = [
       {
         name: "Faster Uploads",
         description: "Enjoy enhanced upload speeds",
+        included: true,
+      },
+      {
+        name: "Hosting Spaces",
+        description: "Create and host your own Spaces",
         included: true,
       },
     ],
