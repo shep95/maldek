@@ -17,6 +17,7 @@ import TermsOfService from "@/pages/TermsOfService";
 import Features from "@/pages/Features";
 import HashtagPage from "@/pages/HashtagPage";
 import Messages from "@/pages/Messages";
+import Subscription from "@/pages/Subscription";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -61,6 +62,7 @@ export const AppRoutes = () => {
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/subscription" element={<Subscription />} />
         <Route path="/privacy" element={<Navigate to="/profiles?tab=privacy" replace />} />
       </Route>
       

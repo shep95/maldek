@@ -1,4 +1,5 @@
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare } from "lucide-react"
+
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -105,6 +106,14 @@ export const NavItems = ({
       label: "Analytics",
       path: "/analytics",
       active: location.pathname === "/analytics"
+    },
+    {
+      icon: WalletCards,
+      label: "Subscription",
+      path: "/subscription",
+      active: location.pathname === "/subscription",
+      description: "Manage your subscription",
+      className: "text-accent hover:bg-accent/10"
     },
     {
       icon: Lock,
