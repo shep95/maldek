@@ -43,6 +43,15 @@ const BosleyCoin = () => {
     }
   };
 
+  // Format small price values (typical for meme coins)
+  const formatSmallPrice = (value: number) => {
+    if (value < 0.00001) {
+      return `$${value.toExponential(4)}`;
+    } else {
+      return `$${value.toFixed(8)}`;
+    }
+  };
+
   // Format large numbers with commas
   const formatNumber = (value: number) => {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -81,7 +90,7 @@ const BosleyCoin = () => {
           ) : (
             <>
               <span className="text-xl font-mono font-semibold text-accent">
-                ${coinData?.price.toFixed(6)}
+                {coinData ? formatSmallPrice(coinData.price) : "$0.000000"}
               </span>
               <span className={`px-2 py-1 text-sm font-medium ${coinData && coinData.priceChange24h >= 0 ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'} rounded-md flex items-center`}>
                 <TrendingUp className="w-4 h-4 mr-1" /> 
@@ -178,9 +187,9 @@ const BosleyCoin = () => {
                     <XAxis dataKey="date" />
                     <YAxis 
                       domain={['auto', 'auto']} 
-                      tickFormatter={(value) => `$${value.toFixed(5)}`} 
+                      tickFormatter={(value) => `$${value < 0.0001 ? value.toExponential(2) : value.toFixed(6)}`} 
                     />
-                    <Tooltip content={<ChartTooltipContent />} />
+                    <Tooltip content={<CustomTooltip />} />
                     <Line 
                       type="monotone" 
                       dataKey="price" 
@@ -241,13 +250,13 @@ const BosleyCoin = () => {
                   <div className="flex justify-between border-b pb-2">
                     <span className="text-muted-foreground">24h High</span>
                     <span className="font-medium text-green-500">
-                      ${coinData?.high24h.toFixed(6)}
+                      {coinData ? formatSmallPrice(coinData.high24h) : "--"}
                     </span>
                   </div>
                   <div className="flex justify-between border-b pb-2">
                     <span className="text-muted-foreground">24h Low</span>
                     <span className="font-medium text-red-500">
-                      ${coinData?.low24h.toFixed(6)}
+                      {coinData ? formatSmallPrice(coinData.low24h) : "--"}
                     </span>
                   </div>
                   <div className="flex justify-between border-b pb-2">
@@ -391,6 +400,26 @@ const BosleyCoin = () => {
       </Tabs>
     </div>
   );
+};
+
+// Custom tooltip for the chart to handle small values
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const price = payload[0].value;
+    const formattedPrice = price < 0.00001 ? price.toExponential(6) : price.toFixed(8);
+    
+    return (
+      <div className="bg-background border border-border/50 p-2 rounded-md shadow-md">
+        <p className="text-sm">{`Date: ${payload[0].payload.date}`}</p>
+        <p className="text-sm font-medium text-accent">{`Price: $${formattedPrice}`}</p>
+        {payload[1] && (
+          <p className="text-sm">{`Volume: $${payload[1].value.toLocaleString()}`}</p>
+        )}
+      </div>
+    );
+  }
+  
+  return null;
 };
 
 export default BosleyCoin;
