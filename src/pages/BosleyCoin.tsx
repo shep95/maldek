@@ -29,9 +29,7 @@ const BosleyCoin = () => {
 
   const handleRefresh = () => {
     window.location.reload();
-    toast({
-      description: "Refreshing data, fetching the latest coin information",
-    });
+    toast("Refreshing data, fetching the latest coin information");
   };
 
   // Format number to display as currency
