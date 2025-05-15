@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,8 +30,7 @@ const BosleyCoin = () => {
   const handleRefresh = () => {
     window.location.reload();
     toast({
-      title: "Refreshing data",
-      description: "Fetching the latest coin information",
+      description: "Refreshing data, fetching the latest coin information",
     });
   };
 
