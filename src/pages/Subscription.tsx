@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { format } from "date-fns";
-import { ArrowPathIcon } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 const Subscription = () => {
   const session = useSession();
@@ -45,7 +45,7 @@ const Subscription = () => {
               disabled={isLoading}
               className="flex items-center gap-2"
             >
-              <ArrowPathIcon className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
               Refresh Status
             </Button>
           )}
