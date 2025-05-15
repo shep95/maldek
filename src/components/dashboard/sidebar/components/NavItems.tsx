@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -106,6 +106,14 @@ export const NavItems = ({
       label: "Analytics",
       path: "/analytics",
       active: location.pathname === "/analytics"
+    },
+    {
+      icon: Coins,
+      label: "Bosley Coin",
+      path: "/bosley-coin",
+      active: location.pathname === "/bosley-coin",
+      description: "Meme coin analytics",
+      className: "text-accent hover:bg-accent/10"
     },
     {
       icon: WalletCards,
