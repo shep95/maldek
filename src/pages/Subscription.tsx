@@ -1,6 +1,6 @@
 
 import React from "react";
-import { PricingDemo } from "@/components/ui/pricing-demo";
+import { PricingSectionDemo } from "@/components/ui/pricing-demo";
 import { Card } from "@/components/ui/card";
 import { useSession } from "@supabase/auth-helpers-react";
 
@@ -27,7 +27,7 @@ const Subscription = () => {
         </p>
       </Card>
       
-      <PricingDemo />
+      <PricingSectionDemo />
       
       <div className="mt-12 text-sm text-muted-foreground">
         <p className="mb-2">

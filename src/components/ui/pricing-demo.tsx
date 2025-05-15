@@ -1,66 +1,87 @@
 
-import { PricingCard } from "@/components/ui/dark-gradient-pricing"
+"use client"
 
-function PricingDemo() {
-  return (
-    <section className="relative overflow-hidden bg-background text-foreground">
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-20 md:px-8">
-        <div className="mb-12 space-y-3">
-          <h2 className="text-center text-3xl font-semibold leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight">
-            Pricing
-          </h2>
-          <p className="text-center text-base text-muted-foreground md:text-lg">
-            Use it for free for yourself, upgrade when your team needs advanced
-            control.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <PricingCard
-            tier="Free"
-            price="$0/mo"
-            bestFor="Best for 1-5 users"
-            CTA="Get started free"
-            benefits={[
-              { text: "One workspace", checked: true },
-              { text: "Email support", checked: true },
-              { text: "1 day data retention", checked: false },
-              { text: "Custom roles", checked: false },
-              { text: "Priority support", checked: false },
-              { text: "SSO", checked: false },
-            ]}
-          />
-          <PricingCard
-            tier="Pro"
-            price="$79/mo"
-            bestFor="Best for 5-50 users"
-            CTA="14-day free trial"
-            benefits={[
-              { text: "Five workspaces", checked: true },
-              { text: "Email support", checked: true },
-              { text: "7 day data retention", checked: true },
-              { text: "Custom roles", checked: true },
-              { text: "Priority support", checked: false },
-              { text: "SSO", checked: false },
-            ]}
-          />
-          <PricingCard
-            tier="Enterprise"
-            price="Contact us"
-            bestFor="Best for 50+ users"
-            CTA="Contact us"
-            benefits={[
-              { text: "Unlimited workspaces", checked: true },
-              { text: "Email support", checked: true },
-              { text: "30 day data retention", checked: true },
-              { text: "Custom roles", checked: true },
-              { text: "Priority support", checked: true },
-              { text: "SSO", checked: true },
-            ]}
-          />
-        </div>
+import { Sparkles, Zap, ArrowDownToDot } from "lucide-react"
+import { PricingSection } from "@/components/ui/pricing-section"
+
+const defaultTiers = [
+  {
+    name: "Starter",
+    price: {
+      monthly: 15,
+      yearly: 144,
+    },
+    description: "Perfect for individuals and small projects",
+    icon: (
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-500/30 to-gray-500/30 blur-2xl rounded-full" />
+        <Zap className="w-7 h-7 relative z-10 text-gray-500 dark:text-gray-400 animate-[float_3s_ease-in-out_infinite]" />
       </div>
-    </section>
-  )
+    ),
+    features: [
+      {
+        name: "Basic Analytics",
+        description: "Track essential metrics and user behavior",
+        included: true,
+      },
+      {
+        name: "5 Team Members",
+        description: "Collaborate with a small team",
+        included: true,
+      },
+      {
+        name: "Basic Support",
+        description: "Email support with 24h response time",
+        included: true,
+      },
+      {
+        name: "API Access",
+        description: "Limited API access for basic integrations",
+        included: false,
+      },
+    ],
+  },
+  {
+    name: "Pro",
+    price: {
+      monthly: 49,
+      yearly: 470,
+    },
+    description: "Ideal for growing teams and businesses",
+    highlight: true,
+    badge: "Most Popular",
+    icon: (
+      <div className="relative">
+        <ArrowDownToDot className="w-7 h-7 relative z-10" />
+      </div>
+    ),
+    features: [
+      {
+        name: "Advanced Analytics",
+        description: "Deep insights and custom reports",
+        included: true,
+      },
+      {
+        name: "Unlimited Team Members",
+        description: "Scale your team without limits",
+        included: true,
+      },
+      {
+        name: "Priority Support",
+        description: "24/7 priority email and chat support",
+        included: true,
+      },
+      {
+        name: "Full API Access",
+        description: "Complete API access with higher rate limits",
+        included: true,
+      },
+    ],
+  },
+]
+
+function PricingSectionDemo() {
+  return <PricingSection tiers={defaultTiers} />
 }
 
-export { PricingDemo }
+export { PricingSectionDemo }
