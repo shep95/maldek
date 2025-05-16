@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,11 +30,10 @@ const BosleyCoin = () => {
   const handleRefresh = useCallback(() => {
     window.location.reload();
     toast({
-      title: "Refreshing Data",
-      description: "Fetching the latest coin information from CoinGecko API"
+      description: "Fetching the latest Bosley Coin information"
     });
   }, [toast]);
-
+  
   // Format number to display as currency
   const formatCurrency = useCallback((value: number) => {
     if (value >= 1000000000) {
