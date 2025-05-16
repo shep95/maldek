@@ -210,12 +210,12 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
 
                   <div className="mb-6">
                     <div className="flex items-baseline gap-2">
-                      {/* Updated to show fixed price of $28.00 */}
+                      {/* Updated to use the getDisplayPrice helper function */}
                       <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-100">
-                        $28.00
+                        ${getDisplayPrice(tier, isYearly).price}
                       </span>
                       <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                        /month
+                        /{getDisplayPrice(tier, isYearly).period}
                       </span>
                     </div>
                     <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
