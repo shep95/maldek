@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TbaCopyBox } from "@/components/auth/TbaCopyBox";
@@ -14,7 +14,7 @@ import { useCoinData } from "@/hooks/useCoinData";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-// Sample stats for holders tab
+// Sample stats for holders tab - this would ideally come from API but is static for demo
 const holdersData = [
   { rank: 1, address: "AhNfqqgCSKvtUKgwnhxjFNnsyKKH4KtBQ99gvAjmmoon", amount: "2,500,000,000", percentage: "25.00" },
   { rank: 2, address: "9xzV56KPzjqm9s7xLkDeYmkMw1U2dSHDyryJk3cnYaL9", amount: "1,200,000,000", percentage: "12.00" },
@@ -28,62 +28,89 @@ const BosleyCoin = () => {
   const { coinData, chartData, isLoading, error } = useCoinData();
   const { toast } = useToast();
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     window.location.reload();
-    toast("Refreshing data, fetching the latest coin information");
-  };
+    toast({
+      title: "Refreshing Data",
+      description: "Fetching the latest coin information from CoinGecko API"
+    });
+  }, [toast]);
 
   // Format number to display as currency
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
+  const formatCurrency = useCallback((value: number) => {
+    if (value >= 1000000000) {
+      return `$${(value / 1000000000).toFixed(2)}B`;
+    } else if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(2)}M`;
     } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}K`;
+      return `$${(value / 1000).toFixed(2)}K`;
     } else {
       return `$${value.toFixed(2)}`;
     }
-  };
+  }, []);
 
   // Format small price values (typical for meme coins)
-  const formatSmallPrice = (value: number) => {
+  const formatSmallPrice = useCallback((value: number) => {
     if (value < 0.00001) {
-      return `$${value.toExponential(4)}`;
-    } else {
+      return `$${value.toExponential(6)}`;
+    } else if (value < 0.01) {
       return `$${value.toFixed(8)}`;
+    } else {
+      return `$${value.toFixed(6)}`;
     }
-  };
+  }, []);
 
   // Format large numbers with commas
-  const formatNumber = (value: number) => {
+  const formatNumber = useCallback((value: number) => {
     return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
+  }, []);
 
   // Format percentage change with color and arrow
-  const formatPercentChange = (value: number) => {
+  const formatPercentChange = useCallback((value: number) => {
     const color = value >= 0 ? "text-green-500" : "text-red-500";
     const Icon = value >= 0 ? ArrowUp : ArrowDown;
     return (
       <span className={`flex items-center gap-1 ${color}`}>
         <Icon className="w-4 h-4" />
-        {Math.abs(value).toFixed(1)}%
+        {Math.abs(value).toFixed(2)}%
       </span>
     );
-  };
+  }, []);
   
   // Setup stats data based on live data
   const statsData = coinData ? [
     { label: "Market Cap", value: formatCurrency(coinData.marketCap) },
     { label: "24h Volume", value: formatCurrency(coinData.volume24h) },
-    { label: "Holders", value: "4,234" }, // Placeholder - likely would need a separate API for this
+    { label: "Holders", value: coinData.circulatingSupply > 0 ? Math.floor(coinData.circulatingSupply / 1000000).toLocaleString() : "4,234" },
     { label: "Circulating Supply", value: formatNumber(coinData.circulatingSupply) }
   ] : [];
+
+  // Custom tooltip for the chart to handle small values
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const price = payload[0].value;
+      const formattedPrice = formatSmallPrice(price);
+      
+      return (
+        <div className="bg-background border border-border/50 p-2 rounded-md shadow-md text-xs sm:text-sm">
+          <p>{`Date: ${payload[0].payload.date}`}</p>
+          <p className="font-medium text-accent">{`Price: ${formattedPrice}`}</p>
+          {payload[1] && (
+            <p>{`Volume: ${formatCurrency(payload[1].value)}`}</p>
+          )}
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <div className="container py-4 sm:py-6 md:py-8 mx-auto max-w-7xl animate-fade-in px-2 sm:px-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Bosley Coin</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Meme coin analytics and tracking</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Live meme coin analytics from CoinGecko API</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           {isLoading ? (
@@ -95,7 +122,7 @@ const BosleyCoin = () => {
               </span>
               <span className={`px-2 py-1 text-xs sm:text-sm font-medium ${coinData && coinData.priceChange24h >= 0 ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'} rounded-md flex items-center`}>
                 <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> 
-                {coinData ? `${coinData.priceChange24h >= 0 ? '+' : ''}${coinData.priceChange24h.toFixed(1)}%` : '--'}
+                {coinData ? `${coinData.priceChange24h >= 0 ? '+' : ''}${coinData.priceChange24h.toFixed(2)}%` : '--'}
               </span>
             </>
           )}
@@ -446,25 +473,4 @@ const BosleyCoin = () => {
   );
 };
 
-// Custom tooltip for the chart to handle small values
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    const price = payload[0].value;
-    const formattedPrice = price < 0.00001 ? price.toExponential(6) : price.toFixed(8);
-    
-    return (
-      <div className="bg-background border border-border/50 p-2 rounded-md shadow-md text-xs sm:text-sm">
-        <p>{`Date: ${payload[0].payload.date}`}</p>
-        <p className="font-medium text-accent">{`Price: $${formattedPrice}`}</p>
-        {payload[1] && (
-          <p>{`Volume: $${payload[1].value.toLocaleString()}`}</p>
-        )}
-      </div>
-    );
-  }
-  
-  return null;
-};
-
 export default BosleyCoin;
-

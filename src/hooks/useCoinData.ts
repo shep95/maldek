@@ -20,67 +20,52 @@ interface ChartData {
   volume: number;
 }
 
-// We're using Solana as a reference for price trends, but customizing the data
-// to represent our fictional "Bosley Coin" meme coin with more realistic values
-const REFERENCE_COIN_ID = "solana";
-
-// Scaling factor to get a realistic meme coin price range (around $0.0000xx)
-const PRICE_SCALING_FACTOR = 0.00000190;
+// We're using an actual coin ID from CoinGecko API
+const COIN_ID = "bosley-coin";  // Using a fallback if this specific ID doesn't exist
+const FALLBACK_COIN_ID = "pepe"; // Using PEPE as fallback since it's a popular meme coin
 
 export function useCoinData() {
   const fetchCoinData = async (): Promise<CoinData> => {
     try {
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/${REFERENCE_COIN_ID}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`,
+      // First try to fetch Bosley Coin data (if it exists in CoinGecko)
+      let response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${COIN_ID}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`,
         { cache: "no-store" }
       );
       
+      // If not found, use the fallback coin
       if (!response.ok) {
-        throw new Error(`Failed to fetch coin data: ${response.status}`);
+        console.log(`Bosley Coin not found on CoinGecko, using ${FALLBACK_COIN_ID} data instead`);
+        response = await fetch(
+          `https://api.coingecko.com/api/v3/coins/${FALLBACK_COIN_ID}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`,
+          { cache: "no-store" }
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch coin data: ${response.status}`);
+        }
       }
       
       const data = await response.json();
       
-      // Calculate a base price typical for meme coins
-      const basePrice = data.market_data.current_price.usd * PRICE_SCALING_FACTOR;
-      
-      // Use actual percentage changes but apply them to our meme coin price
-      const priceChange24h = data.market_data.price_change_percentage_24h || 12.4;
-      const priceChange7d = data.market_data.price_change_percentage_7d || 18.2;
-      const priceChange30d = data.market_data.price_change_percentage_30d || 42.7;
-      
-      // Calculate high/low based on the actual percentage changes
-      const high24h = basePrice * (1 + Math.abs(priceChange24h / 100) * 1.2);
-      const low24h = basePrice * (1 - Math.abs(priceChange24h / 100) * 0.8);
-      
-      // Total supply is fixed at 10 billion (typical for meme coins)
-      const totalSupply = 10000000000;
-      
-      // Circulating supply is 51% of total (also typical)
-      const circulatingSupply = 5100000000;
-      
-      // Market cap is price * circulating supply
-      const marketCap = basePrice * circulatingSupply;
-      
-      // Daily volume is typically 10-30% of market cap for active meme coins
-      const volume24h = marketCap * (0.15 + (Math.random() * 0.15));
-      
+      // Use actual values directly from the API
       return {
-        price: basePrice,
-        priceChange24h,
-        priceChange7d,
-        priceChange30d,
-        marketCap,
-        volume24h,
-        circulatingSupply,
-        totalSupply,
-        high24h,
-        low24h,
+        price: data.market_data.current_price.usd,
+        priceChange24h: data.market_data.price_change_percentage_24h || 0,
+        priceChange7d: data.market_data.price_change_percentage_7d || 0,
+        priceChange30d: data.market_data.price_change_percentage_30d || 0,
+        marketCap: data.market_data.market_cap.usd,
+        volume24h: data.market_data.total_volume.usd,
+        circulatingSupply: data.market_data.circulating_supply,
+        totalSupply: data.market_data.total_supply || data.market_data.circulating_supply * 1.2,
+        high24h: data.market_data.high_24h.usd,
+        low24h: data.market_data.low_24h.usd,
       };
     } catch (error) {
       console.error("Error fetching coin data:", error);
       
       // Return realistic fallback data for a meme coin
+      // These values will only be used if the API request fails
       return {
         price: 0.0000032,
         priceChange24h: 12.4,
@@ -98,13 +83,22 @@ export function useCoinData() {
 
   const fetchChartData = async (): Promise<ChartData[]> => {
     try {
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/${REFERENCE_COIN_ID}/market_chart?vs_currency=usd&days=14&interval=daily`,
+      // First try to fetch Bosley Coin chart data
+      let response = await fetch(
+        `https://api.coingecko.com/api/v3/coins/${COIN_ID}/market_chart?vs_currency=usd&days=14&interval=daily`,
         { cache: "no-store" }
       );
       
+      // If not found, use the fallback coin
       if (!response.ok) {
-        throw new Error(`Failed to fetch chart data: ${response.status}`);
+        response = await fetch(
+          `https://api.coingecko.com/api/v3/coins/${FALLBACK_COIN_ID}/market_chart?vs_currency=usd&days=14&interval=daily`,
+          { cache: "no-store" }
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch chart data: ${response.status}`);
+        }
       }
       
       const data = await response.json();
@@ -113,18 +107,18 @@ export function useCoinData() {
         throw new Error('Invalid price data structure received');
       }
       
-      // Format the data for Recharts, applying our meme coin scaling
+      // Format the data for Recharts using actual values
       return data.prices.map((item: [number, number], index: number) => {
         const timestamp = item[0];
         const date = new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         
-        // Scale the price to meme coin levels
-        const price = item[1] * PRICE_SCALING_FACTOR;
+        // Use the actual price
+        const price = item[1];
         
-        // Use actual volume data if available, or generate realistic volume
-        let volume = price * (5000000 + Math.random() * 15000000);
+        // Use actual volume data if available
+        let volume = 0;
         if (data.total_volumes && Array.isArray(data.total_volumes) && data.total_volumes[index]) {
-          volume = data.total_volumes[index][1] * PRICE_SCALING_FACTOR * 5000;
+          volume = data.total_volumes[index][1];
         }
         
         return { date, price, volume };
@@ -162,14 +156,14 @@ export function useCoinData() {
 
   // Use React Query for data fetching with caching and refetching
   const { data: coinData, isLoading: isLoadingCoinData, error: coinError } = useQuery({
-    queryKey: ['coinData', REFERENCE_COIN_ID],
+    queryKey: ['coinData', COIN_ID, FALLBACK_COIN_ID],
     queryFn: fetchCoinData,
     refetchInterval: 60000, // Refetch every minute
     staleTime: 30000, // Consider data stale after 30 seconds
   });
 
   const { data: chartData, isLoading: isLoadingChartData, error: chartError } = useQuery({
-    queryKey: ['chartData', REFERENCE_COIN_ID],
+    queryKey: ['chartData', COIN_ID, FALLBACK_COIN_ID],
     queryFn: fetchChartData,
     refetchInterval: 300000, // Refetch every 5 minutes
     staleTime: 180000, // Consider data stale after 3 minutes
