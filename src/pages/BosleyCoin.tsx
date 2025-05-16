@@ -11,7 +11,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } f
 import { Coins, TrendingUp, Info, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
 import { useCoinData } from "@/hooks/useCoinData";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 // Sample stats for holders tab - this would ideally come from API but is static for demo
 const holdersData = [
@@ -25,14 +25,11 @@ const holdersData = [
 const BosleyCoin = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { coinData, chartData, isLoading, error } = useCoinData();
-  const { toast } = useToast();
 
   const handleRefresh = useCallback(() => {
     window.location.reload();
-    toast({
-      description: "Fetching the latest Bosley Coin information"
-    });
-  }, [toast]);
+    toast("Fetching the latest Bosley Coin information");
+  }, []);
   
   // Format number to display as currency
   const formatCurrency = useCallback((value: number) => {
