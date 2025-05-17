@@ -1,20 +1,11 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
-import { toast } from "sonner";
+import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const SupportSection = () => {
-  const supportEmail = "asher@bosley.app";
-  
-  const handleCopyEmail = () => {
-    navigator.clipboard.writeText(supportEmail);
-    toast.success("Email copied to clipboard");
-  };
-  
-  const handleEmailClick = () => {
-    window.location.href = `mailto:${supportEmail}`;
-  };
+  const navigate = useNavigate();
   
   return (
     <Card>
@@ -22,28 +13,18 @@ export const SupportSection = () => {
         <CardTitle>Support</CardTitle>
         <CardDescription>Get help with your account or report issues</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col space-y-2">
+      <CardContent>
+        <div className="flex flex-col space-y-4">
           <p className="text-sm text-muted-foreground">
-            If you need assistance, please contact our support team:
+            Visit our support page for assistance with your account or to report any issues you're experiencing.
           </p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={handleEmailClick}
-            >
-              <ExternalLink className="h-4 w-4" />
-              {supportEmail}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleCopyEmail}
-            >
-              Copy
-            </Button>
-          </div>
+          <Button 
+            className="w-full sm:w-auto flex items-center gap-2 justify-between"
+            onClick={() => navigate('/support')}
+          >
+            View Support Page
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -139,13 +139,24 @@ export const NavItems = ({
       className: "text-accent hover:bg-accent/10"
     },
     { 
+      icon: Mail, 
+      label: "Support",
+      path: "/support",
+      active: location.pathname === "/support",
+      description: "Get help with your account"
+    },
+    { 
       icon: Plus, 
       label: "Create Post",
       onClick: handleCreatePost,
       className: "border-none",
       useStarBorder: false
     },
-    { icon: Settings, label: "Settings", path: "/settings" },
+    { 
+      icon: Settings, 
+      label: "Settings", 
+      path: "/settings" 
+    },
     { 
       icon: LogOut, 
       label: "Logout", 

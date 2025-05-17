@@ -19,6 +19,7 @@ import HashtagPage from "@/pages/HashtagPage";
 import Messages from "@/pages/Messages";
 import Subscription from "@/pages/Subscription";
 import BosleyCoin from "@/pages/BosleyCoin";
+import Support from "@/pages/Support";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -65,6 +66,7 @@ export const AppRoutes = () => {
         <Route path="/messages" element={<Messages />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/bosley-coin" element={<BosleyCoin />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/privacy" element={<Navigate to="/profiles?tab=privacy" replace />} />
       </Route>
       

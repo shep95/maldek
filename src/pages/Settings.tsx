@@ -8,7 +8,7 @@ import { LanguageSection } from "@/components/settings/LanguageSection";
 import { ThemeToggle } from "@/components/settings/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Mail } from "lucide-react";
 import { SecurityCodeSection } from "@/components/settings/SecurityCodeSection";
 import { SupportSection } from "@/components/settings/SupportSection";
 import { useQuery } from "@tanstack/react-query";
@@ -54,15 +54,25 @@ const Settings = () => {
       <DangerSection />
       
       <div className="flex flex-col space-y-4 pt-4 border-t">
-        <h2 className="text-xl font-semibold">Legal</h2>
-        <Button 
-          variant="ghost" 
-          className="flex items-center justify-start gap-2 text-muted-foreground"
-          onClick={() => navigate('/terms')}
-        >
-          <ExternalLink className="h-4 w-4" />
-          Terms of Service
-        </Button>
+        <h2 className="text-xl font-semibold">Legal & Support</h2>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            variant="ghost" 
+            className="flex items-center justify-start gap-2 text-muted-foreground"
+            onClick={() => navigate('/terms')}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Terms of Service
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="flex items-center justify-start gap-2 text-muted-foreground"
+            onClick={() => navigate('/support')}
+          >
+            <Mail className="h-4 w-4" />
+            Support
+          </Button>
+        </div>
       </div>
     </div>
   );
