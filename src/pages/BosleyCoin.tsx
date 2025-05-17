@@ -30,6 +30,7 @@ const BosleyCoin = () => {
   const handleRefresh = useCallback(() => {
     window.location.reload();
     toast({
+      title: "Refreshing data",
       description: "Fetching the latest Bosley Coin information"
     });
   }, [toast]);
