@@ -74,6 +74,18 @@ const Settings = () => {
           </Button>
         </div>
       </div>
+      
+      <div className="flex justify-center pt-6 border-t text-sm text-muted-foreground">
+        <a 
+          href="https://zorakcorp.com/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="hover:text-accent transition-colors flex items-center gap-1"
+        >
+          <span>Managed By Zorak</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
     </div>
   );
 };
