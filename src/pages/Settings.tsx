@@ -14,10 +14,18 @@ import { SupportSection } from "@/components/settings/SupportSection";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
+import { useMemo } from "react";
 
 const Settings = () => {
   const navigate = useNavigate();
   const session = useSession();
+  
+  // Check if current date is after May 28th, 2025
+  const shouldShowZorakLink = useMemo(() => {
+    const releaseDate = new Date(2025, 4, 28); // May is month 4 (0-indexed)
+    const currentDate = new Date();
+    return currentDate >= releaseDate;
+  }, []);
 
   const { data: profile } = useQuery({
     queryKey: ['user-security-code', session?.user?.id],
@@ -75,17 +83,19 @@ const Settings = () => {
         </div>
       </div>
       
-      <div className="flex justify-center pt-6 border-t text-sm text-muted-foreground">
-        <a 
-          href="https://zorakcorp.com/" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="hover:text-accent transition-colors flex items-center gap-1"
-        >
-          <span>Managed By Zorak</span>
-          <ExternalLink className="h-3 w-3" />
-        </a>
-      </div>
+      {shouldShowZorakLink && (
+        <div className="flex justify-center pt-6 border-t text-sm text-muted-foreground">
+          <a 
+            href="https://zorakcorp.com/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hover:text-accent transition-colors flex items-center gap-1"
+          >
+            <span>Managed By Zorak</span>
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      )}
     </div>
   );
 };
