@@ -1,11 +1,13 @@
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Home, User, Bell, Menu, Upload } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetOverlay } from "@/components/ui/sheet";
 import { useState, useRef, TouchEvent } from "react";
 import { SidebarNav } from "./sidebar/SidebarNav";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface NavItem {
   icon: any;
@@ -29,6 +31,8 @@ export const MobileNav = () => {
     if (touchStartX.current === null) return;
     const touchEndX = e.changedTouches[0].clientX;
     const swipeDistance = touchEndX - touchStartX.current;
+    
+    // Open drawer on right swipe (left-to-right)
     if (swipeDistance > SWIPE_THRESHOLD) {
       setIsOpen(true);
     }
@@ -97,6 +101,7 @@ export const MobileNav = () => {
         </SheetContent>
       </Sheet>
 
+      {/* Swipe detection area covering the entire screen */}
       <div 
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
