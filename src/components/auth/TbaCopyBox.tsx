@@ -36,7 +36,7 @@ export const TbaCopyBox: React.FC = () => {
             text-lg font-bold text-accent group-hover:text-white
             w-full cursor-pointer
           " 
-          value="copy coin address to buy" 
+          value="Copy Coin Address To Buy" 
           readOnly 
           onClick={(e) => {
             e.preventDefault();
