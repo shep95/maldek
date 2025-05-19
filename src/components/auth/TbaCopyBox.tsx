@@ -31,13 +31,12 @@ export const TbaCopyBox: React.FC = () => {
       >
         <input 
           type="text" 
-          id="contract-address" 
           className="
             copy-input bg-transparent border-none outline-none 
             text-lg font-bold text-accent group-hover:text-white
             w-full cursor-pointer
           " 
-          value={TBA_TEXT} 
+          value="copy coin address to buy" 
           readOnly 
           onClick={(e) => {
             e.preventDefault();
