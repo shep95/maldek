@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
@@ -55,7 +56,7 @@ const Auth = () => {
         }
         
         console.log("Sign in successful");
-        toast.success("Successfully signed in!");
+        // Removed "Successfully signed in!" toast message here
         
         // Check if we need to initialize encryption
         // If there's no encrypted key in local storage, we'll show the security setup dialog
