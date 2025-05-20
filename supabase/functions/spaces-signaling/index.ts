@@ -10,6 +10,7 @@ interface WebSocketClient {
   socket: WebSocket
   spaceId: string
   userId: string
+  role: string
 }
 
 const clients = new Map<string, WebSocketClient>()
@@ -70,14 +71,15 @@ Deno.serve(async (req) => {
   const client: WebSocketClient = {
     socket,
     spaceId,
-    userId: user.id
+    userId: user.id,
+    role: participant.role
   }
 
   clients.set(user.id, client)
 
   // Handle WebSocket events
   socket.onopen = () => {
-    console.log(`Client connected: ${user.id} to space: ${spaceId}`)
+    console.log(`Client connected: ${user.id} to space: ${spaceId} with role: ${participant.role}`)
     broadcastToSpace(spaceId, {
       type: 'user-joined',
       userId: user.id,
@@ -85,13 +87,91 @@ Deno.serve(async (req) => {
     })
   }
 
-  socket.onmessage = (e) => {
+  socket.onmessage = async (e) => {
     try {
       const message = JSON.parse(e.data)
       message.from = user.id
+      message.role = participant.role
       
-      // Relay messages to other participants in the same space
-      broadcastToSpace(spaceId, message, user.id)
+      // Special handling for audio control messages
+      if (message.type === 'mute-user') {
+        // Check if the sender is host or co-host
+        if (participant.role === 'host' || participant.role === 'co_host') {
+          const targetClient = clients.get(message.targetUserId)
+          if (targetClient) {
+            targetClient.socket.send(JSON.stringify({
+              type: 'forced-mute',
+              from: user.id
+            }))
+          }
+        } else {
+          // Not authorized to mute others
+          socket.send(JSON.stringify({
+            type: 'error',
+            message: 'Not authorized to mute other users'
+          }))
+          return
+        }
+      }
+      
+      // Special handling for role change messages
+      if (message.type === 'change-role') {
+        // Only host can change roles
+        if (participant.role === 'host') {
+          // Update role in database
+          const { error } = await supabase
+            .from('space_participants')
+            .update({ role: message.newRole })
+            .eq('space_id', spaceId)
+            .eq('user_id', message.targetUserId)
+            
+          if (error) {
+            socket.send(JSON.stringify({
+              type: 'error',
+              message: 'Failed to update role in database'
+            }))
+            return
+          }
+          
+          // Update client role in memory
+          const targetClient = clients.get(message.targetUserId)
+          if (targetClient) {
+            targetClient.role = message.newRole
+            
+            // Notify the target user of role change
+            targetClient.socket.send(JSON.stringify({
+              type: 'role-changed',
+              newRole: message.newRole,
+              by: user.id
+            }))
+            
+            // Notify all users of the role change
+            broadcastToSpace(spaceId, {
+              type: 'user-role-changed',
+              userId: message.targetUserId,
+              newRole: message.newRole
+            })
+          }
+        } else {
+          // Not authorized to change roles
+          socket.send(JSON.stringify({
+            type: 'error',
+            message: 'Only the host can change user roles'
+          }))
+          return
+        }
+      }
+      
+      // Relay regular messages to other participants in the same space
+      if (['offer', 'answer', 'ice-candidate'].includes(message.type)) {
+        const targetClient = clients.get(message.to)
+        if (targetClient) {
+          targetClient.socket.send(JSON.stringify(message))
+        }
+      } else {
+        // Broadcast to all for other message types
+        broadcastToSpace(spaceId, message, user.id)
+      }
     } catch (err) {
       console.error('Error handling message:', err)
     }

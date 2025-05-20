@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Mic, MicOff, Users, Hand, X, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useGetStreamSpaces } from '@/hooks/spaces/useGetStreamSpaces';
+import { useSpaceRTC } from '@/hooks/useSpaceRTC';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from '@supabase/auth-helpers-react';
 import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
 
 interface TwitterSpaceUIProps {
   spaceId: string;
@@ -32,76 +33,132 @@ export const TwitterSpaceUI = ({
 }: TwitterSpaceUIProps) => {
   const session = useSession();
   const [activeTab, setActiveTab] = useState("people");
-  const [speakerRequests, setSpeakerRequests] = useState<string[]>([]);
+  const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
   
   const {
     isConnected,
-    isLoading,
+    isMuted,
     error,
     participants,
-    isMuted,
     toggleMute,
-    sendMessage,
-    channel
-  } = useGetStreamSpaces(spaceId);
+    cleanup
+  } = useSpaceRTC(spaceId);
   
   const isHost = session?.user?.id === hostId;
   const isSpeaker = isHost || participants.some(p => 
-    p.id === session?.user?.id && p.role === 'speaker'
+    p.userId === session?.user?.id && p.role === 'speaker'
   );
   
   useEffect(() => {
-    if (channel) {
-      // Listen for speaker requests
-      const handleSpeakerRequest = (event: any) => {
-        if (event.type === 'speaker-request') {
-          setSpeakerRequests(prev => 
-            prev.includes(event.user.id) ? prev : [...prev, event.user.id]
-          );
-          toast.info(`${event.user.name} requests to speak`);
+    // Load speaker requests for the host
+    if (isHost) {
+      const fetchSpeakerRequests = async () => {
+        const { data, error } = await supabase
+          .from('space_speaker_requests')
+          .select('*, profile:profiles(*)')
+          .eq('space_id', spaceId)
+          .eq('status', 'pending');
+          
+        if (error) {
+          console.error('Error fetching speaker requests:', error);
+        } else {
+          setSpeakerRequests(data || []);
         }
       };
       
-      channel.on('custom.event', handleSpeakerRequest);
+      fetchSpeakerRequests();
       
+      // Subscribe to speaker request changes
+      const channel = supabase
+        .channel('speaker-requests')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'space_speaker_requests',
+            filter: `space_id=eq.${spaceId}`
+          },
+          () => fetchSpeakerRequests()
+        )
+        .subscribe();
+        
       return () => {
-        channel.off('custom.event', handleSpeakerRequest);
+        supabase.removeChannel(channel);
       };
     }
-  }, [channel]);
+  }, [spaceId, isHost, session?.user?.id]);
   
   const handleRequestToSpeak = async () => {
     try {
-      if (channel) {
-        await channel.sendEvent({
-          type: 'speaker-request',
-          user: {
-            id: session?.user?.id,
-            name: session?.user?.user_metadata?.username || 'Anonymous'
-          }
+      const { error } = await supabase
+        .from('space_speaker_requests')
+        .insert({
+          space_id: spaceId,
+          user_id: session?.user?.id,
+          status: 'pending'
         });
-        toast.success("Request to speak sent!");
-      }
+
+      if (error) throw error;
+      toast.success("Request to speak sent to host!");
     } catch (err) {
       toast.error("Failed to send request");
       console.error(err);
     }
   };
   
-  const handleApproveSpeaker = async (userId: string) => {
+  const handleApproveSpeaker = async (requestId: string, userId: string) => {
     try {
-      // In a real implementation, you'd update the role in your database
-      // and send an event to the user
-      toast.success(`Speaker approved`);
-      setSpeakerRequests(prev => prev.filter(id => id !== userId));
+      // First update the participant role to speaker
+      const { error: updateError } = await supabase
+        .from('space_participants')
+        .update({ role: 'speaker' })
+        .eq('space_id', spaceId)
+        .eq('user_id', userId);
+        
+      if (updateError) throw updateError;
+      
+      // Then mark the request as approved
+      const { error } = await supabase
+        .from('space_speaker_requests')
+        .update({
+          status: 'approved',
+          resolved_at: new Date().toISOString(),
+          resolved_by: session?.user?.id
+        })
+        .eq('id', requestId);
+        
+      if (error) throw error;
+      
+      toast.success(`Speaker request approved`);
     } catch (err) {
       toast.error("Failed to approve speaker");
       console.error(err);
     }
   };
+
+  const handleRejectSpeaker = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('space_speaker_requests')
+        .update({
+          status: 'rejected',
+          resolved_at: new Date().toISOString(),
+          resolved_by: session?.user?.id
+        })
+        .eq('id', requestId);
+        
+      if (error) throw error;
+      
+      toast.success(`Speaker request rejected`);
+    } catch (err) {
+      toast.error("Failed to reject speaker request");
+      console.error(err);
+    }
+  };
   
-  const speakers = participants.filter(p => p.role === 'speaker' || p.id === hostId);
-  const listeners = participants.filter(p => p.role !== 'speaker' && p.id !== hostId);
+  const speakers = participants.filter(p => p.role === 'speaker' || p.userId === hostId);
+  const listeners = participants.filter(p => p.role !== 'speaker' && p.userId !== hostId);
   
   if (error) {
     toast.error(`Connection error: ${error}`);
@@ -150,7 +207,7 @@ export const TwitterSpaceUI = ({
           </TabsTrigger>
           <TabsTrigger value="requests" className="rounded-none">
             <Hand className="h-4 w-4 mr-2" />
-            Requests
+            Requests {isHost && speakerRequests.length > 0 && `(${speakerRequests.length})`}
           </TabsTrigger>
         </TabsList>
         
@@ -161,15 +218,15 @@ export const TwitterSpaceUI = ({
               <h4 className="text-sm font-medium mb-3">Speakers ({speakers.length})</h4>
               <div className="grid grid-cols-3 gap-4">
                 {speakers.map((speaker) => (
-                  <div key={speaker.id} className="flex flex-col items-center">
+                  <div key={speaker.userId} className="flex flex-col items-center">
                     <Avatar className="h-16 w-16 mb-1">
                       <AvatarImage src={speaker.image} />
-                      <AvatarFallback>{speaker.name[0]?.toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>{speaker.name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                     </Avatar>
                     <p className="text-xs font-medium text-center truncate w-full">
                       {speaker.name}
                     </p>
-                    {speaker.id === hostId && (
+                    {speaker.userId === hostId && (
                       <Badge variant="secondary" className="mt-1 text-xs">Host</Badge>
                     )}
                   </div>
@@ -182,10 +239,10 @@ export const TwitterSpaceUI = ({
               <h4 className="text-sm font-medium mb-3">Listening ({listeners.length})</h4>
               <div className="grid grid-cols-3 gap-4">
                 {listeners.map((listener) => (
-                  <div key={listener.id} className="flex flex-col items-center">
+                  <div key={listener.userId} className="flex flex-col items-center">
                     <Avatar className="h-16 w-16 mb-1">
                       <AvatarImage src={listener.image} />
-                      <AvatarFallback>{listener.name[0]?.toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>{listener.name?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                     </Avatar>
                     <p className="text-xs font-medium text-center truncate w-full">
                       {listener.name}
@@ -198,33 +255,56 @@ export const TwitterSpaceUI = ({
         </TabsContent>
         
         <TabsContent value="requests" className="flex-1 p-4 m-0">
-          {isHost && speakerRequests.length > 0 ? (
-            <div className="space-y-3">
-              {speakerRequests.map(userId => {
-                const user = participants.find(p => p.id === userId);
-                return user ? (
-                  <div key={userId} className="flex items-center justify-between p-2 border rounded-md">
+          {isHost ? (
+            speakerRequests.length > 0 ? (
+              <div className="space-y-3">
+                {speakerRequests.map(request => (
+                  <div key={request.id} className="flex items-center justify-between p-2 border rounded-md">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.image} />
-                        <AvatarFallback>{user.name[0]?.toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={request.profile?.avatar_url} />
+                        <AvatarFallback>{request.profile?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{user.name}</span>
+                      <span className="font-medium">{request.profile?.username || 'Unknown user'}</span>
                     </div>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleApproveSpeaker(userId)}
-                    >
-                      Approve
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="default"
+                        onClick={() => handleApproveSpeaker(request.id, request.user_id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleRejectSpeaker(request.id)}
+                      >
+                        Reject
+                      </Button>
+                    </div>
                   </div>
-                ) : null;
-              })}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No speaker requests yet
+              </p>
+            )
           ) : (
-            <p className="text-center text-muted-foreground py-8">
-              No speaker requests yet
-            </p>
+            <div className="flex flex-col items-center justify-center h-full">
+              <p className="text-center text-muted-foreground mb-4">
+                Want to speak in this space?
+              </p>
+              <Button
+                onClick={handleRequestToSpeak}
+                variant="default"
+                className="rounded-full"
+              >
+                <Hand className="h-4 w-4 mr-2" />
+                Request to Speak
+              </Button>
+            </div>
           )}
         </TabsContent>
       </Tabs>
@@ -241,18 +321,6 @@ export const TwitterSpaceUI = ({
         </div>
         
         <div className="flex gap-2">
-          {!isHost && !isSpeaker && (
-            <Button
-              onClick={handleRequestToSpeak}
-              variant="secondary"
-              size="sm"
-              className="rounded-full"
-            >
-              <Hand className="h-4 w-4 mr-2" />
-              Request
-            </Button>
-          )}
-          
           {isSpeaker && (
             <Button
               onClick={toggleMute}
