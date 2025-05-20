@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import React from "react";
 
-const TBA_TEXT = "AhNfqqgCSKvtUKgwnhxjFNnsyKKH4KtBQ99gvAjmmoon";
+const TBA_TEXT = "4P2B244yZ4Q6D76A8XzKHXxfua7xtYVpUE9X6qvomoon";
 
 export const TbaCopyBox: React.FC = () => {
   const handleCopy = () => {
