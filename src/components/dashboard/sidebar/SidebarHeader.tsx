@@ -19,7 +19,7 @@ export const SidebarHeader = ({ collapsed }: SidebarHeaderProps) => {
         <StoryRing userId={session.user.id}>
           <div className="relative w-8 h-8">
             <img 
-              src="/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png"
+              src="/lovable-uploads/0e0e30f4-36a2-4d4b-ad3c-4ce8ae48d447.png"
               alt="Bosley Logo"
               className="w-full h-full object-contain rounded-full bg-black"
             />
@@ -28,7 +28,7 @@ export const SidebarHeader = ({ collapsed }: SidebarHeaderProps) => {
       ) : (
         <div className="relative w-8 h-8">
           <img 
-            src="/lovable-uploads/640dbd2e-465f-448f-b7a2-713a44fd9a28.png"
+            src="/lovable-uploads/0e0e30f4-36a2-4d4b-ad3c-4ce8ae48d447.png"
             alt="Bosley Logo"
             className="w-full h-full object-contain rounded-full bg-black"
           />
