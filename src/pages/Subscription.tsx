@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { PricingSectionDemo } from "@/components/ui/pricing-demo";
 import { Card } from "@/components/ui/card";
@@ -7,15 +6,14 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { format } from "date-fns";
 import { RefreshCw, Check } from "lucide-react";
-
 const Subscription = () => {
   const session = useSession();
-  const { 
-    subscribed, 
-    subscription_tier, 
-    subscription_end, 
-    isLoading, 
-    error, 
+  const {
+    subscribed,
+    subscription_tier,
+    subscription_end,
+    isLoading,
+    error,
     features,
     checkSubscription,
     openCustomerPortal
@@ -25,39 +23,27 @@ const Subscription = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const success = searchParams.get("success");
   const canceled = searchParams.get("canceled");
-  
   useEffect(() => {
     if (success) {
       // Refresh subscription status when returning from successful checkout
       checkSubscription();
     }
   }, [success, checkSubscription]);
-  
-  return (
-    <div className="container py-8 space-y-8 animate-fade-in">
+  return <div className="container py-8 space-y-8 animate-fade-in px-0">
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tight">Subscription Plans</h1>
-          {session && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={checkSubscription}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
+          {session && <Button variant="outline" size="sm" onClick={checkSubscription} disabled={isLoading} className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
               Refresh Status
-            </Button>
-          )}
+            </Button>}
         </div>
         <p className="text-muted-foreground">
           Choose a plan that suits your needs. Upgrade anytime to get more features.
         </p>
       </div>
       
-      {success && (
-        <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+      {success && <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
           <h2 className="text-xl font-semibold mb-2 flex items-center gap-2 text-green-600 dark:text-green-400">
             <span className="inline-block w-3 h-3 rounded-full bg-green-500"></span>
             Subscription Successful
@@ -65,11 +51,9 @@ const Subscription = () => {
           <p>
             Thank you for your subscription! Your account has been upgraded and premium features are now available.
           </p>
-        </Card>
-      )}
+        </Card>}
       
-      {canceled && (
-        <Card className="p-6 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+      {canceled && <Card className="p-6 bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
           <h2 className="text-xl font-semibold mb-2 flex items-center gap-2 text-amber-600 dark:text-amber-400">
             <span className="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
             Subscription Canceled
@@ -77,70 +61,47 @@ const Subscription = () => {
           <p>
             Your subscription process was canceled. You can try again whenever you're ready.
           </p>
-        </Card>
-      )}
+        </Card>}
       
-      {session && subscribed && (
-        <Card className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
+      {session && subscribed && <Card className="p-6 bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20">
           <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
             <span className="inline-block w-3 h-3 rounded-full bg-accent"></span>
             Your Current Plan
           </h2>
           <p className="mb-4">
             You're currently on the <span className="font-bold text-accent">{subscription_tier}</span> plan.
-            {subscription_end && (
-              <> Your subscription renews on {format(new Date(subscription_end), 'MMMM d, yyyy')}.</>
-            )}
+            {subscription_end && <> Your subscription renews on {format(new Date(subscription_end), 'MMMM d, yyyy')}.</>}
           </p>
           <div className="mb-4">
             <h3 className="text-lg font-medium mb-2">Your Active Features</h3>
             <ul className="space-y-2">
-              {features.canUseAI && (
-                <li className="flex items-center gap-2">
+              {features.canUseAI && <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" /> AI Chat & Content Tools
-                </li>
-              )}
-              {features.canUploadGifs && (
-                <li className="flex items-center gap-2">
+                </li>}
+              {features.canUploadGifs && <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" /> GIF Upload Support
-                </li>
-              )}
-              {features.canUseAnimatedAvatar && (
-                <li className="flex items-center gap-2">
+                </li>}
+              {features.canUseAnimatedAvatar && <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" /> Animated Avatar Support
-                </li>
-              )}
-              {features.canUseNFTAvatar && (
-                <li className="flex items-center gap-2">
+                </li>}
+              {features.canUseNFTAvatar && <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" /> NFT Avatar Support
-                </li>
-              )}
-              {features.hasWatermarkFree && (
-                <li className="flex items-center gap-2">
+                </li>}
+              {features.hasWatermarkFree && <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" /> Watermark-Free Media
-                </li>
-              )}
-              {features.hasPrivacyFeatures && (
-                <li className="flex items-center gap-2">
+                </li>}
+              {features.hasPrivacyFeatures && <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" /> Private Posts & Privacy Features
-                </li>
-              )}
-              {features.hasPrioritySupport && (
-                <li className="flex items-center gap-2">
+                </li>}
+              {features.hasPrioritySupport && <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-green-500" /> Priority Customer Support
-                </li>
-              )}
+                </li>}
             </ul>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={openCustomerPortal}
-            className="hover:bg-accent/10"
-          >
+          <Button variant="outline" onClick={openCustomerPortal} className="hover:bg-accent/10">
             Manage Subscription
           </Button>
-        </Card>
-      )}
+        </Card>}
       
       <PricingSectionDemo />
       
@@ -152,8 +113,6 @@ const Subscription = () => {
           Have questions about our plans? <a href="mailto:support@bosley.app" className="text-accent underline">Contact our sales team</a>.
         </p>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Subscription;
