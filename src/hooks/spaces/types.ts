@@ -32,7 +32,7 @@ export interface Space {
   ended_at?: string;
   status: 'scheduled' | 'live' | 'ended';
   is_recorded?: boolean;
-  is_recording?: boolean;  // Added this field
+  is_recording?: boolean;
   recording_url?: string;
   participants_count?: number;
   chat_enabled?: boolean;
