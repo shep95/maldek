@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { 
@@ -201,11 +202,18 @@ const BosleyCoin = () => {
       <div className="mt-8 sm:mt-12 flex justify-center">
         <Button 
           size="lg"
-          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-6 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all"
+          className="bg-[#F1F0FB] hover:bg-[#FDE1D3] text-gray-800 px-8 py-6 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
           onClick={() => window.open("https://axiom.trade/zorak", "_blank")}
         >
-          <ExternalLink className="w-5 h-5 mr-2" />
+          <div className="w-6 h-6 rounded-md overflow-hidden flex-shrink-0">
+            <img 
+              src="/lovable-uploads/0e0e30f4-36a2-4d4b-ad3c-4ce8ae48d447.png" 
+              alt="Bosley" 
+              className="w-full h-full object-cover"
+            />
+          </div>
           Buy Bosley Coin Here
+          <ExternalLink className="w-5 h-5 ml-1" />
         </Button>
       </div>
     </div>
@@ -213,3 +221,4 @@ const BosleyCoin = () => {
 };
 
 export default BosleyCoin;
+
