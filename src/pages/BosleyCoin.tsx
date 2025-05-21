@@ -243,7 +243,7 @@ const BosleyCoin = () => {
         <Button 
           size={isMobile ? "default" : "lg"}
           className="bg-[#F1F0FB] hover:bg-[#FDE1D3] text-gray-800 px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 rounded-lg text-base sm:text-lg font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-          onClick={() => window.open("https://axiom.trade/zorak", "_blank")}
+          onClick={() => window.open("https://axiom.trade/@zorak", "_blank")}
         >
           <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md overflow-hidden flex-shrink-0">
             <img 
