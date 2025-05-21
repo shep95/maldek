@@ -36,19 +36,35 @@ export function useSubscription() {
     error: null,
   });
 
-  // Calculate available features based on subscription tier
+  // Calculate if subscription is active based on subscription end date
+  const isSubscriptionActive = () => {
+    if (!subscriptionData.subscribed || !subscriptionData.subscription_end) {
+      return false;
+    }
+    
+    const endDate = new Date(subscriptionData.subscription_end);
+    const now = new Date();
+    return endDate > now;
+  };
+
+  // Calculate available features based on subscription tier and active status
   const subscriptionFeatures: SubscriptionFeatures = {
-    canUseAI: subscriptionData.subscribed,
-    canUploadGifs: subscriptionData.subscribed,
-    canUseAnimatedAvatar: subscriptionData.subscribed,
-    canUseNFTAvatar: subscriptionData.subscribed,
-    hasWatermarkFree: subscriptionData.subscribed,
-    hasSecurityFolder: subscriptionData.subscribed,
-    canStartSpaces: subscriptionData.subscribed,
-    hasPrioritySupport: subscriptionData.subscribed,
-    hasScheduledPosts: subscriptionData.subscription_tier === 'Creator' || subscriptionData.subscription_tier === 'Pro',
-    hasExtendedHistory: subscriptionData.subscription_tier === 'Creator' || subscriptionData.subscription_tier === 'Pro',
-    hasPrivacyFeatures: subscriptionData.subscription_tier === 'Creator' || subscriptionData.subscription_tier === 'Pro',
+    // Base features available to all active subscriptions
+    canUseAI: isSubscriptionActive(),
+    canUploadGifs: isSubscriptionActive(),
+    canUseAnimatedAvatar: isSubscriptionActive(),
+    hasWatermarkFree: isSubscriptionActive(),
+    hasSecurityFolder: isSubscriptionActive(),
+    canStartSpaces: isSubscriptionActive(),
+    
+    // Pro-tier specific features
+    canUseNFTAvatar: isSubscriptionActive() && subscriptionData.subscription_tier === 'Pro',
+    hasPrioritySupport: isSubscriptionActive() && subscriptionData.subscription_tier === 'Pro',
+    
+    // Features available to both Creator and Pro tiers
+    hasScheduledPosts: isSubscriptionActive(),
+    hasExtendedHistory: isSubscriptionActive(),
+    hasPrivacyFeatures: isSubscriptionActive(),
   };
 
   const checkSubscription = async () => {
@@ -150,6 +166,7 @@ export function useSubscription() {
     }
   };
 
+  // Check subscription status on component mount and when session changes
   useEffect(() => {
     if (session?.access_token) {
       checkSubscription();
@@ -158,9 +175,37 @@ export function useSubscription() {
     }
   }, [session?.access_token]);
 
+  // Periodically check subscription status if user is subscribed
+  useEffect(() => {
+    if (session?.access_token && subscriptionData.subscribed) {
+      const interval = setInterval(() => {
+        checkSubscription();
+      }, 60000 * 30); // Check every 30 minutes
+      
+      return () => clearInterval(interval);
+    }
+  }, [session?.access_token, subscriptionData.subscribed]);
+
+  // Re-check subscription after success redirect from Stripe
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const success = searchParams.get("success");
+    
+    if (success === "true" && session?.access_token) {
+      // Short delay to allow Stripe to process the payment
+      const timer = setTimeout(() => {
+        checkSubscription();
+        toast.success("Thank you for your subscription! Refreshing your access...");
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [window.location.search, session?.access_token]);
+
   return {
     ...subscriptionData,
     features: subscriptionFeatures,
+    isActive: isSubscriptionActive(),
     checkSubscription,
     createCheckoutSession,
     openCustomerPortal,

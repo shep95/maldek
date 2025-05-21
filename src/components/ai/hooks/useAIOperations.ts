@@ -29,7 +29,13 @@ export const useAIOperations = ({
 
   const checkSubscription = useCallback(() => {
     if (!hasSubscription) {
-      toast.error("This feature is only available for subscribers");
+      toast.error("This feature requires an active subscription", {
+        description: "Please subscribe to access premium AI features",
+        action: {
+          label: "Subscribe",
+          onClick: () => window.location.href = "/subscription",
+        },
+      });
       return false;
     }
     return true;

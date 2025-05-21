@@ -69,11 +69,14 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    // Check for active subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
+    
+    // Check if there are any active subscriptions
     const hasActiveSub = subscriptions.data.length > 0;
     let subscriptionTier = null;
     let subscriptionEnd = null;
@@ -83,10 +86,11 @@ serve(async (req) => {
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
       
-      // Determine subscription tier from product name
+      // Get the product details to determine the tier
       const priceId = subscription.items.data[0].price.id;
       const price = await stripe.prices.retrieve(priceId);
       
+      // Set tier based on price amount
       if (price.unit_amount === 350) {
         subscriptionTier = "Creator";
       } else if (price.unit_amount === 2800) {
@@ -95,22 +99,61 @@ serve(async (req) => {
       
       logStep("Determined subscription tier", { priceId, amount: price.unit_amount, subscriptionTier });
     } else {
-      logStep("No active subscription found");
+      // Also check for any subscriptions in the past that might be in grace period
+      const pastSubscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "past_due",
+        limit: 1,
+      });
+      
+      if (pastSubscriptions.data.length > 0) {
+        const subscription = pastSubscriptions.data[0];
+        
+        // Check if the subscription ended less than 3 days ago (grace period)
+        const endDate = new Date(subscription.current_period_end * 1000);
+        const gracePeriodEnd = new Date(endDate.getTime() + (3 * 24 * 60 * 60 * 1000)); // 3 days grace
+        
+        if (gracePeriodEnd > new Date()) {
+          // Still in grace period, treat as active
+          subscriptionEnd = endDate.toISOString();
+          
+          const priceId = subscription.items.data[0].price.id;
+          const price = await stripe.prices.retrieve(priceId);
+          
+          if (price.unit_amount === 350) {
+            subscriptionTier = "Creator";
+          } else if (price.unit_amount === 2800) {
+            subscriptionTier = "Pro";
+          }
+          
+          logStep("Found subscription in grace period", { 
+            subscriptionId: subscription.id, 
+            endDate: subscriptionEnd,
+            gracePeriod: true 
+          });
+        } else {
+          logStep("No active subscription found (grace period expired)");
+        }
+      } else {
+        logStep("No active subscription found");
+      }
     }
 
+    // Update the subscriber record in database
     await supabaseClient.from("subscribers").upsert({
       email: user.email,
       user_id: user.id,
       stripe_customer_id: customerId,
-      subscribed: hasActiveSub,
+      subscribed: !!subscriptionTier, // Only mark as subscribed if we have a tier
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
 
-    logStep("Updated database with subscription info", { subscribed: hasActiveSub, subscriptionTier });
+    logStep("Updated database with subscription info", { subscribed: !!subscriptionTier, subscriptionTier });
+    
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
+      subscribed: !!subscriptionTier,
       subscription_tier: subscriptionTier,
       subscription_end: subscriptionEnd
     }), {
