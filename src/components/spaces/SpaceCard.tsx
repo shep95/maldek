@@ -1,9 +1,10 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Users, Mic, Crown } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useState } from "react";
-import { SpaceManagementDialog } from "./SpaceManagementDialog";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { format } from "date-fns";
+import { Users, Mic } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface SpaceCardProps {
   space: any;
@@ -12,118 +13,112 @@ interface SpaceCardProps {
   currentUserId?: string;
 }
 
-export const SpaceCard = ({ space, onJoin, onLeave, currentUserId }: SpaceCardProps) => {
-  const [isManagementOpen, setIsManagementOpen] = useState(false);
-
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'host':
-        return <Crown className="h-3 w-3 text-yellow-500" />;
-      case 'co_host':
-        return <Crown className="h-3 w-3 text-blue-500" />;
-      case 'speaker':
-        return <Mic className="h-3 w-3 text-green-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const isParticipant = space.participants?.some(
-    (p: any) => p.user_id === currentUserId
-  );
-
+export const SpaceCard = ({
+  space,
+  onJoin,
+  onLeave,
+  currentUserId
+}: SpaceCardProps) => {
   const isHost = space.host_id === currentUserId;
-
-  const handleJoinClick = () => {
-    onJoin(space.id);
-    setIsManagementOpen(true);
-  };
-
-  const handleLeaveSpace = () => {
-    onLeave(space.id);
-    setIsManagementOpen(false);
-  };
-
+  const isParticipant = space.participants?.some((p: any) => p.user_id === currentUserId);
+  const userCount = space.participants?.length || 0;
+  
+  // Get the hosts and speakers (usually displayed at the top)
+  const hosts = space.participants?.filter((p: any) => p.role === 'host' || p.role === 'co_host') || [];
+  const speakers = space.participants?.filter((p: any) => p.role === 'speaker') || [];
+  
   return (
-    <>
-      <div className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <h3 className="font-semibold">{space.title}</h3>
-              {space.description && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {space.description}
-                </p>
-              )}
+    <Card className="border rounded-lg overflow-hidden hover:shadow-md transition-all">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-bold text-lg line-clamp-1">{space.title}</h3>
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {space.description || "No description provided"}
+            </p>
+          </div>
+          {space.is_recorded && (
+            <Badge variant="outline" className="ml-2">Recorded</Badge>
+          )}
+        </div>
+        
+        <div className="mt-4 flex flex-wrap gap-2">
+          {/* Display host */}
+          {space.host && (
+            <div className="flex items-center">
+              <Avatar className="h-8 w-8 border-2 border-primary">
+                <AvatarImage src={space.host.avatar_url} />
+                <AvatarFallback>
+                  {space.host.username?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="ml-2">
+                <p className="text-xs font-medium">{space.host.username}</p>
+                <Badge variant="secondary" className="text-xs">Host</Badge>
+              </div>
             </div>
-            {isParticipant ? (
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={() => setIsManagementOpen(true)}
-              >
-                Manage Space
-              </Button>
-            ) : (
-              <Button 
-                variant="secondary" 
-                size="sm"
-                onClick={handleJoinClick}
-              >
-                Join
-              </Button>
+          )}
+          
+          {/* Display up to 3 speakers */}
+          <div className="flex ml-2">
+            {speakers.slice(0, 3).map((speaker: any) => (
+              <Avatar key={speaker.user_id} className="h-8 w-8 -ml-2 first:ml-0 border-2 border-background">
+                <AvatarImage src={speaker.profile?.avatar_url} />
+                <AvatarFallback>
+                  {speaker.profile?.username?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            {speakers.length > 3 && (
+              <div className="h-8 w-8 -ml-2 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                +{speakers.length - 3}
+              </div>
             )}
           </div>
-
-          <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={space.host?.avatar_url} />
-              <AvatarFallback>
-                {space.host?.username?.[0]?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium flex items-center gap-1">
-                {space.host?.username}
-                <Crown className="h-3 w-3 text-yellow-500" />
-              </span>
-              <span className="text-xs text-muted-foreground">Host</span>
-            </div>
-          </div>
-
-          {space.participants && space.participants.length > 0 && (
-            <ScrollArea className="h-20">
-              <div className="flex flex-wrap gap-2">
-                {space.participants.map((participant: any) => (
-                  <div key={participant.user_id} className="flex items-center gap-1">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={participant.profile?.avatar_url} />
-                      <AvatarFallback>
-                        {participant.profile?.username?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    {getRoleIcon(participant.role)}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span>{space.participants_count || 0} participants</span>
-          </div>
         </div>
-      </div>
-
-      <SpaceManagementDialog
-        isOpen={isManagementOpen}
-        onOpenChange={setIsManagementOpen}
-        spaceId={space.id}
-        isHost={isHost}
-        onLeave={handleLeaveSpace}
-      />
-    </>
+        
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <Mic className="h-4 w-4 mr-1" />
+            <span className="text-xs">Live</span>
+            <Users className="h-4 w-4 ml-4 mr-1" />
+            <span className="text-xs">{userCount} listening</span>
+          </div>
+          
+          {space.scheduled_for && (
+            <Badge variant="outline" className="text-xs">
+              {format(new Date(space.scheduled_for), "MMM d, h:mm a")}
+            </Badge>
+          )}
+        </div>
+      </CardContent>
+      
+      <CardFooter className="bg-muted/10 p-3 flex justify-end gap-2">
+        {isParticipant ? (
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => onLeave(space.id)}
+              className="text-xs h-8"
+            >
+              Leave
+            </Button>
+            <Button
+              onClick={() => onJoin(space.id)}
+              className="text-xs h-8"
+            >
+              Join
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={() => onJoin(space.id)}
+            className="text-xs h-8"
+          >
+            Join
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
   );
 };

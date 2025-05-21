@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { useSpaceSignaling } from './spaces/useSpaceSignaling';
 import { usePeerConnections } from './spaces/usePeerConnections';
@@ -33,7 +33,8 @@ export const useSpaceRTC = (spaceId: string) => {
     error: audioError,
     startAudio,
     toggleMute,
-    stopAudio
+    stopAudio,
+    getStream
   } = useAudioStream();
 
   const handleSignalingMessage = async (event: MessageEvent) => {
@@ -91,6 +92,7 @@ export const useSpaceRTC = (spaceId: string) => {
                 && !localStreamRef.current) {
               const stream = await startAudio();
               if (stream) {
+                localStreamRef.current = stream;
                 // Initialize connections with existing speakers/hosts
                 for (const participant of participants) {
                   if (participant.role === 'speaker' || participant.role === 'host' || participant.role === 'co_host') {
@@ -103,13 +105,14 @@ export const useSpaceRTC = (spaceId: string) => {
             else if (message.newRole === 'listener' && localStreamRef.current) {
               // Stop sending audio
               stopAudio();
+              localStreamRef.current = null;
             }
           }
           break;
 
         case 'forced-mute':
           if (message.from !== session?.user?.id) {
-            toggleMute(true); // Force mute
+            toggleMute();
           }
           break;
 
@@ -179,7 +182,10 @@ export const useSpaceRTC = (spaceId: string) => {
         
         // Only start audio if user is a speaker or host
         if (role === 'speaker' || role === 'host' || role === 'co_host') {
-          await startAudio();
+          const stream = await startAudio();
+          if (stream) {
+            localStreamRef.current = stream;
+          }
         }
       });
 

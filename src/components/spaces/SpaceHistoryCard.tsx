@@ -1,154 +1,136 @@
+
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { RecordingStatus } from "./recording/RecordingStatus";
-import { RecordingPurchaseDialog } from "./recording/RecordingPurchaseDialog";
-import { DownloadProgress } from "./recording/DownloadProgress";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { format } from "date-fns";
+import { PlayCircle, Download, Lock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface SpaceHistoryCardProps {
   space: any;
-  onPurchaseComplete?: () => void;
-  onPurchaseRecording?: (spaceId: string) => Promise<void>;  // Added this prop
-  currentUserId?: string;  // Added this prop for consistency
+  onPurchaseRecording: (spaceId: string) => void;
+  currentUserId?: string;
 }
 
-export const SpaceHistoryCard = ({ 
-  space, 
-  onPurchaseComplete,
+export const SpaceHistoryCard = ({
+  space,
   onPurchaseRecording,
-  currentUserId 
+  currentUserId
 }: SpaceHistoryCardProps) => {
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
-
-  const handleDownload = async () => {
-    try {
-      setIsDownloading(true);
-      setDownloadProgress(0);
-
-      const { data: purchases } = await supabase
-        .from('space_recording_purchases')
-        .select('*')
-        .eq('space_id', space.id)
-        .eq('user_id', currentUserId)
-        .eq('status', 'completed')
-        .single();
-
-      if (!purchases) {
-        if (onPurchaseRecording) {
-          await onPurchaseRecording(space.id);
-        } else {
-          setShowPurchaseDialog(true);
-        }
-        return;
-      }
-
-      if (!space.recording_url) {
-        toast.error("Recording not available yet");
-        return;
-      }
-
-      const response = await fetch(space.recording_url);
-      const contentLength = response.headers.get('content-length');
-      const total = parseInt(contentLength || '0', 10);
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error("Failed to start download");
-
-      let receivedLength = 0;
-      const chunks = [];
-
-      while(true) {
-        const { done, value } = await reader.read();
-        
-        if (done) break;
-        
-        chunks.push(value);
-        receivedLength += value.length;
-        
-        const progress = (receivedLength / total) * 100;
-        setDownloadProgress(progress);
-      }
-
-      const blob = new Blob(chunks);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${space.title}-recording.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast.success("Download completed!");
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error("Failed to download recording");
-    } finally {
-      setIsDownloading(false);
-      setDownloadProgress(0);
-    }
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const isHost = space.host_id === currentUserId;
+  const hasRecording = space.is_recorded;
+  const userPurchasedRecording = space.recording_purchases?.some(
+    (purchase: any) => purchase.user_id === currentUserId
+  );
+  const canAccessRecording = isHost || userPurchasedRecording;
+  
+  // Calculate duration
+  const duration = space.ended_at && space.started_at 
+    ? new Date(space.ended_at).getTime() - new Date(space.started_at).getTime() 
+    : 0;
+  
+  // Convert to minutes and seconds
+  const minutes = Math.floor(duration / 60000);
+  const seconds = Math.floor((duration % 60000) / 1000);
+  const durationFormatted = `${minutes}m ${seconds}s`;
+  
+  const handlePlayRecording = () => {
+    // Logic for playing recording would go here
+    console.log("Play recording:", space.id);
   };
-
+  
   const handlePurchase = async () => {
+    setIsLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Please sign in to purchase recordings");
-        return;
-      }
-
-      const { error } = await supabase.functions.invoke('create-recording-payment', {
-        body: { 
-          spaceId: space.id,
-          userId: user.id
-        }
-      });
-
-      if (error) throw error;
-
-      setShowPurchaseDialog(false);
-      toast.success("Purchase successful!");
-      onPurchaseComplete?.();
-    } catch (error) {
-      console.error('Purchase error:', error);
-      toast.error("Failed to process purchase");
+      await onPurchaseRecording(space.id);
+    } finally {
+      setIsLoading(false);
     }
   };
-
+  
   return (
-    <Card className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold">{space.title}</h3>
-        <RecordingStatus 
-          isRecording={space.status === 'live'} 
-          startTime={space.started_at} 
-        />
-      </div>
-
-      {isDownloading ? (
-        <DownloadProgress progress={downloadProgress} />
-      ) : (
-        <Button 
-          onClick={handleDownload}
-          disabled={!space.recording_url || isDownloading}
-          className="w-full"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Download Recording
-        </Button>
-      )}
-
-      <RecordingPurchaseDialog
-        isOpen={showPurchaseDialog}
-        onOpenChange={setShowPurchaseDialog}
-        space={space}
-        onPurchase={handlePurchase}
-      />
+    <Card className="border rounded-lg overflow-hidden hover:shadow-md transition-all">
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-bold text-lg line-clamp-1">{space.title}</h3>
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+              {space.description || "No description provided"}
+            </p>
+          </div>
+          {hasRecording && (
+            <Badge variant="outline" className="ml-2">Recorded</Badge>
+          )}
+        </div>
+        
+        <div className="mt-4">
+          {space.host && (
+            <div className="flex items-center">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={space.host.avatar_url} />
+                <AvatarFallback>
+                  {space.host.username?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="ml-2">
+                <p className="text-xs font-medium">{space.host.username}</p>
+                <Badge variant="secondary" className="text-xs">Host</Badge>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-4 flex items-center justify-between text-muted-foreground text-xs">
+          <div>
+            {space.started_at && (
+              <span>
+                {format(new Date(space.started_at), "MMM d, yyyy")} • {durationFormatted}
+              </span>
+            )}
+          </div>
+          
+          <div>
+            {space.participants_count || 0} participants
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="bg-muted/10 p-3 flex justify-end gap-2">
+        {hasRecording ? (
+          canAccessRecording ? (
+            <>
+              <Button
+                variant="outline" 
+                size="sm"
+                onClick={handlePlayRecording}
+              >
+                <PlayCircle className="h-4 w-4 mr-2" />
+                Play
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={handlePurchase}
+              disabled={isLoading}
+            >
+              <Lock className="h-4 w-4 mr-2" />
+              Purchase Recording
+            </Button>
+          )
+        ) : (
+          <Badge variant="outline">No Recording</Badge>
+        )}
+      </CardFooter>
     </Card>
   );
 };

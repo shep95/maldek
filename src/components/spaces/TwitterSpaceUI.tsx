@@ -34,20 +34,21 @@ export const TwitterSpaceUI = ({
   const session = useSession();
   const [activeTab, setActiveTab] = useState("people");
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   
   const {
     isConnected,
     isMuted,
     error,
     participants,
+    userRole,
     toggleMute,
     cleanup
   } = useSpaceRTC(spaceId);
   
   const isHost = session?.user?.id === hostId;
-  const isSpeaker = isHost || participants.some(p => 
-    p.userId === session?.user?.id && p.role === 'speaker'
-  );
+  const isSpeaker = userRole === 'speaker' || userRole === 'host' || userRole === 'co_host';
   
   useEffect(() => {
     // Load speaker requests for the host
@@ -88,6 +89,17 @@ export const TwitterSpaceUI = ({
       };
     }
   }, [spaceId, isHost, session?.user?.id]);
+
+  // Timer for recording duration
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
   
   const handleRequestToSpeak = async () => {
     try {
@@ -156,13 +168,60 @@ export const TwitterSpaceUI = ({
       console.error(err);
     }
   };
+
+  const handleToggleRecording = async () => {
+    if (isHost) {
+      try {
+        if (!isRecording) {
+          // Start recording
+          const { error } = await supabase
+            .from('spaces')
+            .update({
+              is_recorded: true,
+              recording_started_at: new Date().toISOString()
+            })
+            .eq('id', spaceId);
+            
+          if (error) throw error;
+          setIsRecording(true);
+          toast.success("Recording started");
+        } else {
+          // Stop recording
+          const { error } = await supabase
+            .from('spaces')
+            .update({
+              is_recorded: false,
+              recording_ended_at: new Date().toISOString()
+            })
+            .eq('id', spaceId);
+            
+          if (error) throw error;
+          setIsRecording(false);
+          toast.success("Recording stopped");
+        }
+      } catch (err) {
+        toast.error("Failed to toggle recording");
+        console.error(err);
+      }
+    }
+  };
   
-  const speakers = participants.filter(p => p.role === 'speaker' || p.userId === hostId);
-  const listeners = participants.filter(p => p.role !== 'speaker' && p.userId !== hostId);
+  const speakers = participants.filter(p => 
+    p.role === 'speaker' || p.role === 'host' || p.role === 'co_host'
+  );
+  const listeners = participants.filter(p => 
+    p.role === 'listener'
+  );
   
   if (error) {
     toast.error(`Connection error: ${error}`);
   }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
   
   return (
     <Card className="max-w-md mx-auto h-[600px] flex flex-col rounded-2xl overflow-hidden">
@@ -195,6 +254,11 @@ export const TwitterSpaceUI = ({
             <p className="text-sm font-medium">{hostName}</p>
             <Badge variant="outline" className="text-xs">Host</Badge>
           </div>
+          {isRecording && (
+            <Badge variant="destructive" className="ml-auto">
+              REC {formatTime(recordingDuration)}
+            </Badge>
+          )}
         </div>
       </div>
       
@@ -228,6 +292,9 @@ export const TwitterSpaceUI = ({
                     </p>
                     {speaker.userId === hostId && (
                       <Badge variant="secondary" className="mt-1 text-xs">Host</Badge>
+                    )}
+                    {speaker.role === 'co_host' && (
+                      <Badge variant="outline" className="mt-1 text-xs">Co-host</Badge>
                     )}
                   </div>
                 ))}
@@ -323,7 +390,7 @@ export const TwitterSpaceUI = ({
         <div className="flex gap-2">
           {isSpeaker && (
             <Button
-              onClick={toggleMute}
+              onClick={() => toggleMute()}
               variant={isMuted ? "destructive" : "default"}
               size="icon"
               className="rounded-full"
@@ -333,6 +400,17 @@ export const TwitterSpaceUI = ({
               ) : (
                 <Mic className="h-4 w-4" />
               )}
+            </Button>
+          )}
+
+          {isHost && (
+            <Button
+              onClick={handleToggleRecording}
+              variant={isRecording ? "destructive" : "outline"}
+              size="sm"
+              className={isRecording ? "animate-pulse" : ""}
+            >
+              {isRecording ? "Stop Recording" : "Record"}
             </Button>
           )}
           

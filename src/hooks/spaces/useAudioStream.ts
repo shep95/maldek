@@ -1,10 +1,12 @@
-import { useState } from 'react';
+
+import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 
 export const useAudioStream = () => {
   const [isMuted, setIsMuted] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startAudio = async () => {
     try {
@@ -40,6 +42,7 @@ export const useAudioStream = () => {
       setIsMuted(true);
       setIsStreaming(true);
       setError(null);
+      streamRef.current = stream;
       
       // Add audio track event listeners
       audioTrack.onended = () => {
@@ -85,14 +88,14 @@ export const useAudioStream = () => {
     }
   };
 
-  const toggleMute = (stream: MediaStream | null) => {
-    if (!stream) {
+  const toggleMute = () => {
+    if (!streamRef.current) {
       console.error('No audio stream available');
       toast.error('No audio connection available. Please try rejoining the space.');
       return;
     }
 
-    const audioTrack = stream.getAudioTracks()[0];
+    const audioTrack = streamRef.current.getAudioTracks()[0];
     if (audioTrack) {
       try {
         audioTrack.enabled = !audioTrack.enabled;
@@ -127,11 +130,25 @@ export const useAudioStream = () => {
     }
   };
 
+  const stopAudio = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+      });
+      streamRef.current = null;
+      setIsStreaming(false);
+      setIsMuted(true);
+      console.log('Audio stream stopped');
+    }
+  };
+
   return {
     isMuted,
     isStreaming,
     error,
     startAudio,
-    toggleMute
+    toggleMute,
+    stopAudio,
+    getStream: () => streamRef.current
   };
 };
