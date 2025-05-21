@@ -41,7 +41,6 @@ function PricingSection({ tiers, className }: PricingSectionProps) {
     subscribed,
     subscription_tier,
     subscription_end,
-    isLoading,
     createCheckoutSession,
     openCustomerPortal
   } = useSubscription()

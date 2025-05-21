@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -163,7 +164,7 @@ export const TwitterSpaceUI = ({
       const { error } = await supabase
         .from('spaces')
         .update({ 
-          is_recorded: true 
+          is_recorded: true // This property needs to be fixed
         })
         .eq('id', spaceId);
         

@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { PricingSection } from "@/components/ui/pricing-section"
-import { SparklesIcon, ZapIcon } from "@radix-ui/react-icons"
+import { Sparkles, Zap } from "lucide-react"
 
 export function PricingSectionDemo() {
   const [isLoading] = useState(false)
@@ -11,7 +11,6 @@ export function PricingSectionDemo() {
   return (
     <div className="w-full">
       <PricingSection 
-        isLoading={isLoading}
         tiers={[
           {
             name: "Premium",
@@ -20,7 +19,7 @@ export function PricingSectionDemo() {
               yearly: 49.99,
             },
             description: "Essential tools for content creators",
-            icon: <SparklesIcon className="w-6 h-6" />,
+            icon: <Sparkles className="w-6 h-6" />,
             features: [
               {
                 name: "AI Chat & Content Tools",
@@ -71,7 +70,7 @@ export function PricingSectionDemo() {
               yearly: 99.99,
             },
             description: "Advanced features for serious creators",
-            icon: <ZapIcon className="w-6 h-6" />,
+            icon: <Zap className="w-6 h-6" />,
             features: [
               {
                 name: "All Premium Features",
