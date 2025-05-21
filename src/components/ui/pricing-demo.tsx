@@ -15,8 +15,8 @@ export function PricingSectionDemo() {
           {
             name: "Premium",
             price: {
-              monthly: 4.99,
-              yearly: 49.99,
+              monthly: 3.50,
+              yearly: 28.00,
             },
             description: "Essential tools for content creators",
             icon: <Sparkles className="w-6 h-6" />,
@@ -66,8 +66,8 @@ export function PricingSectionDemo() {
           {
             name: "Pro",
             price: {
-              monthly: 9.99, 
-              yearly: 99.99,
+              monthly: 3.50, 
+              yearly: 28.00,
             },
             description: "Advanced features for serious creators",
             icon: <Zap className="w-6 h-6" />,

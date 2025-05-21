@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -158,13 +157,13 @@ export const TwitterSpaceUI = ({
     }
   };
   
-  const handleStartRecording = async () => {
+  const startRecording = async () => {
     try {
       // Update space to mark as recorded
       const { error } = await supabase
         .from('spaces')
         .update({ 
-          is_recorded: true // This property needs to be fixed
+          features: { recorded: true } // Fix: Using features JSON field instead
         })
         .eq('id', spaceId);
         
@@ -369,7 +368,7 @@ export const TwitterSpaceUI = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleStartRecording}
+                  onClick={startRecording}
                   className="gap-1"
                 >
                   <div className="h-3 w-3 bg-red-500 rounded-full"></div>
