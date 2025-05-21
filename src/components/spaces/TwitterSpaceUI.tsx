@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, UserPlus2, Users, X, Record, MessageSquare } from "lucide-react";
+import { Mic, MicOff, UserPlus2, Users, X, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -235,7 +235,7 @@ export const TwitterSpaceUI = ({
             </span>
             {isRecording && (
               <Badge variant="destructive" className="flex items-center gap-1">
-                <Record className="h-3 w-3 animate-pulse" /> 
+                <div className="h-3 w-3 animate-pulse bg-red-500 rounded-full"></div> 
                 {formatTime(recordingDuration)}
               </Badge>
             )}
@@ -361,7 +361,7 @@ export const TwitterSpaceUI = ({
                   onClick={handleStopRecording}
                   className="gap-1"
                 >
-                  <Record className="h-4 w-4" />
+                  <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
                   Stop Recording
                 </Button>
               ) : (
@@ -371,7 +371,7 @@ export const TwitterSpaceUI = ({
                   onClick={handleStartRecording}
                   className="gap-1"
                 >
-                  <Record className="h-4 w-4" />
+                  <div className="h-3 w-3 bg-red-500 rounded-full"></div>
                   Record
                 </Button>
               )}

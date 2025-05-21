@@ -20,6 +20,7 @@ import Messages from "@/pages/Messages";
 import Subscription from "@/pages/Subscription";
 import BosleyCoin from "@/pages/BosleyCoin";
 import Support from "@/pages/Support";
+import Spaces from "@/pages/Spaces";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
@@ -68,6 +69,7 @@ export const AppRoutes = () => {
         <Route path="/bosley-coin" element={<BosleyCoin />} />
         <Route path="/support" element={<Support />} />
         <Route path="/privacy" element={<Navigate to="/profiles?tab=privacy" replace />} />
+        <Route path="/spaces" element={<Spaces />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
