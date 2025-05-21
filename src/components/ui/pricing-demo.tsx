@@ -113,7 +113,7 @@ export function PricingSectionDemo() {
       name: "Pro",
       price: {
         monthly: 28,
-        yearly: 280,
+        yearly: 28,
       },
       description: "For professionals and businesses",
       features: [
