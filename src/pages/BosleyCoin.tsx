@@ -7,19 +7,26 @@ import {
   ChartTooltipContent 
 } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { Coins, TrendingUp, Info, RefreshCw, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
+import { Coins, TrendingUp, Info, RefreshCw, ArrowUp, ArrowDown, ExternalLink, Copy } from "lucide-react";
 import { useCoinData } from "@/hooks/useCoinData";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const BosleyCoin = () => {
   const { coinData, chartData, isLoading, error } = useCoinData();
   const { toast } = useToast();
+  const coinAddress = "4P2B244yZ4Q6D76A8XzKHXxfua7xtYVpUE9X6qvomoon";
 
   const handleRefresh = useCallback(() => {
     window.location.reload();
     toast("Fetching the latest Bosley Coin information");
   }, [toast]);
+
+  const handleCopyAddress = () => {
+    navigator.clipboard.writeText(coinAddress);
+    toast.success(`Address copied to clipboard!`);
+  };
   
   // Format number to display as currency
   const formatCurrency = useCallback((value: number) => {
@@ -102,6 +109,36 @@ const BosleyCoin = () => {
             <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden xs:inline">Refresh</span>
           </Button>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div 
+          onClick={handleCopyAddress}
+          className="
+            group flex items-center justify-between gap-2 px-5 py-3 rounded-xl 
+            bg-[#F1F0FB] border border-accent/30 shadow-md 
+            hover:bg-[#FDE1D3] hover:shadow-lg
+            cursor-pointer select-none transition-all
+            max-w-md mx-auto
+          "
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+              <img 
+                src="/lovable-uploads/0e0e30f4-36a2-4d4b-ad3c-4ce8ae48d447.png" 
+                alt="Bosley" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <p className="text-gray-800 font-mono text-sm sm:text-base truncate">
+              {coinAddress}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-accent group-hover:text-gray-800">
+            <Copy className="h-4 w-4" />
+            <span className="text-xs sm:text-sm font-medium">Copy</span>
+          </div>
         </div>
       </div>
 
@@ -221,4 +258,3 @@ const BosleyCoin = () => {
 };
 
 export default BosleyCoin;
-
