@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, UserPlus2, Users, X, MessageSquare } from "lucide-react";
+import { Mic, MicOff, UserPlus2, Users, X, Record, MessageSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -10,7 +10,6 @@ import { useSpaceSignaling } from "@/hooks/spaces/useSpaceSignaling";
 import { useAudioStream } from "@/hooks/spaces/useAudioStream";
 import { toast } from "sonner";
 import { Space } from "@/hooks/spaces/types";
-import { RecordingStatus } from "../spaces/recording/RecordingStatus";
 
 interface TwitterSpaceUIProps {
   spaceId: string;
@@ -164,7 +163,7 @@ export const TwitterSpaceUI = ({
       const { error } = await supabase
         .from('spaces')
         .update({ 
-          is_recording: true  // Changed from is_recorded to is_recording to match the DB schema
+          is_recorded: true 
         })
         .eq('id', spaceId);
         
@@ -235,7 +234,10 @@ export const TwitterSpaceUI = ({
               {participants.length}
             </span>
             {isRecording && (
-              <RecordingStatus isRecording={true} duration={recordingDuration} />
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <Record className="h-3 w-3 animate-pulse" /> 
+                {formatTime(recordingDuration)}
+              </Badge>
             )}
           </div>
         </div>
@@ -359,7 +361,7 @@ export const TwitterSpaceUI = ({
                   onClick={handleStopRecording}
                   className="gap-1"
                 >
-                  <Mic className="h-4 w-4" />
+                  <Record className="h-4 w-4" />
                   Stop Recording
                 </Button>
               ) : (
@@ -369,7 +371,7 @@ export const TwitterSpaceUI = ({
                   onClick={handleStartRecording}
                   className="gap-1"
                 >
-                  <Mic className="h-4 w-4" />
+                  <Record className="h-4 w-4" />
                   Record
                 </Button>
               )}

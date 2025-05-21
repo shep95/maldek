@@ -22,7 +22,7 @@ export interface SpaceHeaderProps {
   isSpeaking: boolean;
 }
 
-// Updated Space interface to include all needed fields
+// Add this new interface for spaces schema
 export interface Space {
   id: string;
   title: string;
@@ -32,7 +32,6 @@ export interface Space {
   ended_at?: string;
   status: 'scheduled' | 'live' | 'ended';
   is_recorded?: boolean;
-  is_recording?: boolean;
   recording_url?: string;
   participants_count?: number;
   chat_enabled?: boolean;

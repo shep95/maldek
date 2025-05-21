@@ -11,7 +11,6 @@ import { AppRoutes } from "@/components/routing/AppRoutes";
 import { useEffect } from "react";
 import { BackgroundMusicProvider } from "@/components/providers/BackgroundMusicProvider";
 import { EncryptionProvider } from "@/providers/EncryptionProvider";
-import { MobileNav } from "@/components/dashboard/MobileNav";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,7 +46,6 @@ const App = () => {
               <EncryptionProvider>
                 <AuthenticationWrapper>
                   <AppRoutes />
-                  <MobileNav />
                 </AuthenticationWrapper>
               </EncryptionProvider>
             </BackgroundMusicProvider>
