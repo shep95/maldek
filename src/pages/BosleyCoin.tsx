@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { 
@@ -7,7 +6,7 @@ import {
   ChartTooltipContent 
 } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { Coins, TrendingUp, Info, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
+import { Coins, TrendingUp, Info, RefreshCw, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { useCoinData } from "@/hooks/useCoinData";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -197,6 +196,17 @@ const BosleyCoin = () => {
             </Card>
           </>
         )}
+      </div>
+      
+      <div className="mt-8 sm:mt-12 flex justify-center">
+        <Button 
+          size="lg"
+          className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-6 rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all"
+          onClick={() => window.open("https://axiom.trade/zorak", "_blank")}
+        >
+          <ExternalLink className="w-5 h-5 mr-2" />
+          Buy Bosley Coin Here
+        </Button>
       </div>
     </div>
   );
