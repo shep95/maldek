@@ -164,7 +164,7 @@ export const TwitterSpaceUI = ({
       const { error } = await supabase
         .from('spaces')
         .update({ 
-          is_recorded: true 
+          is_recording: true  // Changed from is_recorded to is_recording to match the DB schema
         })
         .eq('id', spaceId);
         
