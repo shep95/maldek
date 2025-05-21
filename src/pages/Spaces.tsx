@@ -1,3 +1,4 @@
+
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +11,8 @@ import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
 import { SpaceCard } from "@/components/spaces/SpaceCard";
 import { SpaceHistoryCard } from "@/components/spaces/SpaceHistoryCard";
 import { TwitterSpaceDialog } from "@/components/spaces/TwitterSpaceDialog";
+import { SpaceCardNew } from "@/components/spaces/SpaceCardNew";
+import { SpaceHeaderNew } from "@/components/spaces/SpaceHeaderNew";
 
 const Spaces = () => {
   const session = useSession();
@@ -181,15 +184,21 @@ const Spaces = () => {
     }
   };
 
+  // Function to get a random icon type for spaces
+  const getRandomIconType = (): "music" | "mic" | "heart" | "headphones" => {
+    const icons: Array<"music" | "mic" | "heart" | "headphones"> = ["music", "mic", "heart", "headphones"];
+    return icons[Math.floor(Math.random() * icons.length)];
+  };
+
   return (
-    <div className="min-h-screen bg-background animate-fade-in">
+    <div className="min-h-screen bg-[#111318] animate-fade-in">
       <div className="flex justify-center">
         <main className="w-full max-w-3xl px-4 py-6 md:py-8">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Spaces</h1>
+            <SpaceHeaderNew />
             <Button 
               onClick={handleCreateSpace}
-              className="gap-2"
+              className="bg-[#F97316] hover:bg-[#F59E0B] text-white gap-2"
             >
               <Plus className="h-4 w-4" />
               Create Space
@@ -197,34 +206,60 @@ const Spaces = () => {
           </div>
 
           <Tabs defaultValue="live" className="w-full">
-            <TabsList className="w-full">
-              <TabsTrigger value="live" className="flex-1">Live Spaces</TabsTrigger>
-              <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
+            <TabsList className="w-full bg-[#1A1F2C] mb-6">
+              <TabsTrigger 
+                value="live" 
+                className="flex-1 data-[state=active]:bg-[#F97316] data-[state=active]:text-white"
+              >
+                Live Spaces
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                className="flex-1 data-[state=active]:bg-[#F97316] data-[state=active]:text-white"
+              >
+                History
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="live" className="mt-4 space-y-4">
+            <TabsContent value="live" className="mt-4 space-y-6">
               {!liveSpaces?.length ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No live spaces at the moment
-                </p>
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-gray-400 text-lg mb-4">No live spaces at the moment</p>
+                  <Button 
+                    onClick={handleCreateSpace}
+                    className="bg-[#F97316] hover:bg-[#F59E0B] text-white"
+                  >
+                    Start a new Space
+                  </Button>
+                </div>
               ) : (
-                <div className="space-y-4">
-                  {liveSpaces.map((space) => (
-                    <SpaceCard
+                <div className="space-y-6">
+                  {liveSpaces.slice(0, 3).map((space) => (
+                    <SpaceCardNew
                       key={space.id}
-                      space={space}
-                      onJoin={handleJoinSpace}
-                      onLeave={handleLeaveSpace}
-                      currentUserId={session?.user?.id}
+                      title={space.title}
+                      description={space.description || "Join this space to listen in"}
+                      hostName={space.host?.username || "Anonymous"}
+                      listenerCount={space.participants_count || 0}
+                      iconType={getRandomIconType()}
+                      onClick={() => handleJoinSpace(space.id)}
                     />
                   ))}
+                  
+                  {liveSpaces.length > 3 && (
+                    <div className="flex justify-center mt-4">
+                      <Button variant="outline" className="text-[#F97316] border-[#F97316]">
+                        View more spaces
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="history" className="mt-4 space-y-4">
               {!spaceHistory?.length ? (
-                <p className="text-muted-foreground text-center py-8">
+                <p className="text-gray-400 text-center py-8">
                   No space history yet
                 </p>
               ) : (
