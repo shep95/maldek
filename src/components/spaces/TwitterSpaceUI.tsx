@@ -10,7 +10,6 @@ import { useSpaceSignaling } from "@/hooks/spaces/useSpaceSignaling";
 import { useAudioStream } from "@/hooks/spaces/useAudioStream";
 import { toast } from "sonner";
 import { Space } from "@/hooks/spaces/types";
-import { RecordingStatus } from "../spaces/recording/RecordingStatus";
 
 interface TwitterSpaceUIProps {
   spaceId: string;
@@ -160,11 +159,11 @@ export const TwitterSpaceUI = ({
   
   const handleStartRecording = async () => {
     try {
-      // Update space to mark as recording
+      // Update space to mark as recorded
       const { error } = await supabase
         .from('spaces')
         .update({ 
-          recording_url: 'in-progress' // Use an existing field to mark as recording
+          is_recorded: true 
         })
         .eq('id', spaceId);
         
