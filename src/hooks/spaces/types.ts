@@ -21,3 +21,25 @@ export interface SpaceHeaderProps {
   isConnected: boolean;
   isSpeaking: boolean;
 }
+
+// Add this new interface for spaces schema
+export interface Space {
+  id: string;
+  title: string;
+  description?: string;
+  host_id: string;
+  started_at?: string;
+  ended_at?: string;
+  status: 'scheduled' | 'live' | 'ended';
+  is_recorded?: boolean;
+  recording_url?: string;
+  participants_count?: number;
+  chat_enabled?: boolean;
+  reactions_enabled?: boolean;
+  category?: string;
+  host?: {
+    id: string;
+    username?: string;
+    avatar_url?: string;
+  };
+}

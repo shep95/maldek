@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -93,6 +93,14 @@ export const NavItems = ({
       label: "Videos", 
       path: "/videos", 
       active: location.pathname === "/videos" 
+    },
+    {
+      icon: Mic,
+      label: "Spaces",
+      path: "/spaces",
+      active: location.pathname === "/spaces",
+      description: "Join audio spaces",
+      className: "text-accent hover:bg-accent/10"
     },
     {
       icon: TrendingUp,
