@@ -1,18 +1,16 @@
+
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "next-themes"
 import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import Spaces from "@/pages/Spaces";
 import Subscription from "@/pages/Subscription";
-import Account from "@/pages/Account";
-import Home from "@/pages/Home";
-import Pricing from "@/pages/Pricing";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from "react";
 import { initializeAppCenter, checkForUpdate } from "@/utils/appCenterConfig";
@@ -57,8 +55,7 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
     return (
       <Routes>
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/" element={<Home />} />
-        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/" element={<div>Please log in</div>} />
       </Routes>
     );
   }
@@ -94,11 +91,9 @@ function App() {
               <Toaster />
               <Router>
                 <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/" element={<div>Home</div>} />
                   <Route path="/spaces" element={<Spaces />} />
                   <Route path="/subscription" element={<Subscription />} />
-                  <Route path="/account" element={<Account />} />
                 </Routes>
               </Router>
               <SpaceMiniPlayer />
