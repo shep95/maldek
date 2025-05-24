@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
 
   const { data: { user }, error } = await supabase.auth.getUser(jwt)
   if (error || !user) {
+    console.log('Authentication failed:', error?.message)
     return new Response('Unauthorized', { 
       status: 401,
       headers: corsHeaders 
@@ -59,6 +60,7 @@ Deno.serve(async (req) => {
     .single()
 
   if (!participant) {
+    console.log('User is not a participant in space:', spaceId)
     return new Response('Not a space participant', { 
       status: 403,
       headers: corsHeaders 
@@ -80,11 +82,30 @@ Deno.serve(async (req) => {
   // Handle WebSocket events
   socket.onopen = () => {
     console.log(`Client connected: ${user.id} to space: ${spaceId} with role: ${participant.role}`)
+    
+    // Notify all users that someone joined
     broadcastToSpace(spaceId, {
       type: 'user-joined',
       userId: user.id,
       role: participant.role
     })
+
+    // If a speaker/host joins, send offers to all listeners for audio streaming
+    if (participant.role === 'speaker' || participant.role === 'host' || participant.role === 'co_host') {
+      const listeners = Array.from(clients.values()).filter(
+        client => client.spaceId === spaceId && 
+        client.role === 'listener' && 
+        client.userId !== user.id
+      )
+      
+      listeners.forEach(listener => {
+        listener.socket.send(JSON.stringify({
+          type: 'speaker-joined',
+          speakerId: user.id,
+          message: 'A speaker has joined and will start streaming audio'
+        }))
+      })
+    }
   }
 
   socket.onmessage = async (e) => {
@@ -93,9 +114,22 @@ Deno.serve(async (req) => {
       message.from = user.id
       message.role = participant.role
       
+      console.log('Received message:', message.type, 'from:', user.id)
+      
+      // Handle WebRTC signaling messages (offer, answer, ice-candidate)
+      if (['offer', 'answer', 'ice-candidate'].includes(message.type)) {
+        const targetClient = clients.get(message.to)
+        if (targetClient && targetClient.spaceId === spaceId) {
+          console.log(`Relaying ${message.type} from ${user.id} to ${message.to}`)
+          targetClient.socket.send(JSON.stringify(message))
+        } else {
+          console.log(`Target client ${message.to} not found or not in same space`)
+        }
+        return
+      }
+      
       // Special handling for audio control messages
       if (message.type === 'mute-user') {
-        // Check if the sender is host or co-host
         if (participant.role === 'host' || participant.role === 'co_host') {
           const targetClient = clients.get(message.targetUserId)
           if (targetClient) {
@@ -105,7 +139,6 @@ Deno.serve(async (req) => {
             }))
           }
         } else {
-          // Not authorized to mute others
           socket.send(JSON.stringify({
             type: 'error',
             message: 'Not authorized to mute other users'
@@ -116,9 +149,7 @@ Deno.serve(async (req) => {
       
       // Special handling for role change messages
       if (message.type === 'change-role') {
-        // Only host can change roles
         if (participant.role === 'host') {
-          // Update role in database
           const { error } = await supabase
             .from('space_participants')
             .update({ role: message.newRole })
@@ -133,19 +164,16 @@ Deno.serve(async (req) => {
             return
           }
           
-          // Update client role in memory
           const targetClient = clients.get(message.targetUserId)
           if (targetClient) {
             targetClient.role = message.newRole
             
-            // Notify the target user of role change
             targetClient.socket.send(JSON.stringify({
               type: 'role-changed',
               newRole: message.newRole,
               by: user.id
             }))
             
-            // Notify all users of the role change
             broadcastToSpace(spaceId, {
               type: 'user-role-changed',
               userId: message.targetUserId,
@@ -153,7 +181,6 @@ Deno.serve(async (req) => {
             })
           }
         } else {
-          // Not authorized to change roles
           socket.send(JSON.stringify({
             type: 'error',
             message: 'Only the host can change user roles'
@@ -162,16 +189,8 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Relay regular messages to other participants in the same space
-      if (['offer', 'answer', 'ice-candidate'].includes(message.type)) {
-        const targetClient = clients.get(message.to)
-        if (targetClient) {
-          targetClient.socket.send(JSON.stringify(message))
-        }
-      } else {
-        // Broadcast to all for other message types
-        broadcastToSpace(spaceId, message, user.id)
-      }
+      // Broadcast other message types to all participants
+      broadcastToSpace(spaceId, message, user.id)
     } catch (err) {
       console.error('Error handling message:', err)
     }
@@ -186,17 +205,28 @@ Deno.serve(async (req) => {
     })
   }
 
+  socket.onerror = (error) => {
+    console.error(`WebSocket error for user ${user.id}:`, error)
+  }
+
   return response
 })
 
 function broadcastToSpace(spaceId: string, message: any, excludeUserId?: string) {
-  for (const client of clients.values()) {
-    if (client.spaceId === spaceId && client.userId !== excludeUserId) {
-      try {
+  const spaceClients = Array.from(clients.values()).filter(
+    client => client.spaceId === spaceId && client.userId !== excludeUserId
+  )
+  
+  console.log(`Broadcasting message type ${message.type} to ${spaceClients.length} clients in space ${spaceId}`)
+  
+  spaceClients.forEach(client => {
+    try {
+      if (client.socket.readyState === WebSocket.OPEN) {
         client.socket.send(JSON.stringify(message))
-      } catch (err) {
-        console.error(`Error sending to client ${client.userId}:`, err)
       }
+    } catch (err) {
+      console.error(`Error sending to client ${client.userId}:`, err)
+      clients.delete(client.userId)
     }
-  }
+  })
 }

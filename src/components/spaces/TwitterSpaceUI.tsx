@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,12 @@ interface TwitterSpaceUIProps {
   onClose: () => void;
 }
 
+interface RemoteAudioStream {
+  userId: string;
+  stream: MediaStream;
+  audioElement: HTMLAudioElement;
+}
+
 export const TwitterSpaceUI = ({
   spaceId,
   spaceName,
@@ -46,6 +51,8 @@ export const TwitterSpaceUI = ({
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
   const [hasActiveSpeakerRequest, setHasActiveSpeakerRequest] = useState(false);
+  const [remoteAudioStreams, setRemoteAudioStreams] = useState<Map<string, RemoteAudioStream>>(new Map());
+  const [peerConnections, setPeerConnections] = useState<Map<string, RTCPeerConnection>>(new Map());
   
   const { selectedInputDevice } = useAudioDevices();
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
@@ -433,10 +440,10 @@ export const TwitterSpaceUI = ({
                 Audio Error
               </Badge>
             )}
-            {isRecording && (
-              <Badge variant="destructive" className="flex items-center gap-1">
-                <div className="h-3 w-3 animate-pulse bg-red-500 rounded-full"></div> 
-                {formatTime(recordingDuration)}
+            {remoteAudioStreams.size > 0 && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Volume2 className="h-3 w-3" />
+                Listening to {remoteAudioStreams.size} speaker{remoteAudioStreams.size !== 1 ? 's' : ''}
               </Badge>
             )}
             {/* Show pending requests count for hosts */}

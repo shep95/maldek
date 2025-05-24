@@ -31,8 +31,19 @@ export const useSpaceSignaling = (spaceId: string) => {
       }
 
       console.log('Connecting to signaling server...');
-      const wsUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/spaces-signaling?spaceId=${spaceId}&jwt=${session.access_token}`;
-      websocketRef.current = new WebSocket(wsUrl);
+      
+      // Get the Supabase URL and construct the WebSocket URL correctly
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) {
+        throw new Error('VITE_SUPABASE_URL is not configured');
+      }
+      
+      // Convert HTTP/HTTPS URL to WebSocket URL
+      const wsUrl = supabaseUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+      const fullWsUrl = `${wsUrl}/functions/v1/spaces-signaling?spaceId=${spaceId}&jwt=${session.access_token}`;
+      
+      console.log('Connecting to WebSocket URL:', fullWsUrl);
+      websocketRef.current = new WebSocket(fullWsUrl);
 
       websocketRef.current.onopen = () => {
         console.log('Connected to signaling server');
@@ -44,11 +55,10 @@ export const useSpaceSignaling = (spaceId: string) => {
       websocketRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         setState(prev => ({ ...prev, error: 'Connection error' }));
-        toast.error('Connection error occurred');
       };
 
-      websocketRef.current.onclose = () => {
-        console.log('Disconnected from signaling server');
+      websocketRef.current.onclose = (event) => {
+        console.log('Disconnected from signaling server, code:', event.code, 'reason:', event.reason);
         setState(prev => ({ ...prev, isConnected: false }));
         
         // Clear any existing reconnect timeout
@@ -56,13 +66,13 @@ export const useSpaceSignaling = (spaceId: string) => {
           window.clearTimeout(reconnectTimeoutRef.current);
         }
         
-        // Attempt to reconnect if not at max attempts
-        if (reconnectAttempts.current < maxReconnectAttempts) {
+        // Only try to reconnect if it wasn't a clean close and we haven't exceeded max attempts
+        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           console.log(`Attempting to reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
           reconnectAttempts.current++;
           toast.info(`Reconnecting to space... Attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
           reconnectTimeoutRef.current = window.setTimeout(connectToSignalingServer, 2000);
-        } else {
+        } else if (event.code !== 1000) {
           toast.error('Unable to connect to space. Please try rejoining.');
           setState(prev => ({ ...prev, error: 'Maximum reconnection attempts reached' }));
         }
@@ -78,10 +88,10 @@ export const useSpaceSignaling = (spaceId: string) => {
 
   const sendSignalingMessage = (message: any) => {
     if (websocketRef.current?.readyState === WebSocket.OPEN) {
-      console.log('Sending signaling message:', message);
+      console.log('Sending signaling message:', message.type);
       websocketRef.current.send(JSON.stringify(message));
     } else {
-      console.error('WebSocket not connected');
+      console.error('WebSocket not connected, current state:', websocketRef.current?.readyState);
       toast.error('Connection lost. Attempting to reconnect...');
       connectToSignalingServer();
     }
@@ -93,7 +103,7 @@ export const useSpaceSignaling = (spaceId: string) => {
       window.clearTimeout(reconnectTimeoutRef.current);
     }
     if (websocketRef.current) {
-      websocketRef.current.close();
+      websocketRef.current.close(1000, 'Component unmounting'); // Clean close
       websocketRef.current = null;
     }
   };
