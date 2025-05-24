@@ -31,6 +31,7 @@ export const CreateSpaceDialog = ({
   const [description, setDescription] = useState("");
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
+  const [isRecorded, setIsRecorded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateSpace = async () => {
@@ -47,7 +48,7 @@ export const CreateSpaceDialog = ({
     try {
       setIsSubmitting(true);
 
-      // Create the space without the is_recorded field
+      // Create the space
       const { data: space, error: spaceError } = await supabase
         .from("spaces")
         .insert({
@@ -55,7 +56,8 @@ export const CreateSpaceDialog = ({
           description,
           host_id: session?.user?.id,
           status: isScheduled ? "scheduled" : "live",
-          scheduled_start: isScheduled ? scheduledDate?.toISOString() : null,
+          scheduled_for: isScheduled ? scheduledDate?.toISOString() : null,
+          is_recorded: isRecorded,
           max_speakers: 10,
         })
         .select()
@@ -88,6 +90,7 @@ export const CreateSpaceDialog = ({
       setDescription("");
       setIsScheduled(false);
       setScheduledDate(undefined);
+      setIsRecorded(false);
       
       // Callback to parent component
       if (onSpaceCreated) {
@@ -175,6 +178,18 @@ export const CreateSpaceDialog = ({
               </Popover>
             </div>
           )}
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label htmlFor="recorded" className="block">Record Space</Label>
+              <p className="text-xs text-muted-foreground">Make a replay available after the Space ends</p>
+            </div>
+            <Switch
+              id="recorded"
+              checked={isRecorded}
+              onCheckedChange={setIsRecorded}
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-2">
