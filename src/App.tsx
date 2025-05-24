@@ -23,12 +23,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
 import { SpaceProvider } from "@/contexts/SpaceContext";
 import { SpaceMiniPlayer } from "@/components/spaces/SpaceMiniPlayer";
+import Index from "@/pages/Index";
 
 const queryClient = new QueryClient()
 
@@ -55,7 +54,7 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
     return (
       <Routes>
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="/" element={<div>Please log in</div>} />
+        <Route path="/" element={<Index />} />
       </Routes>
     );
   }
@@ -87,17 +86,17 @@ function App() {
       <SessionContextProvider supabaseClient={supabase}>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
           <SpaceProvider>
-            <AuthenticationWrapper>
-              <Toaster />
-              <Router>
+            <Router>
+              <AuthenticationWrapper>
+                <Toaster />
                 <Routes>
-                  <Route path="/" element={<div>Home</div>} />
+                  <Route path="/" element={<Index />} />
                   <Route path="/spaces" element={<Spaces />} />
                   <Route path="/subscription" element={<Subscription />} />
                 </Routes>
-              </Router>
-              <SpaceMiniPlayer />
-            </AuthenticationWrapper>
+                <SpaceMiniPlayer />
+              </AuthenticationWrapper>
+            </Router>
           </SpaceProvider>
         </ThemeProvider>
       </SessionContextProvider>
