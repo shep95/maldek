@@ -26,8 +26,9 @@ const Index = () => {
         }
         
         if (session) {
-          console.log("Active session found");
-          setIsAuthenticated(true);
+          console.log("Active session found, redirecting to dashboard");
+          navigate("/dashboard", { replace: true });
+          return;
         } else {
           console.log("No active session");
           setIsAuthenticated(false);
@@ -41,7 +42,11 @@ const Index = () => {
     };
 
     checkSession();
-  }, []);
+  }, [navigate]);
+
+  const handleLogin = () => {
+    navigate("/auth");
+  };
 
   const handleNavigateToSpaces = () => {
     navigate("/spaces");
@@ -61,39 +66,29 @@ const Index = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Welcome to Spaces</CardTitle>
-            <CardDescription>
-              Please log in to access the application and join audio spaces.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center">
-              Authentication is required to continue.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center py-12">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Spaces</h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            Connect with others through live audio conversations
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Welcome to Spaces</CardTitle>
+          <CardDescription>
+            Connect with others through live audio conversations and much more.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground text-center">
+            Please log in to access the full application with dashboard, spaces, messages, and more.
           </p>
-          <Button onClick={handleNavigateToSpaces} size="lg">
-            Browse Spaces
-          </Button>
-        </div>
-      </div>
+          <div className="flex flex-col gap-2">
+            <Button onClick={handleLogin} className="w-full">
+              Log In / Sign Up
+            </Button>
+            <Button onClick={handleNavigateToSpaces} variant="outline" className="w-full">
+              Browse Public Spaces
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
