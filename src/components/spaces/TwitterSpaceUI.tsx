@@ -2,17 +2,16 @@ import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, UserPlus2, Users, X, MessageSquare, Volume2, VolumeX, Settings } from "lucide-react";
+import { Mic, MicOff, UserPlus2, Users, X, MessageSquare, Settings, Loader2, WifiOff } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useSpaceSignaling } from "@/hooks/spaces/useSpaceSignaling";
 import { useAudioStream } from "@/hooks/spaces/useAudioStream";
 import { useAudioLevelDetector } from "@/hooks/spaces/useAudioLevelDetector";
-import { useAudioDevices } from "@/hooks/spaces/useAudioDevices";
+import { useAudioDevices } from "@/components/spaces/AudioDeviceSelector";
 import { AudioDeviceSelector } from "@/components/spaces/AudioDeviceSelector";
 import { toast } from "sonner";
-import { Space } from "@/hooks/spaces/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface TwitterSpaceUIProps {
@@ -47,7 +46,7 @@ export const TwitterSpaceUI = ({
   
   const { selectedInputDevice } = useAudioDevices();
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
-  const { isMuted, isStreaming, startAudio, toggleMute, stopAudio, getStream } = useAudioStream(selectedInputDevice);
+  const { isMuted, isStreaming, isInitializing, startAudio, toggleMute, stopAudio, getStream, error: audioError } = useAudioStream(selectedInputDevice);
   const { audioLevel, isSpeaking } = useAudioLevelDetector(getStream(), isStreaming && (isHost || isSpeaker));
 
   // Check if current user is host or speaker
@@ -76,8 +75,9 @@ export const TwitterSpaceUI = ({
     checkUserRole();
   }, [spaceId, session?.user?.id]);
 
-  // Connect to signaling server and start audio when component mounts
+  // Connect to signaling server when component mounts
   useEffect(() => {
+    console.log('Initializing space connection...');
     connectToSignalingServer();
     
     return () => {
@@ -88,6 +88,18 @@ export const TwitterSpaceUI = ({
       }
     };
   }, []);
+
+  // Start audio when user becomes a speaker and signaling is connected
+  useEffect(() => {
+    const initializeAudio = async () => {
+      if (isSpeaker && isConnected && !isStreaming && !isInitializing) {
+        console.log('Initializing audio for speaker...');
+        await startAudio();
+      }
+    };
+    
+    initializeAudio();
+  }, [isSpeaker, isConnected, isStreaming, isInitializing]);
 
   // Load participants and speaker requests
   useEffect(() => {
@@ -185,6 +197,11 @@ export const TwitterSpaceUI = ({
   }, [isConnected, isSpeaker, isStreaming]);
 
   const handleToggleMute = () => {
+    if (!isStreaming && isSpeaker) {
+      toast.error('Audio not connected. Trying to reconnect...');
+      startAudio();
+      return;
+    }
     toggleMute();
   };
 
@@ -338,6 +355,23 @@ export const TwitterSpaceUI = ({
               <Users className="h-3 w-3" />
               {participants.length}
             </span>
+            {!isConnected && (
+              <Badge variant="destructive" className="flex items-center gap-1">
+                <WifiOff className="h-3 w-3" />
+                Connecting...
+              </Badge>
+            )}
+            {isInitializing && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Setting up audio...
+              </Badge>
+            )}
+            {audioError && (
+              <Badge variant="destructive" className="text-xs">
+                Audio Error
+              </Badge>
+            )}
             {isRecording && (
               <Badge variant="destructive" className="flex items-center gap-1">
                 <div className="h-3 w-3 animate-pulse bg-red-500 rounded-full"></div> 
@@ -535,9 +569,16 @@ export const TwitterSpaceUI = ({
                 size="sm"
                 onClick={handleToggleMute}
                 className="gap-1"
+                disabled={isInitializing}
               >
-                {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                {isMuted ? "Unmute" : "Mute"}
+                {isInitializing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isMuted ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+                {isInitializing ? "Connecting..." : isMuted ? "Unmute" : "Mute"}
               </Button>
             ) : (
               <Button
