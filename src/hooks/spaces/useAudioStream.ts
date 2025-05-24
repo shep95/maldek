@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
 
-export const useAudioStream = () => {
+export const useAudioStream = (selectedInputDevice?: string) => {
   const [isMuted, setIsMuted] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -11,13 +11,17 @@ export const useAudioStream = () => {
   const startAudio = async () => {
     try {
       console.log('Requesting microphone access...');
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      
+      const constraints: MediaStreamConstraints = {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          ...(selectedInputDevice && selectedInputDevice !== 'default' ? { deviceId: selectedInputDevice } : {})
         }
-      });
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       console.log('Microphone access granted, checking audio tracks...');
       const audioTrack = stream.getAudioTracks()[0];
@@ -31,7 +35,6 @@ export const useAudioStream = () => {
         toast.warning('Your microphone appears to be muted by your system');
       }
 
-      // Check if the audio track is actually receiving input
       if (!audioTrack.enabled) {
         console.warn('Audio track is disabled');
         toast.warning('Your microphone is disabled. Please check your system settings');
@@ -102,17 +105,14 @@ export const useAudioStream = () => {
         setIsMuted(!audioTrack.enabled);
         console.log(`Microphone ${audioTrack.enabled ? 'unmuted' : 'muted'}`);
         
-        // Show feedback toast
         toast.success(`Microphone ${audioTrack.enabled ? 'unmuted' : 'muted'}`);
         
-        // Check if the track is actually working
         if (!audioTrack.readyState || audioTrack.readyState === 'ended') {
           setError('Audio track is not active');
           toast.error('Audio connection lost. Please try rejoining the space.');
           return;
         }
 
-        // Additional connection checks
         if (!navigator.onLine) {
           setError('Internet connection lost');
           toast.error('Internet connection lost. Please check your connection.');

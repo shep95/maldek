@@ -1,16 +1,19 @@
-
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, UserPlus2, Users, X, MessageSquare, Volume2, VolumeX } from "lucide-react";
+import { Mic, MicOff, UserPlus2, Users, X, MessageSquare, Volume2, VolumeX, Settings } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useSpaceSignaling } from "@/hooks/spaces/useSpaceSignaling";
 import { useAudioStream } from "@/hooks/spaces/useAudioStream";
+import { useAudioLevelDetector } from "@/hooks/spaces/useAudioLevelDetector";
+import { useAudioDevices } from "@/hooks/spaces/useAudioDevices";
+import { AudioDeviceSelector } from "@/components/spaces/AudioDeviceSelector";
 import { toast } from "sonner";
 import { Space } from "@/hooks/spaces/types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface TwitterSpaceUIProps {
   spaceId: string;
@@ -39,11 +42,13 @@ export const TwitterSpaceUI = ({
   const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [showChat, setShowChat] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
   
+  const { selectedInputDevice } = useAudioDevices();
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
-  const { isMuted, isStreaming, startAudio, toggleMute, stopAudio, getStream } = useAudioStream();
+  const { isMuted, isStreaming, startAudio, toggleMute, stopAudio, getStream } = useAudioStream(selectedInputDevice);
+  const { audioLevel, isSpeaking } = useAudioLevelDetector(getStream(), isStreaming && (isHost || isSpeaker));
 
   // Check if current user is host or speaker
   useEffect(() => {
@@ -70,45 +75,6 @@ export const TwitterSpaceUI = ({
     
     checkUserRole();
   }, [spaceId, session?.user?.id]);
-
-  // Audio level detection
-  useEffect(() => {
-    let animationFrame: number;
-    let analyser: AnalyserNode;
-    let dataArray: Uint8Array;
-
-    const detectAudioLevel = () => {
-      if (analyser && dataArray) {
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-        setAudioLevel(average);
-      }
-      animationFrame = requestAnimationFrame(detectAudioLevel);
-    };
-
-    const setupAudioAnalysis = async () => {
-      const stream = await getStream();
-      if (stream && isStreaming) {
-        const audioContext = new AudioContext();
-        const source = audioContext.createMediaStreamSource(stream);
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
-        source.connect(analyser);
-        detectAudioLevel();
-      }
-    };
-
-    if (isStreaming && (isHost || isSpeaker)) {
-      setupAudioAnalysis();
-    }
-
-    return () => {
-      if (animationFrame) {
-        cancelAnimationFrame(animationFrame);
-      }
-    };
-  }, [isStreaming, isHost, isSpeaker, getStream]);
 
   // Connect to signaling server and start audio when component mounts
   useEffect(() => {
@@ -153,7 +119,7 @@ export const TwitterSpaceUI = ({
         .from('space_speaker_requests')
         .select(`
           *,
-          profile:profiles(
+          profile:profiles!space_speaker_requests_user_id_fkey(
             username,
             avatar_url
           )
@@ -380,14 +346,30 @@ export const TwitterSpaceUI = ({
             )}
           </div>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onClose}
-          className="rounded-full h-8 w-8"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Popover open={showAudioSettings} onOpenChange={setShowAudioSettings}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-8 w-8"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64" side="bottom" align="end">
+              <AudioDeviceSelector />
+            </PopoverContent>
+          </Popover>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose}
+            className="rounded-full h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Participants Area */}
@@ -405,11 +387,34 @@ export const TwitterSpaceUI = ({
                   </Avatar>
                   <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
                     {participant.user_id === session?.user?.id && isSpeaker ? (
-                      audioLevel > 10 ? <Volume2 className="h-3 w-3 text-green-500" /> : <Mic className="h-3 w-3 text-accent" />
+                      <>
+                        {isSpeaking ? (
+                          <Volume2 className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <Mic className={`h-3 w-3 ${isMuted ? 'text-red-500' : 'text-accent'}`} />
+                        )}
+                      </>
                     ) : (
                       <Mic className="h-3 w-3 text-accent" />
                     )}
                   </div>
+                  {/* Audio level indicator */}
+                  {participant.user_id === session?.user?.id && isSpeaker && audioLevel > 0 && (
+                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1 rounded-full ${
+                            i < audioLevel ? 'bg-green-500' : 'bg-gray-300'
+                          }`}
+                          style={{
+                            height: `${4 + (i * 2)}px`,
+                            transition: 'all 150ms ease'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs mt-1 font-medium">{participant.profile?.username || 'Unknown'}</span>
                 <Badge variant="secondary" className="text-xs mt-0.5">Host</Badge>
@@ -432,11 +437,34 @@ export const TwitterSpaceUI = ({
                     </Avatar>
                     <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
                       {participant.user_id === session?.user?.id && isSpeaker ? (
-                        audioLevel > 10 ? <Volume2 className="h-3 w-3 text-green-500" /> : <Mic className="h-3 w-3" />
+                        <>
+                          {isSpeaking ? (
+                            <Volume2 className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <Mic className={`h-3 w-3 ${isMuted ? 'text-red-500' : 'text-accent'}`} />
+                          )}
+                        </>
                       ) : (
                         <Mic className="h-3 w-3" />
                       )}
                     </div>
+                    {/* Audio level indicator */}
+                    {participant.user_id === session?.user?.id && isSpeaker && audioLevel > 0 && (
+                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-1 rounded-full ${
+                              i < audioLevel ? 'bg-green-500' : 'bg-gray-300'
+                            }`}
+                            style={{
+                              height: `${4 + (i * 2)}px`,
+                              transition: 'all 150ms ease'
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <span className="text-xs mt-1">{participant.profile?.username || 'Unknown'}</span>
                 </div>
