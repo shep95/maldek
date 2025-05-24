@@ -10,7 +10,6 @@ import { useSpaceSignaling } from "@/hooks/spaces/useSpaceSignaling";
 import { Space } from "@/hooks/spaces/types";
 import { useImprovedAudioStream } from "@/hooks/spaces/useImprovedAudioStream";
 import { useSpace } from "@/contexts/SpaceContext";
-import { toast } from "sonner";
 
 interface TwitterSpaceUIProps {
   spaceId: string;

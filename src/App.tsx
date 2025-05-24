@@ -1,26 +1,18 @@
-
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
 } from "react-router-dom";
-import { ThemeProvider } from "next-themes"
+import { ThemeProvider } from "@/components/theme-provider"
 import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "sonner";
 import Spaces from "@/pages/Spaces";
 import Subscription from "@/pages/Subscription";
-import Dashboard from "@/pages/Dashboard";
-import Auth from "@/pages/Auth";
-import Settings from "@/pages/Settings";
-import Messages from "@/pages/Messages";
-import Notifications from "@/pages/Notifications";
-import Videos from "@/pages/Videos";
-import Profiles from "@/pages/Profiles";
-import PostDetail from "@/pages/PostDetail";
-import DaarpAI from "@/pages/DaarpAI";
-import EmperorChat from "@/pages/EmperorChat";
+import Account from "@/pages/Account";
+import Home from "@/pages/Home";
+import Pricing from "@/pages/Pricing";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from "react";
 import { initializeAppCenter, checkForUpdate } from "@/utils/appCenterConfig";
@@ -33,11 +25,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
 import { SpaceProvider } from "@/contexts/SpaceContext";
 import { SpaceMiniPlayer } from "@/components/spaces/SpaceMiniPlayer";
-import Index from "@/pages/Index";
 
 const queryClient = new QueryClient()
 
@@ -63,8 +56,9 @@ const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
   if (!session) {
     return (
       <Routes>
-        <Route path="/auth" element={<Auth />} />
-        <Route path="*" element={<Navigate to="/auth" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/pricing" element={<Pricing />} />
       </Routes>
     );
   }
@@ -96,27 +90,19 @@ function App() {
       <SessionContextProvider supabaseClient={supabase}>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
           <SpaceProvider>
-            <Router>
-              <AuthenticationWrapper>
-                <Toaster />
+            <AuthenticationWrapper>
+              <Toaster />
+              <Router>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/" element={<Home />} />
+                  <Route path="/pricing" element={<Pricing />} />
                   <Route path="/spaces" element={<Spaces />} />
                   <Route path="/subscription" element={<Subscription />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/messages" element={<Messages />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/videos" element={<Videos />} />
-                  <Route path="/profiles/:username" element={<Profiles />} />
-                  <Route path="/post/:id" element={<PostDetail />} />
-                  <Route path="/ai" element={<DaarpAI />} />
-                  <Route path="/emperor" element={<EmperorChat />} />
+                  <Route path="/account" element={<Account />} />
                 </Routes>
-                <SpaceMiniPlayer />
-              </AuthenticationWrapper>
-            </Router>
+              </Router>
+              <SpaceMiniPlayer />
+            </AuthenticationWrapper>
           </SpaceProvider>
         </ThemeProvider>
       </SessionContextProvider>
