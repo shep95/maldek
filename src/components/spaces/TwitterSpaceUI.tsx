@@ -11,6 +11,7 @@ import { useAudioStream } from "@/hooks/spaces/useAudioStream";
 import { useAudioLevelDetector } from "@/hooks/spaces/useAudioLevelDetector";
 import { useAudioDevices } from "@/hooks/spaces/useAudioDevices";
 import { AudioDeviceSelector } from "@/components/spaces/AudioDeviceSelector";
+import { SpaceChat } from "@/components/spaces/chat/SpaceChat";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -64,8 +65,11 @@ export const TwitterSpaceUI = ({
           
         if (participant) {
           const isUserHost = participant.role === 'host' || participant.role === 'co_host';
+          const isUserSpeaker = isUserHost || participant.role === 'speaker';
           setIsHost(isUserHost);
-          setIsSpeaker(isUserHost || participant.role === 'speaker');
+          setIsSpeaker(isUserSpeaker);
+          
+          console.log('User role detected:', participant.role, { isUserHost, isUserSpeaker });
         }
       } catch (error) {
         console.error('Error checking user role:', error);
@@ -92,16 +96,22 @@ export const TwitterSpaceUI = ({
   // Start audio when user becomes a speaker and signaling is connected
   useEffect(() => {
     const initializeAudio = async () => {
-      if (isSpeaker && isConnected && !isStreaming && !isInitializing) {
-        console.log('Initializing audio for speaker...');
-        await startAudio();
+      // Only initialize audio for speakers and hosts
+      if ((isHost || isSpeaker) && isConnected && !isStreaming && !isInitializing) {
+        console.log('Initializing audio for speaker/host...', { isHost, isSpeaker, isConnected });
+        try {
+          await startAudio();
+          console.log('Audio initialized successfully');
+        } catch (error) {
+          console.error('Failed to initialize audio:', error);
+          toast.error('Failed to connect microphone. Please check permissions.');
+        }
       }
     };
     
     initializeAudio();
-  }, [isSpeaker, isConnected, isStreaming, isInitializing]);
+  }, [isHost, isSpeaker, isConnected, isStreaming, isInitializing]);
 
-  // Load participants and speaker requests
   useEffect(() => {
     const fetchParticipants = async () => {
       const { data, error } = await supabase
@@ -183,25 +193,18 @@ export const TwitterSpaceUI = ({
     };
   }, [spaceId, isHost]);
 
-  // Start audio stream if user is a speaker
-  useEffect(() => {
-    const initializeAudio = async () => {
-      if (isSpeaker && !isStreaming) {
-        await startAudio();
-      }
-    };
-    
-    if (isConnected) {
-      initializeAudio();
-    }
-  }, [isConnected, isSpeaker, isStreaming]);
-
   const handleToggleMute = () => {
-    if (!isStreaming && isSpeaker) {
+    if (!isStreaming && (isHost || isSpeaker)) {
       toast.error('Audio not connected. Trying to reconnect...');
       startAudio();
       return;
     }
+    
+    if (!isHost && !isSpeaker) {
+      toast.error('You need speaker permissions to use the microphone');
+      return;
+    }
+    
     toggleMute();
   };
 
@@ -406,71 +409,23 @@ export const TwitterSpaceUI = ({
         </div>
       </div>
 
-      {/* Participants Area */}
-      <div className="flex-1 flex flex-col overflow-y-auto p-4">
-        {/* Hosts */}
-        <div className="mb-6">
-          <h3 className="text-xs text-muted-foreground mb-2">Host</h3>
-          <div className="flex flex-wrap gap-4">
-            {hostParticipants.map(participant => (
-              <div key={participant.user_id} className="flex flex-col items-center">
-                <div className="relative">
-                  <Avatar className="h-16 w-16 border-2 border-accent">
-                    <AvatarImage src={participant.profile?.avatar_url} />
-                    <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
-                    {participant.user_id === session?.user?.id && isSpeaker ? (
-                      <>
-                        {isSpeaking ? (
-                          <Volume2 className="h-3 w-3 text-green-500" />
-                        ) : (
-                          <Mic className={`h-3 w-3 ${isMuted ? 'text-red-500' : 'text-accent'}`} />
-                        )}
-                      </>
-                    ) : (
-                      <Mic className="h-3 w-3 text-accent" />
-                    )}
-                  </div>
-                  {/* Audio level indicator */}
-                  {participant.user_id === session?.user?.id && isSpeaker && audioLevel > 0 && (
-                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-1 rounded-full ${
-                            i < audioLevel ? 'bg-green-500' : 'bg-gray-300'
-                          }`}
-                          style={{
-                            height: `${4 + (i * 2)}px`,
-                            transition: 'all 150ms ease'
-                          }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs mt-1 font-medium">{participant.profile?.username || 'Unknown'}</span>
-                <Badge variant="secondary" className="text-xs mt-0.5">Host</Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Speakers */}
-        {speakerParticipants.length > 0 && (
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Participants Area */}
+        <div className={`flex-1 overflow-y-auto p-4 ${showChat ? 'max-h-[60%]' : ''}`}>
+          {/* Hosts */}
           <div className="mb-6">
-            <h3 className="text-xs text-muted-foreground mb-2">Speakers</h3>
+            <h3 className="text-xs text-muted-foreground mb-2">Host</h3>
             <div className="flex flex-wrap gap-4">
-              {speakerParticipants.map(participant => (
+              {hostParticipants.map(participant => (
                 <div key={participant.user_id} className="flex flex-col items-center">
                   <div className="relative">
-                    <Avatar className="h-12 w-12">
+                    <Avatar className="h-16 w-16 border-2 border-accent">
                       <AvatarImage src={participant.profile?.avatar_url} />
                       <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
-                      {participant.user_id === session?.user?.id && isSpeaker ? (
+                      {participant.user_id === session?.user?.id && (isHost || isSpeaker) ? (
                         <>
                           {isSpeaking ? (
                             <Volume2 className="h-3 w-3 text-green-500" />
@@ -479,11 +434,11 @@ export const TwitterSpaceUI = ({
                           )}
                         </>
                       ) : (
-                        <Mic className="h-3 w-3" />
+                        <Mic className="h-3 w-3 text-accent" />
                       )}
                     </div>
                     {/* Audio level indicator */}
-                    {participant.user_id === session?.user?.id && isSpeaker && audioLevel > 0 && (
+                    {participant.user_id === session?.user?.id && (isHost || isSpeaker) && audioLevel > 0 && (
                       <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
                         {[...Array(5)].map((_, i) => (
                           <div
@@ -500,70 +455,124 @@ export const TwitterSpaceUI = ({
                       </div>
                     )}
                   </div>
+                  <span className="text-xs mt-1 font-medium">{participant.profile?.username || 'Unknown'}</span>
+                  <Badge variant="secondary" className="text-xs mt-0.5">Host</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Speakers */}
+          {speakerParticipants.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xs text-muted-foreground mb-2">Speakers</h3>
+              <div className="flex flex-wrap gap-4">
+                {speakerParticipants.map(participant => (
+                  <div key={participant.user_id} className="flex flex-col items-center">
+                    <div className="relative">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={participant.profile?.avatar_url} />
+                        <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
+                        {participant.user_id === session?.user?.id && isSpeaker ? (
+                          <>
+                            {isSpeaking ? (
+                              <Volume2 className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <Mic className={`h-3 w-3 ${isMuted ? 'text-red-500' : 'text-accent'}`} />
+                            )}
+                          </>
+                        ) : (
+                          <Mic className="h-3 w-3" />
+                        )}
+                      </div>
+                      {/* Audio level indicator */}
+                      {participant.user_id === session?.user?.id && isSpeaker && audioLevel > 0 && (
+                        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <div
+                              key={i}
+                              className={`w-1 rounded-full ${
+                                i < audioLevel ? 'bg-green-500' : 'bg-gray-300'
+                              }`}
+                              style={{
+                                height: `${4 + (i * 2)}px`,
+                                transition: 'all 150ms ease'
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs mt-1">{participant.profile?.username || 'Unknown'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Speaker Requests (Host Only) */}
+          {isHost && speakerRequests.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-xs text-muted-foreground mb-2">Speaker Requests</h3>
+              <div className="space-y-2">
+                {speakerRequests.map(request => (
+                  <div key={request.id} className="flex items-center justify-between p-2 bg-accent/10 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={request.profile?.avatar_url} />
+                        <AvatarFallback>{request.profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{request.profile?.username}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSpeakerRequest(request.id, request.user_id, false)}
+                      >
+                        Decline
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSpeakerRequest(request.id, request.user_id, true)}
+                      >
+                        Accept
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Listeners */}
+          <div>
+            <h3 className="text-xs text-muted-foreground mb-2">Listening ({listenerParticipants.length})</h3>
+            <div className="flex flex-wrap gap-3">
+              {listenerParticipants.map(participant => (
+                <div key={participant.user_id} className="flex flex-col items-center">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={participant.profile?.avatar_url} />
+                    <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
                   <span className="text-xs mt-1">{participant.profile?.username || 'Unknown'}</span>
                 </div>
               ))}
             </div>
           </div>
-        )}
-
-        {/* Speaker Requests (Host Only) */}
-        {isHost && speakerRequests.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-xs text-muted-foreground mb-2">Speaker Requests</h3>
-            <div className="space-y-2">
-              {speakerRequests.map(request => (
-                <div key={request.id} className="flex items-center justify-between p-2 bg-accent/10 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={request.profile?.avatar_url} />
-                      <AvatarFallback>{request.profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{request.profile?.username}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleSpeakerRequest(request.id, request.user_id, false)}
-                    >
-                      Decline
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleSpeakerRequest(request.id, request.user_id, true)}
-                    >
-                      Accept
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Listeners */}
-        <div>
-          <h3 className="text-xs text-muted-foreground mb-2">Listening ({listenerParticipants.length})</h3>
-          <div className="flex flex-wrap gap-3">
-            {listenerParticipants.map(participant => (
-              <div key={participant.user_id} className="flex flex-col items-center">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={participant.profile?.avatar_url} />
-                  <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
-                </Avatar>
-                <span className="text-xs mt-1">{participant.profile?.username || 'Unknown'}</span>
-              </div>
-            ))}
-          </div>
         </div>
+
+        {/* Chat Area */}
+        <SpaceChat spaceId={spaceId} isVisible={showChat} />
       </div>
 
       {/* Controls */}
       <div className="border-t p-4">
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
-            {isSpeaker ? (
+            {(isHost || isSpeaker) ? (
               <Button
                 variant={isMuted ? "outline" : "default"}
                 size="sm"
@@ -593,7 +602,7 @@ export const TwitterSpaceUI = ({
             )}
             
             <Button
-              variant="outline"
+              variant={showChat ? "default" : "outline"}
               size="sm"
               onClick={() => setShowChat(!showChat)}
               className="gap-1"
