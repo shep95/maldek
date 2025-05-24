@@ -1,61 +1,113 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
-import { SessionContextProvider } from '@supabase/auth-helpers-react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { ThemeProvider } from "@/components/theme-provider"
+import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import { supabase } from "@/integrations/supabase/client";
-import { AuthenticationWrapper } from "@/components/auth/AuthenticationWrapper";
-import { AppRoutes } from "@/components/routing/AppRoutes";
-import { useEffect } from "react";
-import { BackgroundMusicProvider } from "@/components/providers/BackgroundMusicProvider";
-import { EncryptionProvider } from "@/providers/EncryptionProvider";
+import { Toaster } from "sonner";
+import Spaces from "@/pages/Spaces";
+import Subscription from "@/pages/Subscription";
+import Account from "@/pages/Account";
+import Home from "@/pages/Home";
+import Pricing from "@/pages/Pricing";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useEffect, useState } from "react";
+import { initializeAppCenter, checkForUpdate } from "@/utils/appCenterConfig";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button";
+import { useSession } from "@supabase/auth-helpers-react";
+import { SpaceProvider } from "@/contexts/SpaceContext";
+import { SpaceMiniPlayer } from "@/components/spaces/SpaceMiniPlayer";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient()
 
-const App = () => {
+const AuthenticationWrapper = ({ children }: { children: React.ReactNode }) => {
+  const session = useSession();
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+
   useEffect(() => {
-    // Initialize theme from localStorage or default to dark
-    const theme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.classList.add(theme);
+    initializeAppCenter();
 
-    // Initialize autoplay state
-    const shouldAutoplay = localStorage.getItem('background_music_autoplay') !== 'false';
-    if (shouldAutoplay) {
-      localStorage.setItem('background_music_autoplay', 'true');
-    }
+    const check = async () => {
+      const update = await checkForUpdate();
+      if (update && update.version !== import.meta.env.VITE_APP_VERSION) {
+        setUpdateAvailable(true);
+        setLatestVersion(update.version);
+      }
+    };
+
+    check();
   }, []);
 
+  if (!session) {
+    return (
+      <Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/pricing" element={<Pricing />} />
+      </Routes>
+    );
+  }
+
   return (
-    <SessionContextProvider 
-      supabaseClient={supabase} 
-      initialSession={null}
-    >
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <TooltipProvider>
-            <BackgroundMusicProvider>
-              <EncryptionProvider>
-                <AuthenticationWrapper>
-                  <AppRoutes />
-                </AuthenticationWrapper>
-              </EncryptionProvider>
-            </BackgroundMusicProvider>
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </SessionContextProvider>
+    <>
+      {children}
+      <AlertDialog open={updateAvailable}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update Available</AlertDialogTitle>
+            <AlertDialogDescription>
+              A new version of the app is available. Please update to version {latestVersion} to get the latest features and bug fixes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.location.reload()}>Update</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SessionContextProvider supabaseClient={supabase}>
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          <SpaceProvider>
+            <AuthenticationWrapper>
+              <Toaster />
+              <Router>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  <Route path="/spaces" element={<Spaces />} />
+                  <Route path="/subscription" element={<Subscription />} />
+                  <Route path="/account" element={<Account />} />
+                </Routes>
+              </Router>
+              <SpaceMiniPlayer />
+            </AuthenticationWrapper>
+          </SpaceProvider>
+        </ThemeProvider>
+      </SessionContextProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

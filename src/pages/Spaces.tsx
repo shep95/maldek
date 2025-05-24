@@ -1,4 +1,3 @@
-
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
@@ -11,9 +10,11 @@ import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
 import { SpaceCard } from "@/components/spaces/SpaceCard";
 import { SpaceHistoryCard } from "@/components/spaces/SpaceHistoryCard";
 import { TwitterSpaceDialog } from "@/components/spaces/TwitterSpaceDialog";
+import { useSpace } from "@/contexts/SpaceContext";
 
 const Spaces = () => {
   const session = useSession();
+  const { joinSpace } = useSpace();
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
   const [isSpaceDialogOpen, setIsSpaceDialogOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -86,25 +87,7 @@ const Spaces = () => {
 
   const handleJoinSpace = async (spaceId: string) => {
     try {
-      const { data: existingParticipant } = await supabase
-        .from('space_participants')
-        .select('role')
-        .eq('space_id', spaceId)
-        .eq('user_id', session?.user?.id)
-        .maybeSingle();
-
-      if (!existingParticipant) {
-        const { error: joinError } = await supabase
-          .from('space_participants')
-          .insert({
-            space_id: spaceId,
-            user_id: session?.user?.id,
-            role: 'listener'
-          });
-
-        if (joinError) throw joinError;
-      }
-
+      await joinSpace(spaceId);
       setSelectedSpaceId(spaceId);
       setIsSpaceDialogOpen(true);
     } catch (error) {

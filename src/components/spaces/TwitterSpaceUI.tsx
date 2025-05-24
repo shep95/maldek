@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, UserPlus2, Users, X, MessageSquare } from "lucide-react";
+import { Mic, MicOff, UserPlus2, Users, X, MessageSquare, Volume2, VolumeX } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useSpaceSignaling } from "@/hooks/spaces/useSpaceSignaling";
-import { useAudioStream } from "@/hooks/spaces/useAudioStream";
-import { toast } from "sonner";
 import { Space } from "@/hooks/spaces/types";
+import { useImprovedAudioStream } from "@/hooks/spaces/useImprovedAudioStream";
+import { useSpace } from "@/contexts/SpaceContext";
 
 interface TwitterSpaceUIProps {
   spaceId: string;
@@ -31,6 +31,7 @@ export const TwitterSpaceUI = ({
   onClose
 }: TwitterSpaceUIProps) => {
   const session = useSession();
+  const { leaveSpace } = useSpace();
   const [isHost, setIsHost] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -40,7 +41,17 @@ export const TwitterSpaceUI = ({
   const [showChat, setShowChat] = useState(false);
   
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
-  const { isMuted, isStreaming, startAudio, toggleMute, stopAudio, getStream } = useAudioStream();
+  const { 
+    isMuted, 
+    isDeafened,
+    isStreaming, 
+    audioLevel,
+    error: audioError,
+    startAudio, 
+    toggleMute, 
+    toggleDeafen,
+    stopAudio 
+  } = useImprovedAudioStream();
 
   // Check if current user is host or speaker
   useEffect(() => {
@@ -133,12 +144,23 @@ export const TwitterSpaceUI = ({
     if (isConnected) {
       initializeAudio();
     }
-  }, [isConnected, isSpeaker, isStreaming]);
+  }, [isConnected, isSpeaker, isStreaming, startAudio]);
 
   const handleToggleMute = () => {
     toggleMute();
   };
-  
+
+  const handleToggleDeafen = () => {
+    toggleDeafen();
+  };
+
+  const handleLeaveSpace = () => {
+    cleanup();
+    stopAudio();
+    leaveSpace();
+    onClose();
+  };
+
   const handleRequestToSpeak = async () => {
     try {
       const { error } = await supabase
@@ -233,6 +255,16 @@ export const TwitterSpaceUI = ({
               <Users className="h-3 w-3" />
               {participants.length}
             </span>
+            {isConnected && (
+              <Badge variant="secondary" className="bg-green-500/10 text-green-500">
+                Connected
+              </Badge>
+            )}
+            {audioError && (
+              <Badge variant="destructive" className="text-xs">
+                Audio Error
+              </Badge>
+            )}
             {isRecording && (
               <Badge variant="destructive" className="flex items-center gap-1">
                 <div className="h-3 w-3 animate-pulse bg-red-500 rounded-full"></div> 
@@ -244,7 +276,7 @@ export const TwitterSpaceUI = ({
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={onClose}
+          onClick={handleLeaveSpace}
           className="rounded-full h-8 w-8"
         >
           <X className="h-4 w-4" />
@@ -320,15 +352,44 @@ export const TwitterSpaceUI = ({
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
             {isSpeaker ? (
-              <Button
-                variant={isMuted ? "outline" : "default"}
-                size="sm"
-                onClick={handleToggleMute}
-                className="gap-1"
-              >
-                {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                {isMuted ? "Unmute" : "Mute"}
-              </Button>
+              <>
+                <Button
+                  variant={isMuted ? "destructive" : "default"}
+                  size="sm"
+                  onClick={handleToggleMute}
+                  className="gap-1"
+                >
+                  {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  {isMuted ? "Unmute" : "Mute"}
+                </Button>
+                
+                <Button
+                  variant={isDeafened ? "destructive" : "outline"}
+                  size="sm"
+                  onClick={handleToggleDeafen}
+                  className="gap-1"
+                >
+                  {isDeafened ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  {isDeafened ? "Undeafen" : "Deafen"}
+                </Button>
+
+                {/* Audio Level Indicator */}
+                {audioLevel > 0 && !isMuted && (
+                  <div className="flex items-center gap-1 px-2">
+                    <div className="flex gap-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1 rounded-full ${
+                            i < Math.floor(audioLevel / 20) ? 'bg-green-500' : 'bg-gray-300'
+                          }`}
+                          style={{ height: `${6 + (i * 2)}px` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <Button
                 variant="outline"
@@ -378,6 +439,13 @@ export const TwitterSpaceUI = ({
             </div>
           )}
         </div>
+
+        {/* Connection Status */}
+        {audioError && (
+          <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-500">
+            {audioError}
+          </div>
+        )}
       </div>
     </Card>
   );
