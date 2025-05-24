@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, UserPlus2, Users, X, MessageSquare } from "lucide-react";
+import { Mic, MicOff, UserPlus2, Users, X, MessageSquare, Volume2, VolumeX } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -38,6 +39,8 @@ export const TwitterSpaceUI = ({
   const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [showChat, setShowChat] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+  const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
   
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
   const { isMuted, isStreaming, startAudio, toggleMute, stopAudio, getStream } = useAudioStream();
@@ -68,6 +71,45 @@ export const TwitterSpaceUI = ({
     checkUserRole();
   }, [spaceId, session?.user?.id]);
 
+  // Audio level detection
+  useEffect(() => {
+    let animationFrame: number;
+    let analyser: AnalyserNode;
+    let dataArray: Uint8Array;
+
+    const detectAudioLevel = () => {
+      if (analyser && dataArray) {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        setAudioLevel(average);
+      }
+      animationFrame = requestAnimationFrame(detectAudioLevel);
+    };
+
+    const setupAudioAnalysis = async () => {
+      const stream = await getStream();
+      if (stream && isStreaming) {
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        source.connect(analyser);
+        detectAudioLevel();
+      }
+    };
+
+    if (isStreaming && (isHost || isSpeaker)) {
+      setupAudioAnalysis();
+    }
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [isStreaming, isHost, isSpeaker, getStream]);
+
   // Connect to signaling server and start audio when component mounts
   useEffect(() => {
     connectToSignalingServer();
@@ -81,7 +123,7 @@ export const TwitterSpaceUI = ({
     };
   }, []);
 
-  // Load participants
+  // Load participants and speaker requests
   useEffect(() => {
     const fetchParticipants = async () => {
       const { data, error } = await supabase
@@ -103,12 +145,36 @@ export const TwitterSpaceUI = ({
       
       setParticipants(data || []);
     };
+
+    const fetchSpeakerRequests = async () => {
+      if (!isHost) return;
+      
+      const { data, error } = await supabase
+        .from('space_speaker_requests')
+        .select(`
+          *,
+          profile:profiles(
+            username,
+            avatar_url
+          )
+        `)
+        .eq('space_id', spaceId)
+        .eq('status', 'pending');
+        
+      if (error) {
+        console.error('Error fetching speaker requests:', error);
+        return;
+      }
+      
+      setSpeakerRequests(data || []);
+    };
     
     fetchParticipants();
+    fetchSpeakerRequests();
     
     // Set up realtime subscription for participants
-    const channel = supabase
-      .channel(`space_${spaceId}`)
+    const participantsChannel = supabase
+      .channel(`space_${spaceId}_participants`)
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'space_participants', filter: `space_id=eq.${spaceId}` }, 
         () => {
@@ -116,11 +182,28 @@ export const TwitterSpaceUI = ({
         }
       )
       .subscribe();
+
+    // Set up realtime subscription for speaker requests (only for hosts)
+    let requestsChannel;
+    if (isHost) {
+      requestsChannel = supabase
+        .channel(`space_${spaceId}_requests`)
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'space_speaker_requests', filter: `space_id=eq.${spaceId}` }, 
+          () => {
+            fetchSpeakerRequests();
+          }
+        )
+        .subscribe();
+    }
       
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(participantsChannel);
+      if (requestsChannel) {
+        supabase.removeChannel(requestsChannel);
+      }
     };
-  }, [spaceId]);
+  }, [spaceId, isHost]);
 
   // Start audio stream if user is a speaker
   useEffect(() => {
@@ -137,6 +220,31 @@ export const TwitterSpaceUI = ({
 
   const handleToggleMute = () => {
     toggleMute();
+  };
+
+  const handleEndSpace = async () => {
+    if (!isHost) {
+      toast.error("Only the host can end the space");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('spaces')
+        .update({ 
+          status: 'ended',
+          ended_at: new Date().toISOString()
+        })
+        .eq('id', spaceId);
+        
+      if (error) throw error;
+      
+      toast.success('Space ended successfully');
+      onClose();
+    } catch (error) {
+      console.error('Error ending space:', error);
+      toast.error('Failed to end space');
+    }
   };
   
   const handleRequestToSpeak = async () => {
@@ -156,14 +264,47 @@ export const TwitterSpaceUI = ({
       toast.error('Failed to send request');
     }
   };
+
+  const handleSpeakerRequest = async (requestId: string, userId: string, accept: boolean) => {
+    if (!isHost) return;
+
+    try {
+      if (accept) {
+        // Update participant role to speaker
+        const { error: updateError } = await supabase
+          .from('space_participants')
+          .update({ role: 'speaker' })
+          .eq('space_id', spaceId)
+          .eq('user_id', userId);
+
+        if (updateError) throw updateError;
+      }
+
+      // Update request status
+      const { error } = await supabase
+        .from('space_speaker_requests')
+        .update({
+          status: accept ? 'accepted' : 'rejected',
+          resolved_at: new Date().toISOString(),
+          resolved_by: session?.user?.id
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast.success(`Speaker request ${accept ? 'accepted' : 'rejected'}`);
+    } catch (error) {
+      console.error('Error handling speaker request:', error);
+      toast.error('Failed to handle request');
+    }
+  };
   
   const startRecording = async () => {
     try {
-      // Update space to mark as recorded
       const { error } = await supabase
         .from('spaces')
         .update({ 
-          features: { recorded: true } // Fix: Using features JSON field instead
+          features: { recorded: true }
         })
         .eq('id', spaceId);
         
@@ -171,7 +312,6 @@ export const TwitterSpaceUI = ({
       
       setIsRecording(true);
       
-      // Start a timer to track recording duration
       const timer = window.setInterval(() => {
         setRecordingDuration(prev => prev + 1);
       }, 1000);
@@ -187,7 +327,6 @@ export const TwitterSpaceUI = ({
   
   const handleStopRecording = async () => {
     try {
-      // Update space to keep recording flag but add URL
       const { error } = await supabase
         .from('spaces')
         .update({ 
@@ -265,7 +404,11 @@ export const TwitterSpaceUI = ({
                     <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                   <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
-                    <Mic className="h-3 w-3 text-accent" />
+                    {participant.user_id === session?.user?.id && isSpeaker ? (
+                      audioLevel > 10 ? <Volume2 className="h-3 w-3 text-green-500" /> : <Mic className="h-3 w-3 text-accent" />
+                    ) : (
+                      <Mic className="h-3 w-3 text-accent" />
+                    )}
                   </div>
                 </div>
                 <span className="text-xs mt-1 font-medium">{participant.profile?.username || 'Unknown'}</span>
@@ -288,10 +431,49 @@ export const TwitterSpaceUI = ({
                       <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
-                      <Mic className="h-3 w-3" />
+                      {participant.user_id === session?.user?.id && isSpeaker ? (
+                        audioLevel > 10 ? <Volume2 className="h-3 w-3 text-green-500" /> : <Mic className="h-3 w-3" />
+                      ) : (
+                        <Mic className="h-3 w-3" />
+                      )}
                     </div>
                   </div>
                   <span className="text-xs mt-1">{participant.profile?.username || 'Unknown'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Speaker Requests (Host Only) */}
+        {isHost && speakerRequests.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-xs text-muted-foreground mb-2">Speaker Requests</h3>
+            <div className="space-y-2">
+              {speakerRequests.map(request => (
+                <div key={request.id} className="flex items-center justify-between p-2 bg-accent/10 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={request.profile?.avatar_url} />
+                      <AvatarFallback>{request.profile?.username?.[0]?.toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{request.profile?.username}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleSpeakerRequest(request.id, request.user_id, false)}
+                    >
+                      Decline
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSpeakerRequest(request.id, request.user_id, true)}
+                    >
+                      Accept
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -352,31 +534,42 @@ export const TwitterSpaceUI = ({
             </Button>
           </div>
 
-          {isHost && (
-            <div>
-              {isRecording ? (
+          <div className="flex gap-2">
+            {isHost && (
+              <>
+                {isRecording ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleStopRecording}
+                    className="gap-1"
+                  >
+                    <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
+                    Stop Recording
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={startRecording}
+                    className="gap-1"
+                  >
+                    <div className="h-3 w-3 bg-red-500 rounded-full"></div>
+                    Record
+                  </Button>
+                )}
+                
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={handleStopRecording}
+                  onClick={handleEndSpace}
                   className="gap-1"
                 >
-                  <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse"></div>
-                  Stop Recording
+                  End Space
                 </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={startRecording}
-                  className="gap-1"
-                >
-                  <div className="h-3 w-3 bg-red-500 rounded-full"></div>
-                  Record
-                </Button>
-              )}
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </Card>

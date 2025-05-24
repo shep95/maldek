@@ -56,8 +56,9 @@ export const CreateSpaceDialog = ({
           description,
           host_id: session?.user?.id,
           status: isScheduled ? "scheduled" : "live",
-          scheduled_for: isScheduled ? scheduledDate?.toISOString() : null,
-          is_recorded: isRecorded,
+          scheduled_start: isScheduled ? scheduledDate?.toISOString() : null,
+          started_at: isScheduled ? null : new Date().toISOString(),
+          features: isRecorded ? { recorded: true } : {},
           max_speakers: 10,
         })
         .select()
@@ -79,7 +80,7 @@ export const CreateSpaceDialog = ({
       toast.success(
         isScheduled
           ? "Space scheduled successfully"
-          : "Space created successfully"
+          : "Space created and started successfully"
       );
       
       // Close the dialog
@@ -99,7 +100,8 @@ export const CreateSpaceDialog = ({
       
       // If it's not scheduled, redirect to the space
       if (!isScheduled) {
-        window.location.href = `/spaces?id=${space.id}`;
+        // The spaces page will automatically show live spaces, so the user can join from there
+        toast.info("Your space is now live! Join it from the Live Spaces tab.");
       }
     } catch (error) {
       console.error("Error creating space:", error);
@@ -173,7 +175,6 @@ export const CreateSpaceDialog = ({
                     onSelect={setScheduledDate}
                     initialFocus
                   />
-                  {/* Time selection would ideally go here */}
                 </PopoverContent>
               </Popover>
             </div>

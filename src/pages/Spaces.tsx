@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CreateSpaceDialog } from "@/components/spaces/CreateSpaceDialog";
 import { SpaceCard } from "@/components/spaces/SpaceCard";
 import { SpaceHistoryCard } from "@/components/spaces/SpaceHistoryCard";
@@ -75,6 +75,31 @@ const Spaces = () => {
       return data;
     }
   });
+
+  // Set up realtime subscription for space status changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('spaces_status_changes')
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'spaces' }, 
+        (payload) => {
+          console.log('Space status changed:', payload);
+          refetchSpaces();
+          
+          // If the current space was ended, close the dialog
+          if (payload.new.status === 'ended' && selectedSpaceId === payload.new.id) {
+            setIsSpaceDialogOpen(false);
+            setSelectedSpaceId(null);
+            toast.info('Space has ended');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchSpaces, selectedSpaceId]);
 
   const handleCreateSpace = () => {
     if (!session?.user) {
@@ -215,7 +240,12 @@ const Spaces = () => {
           {selectedSpaceId && (
             <TwitterSpaceDialog
               isOpen={isSpaceDialogOpen}
-              onOpenChange={setIsSpaceDialogOpen}
+              onOpenChange={(open) => {
+                setIsSpaceDialogOpen(open);
+                if (!open) {
+                  setSelectedSpaceId(null);
+                }
+              }}
               spaceId={selectedSpaceId}
             />
           )}
