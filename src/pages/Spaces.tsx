@@ -1,3 +1,4 @@
+
 import { useSession } from '@supabase/auth-helpers-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
@@ -16,32 +17,6 @@ const Spaces = () => {
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
   const [isSpaceDialogOpen, setIsSpaceDialogOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-
-  const { data: subscription } = useQuery({
-    queryKey: ['user-subscription'],
-    queryFn: async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
-
-        const { data: subscription, error } = await supabase
-          .from('user_subscriptions')
-          .select(`
-            *,
-            tier:subscription_tiers(*)
-          `)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (error) throw error;
-        return subscription;
-      } catch (error) {
-        console.error("Error in subscription query:", error);
-        return null;
-      }
-    }
-  });
 
   const { data: liveSpaces, refetch: refetchSpaces } = useQuery({
     queryKey: ['live-spaces'],
@@ -102,13 +77,8 @@ const Spaces = () => {
   });
 
   const handleCreateSpace = () => {
-    if (!subscription) {
-      toast.error("You need a premium subscription to create spaces", {
-        action: {
-          label: "Get Premium",
-          onClick: () => window.location.href = '/subscription'
-        }
-      });
+    if (!session?.user) {
+      toast.error("You need to be logged in to create spaces");
       return;
     }
     setIsCreateOpen(true);
