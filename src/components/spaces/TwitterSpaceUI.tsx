@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ export const TwitterSpaceUI = ({
   const [showChat, setShowChat] = useState(false);
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [hasActiveSpeakerRequest, setHasActiveSpeakerRequest] = useState(false);
   
   const { selectedInputDevice } = useAudioDevices();
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
@@ -78,6 +80,30 @@ export const TwitterSpaceUI = ({
     
     checkUserRole();
   }, [spaceId, session?.user?.id]);
+
+  // Check for existing speaker request
+  useEffect(() => {
+    const checkExistingSpeakerRequest = async () => {
+      if (!session?.user?.id || isHost || isSpeaker) return;
+      
+      try {
+        const { data: existingRequest } = await supabase
+          .from('space_speaker_requests')
+          .select('id, status')
+          .eq('space_id', spaceId)
+          .eq('user_id', session.user.id)
+          .eq('status', 'pending')
+          .single();
+          
+        setHasActiveSpeakerRequest(!!existingRequest);
+      } catch (error) {
+        // No existing request found, which is fine
+        setHasActiveSpeakerRequest(false);
+      }
+    };
+    
+    checkExistingSpeakerRequest();
+  }, [spaceId, session?.user?.id, isHost, isSpeaker]);
 
   // Connect to signaling server when component mounts
   useEffect(() => {
@@ -234,7 +260,27 @@ export const TwitterSpaceUI = ({
   };
   
   const handleRequestToSpeak = async () => {
+    if (hasActiveSpeakerRequest) {
+      toast.info('You already have a pending request to speak');
+      return;
+    }
+
     try {
+      // First check if there's already a pending request
+      const { data: existingRequest } = await supabase
+        .from('space_speaker_requests')
+        .select('id')
+        .eq('space_id', spaceId)
+        .eq('user_id', session?.user?.id)
+        .eq('status', 'pending')
+        .single();
+
+      if (existingRequest) {
+        toast.info('You already have a pending request to speak');
+        setHasActiveSpeakerRequest(true);
+        return;
+      }
+
       const { error } = await supabase
         .from('space_speaker_requests')
         .insert({
@@ -244,10 +290,17 @@ export const TwitterSpaceUI = ({
         });
         
       if (error) throw error;
+      
+      setHasActiveSpeakerRequest(true);
       toast.success('Request to speak sent');
     } catch (error) {
       console.error('Error requesting to speak:', error);
-      toast.error('Failed to send request');
+      if (error.code === '23505') {
+        toast.info('You already have a pending request to speak');
+        setHasActiveSpeakerRequest(true);
+      } else {
+        toast.error('Failed to send request');
+      }
     }
   };
 
@@ -279,6 +332,11 @@ export const TwitterSpaceUI = ({
       if (error) throw error;
 
       toast.success(`Speaker request ${accept ? 'accepted' : 'rejected'}`);
+      
+      // Update hasActiveSpeakerRequest for the requesting user if this is them
+      if (userId === session?.user?.id) {
+        setHasActiveSpeakerRequest(false);
+      }
     } catch (error) {
       console.error('Error handling speaker request:', error);
       toast.error('Failed to handle request');
@@ -610,9 +668,10 @@ export const TwitterSpaceUI = ({
                 size="sm"
                 onClick={handleRequestToSpeak}
                 className="gap-1"
+                disabled={hasActiveSpeakerRequest}
               >
                 <UserPlus2 className="h-4 w-4" />
-                Request to speak
+                {hasActiveSpeakerRequest ? "Request Pending" : "Request to speak"}
               </Button>
             )}
             
