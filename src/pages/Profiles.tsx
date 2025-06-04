@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +8,7 @@ import { ProfilePosts } from "@/components/profile/ProfilePosts";
 import { DashboardError } from "@/components/dashboard/error/DashboardError";
 import { DashboardLoading } from "@/components/dashboard/loading/DashboardLoading";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileMusicTab } from "@/components/profile/ProfileMusicTab";
@@ -24,9 +25,16 @@ const Profiles = () => {
   const navigate = useNavigate();
   const { blockedUserIds, isLoadingBlocked } = useBlockedUsers();
 
-  // Extract tab from URL parameters
-  const searchParams = new URLSearchParams(location.search);
-  const defaultTab = searchParams.get('tab') || 'posts';
+  // Extract tab from URL parameters - memoized
+  const defaultTab = useMemo(() => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get('tab') || 'posts';
+  }, [location.search]);
+
+  // Memoized profile identifier
+  const profileIdentifier = useMemo(() => {
+    return username || session?.user?.id;
+  }, [username, session?.user?.id]);
 
   console.log('=== Profile Page Debug Logs ===');
   console.log('Current pathname:', location.pathname);
@@ -34,22 +42,15 @@ const Profiles = () => {
   console.log('Session user:', session?.user?.id);
   console.log('Default tab:', defaultTab);
 
-  useEffect(() => {
-    console.log('Profile component mounted/updated');
-    console.log('Current URL:', window.location.href);
-    return () => {
-      console.log('Profile component unmounting');
-    };
-  }, [username]);
-
+  // Optimized profile query with reduced payload
   const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useQuery({
-    queryKey: ['profile', username || session?.user?.id],
+    queryKey: ['profile', profileIdentifier],
     queryFn: async () => {
       console.log('Starting profile fetch...');
       
       let query = supabase
         .from('profiles')
-        .select('*');
+        .select('id, username, avatar_url, banner_url, bio, follower_count, total_posts, total_likes_received, created_at, location, website');
 
       if (username) {
         const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
@@ -80,9 +81,12 @@ const Profiles = () => {
       console.log('Profile fetched successfully:', data);
       return data;
     },
-    retry: 1
+    retry: 1,
+    staleTime: 30000, // Cache for 30 seconds
+    enabled: !!profileIdentifier
   });
 
+  // Optimized posts query with pagination and reduced payload
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ['user-posts', profile?.id],
     queryFn: async () => {
@@ -90,33 +94,34 @@ const Profiles = () => {
       const { data, error } = await supabase
         .from('posts')
         .select(`
-          *,
-          profiles (
+          id,
+          content,
+          created_at,
+          likes,
+          reposts,
+          view_count,
+          media_urls,
+          user_id,
+          profiles!inner (
             id,
             username,
-            avatar_url,
-            user_subscriptions (
-              status,
-              subscription_tiers (
-                name,
-                checkmark_color
-              )
-            )
+            avatar_url
           ),
-          post_likes (
+          post_likes!left (
             id,
             user_id
           ),
-          bookmarks (
+          bookmarks!left (
             id,
             user_id
           ),
-          comments (
+          comments!left (
             id
           )
         `)
         .eq('user_id', profile.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20); // Limit initial load
 
       if (error) {
         console.error('Error fetching posts:', error);
@@ -124,13 +129,15 @@ const Profiles = () => {
         throw error;
       }
 
-      console.log('Posts fetched:', data);
-      return data;
+      console.log('Posts fetched:', data?.length || 0);
+      return data || [];
     },
     enabled: !!profile?.id,
+    staleTime: 60000, // Cache for 1 minute
   });
 
-  useEffect(() => {
+  // Memoized realtime subscription setup
+  const setupRealtimeSubscription = useCallback(() => {
     if (!profile?.id) return;
 
     const channel = supabase.channel('profile-updates')
@@ -144,7 +151,7 @@ const Profiles = () => {
         },
         (payload) => {
           console.log('Profile updated:', payload);
-          queryClient.invalidateQueries({ queryKey: ['profile', username || session?.user?.id] });
+          queryClient.invalidateQueries({ queryKey: ['profile', profileIdentifier] });
         }
       )
       .subscribe();
@@ -152,9 +159,15 @@ const Profiles = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id, username, session?.user?.id, queryClient]);
+  }, [profile?.id, profileIdentifier, queryClient]);
 
-  const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
+  // Single effect for realtime subscription
+  useEffect(() => {
+    return setupRealtimeSubscription();
+  }, [setupRealtimeSubscription]);
+
+  // Memoized post action handler
+  const handlePostAction = useCallback(async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     try {
       if (action === 'delete') {
         const { error } = await supabase
@@ -164,24 +177,37 @@ const Profiles = () => {
 
         if (error) throw error;
         toast.success('Post deleted successfully');
+        
+        // Optimistically update cache
+        queryClient.setQueryData(['user-posts', profile?.id], (oldData: any[]) => {
+          return oldData?.filter(post => post.id !== postId) || [];
+        });
       }
     } catch (error) {
       console.error(`Error performing ${action}:`, error);
       toast.error(`Failed to ${action} post`);
     }
-  };
+  }, [profile?.id, queryClient]);
 
-  const handleProfileUpdate = () => {
-    // Refetch profile data when profile is updated
+  // Memoized profile update handler
+  const handleProfileUpdate = useCallback(() => {
     refetchProfile();
-  };
+  }, [refetchProfile]);
 
-  const visiblePosts = posts?.filter(
-    post => !blockedUserIds?.includes(post.user_id)
-  ) || [];
+  // Memoized visible posts filtering
+  const visiblePosts = useMemo(() => {
+    if (!posts || !blockedUserIds) return [];
+    return posts.filter(post => !blockedUserIds.includes(post.user_id));
+  }, [posts, blockedUserIds]);
+
+  // Memoized ownership check
+  const isOwnProfile = useMemo(() => {
+    return session?.user?.id === profile?.id;
+  }, [session?.user?.id, profile?.id]);
 
   if (profileError) return <DashboardError />;
   if (profileLoading || isLoadingBlocked) return <DashboardLoading />;
+  
   if (!profile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -195,8 +221,6 @@ const Profiles = () => {
       </div>
     );
   }
-
-  const isOwnProfile = session?.user?.id === profile.id;
 
   return (
     <div className="min-h-screen relative">
