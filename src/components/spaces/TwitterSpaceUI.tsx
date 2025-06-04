@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,60 +60,68 @@ export const TwitterSpaceUI = ({
   const { isMuted, isStreaming, isInitializing, startAudio, toggleMute, stopAudio, getStream, error: audioError } = useAudioStream(selectedInputDevice);
   const { audioLevel, isSpeaking } = useAudioLevelDetector(getStream(), isStreaming && (isHost || isSpeaker));
 
-  // Check if current user is host or speaker
-  useEffect(() => {
-    const checkUserRole = async () => {
-      if (!session?.user?.id) return;
-      
-      try {
-        const { data: participant } = await supabase
-          .from('space_participants')
-          .select('role')
-          .eq('space_id', spaceId)
-          .eq('user_id', session.user.id)
-          .single();
-          
-        if (participant) {
-          const isUserHost = participant.role === 'host' || participant.role === 'co_host';
-          const isUserSpeaker = isUserHost || participant.role === 'speaker';
-          setIsHost(isUserHost);
-          setIsSpeaker(isUserSpeaker);
-          
-          console.log('User role detected:', participant.role, { isUserHost, isUserSpeaker });
-        }
-      } catch (error) {
-        console.error('Error checking user role:', error);
-      }
-    };
+  const currentUserId = session?.user?.id;
+
+  // Memoize grouped participants to prevent unnecessary recalculations
+  const groupedParticipants = useMemo(() => {
+    const hostParticipants = participants.filter(p => p.role === 'host' || p.role === 'co_host');
+    const speakerParticipants = participants.filter(p => p.role === 'speaker');
+    const listenerParticipants = participants.filter(p => p.role === 'listener');
     
+    return { hostParticipants, speakerParticipants, listenerParticipants };
+  }, [participants]);
+
+  // Check if current user is host or speaker - memoized to prevent re-renders
+  const checkUserRole = useCallback(async () => {
+    if (!currentUserId) return;
+    
+    try {
+      const { data: participant } = await supabase
+        .from('space_participants')
+        .select('role')
+        .eq('space_id', spaceId)
+        .eq('user_id', currentUserId)
+        .single();
+        
+      if (participant) {
+        const isUserHost = participant.role === 'host' || participant.role === 'co_host';
+        const isUserSpeaker = isUserHost || participant.role === 'speaker';
+        setIsHost(isUserHost);
+        setIsSpeaker(isUserSpeaker);
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  }, [spaceId, currentUserId]);
+
+  useEffect(() => {
     checkUserRole();
-  }, [spaceId, session?.user?.id]);
+  }, [checkUserRole]);
 
-  // Check for existing speaker request
-  useEffect(() => {
-    const checkExistingSpeakerRequest = async () => {
-      if (!session?.user?.id || isHost || isSpeaker) return;
-      
-      try {
-        const { data: existingRequest } = await supabase
-          .from('space_speaker_requests')
-          .select('id, status')
-          .eq('space_id', spaceId)
-          .eq('user_id', session.user.id)
-          .eq('status', 'pending')
-          .single();
-          
-        setHasActiveSpeakerRequest(!!existingRequest);
-      } catch (error) {
-        // No existing request found, which is fine
-        setHasActiveSpeakerRequest(false);
-      }
-    };
+  // Check for existing speaker request - optimized
+  const checkExistingSpeakerRequest = useCallback(async () => {
+    if (!currentUserId || isHost || isSpeaker) return;
     
-    checkExistingSpeakerRequest();
-  }, [spaceId, session?.user?.id, isHost, isSpeaker]);
+    try {
+      const { data: existingRequest } = await supabase
+        .from('space_speaker_requests')
+        .select('id, status')
+        .eq('space_id', spaceId)
+        .eq('user_id', currentUserId)
+        .eq('status', 'pending')
+        .single();
+        
+      setHasActiveSpeakerRequest(!!existingRequest);
+    } catch (error) {
+      setHasActiveSpeakerRequest(false);
+    }
+  }, [spaceId, currentUserId, isHost, isSpeaker]);
 
-  // Connect to signaling server when component mounts
+  useEffect(() => {
+    checkExistingSpeakerRequest();
+  }, [checkExistingSpeakerRequest]);
+
+  // Connect to signaling server when component mounts - optimized cleanup
   useEffect(() => {
     console.log('Initializing space connection...');
     connectToSignalingServer();
@@ -123,73 +132,82 @@ export const TwitterSpaceUI = ({
       if (recordingTimer) {
         clearInterval(recordingTimer);
       }
+      // Cleanup peer connections
+      peerConnections.forEach(pc => pc.close());
+      setPeerConnections(new Map());
+      // Cleanup audio streams
+      remoteAudioStreams.forEach(({ audioElement }) => {
+        audioElement.pause();
+        audioElement.src = '';
+      });
+      setRemoteAudioStreams(new Map());
     };
-  }, []);
+  }, [spaceId]); // Only depend on spaceId
 
-  // Start audio when user becomes a speaker and signaling is connected
-  useEffect(() => {
-    const initializeAudio = async () => {
-      // Only initialize audio for speakers and hosts
-      if ((isHost || isSpeaker) && isConnected && !isStreaming && !isInitializing) {
-        console.log('Initializing audio for speaker/host...', { isHost, isSpeaker, isConnected });
-        try {
-          await startAudio();
-          console.log('Audio initialized successfully');
-        } catch (error) {
-          console.error('Failed to initialize audio:', error);
-          toast.error('Failed to connect microphone. Please check permissions.');
-        }
+  // Start audio when user becomes a speaker and signaling is connected - optimized
+  const initializeAudio = useCallback(async () => {
+    if ((isHost || isSpeaker) && isConnected && !isStreaming && !isInitializing) {
+      console.log('Initializing audio for speaker/host...', { isHost, isSpeaker, isConnected });
+      try {
+        await startAudio();
+        console.log('Audio initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize audio:', error);
+        toast.error('Failed to connect microphone. Please check permissions.');
       }
-    };
-    
+    }
+  }, [isHost, isSpeaker, isConnected, isStreaming, isInitializing, startAudio]);
+
+  useEffect(() => {
     initializeAudio();
-  }, [isHost, isSpeaker, isConnected, isStreaming, isInitializing]);
+  }, [initializeAudio]);
+
+  // Optimized data fetching with proper dependencies
+  const fetchParticipants = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('space_participants')
+      .select(`
+        user_id,
+        role,
+        profile:profiles(
+          username,
+          avatar_url
+        )
+      `)
+      .eq('space_id', spaceId);
+      
+    if (error) {
+      console.error('Error fetching participants:', error);
+      return;
+    }
+    
+    setParticipants(data || []);
+  }, [spaceId]);
+
+  const fetchSpeakerRequests = useCallback(async () => {
+    if (!isHost) return;
+    
+    const { data, error } = await supabase
+      .from('space_speaker_requests')
+      .select(`
+        *,
+        profile:profiles!space_speaker_requests_user_id_fkey(
+          username,
+          avatar_url
+        )
+      `)
+      .eq('space_id', spaceId)
+      .eq('status', 'pending');
+      
+    if (error) {
+      console.error('Error fetching speaker requests:', error);
+      return;
+    }
+    
+    setSpeakerRequests(data || []);
+  }, [spaceId, isHost]);
 
   useEffect(() => {
-    const fetchParticipants = async () => {
-      const { data, error } = await supabase
-        .from('space_participants')
-        .select(`
-          user_id,
-          role,
-          profile:profiles(
-            username,
-            avatar_url
-          )
-        `)
-        .eq('space_id', spaceId);
-        
-      if (error) {
-        console.error('Error fetching participants:', error);
-        return;
-      }
-      
-      setParticipants(data || []);
-    };
-
-    const fetchSpeakerRequests = async () => {
-      if (!isHost) return;
-      
-      const { data, error } = await supabase
-        .from('space_speaker_requests')
-        .select(`
-          *,
-          profile:profiles!space_speaker_requests_user_id_fkey(
-            username,
-            avatar_url
-          )
-        `)
-        .eq('space_id', spaceId)
-        .eq('status', 'pending');
-        
-      if (error) {
-        console.error('Error fetching speaker requests:', error);
-        return;
-      }
-      
-      setSpeakerRequests(data || []);
-    };
-    
     fetchParticipants();
     fetchSpeakerRequests();
     
@@ -224,9 +242,130 @@ export const TwitterSpaceUI = ({
         supabase.removeChannel(requestsChannel);
       }
     };
-  }, [spaceId, isHost]);
+  }, [spaceId, isHost, fetchParticipants, fetchSpeakerRequests]);
 
-  const handleToggleMute = () => {
+  // Optimized WebSocket message handling
+  useEffect(() => {
+    if (!websocketRef.current) return;
+
+    const handleWebSocketMessage = (event: MessageEvent) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log('Received signaling message:', message.type);
+        
+        switch (message.type) {
+          case 'speaker-joined':
+            if (message.speakerId !== currentUserId) {
+              console.log('Speaker joined, setting up peer connection');
+              // Handle speaker joining for listeners
+            }
+            break;
+          case 'offer':
+            handleWebRTCOffer(message);
+            break;
+          case 'answer':
+            handleWebRTCAnswer(message);
+            break;
+          case 'ice-candidate':
+            handleWebRTCIceCandidate(message);
+            break;
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+      }
+    };
+
+    websocketRef.current.onmessage = handleWebSocketMessage;
+    
+    return () => {
+      if (websocketRef.current) {
+        websocketRef.current.onmessage = null;
+      }
+    };
+  }, [currentUserId]);
+
+  // WebRTC handlers - memoized to prevent recreation
+  const handleWebRTCOffer = useCallback(async (message: any) => {
+    if (!message.offer || message.from === currentUserId) return;
+    
+    console.log('Handling WebRTC offer from:', message.from);
+    
+    try {
+      const peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+
+      peerConnection.ontrack = (event) => {
+        console.log('Received remote audio track');
+        const [remoteStream] = event.streams;
+        
+        // Create audio element and play the stream
+        const audioElement = new Audio();
+        audioElement.srcObject = remoteStream;
+        audioElement.autoplay = true;
+        audioElement.volume = 1.0;
+        
+        setRemoteAudioStreams(prev => new Map(prev.set(message.from, {
+          userId: message.from,
+          stream: remoteStream,
+          audioElement
+        })));
+      };
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendSignalingMessage({
+            type: 'ice-candidate',
+            candidate: event.candidate,
+            to: message.from
+          });
+        }
+      };
+
+      await peerConnection.setRemoteDescription(message.offer);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      sendSignalingMessage({
+        type: 'answer',
+        answer,
+        to: message.from
+      });
+
+      setPeerConnections(prev => new Map(prev.set(message.from, peerConnection)));
+    } catch (error) {
+      console.error('Error handling WebRTC offer:', error);
+    }
+  }, [currentUserId, sendSignalingMessage]);
+
+  const handleWebRTCAnswer = useCallback(async (message: any) => {
+    if (!message.answer || message.from === currentUserId) return;
+    
+    const peerConnection = peerConnections.get(message.from);
+    if (peerConnection) {
+      try {
+        await peerConnection.setRemoteDescription(message.answer);
+      } catch (error) {
+        console.error('Error setting remote description:', error);
+      }
+    }
+  }, [currentUserId, peerConnections]);
+
+  const handleWebRTCIceCandidate = useCallback(async (message: any) => {
+    if (!message.candidate || message.from === currentUserId) return;
+    
+    const peerConnection = peerConnections.get(message.from);
+    if (peerConnection) {
+      try {
+        await peerConnection.addIceCandidate(message.candidate);
+      } catch (error) {
+        console.error('Error adding ICE candidate:', error);
+      }
+    }
+  }, [currentUserId, peerConnections]);
+
+  // Optimized handlers
+  const handleToggleMute = useCallback(() => {
     if (!isStreaming && (isHost || isSpeaker)) {
       toast.error('Audio not connected. Trying to reconnect...');
       startAudio();
@@ -239,9 +378,9 @@ export const TwitterSpaceUI = ({
     }
     
     toggleMute();
-  };
+  }, [isStreaming, isHost, isSpeaker, startAudio, toggleMute]);
 
-  const handleEndSpace = async () => {
+  const handleEndSpace = useCallback(async () => {
     if (!isHost) {
       toast.error("Only the host can end the space");
       return;
@@ -264,21 +403,20 @@ export const TwitterSpaceUI = ({
       console.error('Error ending space:', error);
       toast.error('Failed to end space');
     }
-  };
+  }, [isHost, spaceId, onClose]);
   
-  const handleRequestToSpeak = async () => {
+  const handleRequestToSpeak = useCallback(async () => {
     if (hasActiveSpeakerRequest) {
       toast.info('You already have a pending request to speak');
       return;
     }
 
     try {
-      // First check if there's already a pending request
       const { data: existingRequest } = await supabase
         .from('space_speaker_requests')
         .select('id')
         .eq('space_id', spaceId)
-        .eq('user_id', session?.user?.id)
+        .eq('user_id', currentUserId)
         .eq('status', 'pending')
         .single();
 
@@ -292,7 +430,7 @@ export const TwitterSpaceUI = ({
         .from('space_speaker_requests')
         .insert({
           space_id: spaceId,
-          user_id: session?.user?.id,
+          user_id: currentUserId,
           status: 'pending'
         });
         
@@ -309,14 +447,13 @@ export const TwitterSpaceUI = ({
         toast.error('Failed to send request');
       }
     }
-  };
+  }, [hasActiveSpeakerRequest, spaceId, currentUserId]);
 
-  const handleSpeakerRequest = async (requestId: string, userId: string, accept: boolean) => {
+  const handleSpeakerRequest = useCallback(async (requestId: string, userId: string, accept: boolean) => {
     if (!isHost) return;
 
     try {
       if (accept) {
-        // Update participant role to speaker
         const { error: updateError } = await supabase
           .from('space_participants')
           .update({ role: 'speaker' })
@@ -326,13 +463,12 @@ export const TwitterSpaceUI = ({
         if (updateError) throw updateError;
       }
 
-      // Update request status
       const { error } = await supabase
         .from('space_speaker_requests')
         .update({
           status: accept ? 'accepted' : 'rejected',
           resolved_at: new Date().toISOString(),
-          resolved_by: session?.user?.id
+          resolved_by: currentUserId
         })
         .eq('id', requestId);
 
@@ -340,17 +476,16 @@ export const TwitterSpaceUI = ({
 
       toast.success(`Speaker request ${accept ? 'accepted' : 'rejected'}`);
       
-      // Update hasActiveSpeakerRequest for the requesting user if this is them
-      if (userId === session?.user?.id) {
+      if (userId === currentUserId) {
         setHasActiveSpeakerRequest(false);
       }
     } catch (error) {
       console.error('Error handling speaker request:', error);
       toast.error('Failed to handle request');
     }
-  };
+  }, [isHost, spaceId, currentUserId]);
   
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       const { error } = await supabase
         .from('spaces')
@@ -374,9 +509,9 @@ export const TwitterSpaceUI = ({
       console.error('Error starting recording:', error);
       toast.error('Failed to start recording');
     }
-  };
+  }, [spaceId]);
   
-  const handleStopRecording = async () => {
+  const handleStopRecording = useCallback(async () => {
     try {
       const { error } = await supabase
         .from('spaces')
@@ -399,18 +534,13 @@ export const TwitterSpaceUI = ({
       console.error('Error stopping recording:', error);
       toast.error('Failed to save recording');
     }
-  };
+  }, [spaceId, recordingTimer]);
 
-  const formatTime = (seconds: number): string => {
+  const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Group participants by role
-  const hostParticipants = participants.filter(p => p.role === 'host' || p.role === 'co_host');
-  const speakerParticipants = participants.filter(p => p.role === 'speaker');
-  const listenerParticipants = participants.filter(p => p.role === 'listener');
+  }, []);
 
   return (
     <Card className="flex flex-col h-[80vh] overflow-hidden rounded-xl shadow-2xl border-accent/20 bg-background">
@@ -446,7 +576,6 @@ export const TwitterSpaceUI = ({
                 Listening to {remoteAudioStreams.size} speaker{remoteAudioStreams.size !== 1 ? 's' : ''}
               </Badge>
             )}
-            {/* Show pending requests count for hosts */}
             {isHost && speakerRequests.length > 0 && (
               <Badge variant="secondary" className="flex items-center gap-1 bg-blue-100 text-blue-700">
                 <UserPlus2 className="h-3 w-3" />
@@ -485,7 +614,7 @@ export const TwitterSpaceUI = ({
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Participants Area */}
         <div className={`flex-1 overflow-y-auto p-4 ${showChat ? 'max-h-[60%]' : ''}`}>
-          {/* Speaker Requests (Host Only) - Moved to top for prominence */}
+          {/* Speaker Requests (Host Only) */}
           {isHost && speakerRequests.length > 0 && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <h3 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
@@ -532,7 +661,7 @@ export const TwitterSpaceUI = ({
           <div className="mb-6">
             <h3 className="text-xs text-muted-foreground mb-2">Host</h3>
             <div className="flex flex-wrap gap-4">
-              {hostParticipants.map(participant => (
+              {groupedParticipants.hostParticipants.map(participant => (
                 <div key={participant.user_id} className="flex flex-col items-center">
                   <div className="relative">
                     <Avatar className="h-16 w-16 border-2 border-accent">
@@ -540,7 +669,7 @@ export const TwitterSpaceUI = ({
                       <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                     <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
-                      {participant.user_id === session?.user?.id && (isHost || isSpeaker) ? (
+                      {participant.user_id === currentUserId && (isHost || isSpeaker) ? (
                         <>
                           {isSpeaking ? (
                             <Volume2 className="h-3 w-3 text-green-500" />
@@ -552,8 +681,7 @@ export const TwitterSpaceUI = ({
                         <Mic className="h-3 w-3 text-accent" />
                       )}
                     </div>
-                    {/* Audio level indicator */}
-                    {participant.user_id === session?.user?.id && (isHost || isSpeaker) && audioLevel > 0 && (
+                    {participant.user_id === currentUserId && (isHost || isSpeaker) && audioLevel > 0 && (
                       <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
                         {[...Array(5)].map((_, i) => (
                           <div
@@ -578,11 +706,11 @@ export const TwitterSpaceUI = ({
           </div>
 
           {/* Speakers */}
-          {speakerParticipants.length > 0 && (
+          {groupedParticipants.speakerParticipants.length > 0 && (
             <div className="mb-6">
               <h3 className="text-xs text-muted-foreground mb-2">Speakers</h3>
               <div className="flex flex-wrap gap-4">
-                {speakerParticipants.map(participant => (
+                {groupedParticipants.speakerParticipants.map(participant => (
                   <div key={participant.user_id} className="flex flex-col items-center">
                     <div className="relative">
                       <Avatar className="h-12 w-12">
@@ -590,7 +718,7 @@ export const TwitterSpaceUI = ({
                         <AvatarFallback>{participant.profile?.username?.slice(0, 2).toUpperCase() || 'U'}</AvatarFallback>
                       </Avatar>
                       <div className="absolute bottom-0 right-0 bg-background rounded-full p-0.5 border border-background">
-                        {participant.user_id === session?.user?.id && isSpeaker ? (
+                        {participant.user_id === currentUserId && isSpeaker ? (
                           <>
                             {isSpeaking ? (
                               <Volume2 className="h-3 w-3 text-green-500" />
@@ -602,8 +730,7 @@ export const TwitterSpaceUI = ({
                           <Mic className="h-3 w-3" />
                         )}
                       </div>
-                      {/* Audio level indicator */}
-                      {participant.user_id === session?.user?.id && isSpeaker && audioLevel > 0 && (
+                      {participant.user_id === currentUserId && isSpeaker && audioLevel > 0 && (
                         <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
                           {[...Array(5)].map((_, i) => (
                             <div
@@ -629,9 +756,9 @@ export const TwitterSpaceUI = ({
 
           {/* Listeners */}
           <div>
-            <h3 className="text-xs text-muted-foreground mb-2">Listening ({listenerParticipants.length})</h3>
+            <h3 className="text-xs text-muted-foreground mb-2">Listening ({groupedParticipants.listenerParticipants.length})</h3>
             <div className="flex flex-wrap gap-3">
-              {listenerParticipants.map(participant => (
+              {groupedParticipants.listenerParticipants.map(participant => (
                 <div key={participant.user_id} className="flex flex-col items-center">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={participant.profile?.avatar_url} />
