@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +46,6 @@ export const TwitterSpaceUI = ({
   const [isSpeaker, setIsSpeaker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [recordingTimer, setRecordingTimer] = useState<number | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [showChat, setShowChat] = useState(false);
   const [speakerRequests, setSpeakerRequests] = useState<any[]>([]);
@@ -54,6 +53,9 @@ export const TwitterSpaceUI = ({
   const [hasActiveSpeakerRequest, setHasActiveSpeakerRequest] = useState(false);
   const [remoteAudioStreams, setRemoteAudioStreams] = useState<Map<string, RemoteAudioStream>>(new Map());
   const [peerConnections, setPeerConnections] = useState<Map<string, RTCPeerConnection>>(new Map());
+  
+  const recordingTimerRef = useRef<number | null>(null);
+  const cleanupRef = useRef(false);
   
   const { selectedInputDevice } = useAudioDevices();
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
@@ -71,9 +73,9 @@ export const TwitterSpaceUI = ({
     return { hostParticipants, speakerParticipants, listenerParticipants };
   }, [participants]);
 
-  // Check if current user is host or speaker - memoized to prevent re-renders
+  // Check if current user is host or speaker - stable reference
   const checkUserRole = useCallback(async () => {
-    if (!currentUserId) return;
+    if (!currentUserId || cleanupRef.current) return;
     
     try {
       const { data: participant } = await supabase
@@ -83,24 +85,22 @@ export const TwitterSpaceUI = ({
         .eq('user_id', currentUserId)
         .single();
         
-      if (participant) {
+      if (participant && !cleanupRef.current) {
         const isUserHost = participant.role === 'host' || participant.role === 'co_host';
         const isUserSpeaker = isUserHost || participant.role === 'speaker';
         setIsHost(isUserHost);
         setIsSpeaker(isUserSpeaker);
       }
     } catch (error) {
-      console.error('Error checking user role:', error);
+      if (!cleanupRef.current) {
+        console.error('Error checking user role:', error);
+      }
     }
   }, [spaceId, currentUserId]);
 
-  useEffect(() => {
-    checkUserRole();
-  }, [checkUserRole]);
-
-  // Check for existing speaker request - optimized
+  // Check for existing speaker request - stable reference
   const checkExistingSpeakerRequest = useCallback(async () => {
-    if (!currentUserId || isHost || isSpeaker) return;
+    if (!currentUserId || isHost || isSpeaker || cleanupRef.current) return;
     
     try {
       const { data: existingRequest } = await supabase
@@ -111,59 +111,20 @@ export const TwitterSpaceUI = ({
         .eq('status', 'pending')
         .single();
         
-      setHasActiveSpeakerRequest(!!existingRequest);
+      if (!cleanupRef.current) {
+        setHasActiveSpeakerRequest(!!existingRequest);
+      }
     } catch (error) {
-      setHasActiveSpeakerRequest(false);
+      if (!cleanupRef.current) {
+        setHasActiveSpeakerRequest(false);
+      }
     }
   }, [spaceId, currentUserId, isHost, isSpeaker]);
 
-  useEffect(() => {
-    checkExistingSpeakerRequest();
-  }, [checkExistingSpeakerRequest]);
-
-  // Connect to signaling server when component mounts - optimized cleanup
-  useEffect(() => {
-    console.log('Initializing space connection...');
-    connectToSignalingServer();
-    
-    return () => {
-      cleanup();
-      stopAudio();
-      if (recordingTimer) {
-        clearInterval(recordingTimer);
-      }
-      // Cleanup peer connections
-      peerConnections.forEach(pc => pc.close());
-      setPeerConnections(new Map());
-      // Cleanup audio streams
-      remoteAudioStreams.forEach(({ audioElement }) => {
-        audioElement.pause();
-        audioElement.src = '';
-      });
-      setRemoteAudioStreams(new Map());
-    };
-  }, [spaceId]); // Only depend on spaceId
-
-  // Start audio when user becomes a speaker and signaling is connected - optimized
-  const initializeAudio = useCallback(async () => {
-    if ((isHost || isSpeaker) && isConnected && !isStreaming && !isInitializing) {
-      console.log('Initializing audio for speaker/host...', { isHost, isSpeaker, isConnected });
-      try {
-        await startAudio();
-        console.log('Audio initialized successfully');
-      } catch (error) {
-        console.error('Failed to initialize audio:', error);
-        toast.error('Failed to connect microphone. Please check permissions.');
-      }
-    }
-  }, [isHost, isSpeaker, isConnected, isStreaming, isInitializing, startAudio]);
-
-  useEffect(() => {
-    initializeAudio();
-  }, [initializeAudio]);
-
-  // Optimized data fetching with proper dependencies
+  // Fetch functions with stable references
   const fetchParticipants = useCallback(async () => {
+    if (cleanupRef.current) return;
+    
     const { data, error } = await supabase
       .from('space_participants')
       .select(`
@@ -181,11 +142,13 @@ export const TwitterSpaceUI = ({
       return;
     }
     
-    setParticipants(data || []);
+    if (!cleanupRef.current) {
+      setParticipants(data || []);
+    }
   }, [spaceId]);
 
   const fetchSpeakerRequests = useCallback(async () => {
-    if (!isHost) return;
+    if (!isHost || cleanupRef.current) return;
     
     const { data, error } = await supabase
       .from('space_speaker_requests')
@@ -204,9 +167,59 @@ export const TwitterSpaceUI = ({
       return;
     }
     
-    setSpeakerRequests(data || []);
+    if (!cleanupRef.current) {
+      setSpeakerRequests(data || []);
+    }
   }, [spaceId, isHost]);
 
+  // Initialize user role on mount
+  useEffect(() => {
+    checkUserRole();
+  }, [checkUserRole]);
+
+  // Check speaker request status when role changes
+  useEffect(() => {
+    checkExistingSpeakerRequest();
+  }, [checkExistingSpeakerRequest]);
+
+  // Connect to signaling server when component mounts
+  useEffect(() => {
+    console.log('Initializing space connection...');
+    connectToSignalingServer();
+    
+    return () => {
+      cleanupRef.current = true;
+      cleanup();
+      stopAudio();
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      // Cleanup peer connections
+      peerConnections.forEach(pc => pc.close());
+      setPeerConnections(new Map());
+      // Cleanup audio streams
+      remoteAudioStreams.forEach(({ audioElement }) => {
+        audioElement.pause();
+        audioElement.src = '';
+      });
+      setRemoteAudioStreams(new Map());
+    };
+  }, []); // Only run once on mount
+
+  // Start audio when user becomes a speaker and signaling is connected
+  useEffect(() => {
+    if ((isHost || isSpeaker) && isConnected && !isStreaming && !isInitializing && !cleanupRef.current) {
+      console.log('Initializing audio for speaker/host...', { isHost, isSpeaker, isConnected });
+      startAudio().catch((error) => {
+        console.error('Failed to initialize audio:', error);
+        if (!cleanupRef.current) {
+          toast.error('Failed to connect microphone. Please check permissions.');
+        }
+      });
+    }
+  }, [isHost, isSpeaker, isConnected, isStreaming, isInitializing, startAudio]);
+
+  // Set up data fetching and realtime subscriptions
   useEffect(() => {
     fetchParticipants();
     fetchSpeakerRequests();
@@ -217,7 +230,9 @@ export const TwitterSpaceUI = ({
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'space_participants', filter: `space_id=eq.${spaceId}` }, 
         () => {
-          fetchParticipants();
+          if (!cleanupRef.current) {
+            fetchParticipants();
+          }
         }
       )
       .subscribe();
@@ -230,7 +245,9 @@ export const TwitterSpaceUI = ({
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'space_speaker_requests', filter: `space_id=eq.${spaceId}` }, 
           () => {
-            fetchSpeakerRequests();
+            if (!cleanupRef.current) {
+              fetchSpeakerRequests();
+            }
           }
         )
         .subscribe();
@@ -244,11 +261,97 @@ export const TwitterSpaceUI = ({
     };
   }, [spaceId, isHost, fetchParticipants, fetchSpeakerRequests]);
 
-  // Optimized WebSocket message handling
+  // WebRTC handlers - memoized to prevent recreation
+  const handleWebRTCOffer = useCallback(async (message: any) => {
+    if (!message.offer || message.from === currentUserId || cleanupRef.current) return;
+    
+    console.log('Handling WebRTC offer from:', message.from);
+    
+    try {
+      const peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+
+      peerConnection.ontrack = (event) => {
+        if (cleanupRef.current) return;
+        
+        console.log('Received remote audio track');
+        const [remoteStream] = event.streams;
+        
+        // Create audio element and play the stream
+        const audioElement = new Audio();
+        audioElement.srcObject = remoteStream;
+        audioElement.autoplay = true;
+        audioElement.volume = 1.0;
+        
+        setRemoteAudioStreams(prev => new Map(prev.set(message.from, {
+          userId: message.from,
+          stream: remoteStream,
+          audioElement
+        })));
+      };
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate && !cleanupRef.current) {
+          sendSignalingMessage({
+            type: 'ice-candidate',
+            candidate: event.candidate,
+            to: message.from
+          });
+        }
+      };
+
+      await peerConnection.setRemoteDescription(message.offer);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      if (!cleanupRef.current) {
+        sendSignalingMessage({
+          type: 'answer',
+          answer,
+          to: message.from
+        });
+
+        setPeerConnections(prev => new Map(prev.set(message.from, peerConnection)));
+      }
+    } catch (error) {
+      console.error('Error handling WebRTC offer:', error);
+    }
+  }, [currentUserId, sendSignalingMessage]);
+
+  const handleWebRTCAnswer = useCallback(async (message: any) => {
+    if (!message.answer || message.from === currentUserId || cleanupRef.current) return;
+    
+    const peerConnection = peerConnections.get(message.from);
+    if (peerConnection) {
+      try {
+        await peerConnection.setRemoteDescription(message.answer);
+      } catch (error) {
+        console.error('Error setting remote description:', error);
+      }
+    }
+  }, [currentUserId, peerConnections]);
+
+  const handleWebRTCIceCandidate = useCallback(async (message: any) => {
+    if (!message.candidate || message.from === currentUserId || cleanupRef.current) return;
+    
+    const peerConnection = peerConnections.get(message.from);
+    if (peerConnection) {
+      try {
+        await peerConnection.addIceCandidate(message.candidate);
+      } catch (error) {
+        console.error('Error adding ICE candidate:', error);
+      }
+    }
+  }, [currentUserId, peerConnections]);
+
+  // WebSocket message handling
   useEffect(() => {
     if (!websocketRef.current) return;
 
     const handleWebSocketMessage = (event: MessageEvent) => {
+      if (cleanupRef.current) return;
+      
       try {
         const message = JSON.parse(event.data);
         console.log('Received signaling message:', message.type);
@@ -257,7 +360,6 @@ export const TwitterSpaceUI = ({
           case 'speaker-joined':
             if (message.speakerId !== currentUserId) {
               console.log('Speaker joined, setting up peer connection');
-              // Handle speaker joining for listeners
             }
             break;
           case 'offer':
@@ -282,89 +384,9 @@ export const TwitterSpaceUI = ({
         websocketRef.current.onmessage = null;
       }
     };
-  }, [currentUserId]);
+  }, [currentUserId, handleWebRTCOffer, handleWebRTCAnswer, handleWebRTCIceCandidate]);
 
-  // WebRTC handlers - memoized to prevent recreation
-  const handleWebRTCOffer = useCallback(async (message: any) => {
-    if (!message.offer || message.from === currentUserId) return;
-    
-    console.log('Handling WebRTC offer from:', message.from);
-    
-    try {
-      const peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      });
-
-      peerConnection.ontrack = (event) => {
-        console.log('Received remote audio track');
-        const [remoteStream] = event.streams;
-        
-        // Create audio element and play the stream
-        const audioElement = new Audio();
-        audioElement.srcObject = remoteStream;
-        audioElement.autoplay = true;
-        audioElement.volume = 1.0;
-        
-        setRemoteAudioStreams(prev => new Map(prev.set(message.from, {
-          userId: message.from,
-          stream: remoteStream,
-          audioElement
-        })));
-      };
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          sendSignalingMessage({
-            type: 'ice-candidate',
-            candidate: event.candidate,
-            to: message.from
-          });
-        }
-      };
-
-      await peerConnection.setRemoteDescription(message.offer);
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-
-      sendSignalingMessage({
-        type: 'answer',
-        answer,
-        to: message.from
-      });
-
-      setPeerConnections(prev => new Map(prev.set(message.from, peerConnection)));
-    } catch (error) {
-      console.error('Error handling WebRTC offer:', error);
-    }
-  }, [currentUserId, sendSignalingMessage]);
-
-  const handleWebRTCAnswer = useCallback(async (message: any) => {
-    if (!message.answer || message.from === currentUserId) return;
-    
-    const peerConnection = peerConnections.get(message.from);
-    if (peerConnection) {
-      try {
-        await peerConnection.setRemoteDescription(message.answer);
-      } catch (error) {
-        console.error('Error setting remote description:', error);
-      }
-    }
-  }, [currentUserId, peerConnections]);
-
-  const handleWebRTCIceCandidate = useCallback(async (message: any) => {
-    if (!message.candidate || message.from === currentUserId) return;
-    
-    const peerConnection = peerConnections.get(message.from);
-    if (peerConnection) {
-      try {
-        await peerConnection.addIceCandidate(message.candidate);
-      } catch (error) {
-        console.error('Error adding ICE candidate:', error);
-      }
-    }
-  }, [currentUserId, peerConnections]);
-
-  // Optimized handlers
+  // Optimized handlers with stable references
   const handleToggleMute = useCallback(() => {
     if (!isStreaming && (isHost || isSpeaker)) {
       toast.error('Audio not connected. Trying to reconnect...');
@@ -502,7 +524,7 @@ export const TwitterSpaceUI = ({
         setRecordingDuration(prev => prev + 1);
       }, 1000);
       
-      setRecordingTimer(timer);
+      recordingTimerRef.current = timer;
       
       toast.success('Recording started');
     } catch (error) {
@@ -524,9 +546,9 @@ export const TwitterSpaceUI = ({
       
       setIsRecording(false);
       
-      if (recordingTimer) {
-        clearInterval(recordingTimer);
-        setRecordingTimer(null);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
       }
       
       toast.success('Recording saved');
@@ -534,7 +556,7 @@ export const TwitterSpaceUI = ({
       console.error('Error stopping recording:', error);
       toast.error('Failed to save recording');
     }
-  }, [spaceId, recordingTimer]);
+  }, [spaceId]);
 
   const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);

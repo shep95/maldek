@@ -19,11 +19,14 @@ export const useSpaceSignaling = (spaceId: string) => {
   const maxReconnectAttempts = 3;
   const reconnectTimeoutRef = useRef<number | null>(null);
   const isConnectingRef = useRef(false);
+  const cleanupRef = useRef(false);
 
   const connectToSignalingServer = useCallback(async () => {
     // Prevent multiple simultaneous connection attempts
-    if (isConnectingRef.current || websocketRef.current?.readyState === WebSocket.CONNECTING) {
-      console.log('Connection already in progress');
+    if (isConnectingRef.current || 
+        websocketRef.current?.readyState === WebSocket.CONNECTING ||
+        cleanupRef.current) {
+      console.log('Connection already in progress or component unmounted');
       return;
     }
 
@@ -55,6 +58,8 @@ export const useSpaceSignaling = (spaceId: string) => {
       websocketRef.current = new WebSocket(fullWsUrl);
 
       websocketRef.current.onopen = () => {
+        if (cleanupRef.current) return;
+        
         console.log('Connected to signaling server');
         isConnectingRef.current = false;
         setState(prev => ({ ...prev, isConnected: true, error: null }));
@@ -65,13 +70,18 @@ export const useSpaceSignaling = (spaceId: string) => {
       websocketRef.current.onerror = (error) => {
         console.error('WebSocket error:', error);
         isConnectingRef.current = false;
-        setState(prev => ({ ...prev, error: 'Connection error' }));
+        if (!cleanupRef.current) {
+          setState(prev => ({ ...prev, error: 'Connection error' }));
+        }
       };
 
       websocketRef.current.onclose = (event) => {
         console.log('Disconnected from signaling server, code:', event.code, 'reason:', event.reason);
         isConnectingRef.current = false;
-        setState(prev => ({ ...prev, isConnected: false }));
+        
+        if (!cleanupRef.current) {
+          setState(prev => ({ ...prev, isConnected: false }));
+        }
         
         // Clear any existing reconnect timeout
         if (reconnectTimeoutRef.current) {
@@ -80,14 +90,18 @@ export const useSpaceSignaling = (spaceId: string) => {
         }
         
         // Only try to reconnect if it wasn't a clean close and we haven't exceeded max attempts
-        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+        if (event.code !== 1000 && 
+            reconnectAttempts.current < maxReconnectAttempts && 
+            !cleanupRef.current) {
           console.log(`Attempting to reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
           reconnectAttempts.current++;
           toast.info(`Reconnecting to space... Attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
           reconnectTimeoutRef.current = window.setTimeout(() => {
-            connectToSignalingServer();
+            if (!cleanupRef.current) {
+              connectToSignalingServer();
+            }
           }, 2000 * reconnectAttempts.current); // Exponential backoff
-        } else if (event.code !== 1000) {
+        } else if (event.code !== 1000 && !cleanupRef.current) {
           toast.error('Unable to connect to space. Please try rejoining.');
           setState(prev => ({ ...prev, error: 'Maximum reconnection attempts reached' }));
         }
@@ -96,25 +110,32 @@ export const useSpaceSignaling = (spaceId: string) => {
     } catch (err) {
       console.error('Error connecting to space:', err);
       isConnectingRef.current = false;
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setState(prev => ({ ...prev, error: errorMessage }));
-      toast.error(`Failed to connect: ${errorMessage}`);
+      if (!cleanupRef.current) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        setState(prev => ({ ...prev, error: errorMessage }));
+        toast.error(`Failed to connect: ${errorMessage}`);
+      }
     }
   }, [spaceId, session?.access_token]);
 
   const sendSignalingMessage = useCallback((message: any) => {
+    if (cleanupRef.current) return;
+    
     if (websocketRef.current?.readyState === WebSocket.OPEN) {
       console.log('Sending signaling message:', message.type);
       websocketRef.current.send(JSON.stringify(message));
     } else {
       console.error('WebSocket not connected, current state:', websocketRef.current?.readyState);
-      toast.error('Connection lost. Attempting to reconnect...');
-      connectToSignalingServer();
+      if (!cleanupRef.current) {
+        toast.error('Connection lost. Attempting to reconnect...');
+        connectToSignalingServer();
+      }
     }
   }, [connectToSignalingServer]);
 
   const cleanup = useCallback(() => {
     console.log('Cleaning up signaling connection');
+    cleanupRef.current = true;
     isConnectingRef.current = false;
     
     if (reconnectTimeoutRef.current) {

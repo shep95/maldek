@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -30,12 +30,20 @@ export const SpaceChat = ({ spaceId, isVisible }: SpaceChatProps) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
+  
+  const cleanupRef = useRef(false);
   const currentUserId = session?.user?.id;
 
-  // Memoize the fetch function to prevent recreation
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      cleanupRef.current = true;
+    };
+  }, []);
+
+  // Fetch messages function with stable reference
   const fetchMessages = useCallback(async () => {
-    if (!isVisible || !spaceId) return;
+    if (!isVisible || !spaceId || cleanupRef.current) return;
 
     const { data, error } = await supabase
       .from('space_chat_messages')
@@ -54,16 +62,15 @@ export const SpaceChat = ({ spaceId, isVisible }: SpaceChatProps) => {
       return;
     }
 
-    setMessages(data || []);
+    if (!cleanupRef.current) {
+      setMessages(data || []);
+    }
   }, [spaceId, isVisible]);
 
-  // Fetch existing messages only when needed
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
-
-  // Optimized message fetching for new messages
+  // Fetch new message function with stable reference  
   const fetchNewMessage = useCallback(async (messageId: string) => {
+    if (cleanupRef.current) return;
+    
     const { data, error } = await supabase
       .from('space_chat_messages')
       .select(`
@@ -81,7 +88,7 @@ export const SpaceChat = ({ spaceId, isVisible }: SpaceChatProps) => {
       return;
     }
 
-    if (data) {
+    if (data && !cleanupRef.current) {
       setMessages(prev => {
         // Prevent duplicate messages
         const exists = prev.some(msg => msg.id === data.id);
@@ -89,6 +96,13 @@ export const SpaceChat = ({ spaceId, isVisible }: SpaceChatProps) => {
       });
     }
   }, []);
+
+  // Fetch existing messages only when needed
+  useEffect(() => {
+    if (isVisible) {
+      fetchMessages();
+    }
+  }, [fetchMessages, isVisible]);
 
   // Subscribe to new messages with optimized handling
   useEffect(() => {
@@ -104,8 +118,10 @@ export const SpaceChat = ({ spaceId, isVisible }: SpaceChatProps) => {
           filter: `space_id=eq.${spaceId}`
         }, 
         (payload) => {
-          console.log('New chat message:', payload);
-          fetchNewMessage(payload.new.id);
+          if (!cleanupRef.current) {
+            console.log('New chat message:', payload);
+            fetchNewMessage(payload.new.id);
+          }
         }
       )
       .subscribe();
@@ -115,9 +131,9 @@ export const SpaceChat = ({ spaceId, isVisible }: SpaceChatProps) => {
     };
   }, [spaceId, isVisible, fetchNewMessage]);
 
-  // Optimized send handler
+  // Send message handler with stable reference
   const handleSend = useCallback(async () => {
-    if (!message.trim() || !currentUserId || isLoading) return;
+    if (!message.trim() || !currentUserId || isLoading || cleanupRef.current) return;
 
     setIsLoading(true);
     try {
@@ -134,12 +150,17 @@ export const SpaceChat = ({ spaceId, isVisible }: SpaceChatProps) => {
       setMessage("");
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      if (!cleanupRef.current) {
+        toast.error('Failed to send message');
+      }
     } finally {
-      setIsLoading(false);
+      if (!cleanupRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [message, currentUserId, spaceId, isLoading]);
 
+  // Key press handler with stable reference
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
