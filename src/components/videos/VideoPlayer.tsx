@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useVideoUrl } from "@/hooks/useVideoUrl";
 import { VideoControls } from "./player/VideoControls";
@@ -37,7 +38,6 @@ export const VideoPlayer = ({
   const backgroundMusic = useBackgroundMusicContext();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
-  const [showWatermark, setShowWatermark] = useState(false);
   const [ambientLightActive, setAmbientLightActive] = useState(true);
   const session = useSession();
   
@@ -73,10 +73,6 @@ export const VideoPlayer = ({
     },
     enabled: !!session?.user?.id
   });
-
-  const hasPaidSubscription = subscription?.status === 'active' && 
-                            subscription?.tier?.name && 
-                            ['Creator', 'True Emperor', 'Business'].includes(subscription.tier.name);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -153,10 +149,6 @@ export const VideoPlayer = ({
     if (ambientLightActive) {
       startColorAnalysis();
     }
-    
-    if (!hasPaidSubscription) {
-      checkScreenRecording();
-    }
   };
 
   const handlePause = () => {
@@ -178,30 +170,6 @@ export const VideoPlayer = ({
       stopColorAnalysis();
     }
   };
-
-  const checkScreenRecording = () => {
-    if (navigator.mediaDevices?.getDisplayMedia) {
-      setShowWatermark(true);
-    }
-  };
-
-  useEffect(() => {
-    if (hasPaidSubscription) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isPrintScreen = e.key === 'PrintScreen';
-      const isMacScreenshot = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '4';
-      const isWindowsSnippingTool = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's';
-      
-      if (isPrintScreen || isMacScreenshot || isWindowsSnippingTool) {
-        setShowWatermark(true);
-        setTimeout(() => setShowWatermark(false), 2000);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasPaidSubscription]);
 
   const getAverageColor = (context: CanvasRenderingContext2D, width: number, height: number) => {
     const imageData = context.getImageData(0, 0, width, height).data;
@@ -371,13 +339,6 @@ export const VideoPlayer = ({
               crossOrigin="anonymous"
               autoPlay={autoPlay}
             />
-            {showWatermark && !hasPaidSubscription && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
-                  Bosley
-                </div>
-              </div>
-            )}
             
             <Button
               variant="ghost"

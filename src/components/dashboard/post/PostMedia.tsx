@@ -1,3 +1,4 @@
+
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Maximize, Image as ImageIcon, Download } from "lucide-react";
@@ -18,7 +19,6 @@ interface PostMediaProps {
 
 export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaProps) => {
   const [imageDimensions, setImageDimensions] = useState<Record<string, { width: number; height: number }>>({});
-  const [showWatermark, setShowWatermark] = useState(false);
   const hasPaidSubscription = subscription?.tier?.name === 'Creator' || 
                               subscription?.tier?.name === 'True Emperor';
   const [publicImageUrls, setPublicImageUrls] = useState<string[]>([]);
@@ -62,24 +62,6 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
     
     processMediaUrls();
   }, [mediaUrls]);
-
-  useEffect(() => {
-    if (hasPaidSubscription) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isPrintScreen = e.key === 'PrintScreen';
-      const isMacScreenshot = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '4';
-      const isWindowsSnippingTool = (e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's';
-      
-      if (isPrintScreen || isMacScreenshot || isWindowsSnippingTool) {
-        setShowWatermark(true);
-        setTimeout(() => setShowWatermark(false), 2000);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasPaidSubscription]);
 
   if (!mediaUrls || mediaUrls.length === 0) {
     return null;
@@ -196,13 +178,6 @@ export const PostMedia = ({ mediaUrls, onMediaClick, subscription }: PostMediaPr
                         className="w-full h-full object-contain p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] rounded-lg"
                         loading="lazy"
                       />
-                      {showWatermark && !hasPaidSubscription && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="text-white text-[100px] font-bold opacity-50 rotate-[-45deg]">
-                            Bosley
-                          </div>
-                        </div>
-                      )}
                     </div>
                     <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
