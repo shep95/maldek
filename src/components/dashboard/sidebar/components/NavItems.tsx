@@ -8,6 +8,8 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMessageNotificationCount } from "@/hooks/useMessageNotificationCount";
+import { useState } from "react";
+import { PandoraDialog } from "./PandoraDialog";
 
 interface NavItemsProps {
   subscription: any;
@@ -34,6 +36,7 @@ export const NavItems = ({
   const isMobile = useIsMobile();
   const session = useSession();
   const navigate = useNavigate();
+  const [isPandoraDialogOpen, setIsPandoraDialogOpen] = useState(false);
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
@@ -55,6 +58,10 @@ export const NavItems = ({
   const handleCreatePost = () => {
     console.log('Create post clicked');
     setIsCreatingPost(true);
+  };
+
+  const handlePandoraClick = () => {
+    setIsPandoraDialogOpen(true);
   };
 
   const hasPremiumFeatures = true;
@@ -141,9 +148,9 @@ export const NavItems = ({
     },
     {
       icon: Bot,
-      label: "ZUKO AI",
-      path: "https://www.zukoi.app",
-      description: "Visit ZUKO AI",
+      label: "PANDORA",
+      onClick: handlePandoraClick,
+      description: "AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
     { 
@@ -173,16 +180,23 @@ export const NavItems = ({
   ];
 
   return (
-    <nav className="space-y-2">
-      {navItems.map((item) => (
-        <NavItem
-          key={item.label}
-          {...item}
-          subscription={subscription}
-          onNavigate={handleNavigation}
-          collapsed={collapsed}
-        />
-      ))}
-    </nav>
+    <>
+      <nav className="space-y-2">
+        {navItems.map((item) => (
+          <NavItem
+            key={item.label}
+            {...item}
+            subscription={subscription}
+            onNavigate={handleNavigation}
+            collapsed={collapsed}
+          />
+        ))}
+      </nav>
+      
+      <PandoraDialog 
+        open={isPandoraDialogOpen} 
+        onOpenChange={setIsPandoraDialogOpen} 
+      />
+    </>
   );
 };
