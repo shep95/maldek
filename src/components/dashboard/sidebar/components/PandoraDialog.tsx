@@ -81,7 +81,7 @@ export const PandoraDialog = ({ open, onOpenChange }: PandoraDialogProps) => {
             PANDORA - AI Assistant
           </DialogTitle>
           <DialogDescription>
-            Chat with PANDORA and upload media files. Built by <span className="font-semibold text-accent">ZORAK</span>.
+            Talk to PANDORA, the first advance self-evolving AGI created by ZORAK.
           </DialogDescription>
         </DialogHeader>
         
