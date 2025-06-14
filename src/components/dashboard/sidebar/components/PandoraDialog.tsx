@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface PandoraDialogProps {
   open: boolean;
@@ -31,11 +32,17 @@ interface Message {
 export const PandoraDialog = ({ open, onOpenChange }: PandoraDialogProps) => {
   const { subscribed, features } = useSubscription();
   const navigate = useNavigate();
+  const session = useSession();
+  
+  // Check if user has unlimited access
+  const hasUnlimitedAccess = session?.user?.email === 'killerbattleasher@gmail.com';
+  const canUsePandora = subscribed || hasUnlimitedAccess;
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'ai',
-      content: subscribed 
+      content: canUsePandora 
         ? 'Hello! I\'m PANDORA, your AI assistant. I\'m currently being built by ZORAK and will be running soon. You can start typing messages and uploading files - I\'ll be ready to help you shortly!\n\nCommands:\n• /new - Start a new chat\n• /download - Download chat history'
         : 'Hello! I\'m PANDORA, your AI assistant. Access to PANDORA requires an active subscription. Please subscribe to unlock this premium feature.',
       timestamp: new Date(),
@@ -43,7 +50,7 @@ export const PandoraDialog = ({ open, onOpenChange }: PandoraDialogProps) => {
   ]);
 
   const handleSubmit = (value: string) => {
-    if (!subscribed) {
+    if (!canUsePandora) {
       toast.error("PANDORA requires an active subscription");
       return;
     }
@@ -128,7 +135,7 @@ export const PandoraDialog = ({ open, onOpenChange }: PandoraDialogProps) => {
   };
 
   const handleFileUpload = (files: FileList) => {
-    if (!subscribed) {
+    if (!canUsePandora) {
       toast.error("PANDORA requires an active subscription");
       return;
     }
@@ -159,7 +166,7 @@ export const PandoraDialog = ({ open, onOpenChange }: PandoraDialogProps) => {
           <DialogTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-accent" />
             PANDORA - AI Assistant
-            {subscribed && <Crown className="h-4 w-4 text-yellow-500" />}
+            {(subscribed || hasUnlimitedAccess) && <Crown className="h-4 w-4 text-yellow-500" />}
           </DialogTitle>
           <DialogDescription>
             Talk to PANDORA, the first advance self-evolving AGI created by ZORAK.
@@ -192,7 +199,7 @@ export const PandoraDialog = ({ open, onOpenChange }: PandoraDialogProps) => {
           </ScrollArea>
           
           <div className="border-t pt-4">
-            {!subscribed ? (
+            {!canUsePandora ? (
               <div className="space-y-3">
                 <div className="text-center p-4 bg-muted/50 rounded-lg">
                   <Crown className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
