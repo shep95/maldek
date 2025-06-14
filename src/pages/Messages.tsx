@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -156,163 +155,166 @@ const Messages: React.FC = () => {
   }) : requestedConversations;
   
   return (
-    <div className="h-full min-h-screen-dynamic p-2 sm:p-4 md:p-6 lg:p-8 w-full max-w-screen-2xl mx-auto">
-      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 px-2">Messages</h1>
-      
-      {!isEncryptionInitialized && (
-        <Alert className="mb-4 sm:mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Encryption not enabled</AlertTitle>
-          <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <span>Enable end-to-end encryption to view and send secure messages.</span>
-            <Button onClick={() => setIsSecurityDialogOpen(true)} size="sm" variant="outline">
-              <Shield className="h-4 w-4 mr-2" />
-              Enter Security Code
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 h-[calc(100vh-180px)] md:h-[calc(100vh-200px)]">
-        {/* Conversations sidebar - hide on mobile when viewing a conversation */}
-        {(!isMobile || showConversations) && (
-          <div className="bg-card rounded-lg border shadow-md p-2 sm:p-4 flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)]">
-            {/* Conversations header */}
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="font-semibold flex items-center gap-2">
-                <MessagesSquare className="h-4 w-4" />
-                Chats
-              </h2>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setIsNewMessageDialogOpen(true)} 
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setIsSettingsDialogOpen(true)} 
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            {/* Search input */}
-            <div className="relative mb-3 sm:mb-4">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search conversations..." 
-                className="pl-9" 
-                value={searchQuery} 
-                onChange={e => setSearchQuery(e.target.value)} 
-              />
-            </div>
-            
-            {/* Tabs for All and Requests */}
-            <Tabs 
-              defaultValue="all" 
-              value={activeTab} 
-              onValueChange={value => setActiveTab(value as "all" | "requests")} 
-              className="w-full"
-            >
-              {/* Tabs content */}
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="all" className="flex items-center gap-1">
-                  <Inbox className="h-4 w-4" />
-                  <span>All</span>
-                </TabsTrigger>
-                <TabsTrigger value="requests" className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>Requests</span>
-                  {requestedConversations.length > 0 && (
-                    <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {requestedConversations.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="all" className="flex-grow overflow-hidden m-0">
-                <ConversationList 
-                  conversations={filteredConversations} 
-                  selectedConversationId={selectedConversationId || undefined}
-                  onSelectConversation={handleSelectConversation} 
-                />
-              </TabsContent>
-              
-              <TabsContent value="requests" className="flex-grow overflow-hidden m-0">
-                <ConversationList 
-                  conversations={filteredRequestedConversations}
-                  selectedConversationId={selectedConversationId || undefined}
-                  onSelectConversation={handleSelectConversation}
-                  onAcceptRequest={handleAcceptRequest}
-                  isRequestTab 
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
+    <div className="min-h-screen w-full p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Messages</h1>
         
-        {/* Message thread - full width on mobile, 2/3 on larger screens */}
-        {(!isMobile || !showConversations) && (
-          <div className="md:col-span-2 bg-card rounded-lg border shadow-md flex flex-col md:h-[calc(100vh-220px)] lg:h-[calc(100vh-240px)]">
-            {selectedConversationId && recipient && currentUserId ? (
-              <MessageThread 
-                messages={messages}
-                currentUserId={currentUserId} 
-                recipient={recipient}
-                onSendMessage={handleSendMessage}
-                onBackClick={isMobile ? handleBackToList : undefined}
-                onDeleteConversation={handleDeleteConversation} 
-                onDeleteMessage={handleDeleteMessage}
-              />
-            ) : (
-              <div className="flex flex-col h-full">
-                {isMobile && !showConversations && (
-                  <div className="border-b py-3 px-4">
-                    <Button variant="ghost" size="sm" onClick={handleBackToList} className="mr-2">
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="font-semibold">Back to messages</span>
-                  </div>
-                )}
-                <div className="flex-grow flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <MessagesSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                    <p className="text-muted-foreground">
-                      Select a conversation to view messages
-                    </p>
-                  </div>
+        {!isEncryptionInitialized && (
+          <Alert className="mb-4 md:mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Encryption not enabled</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <span>Enable end-to-end encryption to view and send secure messages.</span>
+              <Button onClick={() => setIsSecurityDialogOpen(true)} size="sm" variant="outline">
+                <Shield className="h-4 w-4 mr-2" />
+                Enter Security Code
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-200px)]">
+          {/* Conversations sidebar - responsive width */}
+          {(!isMobile || showConversations) && (
+            <div className="lg:col-span-1 bg-card rounded-lg border shadow-md p-4 flex flex-col h-full">
+              {/* Conversations header */}
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <MessagesSquare className="h-4 w-4" />
+                  Chats
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setIsNewMessageDialogOpen(true)} 
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setIsSettingsDialogOpen(true)} 
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+              
+              {/* Search input */}
+              <div className="relative mb-4 flex-shrink-0">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search conversations..." 
+                  className="pl-9" 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                />
+              </div>
+              
+              {/* Tabs for All and Requests */}
+              <Tabs 
+                defaultValue="all" 
+                value={activeTab} 
+                onValueChange={value => setActiveTab(value as "all" | "requests")} 
+                className="flex-1 flex flex-col min-h-0"
+              >
+                <TabsList className="grid grid-cols-2 mb-4 flex-shrink-0">
+                  <TabsTrigger value="all" className="flex items-center gap-1">
+                    <Inbox className="h-4 w-4" />
+                    <span>All</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="requests" className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    <span>Requests</span>
+                    {requestedConversations.length > 0 && (
+                      <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        {requestedConversations.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+                
+                <div className="flex-1 min-h-0">
+                  <TabsContent value="all" className="h-full m-0">
+                    <ConversationList 
+                      conversations={filteredConversations} 
+                      selectedConversationId={selectedConversationId || undefined}
+                      onSelectConversation={handleSelectConversation} 
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="requests" className="h-full m-0">
+                    <ConversationList 
+                      conversations={filteredRequestedConversations}
+                      selectedConversationId={selectedConversationId || undefined}
+                      onSelectConversation={handleSelectConversation}
+                      onAcceptRequest={handleAcceptRequest}
+                      isRequestTab 
+                    />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
+          )}
+          
+          {/* Message thread - responsive width */}
+          {(!isMobile || !showConversations) && (
+            <div className="lg:col-span-2 bg-card rounded-lg border shadow-md flex flex-col h-full">
+              {selectedConversationId && recipient && currentUserId ? (
+                <MessageThread 
+                  messages={messages}
+                  currentUserId={currentUserId} 
+                  recipient={recipient}
+                  onSendMessage={handleSendMessage}
+                  onBackClick={isMobile ? handleBackToList : undefined}
+                  onDeleteConversation={handleDeleteConversation} 
+                  onDeleteMessage={handleDeleteMessage}
+                />
+              ) : (
+                <div className="flex flex-col h-full">
+                  {isMobile && !showConversations && (
+                    <div className="border-b py-3 px-4 flex-shrink-0">
+                      <Button variant="ghost" size="sm" onClick={handleBackToList} className="mr-2">
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="font-semibold">Back to messages</span>
+                    </div>
+                  )}
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center p-6">
+                      <MessagesSquare className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p className="text-muted-foreground">
+                        Select a conversation to view messages
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <SecurityCodeDialog 
+          isOpen={isSecurityDialogOpen} 
+          onOpenChange={setIsSecurityDialogOpen} 
+          action="verify" 
+          onSuccess={handleSecurityCodeVerified} 
+        />
+
+        <MessageSettingsDialog 
+          isOpen={isSettingsDialogOpen} 
+          onOpenChange={setIsSettingsDialogOpen} 
+        />
+
+        <NewMessageDialog 
+          isOpen={isNewMessageDialogOpen}
+          onOpenChange={setIsNewMessageDialogOpen}
+          onSelectUser={handleSelectUser}
+        />
       </div>
-
-      <SecurityCodeDialog 
-        isOpen={isSecurityDialogOpen} 
-        onOpenChange={setIsSecurityDialogOpen} 
-        action="verify" 
-        onSuccess={handleSecurityCodeVerified} 
-      />
-
-      <MessageSettingsDialog 
-        isOpen={isSettingsDialogOpen} 
-        onOpenChange={setIsSettingsDialogOpen} 
-      />
-
-      <NewMessageDialog 
-        isOpen={isNewMessageDialogOpen}
-        onOpenChange={setIsNewMessageDialogOpen}
-        onSelectUser={handleSelectUser}
-      />
     </div>
   );
 };
