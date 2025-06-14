@@ -1,4 +1,5 @@
 
+
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -146,6 +147,13 @@ export const NavItems = ({
       description: "Access private posts",
       className: "text-accent hover:bg-accent/10"
     },
+    {
+      icon: Bot,
+      label: "PANDORA",
+      onClick: handlePandoraClick,
+      description: "AI Assistant",
+      className: "text-accent hover:bg-accent/10"
+    },
     { 
       icon: Mail, 
       label: "Support",
@@ -193,3 +201,4 @@ export const NavItems = ({
     </>
   );
 };
+
