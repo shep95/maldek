@@ -146,13 +146,6 @@ export const NavItems = ({
       description: "Access private posts",
       className: "text-accent hover:bg-accent/10"
     },
-    {
-      icon: Bot,
-      label: "ZUKO",
-      onClick: handlePandoraClick,
-      description: "AI Assistant",
-      className: "text-accent hover:bg-accent/10"
-    },
     { 
       icon: Mail, 
       label: "Support",
