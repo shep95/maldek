@@ -6,9 +6,17 @@ interface MediaUploadZoneProps {
   onFileSelect: () => void;
   dragActive: boolean;
   isProcessing?: boolean;
+  isPrivateContent?: boolean;
 }
 
-export const MediaUploadZone = ({ onFileSelect, dragActive, isProcessing }: MediaUploadZoneProps) => {
+export const MediaUploadZone = ({ 
+  onFileSelect, 
+  dragActive, 
+  isProcessing, 
+  isPrivateContent = false 
+}: MediaUploadZoneProps) => {
+  const sizeLimit = isPrivateContent ? '4GB' : '100KB';
+  
   return (
     <div
       className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
@@ -26,7 +34,12 @@ export const MediaUploadZone = ({ onFileSelect, dragActive, isProcessing }: Medi
       </Button>
       
       <div className="mt-2 text-sm text-muted-foreground text-center">
-        Supports images and videos up to 100KB
+        Supports images and videos up to {sizeLimit}
+        {isPrivateContent && (
+          <div className="text-xs mt-1 text-accent">
+            Private content supports larger files and longer videos
+          </div>
+        )}
       </div>
     </div>
   );

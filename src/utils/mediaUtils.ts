@@ -30,14 +30,28 @@ export async function downloadMedia(url: string, filename?: string) {
   }
 }
 
-// Validate media files for size and type
-export async function validateMediaFile(file: File, userId: string): Promise<{ isValid: boolean; error?: string }> {
-  // Check file size (max 100KB)
-  const MAX_FILE_SIZE = 100 * 1024; // 100KB (decreased from 100MB)
-  if (file.size > MAX_FILE_SIZE) {
+// Validate media files with different limits for private vs public content
+export async function validateMediaFile(
+  file: File, 
+  userId: string, 
+  isPrivateContent: boolean = false
+): Promise<{ isValid: boolean; error?: string }> {
+  // Different size limits for private vs public content
+  const MAX_PUBLIC_FILE_SIZE = 100 * 1024; // 100KB for public posts
+  const MAX_PRIVATE_FILE_SIZE = 4 * 1024 * 1024 * 1024; // 4GB for private content
+  
+  const maxSize = isPrivateContent ? MAX_PRIVATE_FILE_SIZE : MAX_PUBLIC_FILE_SIZE;
+  const sizeLabel = isPrivateContent ? '4GB' : '100KB';
+  
+  // Check file size
+  if (file.size > maxSize) {
+    const actualSize = isPrivateContent 
+      ? `${(file.size / (1024 * 1024 * 1024)).toFixed(2)}GB`
+      : `${(file.size / 1024).toFixed(2)}KB`;
+    
     return {
       isValid: false,
-      error: `File size exceeds the 100KB limit (${(file.size / 1024).toFixed(2)}KB)`
+      error: `File size exceeds the ${sizeLabel} limit (${actualSize})`
     };
   }
 
@@ -65,11 +79,14 @@ export async function validateMediaFile(file: File, userId: string): Promise<{ i
       // Clean up
       URL.revokeObjectURL(video.src);
       
-      // Check if video is too long (> 5 minutes)
-      if (video.duration > 300) { // 5 minutes in seconds
+      // For private content, allow longer videos (up to 2 hours)
+      const maxDuration = isPrivateContent ? 7200 : 300; // 2 hours vs 5 minutes
+      const durationLabel = isPrivateContent ? '2 hours' : '5 minutes';
+      
+      if (video.duration > maxDuration) {
         return {
           isValid: false,
-          error: 'Video is too long. Maximum duration is 5 minutes.'
+          error: `Video is too long. Maximum duration is ${durationLabel}.`
         };
       }
     } catch (error) {
