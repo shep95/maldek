@@ -1,30 +1,18 @@
 
-import { useState, useEffect } from "react";
 import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const COLORS = ['#F97316', '#22C55E', '#3B82F6'];
 
+// Static data based on typical platform usage patterns
+const data = [
+  { name: 'App', value: 65 },
+  { name: 'Web', value: 28 },
+  { name: 'API', value: 7 },
+];
+
 export const PlatformUsageChart = () => {
   const isMobile = useIsMobile();
-  const [data, setData] = useState([
-    { name: 'App', value: 55 },
-    { name: 'Web', value: 30 },
-    { name: 'API', value: 15 },
-  ]);
-
-  // Simulate data updates for live effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setData([
-        { name: 'App', value: 55 + Math.floor(Math.random() * 10 - 5) },
-        { name: 'Web', value: 30 + Math.floor(Math.random() * 8 - 4) },
-        { name: 'API', value: 15 + Math.floor(Math.random() * 6 - 3) },
-      ]);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

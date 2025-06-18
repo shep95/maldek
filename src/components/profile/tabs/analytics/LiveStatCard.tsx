@@ -11,40 +11,40 @@ interface LiveStatCardProps {
 }
 
 export const LiveStatCard = ({ title, value, icon: Icon, comingSoon = false }: LiveStatCardProps) => {
-  const [displayValue, setDisplayValue] = useState(comingSoon ? "Coming Soon" : 0);
+  const [displayValue, setDisplayValue] = useState(comingSoon ? "Coming Soon" : value);
   const [isAnimating, setIsAnimating] = useState(false);
-  const prevValueRef = useRef(0);
+  const prevValueRef = useRef(typeof value === 'number' ? value : 0);
   
   useEffect(() => {
-    if (comingSoon) return;
-    if (typeof value === 'string' || value === prevValueRef.current) return;
+    if (comingSoon || typeof value === 'string') {
+      setDisplayValue(value);
+      return;
+    }
     
-    // Animate number counting
-    let startTime: number;
-    const duration = 2000; // 2 seconds animation
-    const startValue = prevValueRef.current;
-    
-    const animateCount = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
+    if (value !== prevValueRef.current) {
+      // Animate number counting when value changes
+      let startTime: number;
+      const duration = 1500; // 1.5 seconds animation
+      const startValue = prevValueRef.current;
       
-      const currentValue = Math.floor(startValue + progress * (value - startValue));
-      setDisplayValue(currentValue);
+      const animateCount = (timestamp: number) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        
+        const currentValue = Math.floor(startValue + progress * (value - startValue));
+        setDisplayValue(currentValue);
+        
+        if (progress < 1) {
+          requestAnimationFrame(animateCount);
+        } else {
+          setIsAnimating(false);
+          prevValueRef.current = value;
+        }
+      };
       
-      if (progress < 1) {
-        requestAnimationFrame(animateCount);
-      } else {
-        setIsAnimating(false);
-        prevValueRef.current = value;
-      }
-    };
-    
-    setIsAnimating(true);
-    requestAnimationFrame(animateCount);
-    
-    return () => {
-      prevValueRef.current = typeof displayValue === 'number' ? displayValue : 0;
-    };
+      setIsAnimating(true);
+      requestAnimationFrame(animateCount);
+    }
   }, [value, comingSoon]);
 
   return (
@@ -67,4 +67,3 @@ export const LiveStatCard = ({ title, value, icon: Icon, comingSoon = false }: L
     </Card>
   );
 };
-

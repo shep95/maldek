@@ -12,45 +12,48 @@ import { DemographicChart } from "@/components/profile/tabs/analytics/Demographi
 import { MetricRing } from "@/components/profile/tabs/analytics/MetricRing";
 import { LiveStatCard } from "@/components/profile/tabs/analytics/LiveStatCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const Analytics = () => {
   const session = useSession();
   const isMobile = useIsMobile();
   const { data: analytics, isLoading } = useAnalytics(session?.user?.id || '');
-  const [counts, setCounts] = useState({
-    followers: 0,
-    wallets: 0,
-    posts: 0
+
+  // Fetch real live stats
+  const { data: liveStats } = useQuery({
+    queryKey: ['live-stats', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+
+      // Get real follower count
+      const { data: followers } = await supabase
+        .from('followers')
+        .select('id', { count: 'exact' })
+        .eq('following_id', session.user.id);
+
+      // Get real post count
+      const { data: posts } = await supabase
+        .from('posts')
+        .select('id', { count: 'exact' })
+        .eq('user_id', session.user.id);
+
+      // Get user profile data
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('follower_count, total_posts')
+        .eq('id', session.user.id)
+        .single();
+
+      return {
+        followers: profile?.follower_count || 0,
+        posts: profile?.total_posts || 0,
+        wallets: 0 // This would need to be implemented based on your wallet system
+      };
+    },
+    enabled: !!session?.user?.id,
+    refetchInterval: 15000 // Refetch every 15 seconds
   });
-
-  // Simulate increasing numbers for live stats
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCounts(prev => ({
-        followers: Math.min(prev.followers + Math.floor(Math.random() * 3), 142),
-        wallets: Math.min(prev.wallets + Math.floor(Math.random() * 2), 98),
-        posts: Math.min(prev.posts + Math.floor(Math.random() * 4), 314)
-      }));
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Function to inject live-data feel
-  useEffect(() => {
-    const liveDataInterval = setInterval(() => {
-      const randomStat = Math.floor(Math.random() * 3);
-      const notifications = [
-        "New wallet connected from Asia region",
-        "30 new followers in the last hour",
-        "Trending post gaining traction: +125 views"
-      ];
-      
-      console.log(`[LIVE] ${notifications[randomStat]}`);
-    }, 5000);
-    
-    return () => clearInterval(liveDataInterval);
-  }, []);
 
   if (!session?.user?.id) {
     return (
@@ -83,7 +86,7 @@ const Analytics = () => {
     if (!analytics || analytics.length < 2) return "+0%";
     const current = analytics[analytics.length - 1][metric as keyof typeof analytics[0]] as number;
     const previous = analytics[analytics.length - 2][metric as keyof typeof analytics[0]] as number;
-    if (previous === 0) return "+0%";
+    if (previous === 0) return current > 0 ? "+100%" : "+0%";
     const trend = ((current - previous) / previous) * 100;
     return `${trend > 0 ? "+" : ""}${trend.toFixed(1)}%`;
   };
@@ -162,8 +165,8 @@ const Analytics = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <LiveStatCard 
-            title="Followers Today" 
-            value={counts.followers} 
+            title="Followers" 
+            value={liveStats?.followers || 0} 
             icon={CircleUser} 
           />
           <LiveStatCard 
@@ -174,7 +177,7 @@ const Analytics = () => {
           />
           <LiveStatCard 
             title="Posts Created" 
-            value={counts.posts} 
+            value={liveStats?.posts || 0} 
             icon={ThumbsUp} 
           />
         </div>

@@ -1,53 +1,31 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// Static demographic data based on typical social media demographics
+const ageData = [
+  { name: '18-24', value: 32 },
+  { name: '25-34', value: 41 },
+  { name: '35-44', value: 18 },
+  { name: '45+', value: 9 },
+];
+
+const regionData = [
+  { name: 'N.America', value: 38 },
+  { name: 'Europe', value: 29 },
+  { name: 'Asia', value: 23 },
+  { name: 'Other', value: 10 },
+];
+
+const deviceData = [
+  { name: 'Mobile', value: 68 },
+  { name: 'Desktop', value: 24 },
+  { name: 'Tablet', value: 8 },
+];
+
 export const DemographicChart = () => {
   const isMobile = useIsMobile();
-  const [ageData, setAgeData] = useState([
-    { name: '18-24', value: 28 },
-    { name: '25-34', value: 42 },
-    { name: '35-44', value: 19 },
-    { name: '45+', value: 11 },
-  ]);
-  
-  const [regionData, setRegionData] = useState([
-    { name: 'N.America', value: 35 },
-    { name: 'Europe', value: 30 },
-    { name: 'Asia', value: 25 },
-    { name: 'Other', value: 10 },
-  ]);
-  
-  const [deviceData, setDeviceData] = useState([
-    { name: 'Mobile', value: 65 },
-    { name: 'Desktop', value: 25 },
-    { name: 'Tablet', value: 10 },
-  ]);
-
-  // Simulate data changes for live effect
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Randomly adjust values
-      setAgeData(prev => prev.map(item => ({
-        ...item,
-        value: Math.max(5, Math.min(50, item.value + Math.floor(Math.random() * 6 - 3)))
-      })));
-      
-      setRegionData(prev => prev.map(item => ({
-        ...item,
-        value: Math.max(5, Math.min(45, item.value + Math.floor(Math.random() * 6 - 3)))
-      })));
-      
-      setDeviceData(prev => prev.map(item => ({
-        ...item,
-        value: Math.max(5, Math.min(70, item.value + Math.floor(Math.random() * 6 - 3)))
-      })));
-    }, 7000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   const [activeTab, setActiveTab] = useState('age');
   
   const CustomTooltip = ({ active, payload, label }: any) => {
