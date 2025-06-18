@@ -22,7 +22,6 @@ export default {
 				'adventor': ['TeX Gyre Adventor', 'system-ui', 'sans-serif'],
 			},
 			colors: {
-				black: '#0a0a0a',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
