@@ -4,12 +4,17 @@ import { toast } from 'sonner';
 
 export const useAudioStream = () => {
   const [isMuted, setIsMuted] = useState(true);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
 
   const startAudio = async (): Promise<MediaStream | null> => {
     try {
       console.log('Starting audio stream...');
+      setIsInitializing(true);
+      setError(null);
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
@@ -19,13 +24,15 @@ export const useAudioStream = () => {
       });
       
       audioStreamRef.current = stream;
-      setError(null);
+      setIsStreaming(true);
+      setIsInitializing(false);
       console.log('Audio stream started successfully');
       return stream;
     } catch (err) {
       console.error('Error starting audio:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to access microphone';
       setError(errorMessage);
+      setIsInitializing(false);
       toast.error('Failed to access microphone. Please check permissions.');
       return null;
     }
@@ -38,6 +45,7 @@ export const useAudioStream = () => {
         track.stop();
       });
       audioStreamRef.current = null;
+      setIsStreaming(false);
     }
   };
 
@@ -56,6 +64,8 @@ export const useAudioStream = () => {
 
   return {
     isMuted,
+    isStreaming,
+    isInitializing,
     error,
     startAudio,
     stopAudio,

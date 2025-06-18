@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,7 @@ export const TwitterSpaceUI = ({
   
   const { selectedInputDevice } = useAudioDevices();
   const { isConnected, connectToSignalingServer, sendSignalingMessage, websocketRef, cleanup } = useSpaceSignaling(spaceId);
-  const { isMuted, isStreaming, isInitializing, startAudio, toggleMute, stopAudio, getStream, error: audioError } = useAudioStream(selectedInputDevice);
+  const { isMuted, isStreaming, isInitializing, startAudio, toggleMute, stopAudio, getStream, error: audioError } = useAudioStream();
   const { audioLevel, isSpeaking } = useAudioLevelDetector(getStream(), isStreaming && (isHost || isSpeaker));
 
   const currentUserId = session?.user?.id;
