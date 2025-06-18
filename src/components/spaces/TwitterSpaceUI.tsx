@@ -97,6 +97,133 @@ export const TwitterSpaceUI = ({
     }
   }, [spaceId, currentUserId]);
 
+  // Create peer connection for WebRTC
+  const createPeerConnection = useCallback((remoteUserId: string) => {
+    console.log('Creating peer connection for:', remoteUserId);
+    
+    const peerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    });
+
+    // Handle incoming audio stream
+    peerConnection.ontrack = (event) => {
+      console.log('Received remote audio track from:', remoteUserId);
+      const [remoteStream] = event.streams;
+      
+      // Create audio element and play the stream
+      const audioElement = new Audio();
+      audioElement.srcObject = remoteStream;
+      audioElement.autoplay = true;
+      audioElement.volume = 1.0;
+      audioElement.play().catch(console.error);
+      
+      setRemoteAudioStreams(prev => new Map(prev.set(remoteUserId, {
+        userId: remoteUserId,
+        stream: remoteStream,
+        audioElement
+      })));
+    };
+
+    // Handle ICE candidates
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log('Sending ICE candidate to:', remoteUserId);
+        sendSignalingMessage({
+          type: 'ice-candidate',
+          candidate: event.candidate,
+          to: remoteUserId
+        });
+      }
+    };
+
+    // Add local stream if available
+    const localStream = getStream();
+    if (localStream) {
+      console.log('Adding local stream tracks to peer connection');
+      localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+      });
+    }
+
+    return peerConnection;
+  }, [getStream, sendSignalingMessage]);
+
+  // Initiate connection to another peer
+  const initiateConnection = useCallback(async (remoteUserId: string) => {
+    if (peerConnections.has(remoteUserId)) return;
+    
+    console.log('Initiating connection to:', remoteUserId);
+    const peerConnection = createPeerConnection(remoteUserId);
+    
+    setPeerConnections(prev => new Map(prev.set(remoteUserId, peerConnection)));
+    
+    try {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      
+      sendSignalingMessage({
+        type: 'offer',
+        offer,
+        to: remoteUserId
+      });
+    } catch (error) {
+      console.error('Error creating offer:', error);
+    }
+  }, [createPeerConnection, peerConnections, sendSignalingMessage]);
+
+  // Handle WebRTC signaling messages
+  const handleWebRTCOffer = useCallback(async (message: any) => {
+    if (!message.offer || message.from === currentUserId) return;
+    
+    console.log('Handling offer from:', message.from);
+    const peerConnection = createPeerConnection(message.from);
+    
+    setPeerConnections(prev => new Map(prev.set(message.from, peerConnection)));
+    
+    try {
+      await peerConnection.setRemoteDescription(message.offer);
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      
+      sendSignalingMessage({
+        type: 'answer',
+        answer,
+        to: message.from
+      });
+    } catch (error) {
+      console.error('Error handling offer:', error);
+    }
+  }, [createPeerConnection, currentUserId, sendSignalingMessage]);
+
+  const handleWebRTCAnswer = useCallback(async (message: any) => {
+    if (!message.answer || message.from === currentUserId) return;
+    
+    const peerConnection = peerConnections.get(message.from);
+    if (peerConnection) {
+      try {
+        await peerConnection.setRemoteDescription(message.answer);
+      } catch (error) {
+        console.error('Error setting remote description:', error);
+      }
+    }
+  }, [currentUserId, peerConnections]);
+
+  const handleWebRTCIceCandidate = useCallback(async (message: any) => {
+    if (!message.candidate || message.from === currentUserId) return;
+    
+    const peerConnection = peerConnections.get(message.from);
+    if (peerConnection) {
+      try {
+        await peerConnection.addIceCandidate(message.candidate);
+      } catch (error) {
+        console.error('Error adding ICE candidate:', error);
+      }
+    }
+  }, [currentUserId, peerConnections]);
+
   // Check for existing speaker request - stable reference
   const checkExistingSpeakerRequest = useCallback(async () => {
     if (!currentUserId || isHost || isSpeaker || cleanupRef.current) return;
@@ -209,14 +336,29 @@ export const TwitterSpaceUI = ({
   useEffect(() => {
     if ((isHost || isSpeaker) && isConnected && !isStreaming && !isInitializing && !cleanupRef.current) {
       console.log('Initializing audio for speaker/host...', { isHost, isSpeaker, isConnected });
-      startAudio().catch((error) => {
+      startAudio().then((stream) => {
+        if (stream) {
+          // Notify other participants that we're now speaking
+          sendSignalingMessage({
+            type: 'speaker-joined',
+            userId: currentUserId
+          });
+          
+          // Initiate connections to existing participants who can hear us
+          participants.forEach(participant => {
+            if (participant.user_id !== currentUserId) {
+              initiateConnection(participant.user_id);
+            }
+          });
+        }
+      }).catch((error) => {
         console.error('Failed to initialize audio:', error);
         if (!cleanupRef.current) {
           toast.error('Failed to connect microphone. Please check permissions.');
         }
       });
     }
-  }, [isHost, isSpeaker, isConnected, isStreaming, isInitializing, startAudio]);
+  }, [isHost, isSpeaker, isConnected, isStreaming, isInitializing, startAudio, sendSignalingMessage, currentUserId, participants, initiateConnection]);
 
   // Set up data fetching and realtime subscriptions
   useEffect(() => {
@@ -260,90 +402,6 @@ export const TwitterSpaceUI = ({
     };
   }, [spaceId, isHost, fetchParticipants, fetchSpeakerRequests]);
 
-  // WebRTC handlers - memoized to prevent recreation
-  const handleWebRTCOffer = useCallback(async (message: any) => {
-    if (!message.offer || message.from === currentUserId || cleanupRef.current) return;
-    
-    console.log('Handling WebRTC offer from:', message.from);
-    
-    try {
-      const peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      });
-
-      peerConnection.ontrack = (event) => {
-        if (cleanupRef.current) return;
-        
-        console.log('Received remote audio track');
-        const [remoteStream] = event.streams;
-        
-        // Create audio element and play the stream
-        const audioElement = new Audio();
-        audioElement.srcObject = remoteStream;
-        audioElement.autoplay = true;
-        audioElement.volume = 1.0;
-        
-        setRemoteAudioStreams(prev => new Map(prev.set(message.from, {
-          userId: message.from,
-          stream: remoteStream,
-          audioElement
-        })));
-      };
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate && !cleanupRef.current) {
-          sendSignalingMessage({
-            type: 'ice-candidate',
-            candidate: event.candidate,
-            to: message.from
-          });
-        }
-      };
-
-      await peerConnection.setRemoteDescription(message.offer);
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-
-      if (!cleanupRef.current) {
-        sendSignalingMessage({
-          type: 'answer',
-          answer,
-          to: message.from
-        });
-
-        setPeerConnections(prev => new Map(prev.set(message.from, peerConnection)));
-      }
-    } catch (error) {
-      console.error('Error handling WebRTC offer:', error);
-    }
-  }, [currentUserId, sendSignalingMessage]);
-
-  const handleWebRTCAnswer = useCallback(async (message: any) => {
-    if (!message.answer || message.from === currentUserId || cleanupRef.current) return;
-    
-    const peerConnection = peerConnections.get(message.from);
-    if (peerConnection) {
-      try {
-        await peerConnection.setRemoteDescription(message.answer);
-      } catch (error) {
-        console.error('Error setting remote description:', error);
-      }
-    }
-  }, [currentUserId, peerConnections]);
-
-  const handleWebRTCIceCandidate = useCallback(async (message: any) => {
-    if (!message.candidate || message.from === currentUserId || cleanupRef.current) return;
-    
-    const peerConnection = peerConnections.get(message.from);
-    if (peerConnection) {
-      try {
-        await peerConnection.addIceCandidate(message.candidate);
-      } catch (error) {
-        console.error('Error adding ICE candidate:', error);
-      }
-    }
-  }, [currentUserId, peerConnections]);
-
   // WebSocket message handling
   useEffect(() => {
     if (!websocketRef.current) return;
@@ -357,8 +415,9 @@ export const TwitterSpaceUI = ({
         
         switch (message.type) {
           case 'speaker-joined':
-            if (message.speakerId !== currentUserId) {
-              console.log('Speaker joined, setting up peer connection');
+            if (message.userId !== currentUserId) {
+              console.log('Speaker joined, initiating connection');
+              initiateConnection(message.userId);
             }
             break;
           case 'offer':
@@ -383,9 +442,8 @@ export const TwitterSpaceUI = ({
         websocketRef.current.onmessage = null;
       }
     };
-  }, [currentUserId, handleWebRTCOffer, handleWebRTCAnswer, handleWebRTCIceCandidate]);
+  }, [currentUserId, handleWebRTCOffer, handleWebRTCAnswer, handleWebRTCIceCandidate, initiateConnection]);
 
-  // Optimized handlers with stable references
   const handleToggleMute = useCallback(() => {
     if (!isStreaming && (isHost || isSpeaker)) {
       toast.error('Audio not connected. Trying to reconnect...');
