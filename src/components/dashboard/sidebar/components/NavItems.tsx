@@ -1,6 +1,5 @@
 
-
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic, ExternalLink } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -63,6 +62,10 @@ export const NavItems = ({
 
   const handlePandoraClick = () => {
     setIsPandoraDialogOpen(true);
+  };
+
+  const handleZukoClick = () => {
+    window.open('https://www.zukoi.app/', '_blank');
   };
 
   const hasPremiumFeatures = true;
@@ -154,6 +157,13 @@ export const NavItems = ({
       description: "AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
+    {
+      icon: ExternalLink,
+      label: "ZUKO",
+      onClick: handleZukoClick,
+      description: "Open ZUKO app",
+      className: "text-accent hover:bg-accent/10"
+    },
     { 
       icon: Mail, 
       label: "Support",
@@ -201,4 +211,3 @@ export const NavItems = ({
     </>
   );
 };
-
