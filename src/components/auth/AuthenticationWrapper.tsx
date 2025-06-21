@@ -14,6 +14,8 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
   const navigate = useNavigate();
   const location = useLocation();
   const authListenerSet = useRef(false);
+  const errorCount = useRef(0);
+  const maxErrors = 5;
 
   // Only set up auth listener once
   useEffect(() => {
@@ -23,17 +25,30 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
       console.log('Auth state changed:', event, currentSession?.user?.id);
       
       if (event === 'SIGNED_OUT' || !currentSession) {
+        errorCount.current = 0; // Reset error count on signout
         navigate('/auth');
       } else if (event === 'SIGNED_IN') {
         console.log('User signed in:', currentSession.user.id);
+        errorCount.current = 0; // Reset error count on successful signin
       }
     });
 
-    // Handle auth errors with retry mechanism
-    window.addEventListener('unhandledrejection', async (event) => {
-      if (event.reason?.message === 'Failed to fetch' && 
-          event.reason?.url?.includes('/auth/v1/user')) {
-        console.log('Auth error detected, attempting to refresh session');
+    // Enhanced error handling with circuit breaker pattern
+    const handleUnhandledRejection = async (event: PromiseRejectionEvent) => {
+      const isAuthError = event.reason?.message === 'Failed to fetch' && 
+                         event.reason?.url?.includes('/auth/v1/user');
+      
+      if (isAuthError) {
+        errorCount.current++;
+        console.log(`Auth error detected (${errorCount.current}/${maxErrors}), attempting to refresh session`);
+        
+        // Implement circuit breaker - if too many errors, stop trying
+        if (errorCount.current >= maxErrors) {
+          console.log('Too many auth errors, redirecting to login');
+          navigate('/auth');
+          toast.error('Connection issues detected. Please sign in again.');
+          return;
+        }
         
         try {
           const { data: { session: currentSession }, error: refreshError } = await supabase.auth.getSession();
@@ -41,22 +56,29 @@ export const AuthenticationWrapper = ({ children }: AuthenticationWrapperProps) 
           if (refreshError || !currentSession) {
             console.log('Session refresh failed, redirecting to login');
             navigate('/auth');
-            toast.error('Session expired. Please sign in again.');
+            if (errorCount.current === 1) { // Only show toast on first error
+              toast.error('Session expired. Please sign in again.');
+            }
           } else {
             console.log('Session refreshed successfully');
-            // Session is valid, no need to redirect
+            errorCount.current = Math.max(0, errorCount.current - 1); // Reduce error count on success
           }
         } catch (error) {
           console.error('Error refreshing session:', error);
-          navigate('/auth');
-          toast.error('Session expired. Please sign in again.');
+          if (errorCount.current >= maxErrors) {
+            navigate('/auth');
+            toast.error('Session expired. Please sign in again.');
+          }
         }
       }
-    });
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
     authListenerSet.current = true;
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
       authListenerSet.current = false;
     };
   }, [navigate]);

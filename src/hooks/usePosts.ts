@@ -54,14 +54,16 @@ export const usePosts = (followingOnly: boolean = false) => {
             )
           `)
           .gt('created_at', threeDaysAgo.toISOString())
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(50); // Limit to prevent memory issues with massive datasets
 
         // If followingOnly is true and user is logged in, first get following IDs
         if (followingOnly && session?.user?.id) {
           const { data: followingData, error: followingError } = await supabase
             .from('followers')
             .select('following_id')
-            .eq('follower_id', session.user.id);
+            .eq('follower_id', session.user.id)
+            .limit(5000); // Reasonable limit for following relationships
 
           if (followingError) {
             console.error('Error fetching following:', followingError);
@@ -69,6 +71,12 @@ export const usePosts = (followingOnly: boolean = false) => {
           }
 
           const followingIds = followingData?.map(f => f.following_id) || [];
+          
+          // Handle empty following list gracefully
+          if (followingIds.length === 0) {
+            return [];
+          }
+          
           query = query.in('user_id', followingIds);
         }
 
@@ -90,8 +98,8 @@ export const usePosts = (followingOnly: boolean = false) => {
             (sub: UserSubscription) => sub?.status === 'active'
           );
 
-          // Calculate the actual number of likes
-          const likeCount = post.post_likes ? post.post_likes.length : 0;
+          // Calculate the actual number of likes with safety checks
+          const likeCount = Array.isArray(post.post_likes) ? post.post_likes.length : 0;
 
           return {
             ...post,
@@ -102,26 +110,32 @@ export const usePosts = (followingOnly: boolean = false) => {
               name: post.profiles.username || 'Deleted User',
               subscription: activeSubscription?.subscription_tiers || null
             },
-            likes: likeCount
+            likes: Math.max(0, likeCount) // Ensure non-negative
           };
         });
 
-        console.log(`Successfully fetched ${validPosts?.length} posts:`, validPosts);
-        return validPosts;
+        console.log(`Successfully fetched ${validPosts?.length} posts`);
+        return validPosts || [];
       } catch (error) {
         console.error('Query error:', error);
-        toast.error('Failed to load posts');
+        // Don't show toast for network errors to avoid spam
+        if (!error?.message?.includes('Failed to fetch')) {
+          toast.error('Failed to load posts');
+        }
         throw error;
       }
     },
-    staleTime: 1000 * 30, // Data stays fresh for 30 seconds
-    gcTime: 1000 * 60 * 5, // Keep unused data for 5 minutes
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    staleTime: 1000 * 60, // Increased to 1 minute for better caching
+    gcTime: 1000 * 60 * 10, // Keep unused data for 10 minutes
+    retry: 2, // Reduced retries to prevent cascade failures
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+    // Add circuit breaker pattern
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: 'always',
   });
 
   return { 
-    posts, 
+    posts: posts || [], 
     isLoading,
     error,
   };

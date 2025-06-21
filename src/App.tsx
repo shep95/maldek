@@ -12,11 +12,20 @@ import { useEffect } from "react";
 import { BackgroundMusicProvider } from "@/components/providers/BackgroundMusicProvider";
 import { EncryptionProvider } from "@/providers/EncryptionProvider";
 
+// Enhanced query client configuration for massive scale
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
+      retry: 2, // Reduced retries to prevent cascade failures
       refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes stale time
+      gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
+      // Add network mode for better offline handling
+      networkMode: 'online',
+    },
+    mutations: {
+      retry: 1, // Minimal retries for mutations
+      networkMode: 'online',
     },
   },
 });
@@ -24,14 +33,46 @@ const queryClient = new QueryClient({
 const App = () => {
   useEffect(() => {
     // Initialize theme from localStorage or default to dark
-    const theme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.classList.add(theme);
-
-    // Initialize autoplay state
-    const shouldAutoplay = localStorage.getItem('background_music_autoplay') !== 'false';
-    if (shouldAutoplay) {
-      localStorage.setItem('background_music_autoplay', 'true');
+    try {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.classList.add(theme);
+    } catch (error) {
+      console.warn('Error setting theme:', error);
+      document.documentElement.classList.add('dark');
     }
+
+    // Initialize autoplay state with error handling
+    try {
+      const shouldAutoplay = localStorage.getItem('background_music_autoplay') !== 'false';
+      if (shouldAutoplay) {
+        localStorage.setItem('background_music_autoplay', 'true');
+      }
+    } catch (error) {
+      console.warn('Error setting autoplay:', error);
+    }
+
+    // Add global error handler for unhandled promise rejections
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      // Prevent the error from crashing the app
+      event.preventDefault();
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    // Add global error handler for errors
+    const handleError = (event: ErrorEvent) => {
+      console.error('Global error:', event.error);
+      // Log error but don't crash the app
+    };
+
+    window.addEventListener('error', handleError);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      window.removeEventListener('error', handleError);
+    };
   }, []);
 
   return (

@@ -21,10 +21,14 @@ const Auth = () => {
   // Check if user is already logged in
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        // User is already logged in, redirect to dashboard
-        navigate('/dashboard');
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+        // Don't show error to user, just continue with auth flow
       }
     };
 
@@ -43,30 +47,38 @@ const Auth = () => {
       
       if (isLogin) {
         console.log("Attempting to sign in user:", formData.email);
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        
+        // Add timeout for sign in
+        const signInPromise = supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
+        
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Sign in timeout')), 15000);
+        });
+        
+        const { data, error: signInError } = await Promise.race([
+          signInPromise,
+          timeoutPromise
+        ]) as any;
 
         if (signInError) {
-          if (signInError.message.includes('Failed to fetch')) {
+          if (signInError.message.includes('Failed to fetch') || 
+              signInError.message.includes('timeout')) {
             throw new Error('Network error. Please check your connection and try again.');
           }
           throw signInError;
         }
         
         console.log("Sign in successful");
-        // Removed "Successfully signed in!" toast message here
         
         // Check if we need to initialize encryption
-        // If there's no encrypted key in local storage, we'll show the security setup dialog
         const hasEncryptedKey = localStorage.getItem("bosley_encrypted_master_key");
         
         if (hasEncryptedKey) {
-          // User already has an encryption key, redirect to dashboard
           navigate('/dashboard');
         } else {
-          // User needs to set up encryption, show the security setup dialog
           setCurrentUserId(data.user?.id || null);
           setShowSecuritySetup(true);
         }
@@ -80,14 +92,23 @@ const Auth = () => {
           username: formData.username 
         });
 
-        // First check if username is available
-        const { data: existingUser, error: checkError } = await supabase
+        // First check if username is available with timeout
+        const checkPromise = supabase
           .from('profiles')
           .select('username')
           .eq('username', formData.username.toLowerCase())
           .maybeSingle();
+          
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Username check timeout')), 10000);
+        });
 
-        if (checkError) {
+        const { data: existingUser, error: checkError } = await Promise.race([
+          checkPromise,
+          timeoutPromise
+        ]) as any;
+
+        if (checkError && !checkError.message?.includes('timeout')) {
           console.error("Username check error:", checkError);
           throw new Error('Error checking username availability');
         }
@@ -99,8 +120,8 @@ const Auth = () => {
 
         console.log("Username is available, proceeding with signup");
 
-        // Create the auth user with the username in metadata
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        // Create the auth user with timeout
+        const signUpPromise = supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -110,8 +131,14 @@ const Auth = () => {
           }
         });
 
+        const { data: signUpData, error: signUpError } = await Promise.race([
+          signUpPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Signup timeout')), 15000))
+        ]) as any;
+
         if (signUpError) {
-          if (signUpError.message.includes('Failed to fetch')) {
+          if (signUpError.message.includes('Failed to fetch') || 
+              signUpError.message.includes('timeout')) {
             throw new Error('Network error. Please check your connection and try again.');
           }
           console.error("Signup error:", signUpError);
@@ -123,29 +150,37 @@ const Auth = () => {
           throw new Error('Failed to create user');
         }
 
-        // Wait a moment for the trigger to create the profile
+        // Wait for profile creation with shorter timeout
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Verify the profile was created
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', signUpData.user.id)
-          .single();
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', signUpData.user.id)
+            .single();
 
-        if (profileError || !profile) {
-          console.error("Profile verification error:", profileError);
-          toast.error("Account created but profile setup failed. Please try logging in.");
-        } else {
-          console.log("Profile created successfully:", profile);
-          toast.success("Account created successfully! You can now sign in.");
+          if (profileError || !profile) {
+            console.error("Profile verification error:", profileError);
+            toast.error("Account created but profile setup failed. Please try logging in.");
+          } else {
+            console.log("Profile created successfully:", profile);
+            toast.success("Account created successfully! You can now sign in.");
+          }
+        } catch (verifyError) {
+          console.error("Profile verification failed:", verifyError);
+          toast.success("Account created! Please try signing in.");
         }
 
-        setIsLogin(true); // Switch to login view
+        setIsLogin(true);
       }
     } catch (error: any) {
       console.error('Authentication error:', error);
-      toast.error(error.message || "Authentication failed");
+      const errorMessage = error.message?.includes('timeout') 
+        ? 'Request timed out. Please try again.'
+        : error.message || "Authentication failed";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -155,7 +190,6 @@ const Auth = () => {
     try {
       console.log("Setting up encryption with security code");
       
-      // Initialize the encryption service with the user's security code
       const success = await encryptionService.initialize(securityCode);
       
       if (success) {
@@ -172,10 +206,8 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 md:p-8 relative overflow-hidden">
-      {/* Geometric Hero Background */}
       <HeroGeometric hideContent={true} />
 
-      {/* Main content */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -184,9 +216,12 @@ const Auth = () => {
       >
         <div className="bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl border border-accent/10 p-4 md:p-8">
           <AuthHeader isLogin={isLogin} />
-          <AuthForm isLogin={isLogin} onSubmit={handleSubmit} />
+          <AuthForm 
+            isLogin={isLogin} 
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+          />
           
-          {/* Toggle button with futuristic style */}
           <div className="text-center mt-6">
             <button
               onClick={() => setIsLogin(!isLogin)}
@@ -200,11 +235,9 @@ const Auth = () => {
             </button>
           </div>
         </div>
-        {/* Google Play badge below the main box */}
         <GooglePlayBadge />
       </motion.div>
 
-      {/* Security Setup Dialog */}
       <SecuritySetupDialog 
         isOpen={showSecuritySetup} 
         onOpenChange={setShowSecuritySetup}
@@ -212,7 +245,6 @@ const Auth = () => {
         userId={currentUserId}
       />
 
-      {/* Decorative elements */}
       <div className="absolute bottom-4 left-4 text-xs text-muted-foreground/50 z-20">
         Bosley © 2024
       </div>

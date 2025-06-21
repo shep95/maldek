@@ -14,11 +14,26 @@ const Index = () => {
       try {
         console.log("Checking session status...");
         setIsLoading(true);
-        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // Add timeout for session check to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Session check timeout')), 10000);
+        });
+        
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
           console.error("Session check error:", error);
-          toast.error("Failed to check login status. Please try again.");
+          // Don't show error toast for timeout, just redirect
+          if (!error.message?.includes('timeout')) {
+            toast.error("Failed to check login status. Please try again.");
+          }
+          navigate("/auth", { replace: true });
           return;
         }
         
@@ -31,7 +46,8 @@ const Index = () => {
         }
       } catch (error) {
         console.error("Unexpected error:", error);
-        toast.error("Something went wrong. Please refresh the page.");
+        // For scale, redirect gracefully instead of showing error
+        navigate("/auth", { replace: true });
       } finally {
         setIsLoading(false);
       }
@@ -54,7 +70,7 @@ const Index = () => {
     );
   }
 
-  return null; // This won't be rendered as we'll be redirected
+  return null;
 };
 
 export default Index;

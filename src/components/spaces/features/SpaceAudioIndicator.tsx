@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useState, memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Mic, WifiOff } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,7 @@ interface SpaceAudioIndicatorProps {
   audioLevel?: number;
 }
 
-export const SpaceAudioIndicator = ({
+export const SpaceAudioIndicator = memo(({
   isConnected,
   isSpeaking,
   audioLevel = 0
@@ -22,33 +23,48 @@ export const SpaceAudioIndicator = ({
       return;
     }
 
-    // Monitor connection quality
+    // Monitor connection quality with error handling
     const checkQuality = () => {
-      if (navigator.onLine) {
-        // Using Navigator.connection if available
-        const connection = (navigator as any).connection;
-        if (connection) {
-          const effectiveType = connection.effectiveType;
-          setConnectionQuality(
-            effectiveType === '4g' ? 'good' :
-            effectiveType === '3g' ? 'poor' :
-            'offline'
-          );
+      try {
+        if (navigator.onLine) {
+          // Using Navigator.connection if available
+          const connection = (navigator as any).connection;
+          if (connection) {
+            const effectiveType = connection.effectiveType;
+            setConnectionQuality(
+              effectiveType === '4g' ? 'good' :
+              effectiveType === '3g' ? 'poor' :
+              'offline'
+            );
+          } else {
+            // Fallback to good if connection API not available
+            setConnectionQuality('good');
+          }
+        } else {
+          setConnectionQuality('offline');
         }
-      } else {
-        setConnectionQuality('offline');
+      } catch (error) {
+        console.warn('Error checking connection quality:', error);
+        setConnectionQuality('good'); // Fallback to good
       }
     };
 
     checkQuality();
-    window.addEventListener('online', checkQuality);
-    window.addEventListener('offline', checkQuality);
+    
+    const handleOnline = () => checkQuality();
+    const handleOffline = () => setConnectionQuality('offline');
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('online', checkQuality);
-      window.removeEventListener('offline', checkQuality);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, [isConnected]);
+
+  // Ensure audioLevel is within valid range
+  const safeAudioLevel = Math.max(0, Math.min(5, Math.floor(audioLevel || 0)));
 
   return (
     <div className="flex items-center gap-2">
@@ -71,17 +87,16 @@ export const SpaceAudioIndicator = ({
          'Offline'}
       </Badge>
 
-      {isSpeaking && audioLevel > 0 && (
+      {isSpeaking && safeAudioLevel > 0 && (
         <div className="flex gap-0.5">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className={`w-1 rounded-full ${
-                i < audioLevel ? 'bg-green-500' : 'bg-gray-300'
+              className={`w-1 rounded-full transition-all duration-150 ${
+                i < safeAudioLevel ? 'bg-green-500' : 'bg-gray-300'
               }`}
               style={{
-                height: `${6 + (i * 2)}px`,
-                transition: 'all 150ms ease'
+                height: `${6 + (i * 2)}px`
               }}
             />
           ))}
@@ -89,4 +104,6 @@ export const SpaceAudioIndicator = ({
       )}
     </div>
   );
-};
+});
+
+SpaceAudioIndicator.displayName = 'SpaceAudioIndicator';
