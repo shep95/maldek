@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,19 +32,23 @@ interface AuthFormProps {
     password: string;
     username?: string;
   }) => void;
+  isSubmitting?: boolean;
 }
 
-export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
+export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
   const [isDisposableEmail, setIsDisposableEmail] = useState(false);
   const [isValidEmailDomain, setIsValidEmailDomain] = useState(true);
   const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
+
+  // Use external isSubmitting prop if provided, otherwise use local state
+  const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
 
   const checkEmailDomain = (email: string) => {
     if (!email || !email.includes('@')) {
@@ -151,7 +156,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       return;
     }
 
-    setIsSubmitting(true);
+    setLocalIsSubmitting(true);
     console.log("Starting form submission with username:", username);
 
     try {
@@ -188,7 +193,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
       toast.error(error.message || "Authentication failed");
       resetCaptcha();
     } finally {
-      setIsSubmitting(false);
+      setLocalIsSubmitting(false);
     }
   };
 
@@ -218,7 +223,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
               }`}
               required
               minLength={3}
-              disabled={isSubmitting}
+              disabled={effectiveIsSubmitting}
             />
             {username.length >= 3 && (
               <div className="absolute right-3 top-3 text-sm">
@@ -241,7 +246,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
             onChange={handleEmailChange}
             className={`bg-muted/50 w-full ${isDisposableEmail || !isValidEmailDomain ? "border-red-500" : ""}`}
             required
-            disabled={isSubmitting}
+            disabled={effectiveIsSubmitting}
           />
           {isDisposableEmail && (
             <div className="text-xs text-red-500 mt-1">
@@ -262,7 +267,7 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
           className="bg-muted/50 w-full"
           required
           minLength={6}
-          disabled={isSubmitting}
+          disabled={effectiveIsSubmitting}
         />
         
         {/* hCaptcha integration */}
@@ -284,9 +289,9 @@ export const AuthForm = ({ isLogin, onSubmit }: AuthFormProps) => {
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={isSubmitting || !hcaptchaToken || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
+          disabled={effectiveIsSubmitting || !hcaptchaToken || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
         >
-          {isSubmitting ? "Please wait..." : (isLogin ? "Sign in" : "Sign up")}
+          {effectiveIsSubmitting ? "Please wait..." : (isLogin ? "Sign in" : "Sign up")}
         </Button>
       </div>
     </form>
