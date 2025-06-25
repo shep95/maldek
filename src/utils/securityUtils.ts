@@ -33,11 +33,9 @@ export const validateSecurityCode = async (code: string, userId: string): Promis
   }
   
   try {
-    const { data, error } = await supabase.rpc('verify_security_code_enhanced', {
+    const { data, error } = await supabase.rpc('verify_security_code', {
       user_uuid: userId,
-      code: code,
-      client_ip: await getClientIP(),
-      user_agent: navigator.userAgent
+      code: code
     });
     
     if (error) throw error;
