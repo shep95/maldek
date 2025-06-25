@@ -22,18 +22,13 @@ export function PricingSectionDemo() {
             icon: <Sparkles className="w-6 h-6" />,
             features: [
               {
-                name: "AI Chat & Content Tools",
-                description: "Generate and enhance content with AI",
+                name: "GIF Profile Upload",
+                description: "Upload animated GIFs as your profile picture",
                 included: true,
               },
               {
-                name: "GIF Upload Support",
-                description: "Include animated GIFs in your posts",
-                included: true,
-              },
-              {
-                name: "Animated Avatar",
-                description: "Stand out with animated profile pictures",
+                name: "Access to Spaces",
+                description: "Join and create audio spaces (beta testing)",
                 included: true,
               },
               {
@@ -42,24 +37,9 @@ export function PricingSectionDemo() {
                 included: true,
               },
               {
-                name: "Private Posts",
-                description: "Control who can see your content",
+                name: "Private Posts with Secure Files",
+                description: "Encrypted file storage up to 4GB",
                 included: true,
-              },
-              {
-                name: "Security Folder",
-                description: "Store sensitive content securely",
-                included: true,
-              },
-              {
-                name: "Community Spaces",
-                description: "Create and join audio spaces",
-                included: true,
-              },
-              {
-                name: "Priority Support",
-                description: "Get help when you need it most",
-                included: false,
               },
             ],
           },
@@ -73,43 +53,23 @@ export function PricingSectionDemo() {
             icon: <Zap className="w-6 h-6" />,
             features: [
               {
-                name: "All Premium Features",
-                description: "Everything in the Premium tier",
+                name: "GIF Profile Upload",
+                description: "Upload animated GIFs as your profile picture",
                 included: true,
               },
               {
-                name: "Scheduled Posts",
-                description: "Plan your content calendar",
+                name: "Access to Spaces",
+                description: "Join and create audio spaces (beta testing)",
                 included: true,
               },
               {
-                name: "Extended History",
-                description: "Access your content history longer",
+                name: "No Watermarks",
+                description: "Clean media without Bosley watermarks",
                 included: true,
               },
               {
-                name: "NFT Avatar Support",
-                description: "Display your NFTs as avatars",
-                included: true,
-              },
-              {
-                name: "Priority Support",
-                description: "Get help when you need it most",
-                included: true,
-              },
-              {
-                name: "Analytics Dashboard",
-                description: "Detailed insights for your content",
-                included: true,
-              },
-              {
-                name: "Verified Checkmark",
-                description: "Stand out with verification",
-                included: true,
-              },
-              {
-                name: "Custom Username Colors",
-                description: "Make your name pop in conversations",
+                name: "Private Posts with Secure Files",
+                description: "Encrypted file storage up to 4GB",
                 included: true,
               },
             ],
