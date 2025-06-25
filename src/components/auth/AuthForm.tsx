@@ -1,10 +1,9 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { Shield } from "lucide-react";
 
 // List of known disposable email domains
@@ -44,8 +43,6 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
   const [localIsSubmitting, setLocalIsSubmitting] = useState(false);
   const [isDisposableEmail, setIsDisposableEmail] = useState(false);
   const [isValidEmailDomain, setIsValidEmailDomain] = useState(true);
-  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
-  const captchaRef = useRef<HCaptcha>(null);
 
   // Use external isSubmitting prop if provided, otherwise use local state
   const effectiveIsSubmitting = isSubmitting || localIsSubmitting;
@@ -117,17 +114,6 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
     }
   };
 
-  const handleCaptchaVerify = (token: string) => {
-    setHcaptchaToken(token);
-  };
-
-  const resetCaptcha = () => {
-    setHcaptchaToken(null);
-    if (captchaRef.current) {
-      captchaRef.current.resetCaptcha();
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -151,11 +137,6 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
       return;
     }
 
-    if (!hcaptchaToken) {
-      toast.error("Please complete the captcha verification");
-      return;
-    }
-
     setLocalIsSubmitting(true);
     console.log("Starting form submission with username:", username);
 
@@ -167,8 +148,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
           password,
           options: {
             data: {
-              username: username.toLowerCase(),
-              captchaToken: hcaptchaToken
+              username: username.toLowerCase()
             }
           }
         });
@@ -179,19 +159,16 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         toast.success("Account created successfully! You can now sign in.");
-        resetCaptcha();
       } else {
         // For login, use the provided onSubmit
         await onSubmit({
           email,
           password
         });
-        resetCaptcha();
       }
     } catch (error: any) {
       console.error("Form submission error:", error);
       toast.error(error.message || "Authentication failed");
-      resetCaptcha();
     } finally {
       setLocalIsSubmitting(false);
     }
@@ -273,17 +250,6 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
           autoComplete={isLogin ? "current-password" : "new-password"}
         />
         
-        {/* Enhanced hCaptcha integration */}
-        <div className="mt-4 flex justify-center">
-          <HCaptcha
-            sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || "10000000-ffff-ffff-ffff-000000000001"}
-            onVerify={handleCaptchaVerify}
-            ref={captchaRef}
-            theme="dark"
-            size="normal"
-          />
-        </div>
-        
         <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1 mt-1">
           <Shield className="w-3 h-3" />
           <span>Enhanced security protection</span>
@@ -292,7 +258,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={effectiveIsSubmitting || !hcaptchaToken || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
+          disabled={effectiveIsSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
         >
           {effectiveIsSubmitting ? "Securing..." : (isLogin ? "Sign in" : "Create account")}
         </Button>
