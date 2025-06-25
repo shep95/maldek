@@ -120,22 +120,27 @@ const Subscription = () => {
           <div className="mb-4">
             <h3 className="text-lg font-medium mb-2">Your Active Features</h3>
             <ul className="space-y-2">
-              {isActive && (
-                <>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" /> GIF Profile Upload
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" /> Access to Spaces (beta testing)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" /> No Watermarks
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" /> Private Posts with Secure Encrypted Files (4GB storage)
-                  </li>
-                </>
-              )}
+              {features.canUseAI && <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> AI Chat & Content Tools
+                </li>}
+              {features.canUploadGifs && <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> GIF Upload Support
+                </li>}
+              {features.canUseAnimatedAvatar && <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Animated Avatar Support
+                </li>}
+              {features.canUseNFTAvatar && <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> NFT Avatar Support
+                </li>}
+              {features.hasWatermarkFree && <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Watermark-Free Media
+                </li>}
+              {features.hasPrivacyFeatures && <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Private Posts & Privacy Features
+                </li>}
+              {features.hasPrioritySupport && <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" /> Priority Customer Support
+                </li>}
             </ul>
           </div>
           
