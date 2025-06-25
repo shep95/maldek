@@ -224,6 +224,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
               required
               minLength={3}
               disabled={effectiveIsSubmitting}
+              autoComplete="username"
             />
             {username.length >= 3 && (
               <div className="absolute right-3 top-3 text-sm">
@@ -247,6 +248,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
             className={`bg-muted/50 w-full ${isDisposableEmail || !isValidEmailDomain ? "border-red-500" : ""}`}
             required
             disabled={effectiveIsSubmitting}
+            autoComplete="email"
           />
           {isDisposableEmail && (
             <div className="text-xs text-red-500 mt-1">
@@ -268,12 +270,13 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
           required
           minLength={6}
           disabled={effectiveIsSubmitting}
+          autoComplete={isLogin ? "current-password" : "new-password"}
         />
         
-        {/* hCaptcha integration */}
+        {/* Enhanced hCaptcha integration */}
         <div className="mt-4 flex justify-center">
           <HCaptcha
-            sitekey="10000000-ffff-ffff-ffff-000000000001"
+            sitekey={import.meta.env.VITE_HCAPTCHA_SITE_KEY || "10000000-ffff-ffff-ffff-000000000001"}
             onVerify={handleCaptchaVerify}
             ref={captchaRef}
             theme="dark"
@@ -283,7 +286,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
         
         <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1 mt-1">
           <Shield className="w-3 h-3" />
-          <span>Protected by hCaptcha</span>
+          <span>Enhanced security protection</span>
         </div>
         
         <Button 
@@ -291,7 +294,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
           className="w-full bg-accent hover:bg-accent/90 text-white"
           disabled={effectiveIsSubmitting || !hcaptchaToken || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
         >
-          {effectiveIsSubmitting ? "Please wait..." : (isLogin ? "Sign in" : "Sign up")}
+          {effectiveIsSubmitting ? "Securing..." : (isLogin ? "Sign in" : "Create account")}
         </Button>
       </div>
     </form>

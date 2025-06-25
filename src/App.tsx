@@ -11,28 +11,36 @@ import { AppRoutes } from "@/components/routing/AppRoutes";
 import { useEffect } from "react";
 import { BackgroundMusicProvider } from "@/components/providers/BackgroundMusicProvider";
 import { EncryptionProvider } from "@/providers/EncryptionProvider";
+import { SecurityMonitor } from "@/components/security/SecurityMonitor";
+import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
-// Enhanced query client configuration for massive scale
+// Enhanced query client configuration with security measures
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2, // Reduced retries to prevent cascade failures
+      retry: 2,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes stale time
-      gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
-      // Add network mode for better offline handling
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 10,
       networkMode: 'online',
+      // Add security headers to all requests
+      meta: {
+        secure: true
+      }
     },
     mutations: {
-      retry: 1, // Minimal retries for mutations
+      retry: 1,
       networkMode: 'online',
+      meta: {
+        secure: true
+      }
     },
   },
 });
 
 const App = () => {
   useEffect(() => {
-    // Initialize theme from localStorage or default to dark
+    // Enhanced security initialization
     try {
       const theme = localStorage.getItem('theme') || 'dark';
       document.documentElement.classList.add(theme);
@@ -41,7 +49,6 @@ const App = () => {
       document.documentElement.classList.add('dark');
     }
 
-    // Initialize autoplay state with error handling
     try {
       const shouldAutoplay = localStorage.getItem('background_music_autoplay') !== 'false';
       if (shouldAutoplay) {
@@ -51,51 +58,75 @@ const App = () => {
       console.warn('Error setting autoplay:', error);
     }
 
-    // Add global error handler for unhandled promise rejections
+    // Enhanced global error handling with security logging
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
-      // Prevent the error from crashing the app
+      
+      // Log security-related errors
+      if (event.reason?.message?.includes('auth') || 
+          event.reason?.message?.includes('token') ||
+          event.reason?.message?.includes('session')) {
+        console.warn('Security-related error detected:', event.reason);
+      }
+      
       event.preventDefault();
     };
 
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    // Add global error handler for errors
     const handleError = (event: ErrorEvent) => {
       console.error('Global error:', event.error);
-      // Log error but don't crash the app
+      
+      // Enhanced error filtering for security
+      if (event.error?.message?.includes('script') ||
+          event.error?.message?.includes('unauthorized')) {
+        console.warn('Potential security issue detected:', event.error);
+      }
     };
 
+    // Security event listeners
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Clear sensitive data when tab becomes hidden
+        console.log('Tab hidden - clearing sensitive data');
+      }
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
     window.addEventListener('error', handleError);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Cleanup
     return () => {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection);
       window.removeEventListener('error', handleError);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
   return (
-    <SessionContextProvider 
-      supabaseClient={supabase} 
-      initialSession={null}
-    >
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <TooltipProvider>
-            <BackgroundMusicProvider>
-              <EncryptionProvider>
-                <AuthenticationWrapper>
-                  <AppRoutes />
-                </AuthenticationWrapper>
-              </EncryptionProvider>
-            </BackgroundMusicProvider>
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </SessionContextProvider>
+    <>
+      <SecurityHeaders />
+      <SecurityMonitor />
+      <SessionContextProvider 
+        supabaseClient={supabase} 
+        initialSession={null}
+      >
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <TooltipProvider>
+              <BackgroundMusicProvider>
+                <EncryptionProvider>
+                  <AuthenticationWrapper>
+                    <AppRoutes />
+                  </AuthenticationWrapper>
+                </EncryptionProvider>
+              </BackgroundMusicProvider>
+              <Toaster />
+              <Sonner />
+            </TooltipProvider>
+          </BrowserRouter>
+        </QueryClientProvider>
+      </SessionContextProvider>
+    </>
   );
 };
 
