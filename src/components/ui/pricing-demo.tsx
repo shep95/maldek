@@ -1,123 +1,37 @@
 
-"use client"
+import { PricingCard } from "@/components/ui/dark-gradient-pricing"
 
-import { useState } from "react"
-import { PricingSection } from "@/components/ui/pricing-section"
-import { Sparkles, Zap } from "lucide-react"
+const benefits = [
+  { text: "GIF profile upload", checked: true },
+  { text: "Access to Spaces (beta testing)", checked: true },
+  { text: "No watermarks", checked: true },
+  { text: "Private posts with secure encrypted files (4GB storage)", checked: true },
+]
 
-export function PricingSectionDemo() {
-  const [isLoading] = useState(false)
-
+export const PricingSectionDemo = () => {
   return (
-    <div className="w-full">
-      <PricingSection 
-        tiers={[
-          {
-            name: "Premium",
-            price: {
-              monthly: 3.50,
-              yearly: 28.00,
-            },
-            description: "Essential tools for content creators",
-            icon: <Sparkles className="w-6 h-6" />,
-            features: [
-              {
-                name: "AI Chat & Content Tools",
-                description: "Generate and enhance content with AI",
-                included: true,
-              },
-              {
-                name: "GIF Upload Support",
-                description: "Include animated GIFs in your posts",
-                included: true,
-              },
-              {
-                name: "Animated Avatar",
-                description: "Stand out with animated profile pictures",
-                included: true,
-              },
-              {
-                name: "No Watermarks",
-                description: "Clean media without Bosley watermarks",
-                included: true,
-              },
-              {
-                name: "Private Posts",
-                description: "Control who can see your content",
-                included: true,
-              },
-              {
-                name: "Security Folder",
-                description: "Store sensitive content securely",
-                included: true,
-              },
-              {
-                name: "Community Spaces",
-                description: "Create and join audio spaces",
-                included: true,
-              },
-              {
-                name: "Priority Support",
-                description: "Get help when you need it most",
-                included: false,
-              },
-            ],
-          },
-          {
-            name: "Pro",
-            price: {
-              monthly: 3.50, 
-              yearly: 28.00,
-            },
-            description: "Advanced features for serious creators",
-            icon: <Zap className="w-6 h-6" />,
-            features: [
-              {
-                name: "All Premium Features",
-                description: "Everything in the Premium tier",
-                included: true,
-              },
-              {
-                name: "Scheduled Posts",
-                description: "Plan your content calendar",
-                included: true,
-              },
-              {
-                name: "Extended History",
-                description: "Access your content history longer",
-                included: true,
-              },
-              {
-                name: "NFT Avatar Support",
-                description: "Display your NFTs as avatars",
-                included: true,
-              },
-              {
-                name: "Priority Support",
-                description: "Get help when you need it most",
-                included: true,
-              },
-              {
-                name: "Analytics Dashboard",
-                description: "Detailed insights for your content",
-                included: true,
-              },
-              {
-                name: "Verified Checkmark",
-                description: "Stand out with verification",
-                included: true,
-              },
-              {
-                name: "Custom Username Colors",
-                description: "Make your name pop in conversations",
-                included: true,
-              },
-            ],
-            highlight: true,
-            badge: "Most Popular",
-          },
-        ]}
-      />
-    </div>
+    <section className="py-24">
+      <div className="container mx-auto px-4">
+        <div className="mb-16 text-center">
+          <h2 className="mb-4 text-4xl font-bold">Choose Your Plan</h2>
+          <p className="text-muted-foreground">
+            Unlock premium features with our subscription plan
+          </p>
+        </div>
+        
+        <div className="flex justify-center">
+          <div className="w-full max-w-sm">
+            <PricingCard
+              tier="Premium"
+              price="$7.99/mo"
+              bestFor="Enhanced social experience"
+              CTA="Subscribe Now"
+              benefits={benefits}
+              className="border-accent/50 shadow-lg"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
