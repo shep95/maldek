@@ -1441,14 +1441,11 @@ export type Database = {
           follower_count: number
           id: string
           is_avatar_animated: boolean | null
-          is_suspended: boolean | null
           last_active: string | null
           last_post_time: string | null
           location: string | null
           security_code: string | null
           social_links: Json | null
-          suspension_end: string | null
-          suspension_reason: string | null
           theme_preference: string | null
           total_likes_received: number | null
           total_media: number | null
@@ -1468,14 +1465,11 @@ export type Database = {
           follower_count?: number
           id: string
           is_avatar_animated?: boolean | null
-          is_suspended?: boolean | null
           last_active?: string | null
           last_post_time?: string | null
           location?: string | null
           security_code?: string | null
           social_links?: Json | null
-          suspension_end?: string | null
-          suspension_reason?: string | null
           theme_preference?: string | null
           total_likes_received?: number | null
           total_media?: number | null
@@ -1495,14 +1489,11 @@ export type Database = {
           follower_count?: number
           id?: string
           is_avatar_animated?: boolean | null
-          is_suspended?: boolean | null
           last_active?: string | null
           last_post_time?: string | null
           location?: string | null
           security_code?: string | null
           social_links?: Json | null
-          suspension_end?: string | null
-          suspension_reason?: string | null
           theme_preference?: string | null
           total_likes_received?: number | null
           total_media?: number | null

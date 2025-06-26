@@ -77,24 +77,22 @@ export const useAIOperations = ({
     }
   }, [value, translateContent, onChange, checkSubscription]);
 
-  const handleModerate = useCallback(async (mediaUrl?: string) => {
+  const handleModerate = useCallback(async () => {
     if (!checkSubscription()) return;
 
     try {
-      const { is_safe, details } = await moderateContent(value, mediaUrl);
-      if (!is_safe) {
-        const flaggedCategories = Object.entries(details.categories || {})
+      const { flagged, categories } = await moderateContent(value);
+      if (flagged) {
+        const flaggedCategories = Object.entries(categories)
           .filter(([_, isFlagged]) => isFlagged)
           .map(([category]) => category)
           .join(', ');
-        toast.error(`Content flagged for: ${flaggedCategories || 'inappropriate content'}`);
+        toast.error(`Content flagged for: ${flaggedCategories}`);
       } else {
         toast.success('Content passed moderation!');
       }
-      return is_safe;
     } catch (error) {
       console.error('Moderation error:', error);
-      return false;
     }
   }, [value, moderateContent, checkSubscription]);
 
@@ -102,11 +100,8 @@ export const useAIOperations = ({
     if (!checkSubscription() || !onAudioGenerate) return;
     
     try {
-      // The synthesizeSpeech function now uses Web Speech API directly
-      // and doesn't return audioData, so we don't need to destructure it
-      await synthesizeSpeech(value);
-      // Since Web Speech API plays directly, we don't need to pass audio data
-      onAudioGenerate(null);
+      const { audioData } = await synthesizeSpeech(value);
+      onAudioGenerate(audioData);
       toast.success('Audio generated!');
     } catch (error) {
       console.error('Speech synthesis error:', error);

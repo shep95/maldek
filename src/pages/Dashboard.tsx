@@ -1,6 +1,7 @@
+
 import { useState, useMemo } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
@@ -18,7 +19,6 @@ const Dashboard = () => {
   const [followingOnly, setFollowingOnly] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -60,7 +60,7 @@ const Dashboard = () => {
     },
     retry: 1,
     staleTime: 1000 * 60 * 5,
-    enabled: !!session?.user?.id,
+    enabled: !!session?.user?.id, // Only run query if user exists
   });
 
   const { data: posts, isLoading: isPostsLoading } = useQuery({
@@ -91,7 +91,7 @@ const Dashboard = () => {
         `)
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(20); // Limit to prevent excessive data loading
 
       if (error) {
         console.error('Error fetching user posts:', error);
@@ -101,9 +101,10 @@ const Dashboard = () => {
       return data || [];
     },
     enabled: !!session?.user?.id,
-    staleTime: 1000 * 30, // Reduced stale time for more frequent updates
+    staleTime: 1000 * 60 * 2, // 2 minute cache
   });
 
+  // Memoize currentUser to prevent unnecessary re-renders
   const currentUser: Author = useMemo(() => ({
     id: session?.user?.id || '',
     username: profile?.username || '',
@@ -112,24 +113,14 @@ const Dashboard = () => {
   }), [session?.user?.id, profile?.username, profile?.avatar_url]);
 
   const handlePostCreated = (newPost: any) => {
-    console.log('New post created, refreshing timeline:', newPost);
-    
-    // Immediately invalidate all post-related queries to refresh timeline
-    queryClient.invalidateQueries({ queryKey: ['posts'] });
-    queryClient.invalidateQueries({ queryKey: ['user-posts'] });
-    
-    // Force immediate refetch to show new post in timeline
-    queryClient.refetchQueries({ queryKey: ['posts'] });
-    queryClient.refetchQueries({ queryKey: ['user-posts'] });
-    
+    console.log('New post created:', newPost);
     setIsCreatingPost(false);
     navigate('/dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    toast.success('Post created and added to timeline!');
-    
-    console.log('Timeline refresh completed');
+    toast.success('Post created successfully!');
   };
 
+  // Early returns for loading and error states
   if (error) {
     console.error('Profile loading error:', error);
     return <DashboardError />;

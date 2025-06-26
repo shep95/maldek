@@ -1,4 +1,3 @@
-
 import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic, ExternalLink } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
@@ -67,6 +66,10 @@ export const NavItems = ({
   const handleZukoClick = () => {
     window.open('https://www.zukoi.app/', '_blank');
   };
+
+  // Check if today is August 26th
+  const today = new Date();
+  const isAugust26 = today.getMonth() === 7 && today.getDate() === 26; // Month is 0-indexed, so August is 7
 
   const hasPremiumFeatures = true;
 
@@ -150,6 +153,22 @@ export const NavItems = ({
       description: "Access private posts",
       className: "text-accent hover:bg-accent/10"
     },
+    // Conditionally include PANDORA tab (hide on August 26th)
+    ...(isAugust26 ? [] : [{
+      icon: Bot,
+      label: "PANDORA",
+      onClick: handlePandoraClick,
+      description: "AI Assistant",
+      className: "text-accent hover:bg-accent/10"
+    }]),
+    // Conditionally include ZUKO tab (hide on August 26th)
+    ...(isAugust26 ? [] : [{
+      icon: ExternalLink,
+      label: "ZUKO",
+      onClick: handleZukoClick,
+      description: "Open ZUKO app",
+      className: "text-accent hover:bg-accent/10"
+    }]),
     { 
       icon: Mail, 
       label: "Support",
