@@ -77,22 +77,24 @@ export const useAIOperations = ({
     }
   }, [value, translateContent, onChange, checkSubscription]);
 
-  const handleModerate = useCallback(async () => {
+  const handleModerate = useCallback(async (mediaUrl?: string) => {
     if (!checkSubscription()) return;
 
     try {
-      const { flagged, categories } = await moderateContent(value);
-      if (flagged) {
-        const flaggedCategories = Object.entries(categories)
+      const { is_safe, details } = await moderateContent(value, mediaUrl);
+      if (!is_safe) {
+        const flaggedCategories = Object.entries(details.categories || {})
           .filter(([_, isFlagged]) => isFlagged)
           .map(([category]) => category)
           .join(', ');
-        toast.error(`Content flagged for: ${flaggedCategories}`);
+        toast.error(`Content flagged for: ${flaggedCategories || 'inappropriate content'}`);
       } else {
         toast.success('Content passed moderation!');
       }
+      return is_safe;
     } catch (error) {
       console.error('Moderation error:', error);
+      return false;
     }
   }, [value, moderateContent, checkSubscription]);
 

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -51,8 +52,28 @@ export const useAIServices = () => {
     return callAIService('translate', content, targetLanguage, options);
   };
 
-  const moderateContent = async (content: string, options?: AIServiceOptions) => {
-    return callAIService('moderate', content, undefined, options);
+  const moderateContent = async (content: string, mediaUrl?: string, options?: AIServiceOptions) => {
+    setIsLoading(true);
+    try {
+      console.log('Calling content moderation:', { content, mediaUrl });
+      
+      const { data, error } = await supabase.functions.invoke('moderate-content', {
+        body: { content, mediaUrl }
+      });
+
+      if (error) throw error;
+      
+      console.log('Moderation response:', data);
+      options?.onSuccess?.(data);
+      return data;
+    } catch (error) {
+      console.error('Moderation error:', error);
+      toast.error('Content moderation error: ' + (error as Error).message);
+      options?.onError?.(error as Error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const synthesizeSpeech = async (text: string, options?: AIServiceOptions) => {
