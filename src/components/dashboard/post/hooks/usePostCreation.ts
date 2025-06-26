@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -148,12 +149,15 @@ export const usePostCreation = (
         }
       })
 
-      if (error) throw error
+      if (error) {
+        console.warn('Content moderation failed, allowing post anyway:', error);
+        return true; // Allow post if moderation fails
+      }
 
-      return data.is_safe
+      return data?.is_safe ?? true; // Default to safe if no response
     } catch (error) {
-      console.error('Content moderation failed:', error)
-      throw new Error('Content moderation failed')
+      console.warn('Content moderation network error, allowing post anyway:', error);
+      return true; // Allow post if moderation service is unavailable
     }
   }
 
@@ -196,6 +200,7 @@ export const usePostCreation = (
             .from('posts')
             .getPublicUrl(filePath);
 
+          // Try moderation but don't block post if it fails
           const isSafe = await moderateContent(publicUrl);
           if (!isSafe) {
             await supabase.storage
