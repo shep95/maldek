@@ -1,10 +1,59 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
 import { formatInTimeZone } from 'date-fns-tz';
 import { useQueryClient } from "@tanstack/react-query";
+
+// Simple local content moderation
+const moderateContentLocally = (content: string, mediaUrls: string[] = []) => {
+  const inappropriateKeywords = [
+    // Adult content
+    'porn', 'xxx', 'nude', 'naked', 'sex', 'adult', 'nsfw', 'explicit',
+    // Violence/Gore
+    'gore', 'blood', 'violence', 'kill', 'murder', 'death', 'suicide',
+    'weapon', 'gun', 'knife', 'bomb', 'terrorist', 'torture',
+    // Hate speech
+    'hate', 'racist', 'nazi', 'fascist', 'terrorist'
+  ];
+
+  const textToCheck = content.toLowerCase();
+  const urlsToCheck = mediaUrls.join(' ').toLowerCase();
+  
+  for (const keyword of inappropriateKeywords) {
+    if (textToCheck.includes(keyword) || urlsToCheck.includes(keyword)) {
+      return {
+        isSafe: false,
+        flaggedContent: keyword,
+        reason: 'Content contains inappropriate material'
+      };
+    }
+  }
+  
+  return { isSafe: true };
+};
+
+const suspendUserAccount = async (userId: string, reason: string) => {
+  try {
+    const suspensionEnd = new Date();
+    suspensionEnd.setHours(suspensionEnd.getHours() + 24); // 24 hour suspension
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        is_suspended: true,
+        suspension_reason: reason,
+        suspension_end: suspensionEnd.toISOString()
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error suspending user:', error);
+    }
+  } catch (error) {
+    console.error('Error in suspendUserAccount:', error);
+  }
+};
 
 export const usePostCreation = (
   currentUser: Author,
@@ -140,30 +189,15 @@ export const usePostCreation = (
     console.log('Saving to drafts:', { content, mediaFiles, scheduledDate });
   };
 
-  const moderateContent = async (mediaUrl: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('moderate-content', {
-        body: {
-          mediaUrl,
-          userId: currentUser.id
-        }
-      })
-
-      if (error) {
-        console.warn('Content moderation failed, allowing post anyway:', error);
-        return true; // Allow post if moderation fails
-      }
-
-      return data?.is_safe ?? true; // Default to safe if no response
-    } catch (error) {
-      console.warn('Content moderation network error, allowing post anyway:', error);
-      return true; // Allow post if moderation service is unavailable
-    }
-  }
-
   const handleCreatePost = async () => {
     if (!content.trim() && mediaFiles.length === 0) {
       toast.error("Please add some content or media to your post");
+      return;
+    }
+
+    // Check network connectivity
+    if (!navigator.onLine) {
+      toast.error("No network connection. Please check your internet and try again.");
       return;
     }
 
@@ -200,19 +234,30 @@ export const usePostCreation = (
             .from('posts')
             .getPublicUrl(filePath);
 
-          // Try moderation but don't block post if it fails
-          const isSafe = await moderateContent(publicUrl);
-          if (!isSafe) {
-            await supabase.storage
-              .from('posts')
-              .remove([filePath]);
-            
-            toast.error("Your content was flagged as inappropriate and cannot be posted");
-            return;
-          }
-
           mediaUrls.push(publicUrl);
         }
+      }
+
+      // Local content moderation
+      const moderationResult = moderateContentLocally(content, mediaUrls);
+      if (!moderationResult.isSafe) {
+        // Suspend user account for 24 hours
+        await suspendUserAccount(currentUser.id, `Inappropriate content: ${moderationResult.reason}`);
+        
+        // Delete uploaded media
+        if (mediaUrls.length > 0) {
+          for (const url of mediaUrls) {
+            const filePath = url.split('/').pop();
+            if (filePath) {
+              await supabase.storage
+                .from('posts')
+                .remove([`${currentUser.id}/${filePath}`]);
+            }
+          }
+        }
+        
+        toast.error("Your account has been suspended for 24 hours due to inappropriate content");
+        return;
       }
 
       let scheduledForDate: string | undefined;
