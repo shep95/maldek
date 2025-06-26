@@ -8,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -28,7 +27,6 @@ serve(async (req) => {
 
     console.log('Moderating content:', { mediaUrl, content, userId });
 
-    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -37,37 +35,60 @@ serve(async (req) => {
     let moderationResult = null;
     let isSafe = true;
 
-    // If we have text content, moderate it directly
     if (content) {
-      console.log('Moderating text content...');
-      const response = await fetch('https://api.openai.com/v1/moderations', {
+      console.log('Moderating text content with Groq...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+          'Authorization': `Bearer ${Deno.env.get('GROQ_API_KEY')}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          input: content
+          model: 'llama-3.1-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a content moderator. Analyze the following text for inappropriate content including hate speech, violence, adult content, harassment, or harmful content. Respond with ONLY a JSON object containing: {"flagged": boolean, "categories": {"hate": boolean, "violence": boolean, "adult": boolean, "harassment": boolean}, "reason": "explanation if flagged"}'
+            },
+            { role: 'user', content }
+          ],
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        throw new Error(`Groq API error: ${response.status}`);
       }
 
       const data = await response.json();
-      moderationResult = data.results[0];
-      isSafe = !moderationResult.flagged;
+      try {
+        moderationResult = JSON.parse(data.choices[0].message.content);
+        isSafe = !moderationResult.flagged;
+      } catch (parseError) {
+        console.error('Failed to parse moderation result:', parseError);
+        // Fallback to keyword-based moderation
+        const suspiciousKeywords = [
+          'hate', 'kill', 'violence', 'terrorist', 'bomb', 'weapon',
+          'suicide', 'self-harm', 'abuse', 'threat', 'harassment'
+        ];
+        
+        const containsSuspiciousContent = suspiciousKeywords.some(keyword => 
+          content.toLowerCase().includes(keyword)
+        );
+        
+        moderationResult = {
+          flagged: containsSuspiciousContent,
+          categories: { "hate": containsSuspiciousContent },
+          reason: containsSuspiciousContent ? "Contains potentially harmful keywords" : "Content appears safe"
+        };
+        isSafe = !containsSuspiciousContent;
+      }
 
       console.log('Text moderation result:', { flagged: moderationResult.flagged, categories: moderationResult.categories });
     }
 
-    // If we have a media URL, we can't directly moderate it with OpenAI's text moderation
-    // For now, we'll check if the URL appears suspicious or contains inappropriate terms
     if (mediaUrl) {
       console.log('Checking media URL for suspicious patterns...');
       
-      // Check if we already have moderation results for this URL
       const { data: existingModeration, error: checkError } = await supabaseClient
         .from('content_moderation')
         .select('is_safe, moderation_result')
@@ -88,8 +109,6 @@ serve(async (req) => {
         )
       }
 
-      // For media files, we'll do basic URL pattern checking
-      // This is a placeholder - in production you'd want to use image moderation services
       const suspiciousPatterns = [
         /adult/i, /porn/i, /explicit/i, /nsfw/i, /xxx/i,
         /violence/i, /gore/i, /disturbing/i, /hate/i
@@ -107,7 +126,6 @@ serve(async (req) => {
           category_scores: { "adult": 0.9 }
         };
       } else {
-        // If no suspicious patterns found, consider it safe
         moderationResult = {
           flagged: false,
           categories: {},
@@ -116,7 +134,6 @@ serve(async (req) => {
       }
     }
 
-    // Store moderation results in database
     if (mediaUrl || content) {
       const { error: insertError } = await supabaseClient
         .from('content_moderation')
@@ -130,7 +147,6 @@ serve(async (req) => {
 
       if (insertError) {
         console.error('Error storing moderation results:', insertError);
-        // Don't throw error here - still return the moderation result
       }
     }
 

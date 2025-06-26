@@ -1,7 +1,6 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,112 +14,88 @@ serve(async (req) => {
 
   try {
     const { messages, currentMessage, imageUrl, generateImage } = await req.json();
-    console.log('Received chat request:', { 
-      message: currentMessage,
-      hasImage: !!imageUrl,
-      generateImage,
-      historyLength: messages?.length || 0
-    });
+    console.log('Processing request:', { messageCount: messages?.length, currentMessage, hasImage: !!imageUrl, generateImage });
 
-    if (!openAIApiKey) {
-      console.error('OpenAI API key missing');
-      throw new Error('OpenAI API key is not configured');
-    }
+    let response = '';
+    let generatedImageUrl = null;
 
-    if (generateImage) {
-      console.log('Generating image for prompt:', currentMessage);
-      
-      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: "dall-e-3",
-          prompt: currentMessage,
-          n: 1,
-          size: "1024x1024",
-          quality: "standard",
-        }),
-      });
-
-      if (!imageResponse.ok) {
-        const errorData = await imageResponse.json();
-        console.error('DALL-E API error:', errorData);
-        throw new Error(`Image generation failed: ${errorData.error?.message || 'Unknown error'}`);
-      }
-
-      const imageData = await imageResponse.json();
-      console.log('Image generated successfully');
-      
-      return new Response(JSON.stringify({ 
-        response: "Here's your generated image! Let me know if you'd like any adjustments or if you want to try a different prompt.",
-        generatedImageUrl: imageData.data[0].url
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const systemMessage = "You are Bosley AI, a helpful and friendly AI assistant. You can help users with various tasks, including generating images and answering questions. When users want to generate images, guide them to use phrases like 'Generate an image of...' or similar phrases.";
-
-    const userMessage = imageUrl
-      ? {
-          role: 'user',
-          content: [
-            { type: 'text', text: currentMessage },
-            { type: 'image_url', image_url: imageUrl }
-          ]
-        }
-      : {
-          role: 'user',
-          content: currentMessage
-        };
-
-    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Generate AI response using Groq
+    const chatResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${Deno.env.get('GROQ_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: imageUrl ? 'gpt-4-vision-preview' : 'gpt-4',
+        model: 'llama-3.1-70b-versatile',
         messages: [
           {
             role: 'system',
-            content: systemMessage
+            content: 'You are Daarp, a helpful AI assistant. Provide helpful, accurate, and engaging responses to user questions.'
           },
           ...messages.slice(-5).map((msg: any) => ({
-            role: msg.role,
+            role: msg.role === 'user' ? 'user' : 'assistant',
             content: msg.content
           })),
-          userMessage
+          { role: 'user', content: currentMessage }
         ],
         temperature: 0.7,
         max_tokens: 1000,
       }),
     });
 
-    if (!aiResponse.ok) {
-      const errorData = await aiResponse.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    if (!chatResponse.ok) {
+      throw new Error(`Groq API error: ${chatResponse.status}`);
     }
 
-    const aiData = await aiResponse.json();
+    const chatData = await chatResponse.json();
+    response = chatData.choices[0].message.content;
 
-    return new Response(JSON.stringify({ 
-      response: aiData.choices[0].message.content
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Handle image generation if requested
+    if (generateImage) {
+      try {
+        const imageResponse = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('STABILITY_API_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text_prompts: [{ text: currentMessage }],
+            cfg_scale: 7,
+            samples: 1,
+            steps: 30,
+          }),
+        });
+
+        if (imageResponse.ok) {
+          const imageData = await imageResponse.json();
+          generatedImageUrl = `data:image/png;base64,${imageData.artifacts[0].base64}`;
+        }
+      } catch (error) {
+        console.error('Image generation failed:', error);
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        response,
+        generatedImageUrl 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
     console.error('Error in search-web function:', error);
-    return new Response(JSON.stringify({ 
-      error: `Error: ${error.message}. Please try again.`
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: 'Failed to generate response',
+        details: error.message 
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });

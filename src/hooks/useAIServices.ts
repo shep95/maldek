@@ -77,7 +77,40 @@ export const useAIServices = () => {
   };
 
   const synthesizeSpeech = async (text: string, options?: AIServiceOptions) => {
-    return callAIService('synthesize-speech', text, undefined, options);
+    setIsLoading(true);
+    try {
+      // Use Web Speech API directly in the browser
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        
+        return new Promise((resolve, reject) => {
+          utterance.onend = () => {
+            const audioData = null; // Web Speech API doesn't return audio data
+            options?.onSuccess?.({ audioData });
+            resolve({ audioData });
+          };
+          
+          utterance.onerror = (error) => {
+            options?.onError?.(new Error('Speech synthesis failed'));
+            reject(error);
+          };
+          
+          window.speechSynthesis.speak(utterance);
+        });
+      } else {
+        throw new Error('Speech synthesis not supported in this browser');
+      }
+    } catch (error) {
+      console.error('Speech synthesis error:', error);
+      toast.error('Speech synthesis error: ' + (error as Error).message);
+      options?.onError?.(error as Error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return {
