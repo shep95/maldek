@@ -112,19 +112,22 @@ const Dashboard = () => {
   }), [session?.user?.id, profile?.username, profile?.avatar_url]);
 
   const handlePostCreated = (newPost: any) => {
-    console.log('New post created:', newPost);
+    console.log('New post created, refreshing timeline:', newPost);
     
-    // Immediately invalidate all post-related queries
+    // Immediately invalidate all post-related queries to refresh timeline
     queryClient.invalidateQueries({ queryKey: ['posts'] });
     queryClient.invalidateQueries({ queryKey: ['user-posts'] });
     
-    // Trigger a refetch to ensure new post appears
+    // Force immediate refetch to show new post in timeline
     queryClient.refetchQueries({ queryKey: ['posts'] });
+    queryClient.refetchQueries({ queryKey: ['user-posts'] });
     
     setIsCreatingPost(false);
     navigate('/dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    toast.success('Post created successfully!');
+    toast.success('Post created and added to timeline!');
+    
+    console.log('Timeline refresh completed');
   };
 
   if (error) {

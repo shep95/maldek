@@ -15,13 +15,12 @@ interface UserSubscription {
 export const usePosts = (followingOnly: boolean = false) => {
   const session = useSession();
 
-  const { data: posts, isLoading, error } = useQuery({
+  const { data: posts, isLoading, error, refetch } = useQuery({
     queryKey: ['posts', followingOnly],
     queryFn: async () => {
-      console.log('Fetching posts with followingOnly:', followingOnly);
+      console.log('Fetching posts from database with followingOnly:', followingOnly);
       
       try {
-        // Remove the 3-day filter to show all recent posts
         let query = supabase
           .from('posts')
           .select(`
@@ -51,10 +50,11 @@ export const usePosts = (followingOnly: boolean = false) => {
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(50); // Keep limit to prevent memory issues
+          .limit(50);
 
         // If followingOnly is true and user is logged in, first get following IDs
         if (followingOnly && session?.user?.id) {
+          console.log('Filtering posts for following only...');
           const { data: followingData, error: followingError } = await supabase
             .from('followers')
             .select('following_id')
@@ -69,18 +69,22 @@ export const usePosts = (followingOnly: boolean = false) => {
           const followingIds = followingData?.map(f => f.following_id) || [];
           
           if (followingIds.length === 0) {
+            console.log('User is not following anyone, returning empty array');
             return [];
           }
           
           query = query.in('user_id', followingIds);
         }
 
+        console.log('Executing posts query...');
         const { data, error } = await query;
 
         if (error) {
-          console.error('Error fetching posts:', error);
+          console.error('Error fetching posts from database:', error);
           throw error;
         }
+
+        console.log('Raw posts data from database:', data);
 
         // Filter out posts with missing profiles and map the data
         const validPosts = data?.filter(post => post.profiles).map(post => {
@@ -107,21 +111,21 @@ export const usePosts = (followingOnly: boolean = false) => {
           };
         });
 
-        console.log(`Successfully fetched ${validPosts?.length} posts`);
+        console.log(`Successfully fetched ${validPosts?.length} valid posts from database`);
         return validPosts || [];
       } catch (error) {
         console.error('Query error:', error);
         if (!error?.message?.includes('Failed to fetch')) {
-          toast.error('Failed to load posts');
+          toast.error('Failed to load posts from database');
         }
         throw error;
       }
     },
-    staleTime: 1000 * 30, // Reduced to 30 seconds for more frequent updates
-    gcTime: 1000 * 60 * 5, // Reduced cache time
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    refetchOnWindowFocus: true, // Enable refetch on window focus
+    staleTime: 1000 * 10, // Reduced to 10 seconds for faster updates
+    gcTime: 1000 * 60 * 2, // Reduced cache time to 2 minutes
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
+    refetchOnWindowFocus: true,
     refetchOnReconnect: 'always',
   });
 
@@ -129,5 +133,6 @@ export const usePosts = (followingOnly: boolean = false) => {
     posts: posts || [], 
     isLoading,
     error,
+    refetch
   };
 };

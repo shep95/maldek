@@ -39,6 +39,8 @@ const suspendUserAccount = async (userId: string, reason: string) => {
     const suspensionEnd = new Date();
     suspensionEnd.setHours(suspensionEnd.getHours() + 24); // 24 hour suspension
 
+    console.log('Suspending user account:', userId, 'until:', suspensionEnd);
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -50,6 +52,8 @@ const suspendUserAccount = async (userId: string, reason: string) => {
 
     if (error) {
       console.error('Error suspending user:', error);
+    } else {
+      console.log('User suspended successfully');
     }
   } catch (error) {
     console.error('Error in suspendUserAccount:', error);
@@ -58,6 +62,8 @@ const suspendUserAccount = async (userId: string, reason: string) => {
 
 const checkUserSuspension = async (userId: string) => {
   try {
+    console.log('Checking suspension status for user:', userId);
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('is_suspended, suspension_end, suspension_reason')
@@ -73,8 +79,11 @@ const checkUserSuspension = async (userId: string) => {
       const now = new Date();
       const suspensionEnd = new Date(data.suspension_end);
       
+      console.log('User is suspended until:', suspensionEnd, 'Current time:', now);
+      
       if (now >= suspensionEnd) {
         // Suspension has expired, remove it
+        console.log('Suspension expired, removing suspension');
         await supabase
           .from('profiles')
           .update({
@@ -241,11 +250,13 @@ export const usePostCreation = (
       return;
     }
 
-    // Check network connectivity
+    // Check network connectivity first
     if (!navigator.onLine) {
       toast.error("No network connection. Please check your internet and try again.");
       return;
     }
+
+    console.log('Creating post - checking user suspension...');
 
     // Check if user is suspended
     const suspensionStatus = await checkUserSuspension(currentUser.id);
@@ -257,6 +268,8 @@ export const usePostCreation = (
 
     try {
       setIsSubmitting(true);
+      console.log('Starting post creation process...');
+      
       const mediaUrls: string[] = [];
 
       const { data: subscription } = await supabase
@@ -270,16 +283,20 @@ export const usePostCreation = (
       const hasPremium = !!subscription?.subscription_tiers?.name || subscription?.is_lifetime;
 
       if (mediaFiles.length > 0) {
+        console.log('Uploading media files:', mediaFiles.length);
         for (const file of mediaFiles) {
           const fileExt = file.name.split('.').pop();
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${currentUser.id}/${fileName}`;
+
+          console.log('Uploading file:', fileName);
 
           const { error: uploadError } = await supabase.storage
             .from('posts')
             .upload(filePath, file);
 
           if (uploadError) {
+            console.error('Upload error:', uploadError);
             toast.error(`Failed to upload ${file.name}`);
             throw uploadError;
           }
@@ -289,24 +306,30 @@ export const usePostCreation = (
             .getPublicUrl(filePath);
 
           mediaUrls.push(publicUrl);
+          console.log('File uploaded successfully:', publicUrl);
         }
       }
 
+      console.log('Running content moderation...');
       // Local content moderation
       const moderationResult = moderateContentLocally(content, mediaUrls);
       if (!moderationResult.isSafe) {
+        console.log('Content flagged as inappropriate:', moderationResult.flaggedContent);
+        
         // Suspend user account for 24 hours
         await suspendUserAccount(currentUser.id, `Inappropriate content: ${moderationResult.reason}`);
         
         // Delete uploaded media
         if (mediaUrls.length > 0) {
+          console.log('Deleting uploaded media due to inappropriate content');
           for (const url of mediaUrls) {
-            const filePath = url.split('/').pop();
-            if (filePath) {
-              await supabase.storage
-                .from('posts')
-                .remove([`${currentUser.id}/${filePath}`]);
-            }
+            const urlParts = url.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            const filePath = `${currentUser.id}/${fileName}`;
+            
+            await supabase.storage
+              .from('posts')
+              .remove([filePath]);
           }
         }
         
@@ -339,6 +362,8 @@ export const usePostCreation = (
         scheduled_for: scheduledForDate
       };
 
+      console.log('Inserting post into database:', postData);
+
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert([postData])
@@ -360,6 +385,7 @@ export const usePostCreation = (
         .single();
 
       if (postError) {
+        console.error('Post creation error:', postError);
         if (postError.message.includes('Cannot schedule posts')) {
           toast.error("You need an active subscription to schedule posts", {
             duration: 5000,
@@ -373,12 +399,16 @@ export const usePostCreation = (
         throw postError;
       }
 
-      // Immediately invalidate and refetch posts to show the new post
+      console.log('Post created successfully:', newPost);
+
+      // Immediately invalidate and refetch posts to show the new post in timeline
+      console.log('Refreshing timeline data...');
       await queryClient.invalidateQueries({ queryKey: ['posts'] });
       await queryClient.invalidateQueries({ queryKey: ['user-posts'] });
       
       // Force a refetch to ensure the new post appears immediately
       await queryClient.refetchQueries({ queryKey: ['posts'] });
+      await queryClient.refetchQueries({ queryKey: ['user-posts'] });
 
       await checkPostsRemaining();
       
@@ -387,9 +417,12 @@ export const usePostCreation = (
       setUploadProgress(0);
       setScheduledDate(undefined);
       
+      console.log('Calling onPostCreated callback...');
       onPostCreated(newPost);
       onOpenChange(false);
+      
       toast.success(scheduledDate ? "Post scheduled successfully!" : "Post created successfully!");
+      console.log('Post creation process completed successfully');
 
     } catch (error: any) {
       console.error('Post creation error:', error);
