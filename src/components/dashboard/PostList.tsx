@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useSession } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,99 +22,111 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
   const { posts, isLoading } = usePosts(followingOnly);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
-  const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 3;
-  const RETRY_DELAY = 2000;
   const { blockedUserIds, isLoadingBlocked } = useBlockedUsers();
 
-  React.useEffect(() => {
-    const fetchPostStats = async () => {
-      if (!posts?.length) return;
-      
-      console.log('Fetching post stats in batch...');
-      
-      try {
-        const postIds = posts.map(p => p.id);
-        
-        let likesData = null;
-        let likesError = null;
-        let attempts = 0;
-
-        while (!likesData && attempts < MAX_RETRIES) {
-          try {
-            const { data, error } = await supabase
-              .from('post_likes')
-              .select('post_id, user_id')
-              .in('post_id', postIds);
-
-            if (error) throw error;
-            likesData = data;
-          } catch (error) {
-            console.error(`Attempt ${attempts + 1} failed:`, error);
-            likesError = error;
-            attempts++;
-            if (attempts < MAX_RETRIES) {
-              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-            }
+  // Set up real-time subscriptions for post interactions
+  useEffect(() => {
+    console.log('Setting up real-time subscriptions for post interactions');
+    
+    const likesChannel = supabase
+      .channel('post-likes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_likes'
+        },
+        (payload) => {
+          console.log('Post likes changed:', payload);
+          // Refetch post stats when likes change
+          if (posts?.length) {
+            fetchPostStats();
           }
         }
+      )
+      .subscribe();
 
-        if (likesError && !likesData) throw likesError;
-
-        let commentsData = null;
-        let commentsError = null;
-        attempts = 0;
-
-        while (!commentsData && attempts < MAX_RETRIES) {
-          try {
-            const { data, error } = await supabase
-              .from('comments')
-              .select('post_id')
-              .in('post_id', postIds);
-
-            if (error) throw error;
-            commentsData = data;
-          } catch (error) {
-            console.error(`Attempt ${attempts + 1} failed:`, error);
-            commentsError = error;
-            attempts++;
-            if (attempts < MAX_RETRIES) {
-              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-            }
+    const commentsChannel = supabase
+      .channel('comments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'comments'
+        },
+        (payload) => {
+          console.log('Comments changed:', payload);
+          // Refetch post stats when comments change
+          if (posts?.length) {
+            fetchPostStats();
           }
         }
+      )
+      .subscribe();
 
-        if (commentsError && !commentsData) throw commentsError;
-
-        const stats: Record<string, { likes: number, isLiked: boolean, comments: number }> = {};
-        postIds.forEach(postId => {
-          const postLikes = likesData?.filter(l => l.post_id === postId) || [];
-          const postComments = commentsData?.filter(c => c.post_id === postId) || [];
-          
-          stats[postId] = {
-            likes: postLikes.length,
-            isLiked: postLikes.some(like => like.user_id === session?.user?.id),
-            comments: postComments.length
-          };
-        });
-
-        console.log('Post stats fetched successfully:', stats);
-        setPostStats(prev => ({ ...prev, ...stats }));
-        setRetryCount(0);
-      } catch (error) {
-        console.error('Error fetching post stats:', error);
-        if (retryCount < MAX_RETRIES) {
-          setRetryCount(prev => prev + 1);
-          toast.error("Having trouble loading some data. Retrying...");
-          setTimeout(fetchPostStats, RETRY_DELAY);
-        } else {
-          toast.error("Unable to load complete post data. Please refresh the page.");
-        }
-      }
+    return () => {
+      supabase.removeChannel(likesChannel);
+      supabase.removeChannel(commentsChannel);
     };
+  }, [posts?.length]);
 
+  const fetchPostStats = async () => {
+    if (!posts?.length) return;
+    
+    console.log('Fetching post stats for', posts.length, 'posts');
+    
+    try {
+      const postIds = posts.map(p => p.id);
+      
+      // Fetch likes data
+      const { data: likesData, error: likesError } = await supabase
+        .from('post_likes')
+        .select('post_id, user_id')
+        .in('post_id', postIds);
+
+      if (likesError) {
+        console.error('Error fetching likes:', likesError);
+        throw likesError;
+      }
+
+      // Fetch comments data
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds);
+
+      if (commentsError) {
+        console.error('Error fetching comments:', commentsError);
+        throw commentsError;
+      }
+
+      // Build stats object
+      const stats: Record<string, { likes: number, isLiked: boolean, comments: number }> = {};
+      postIds.forEach(postId => {
+        const postLikes = likesData?.filter(l => l.post_id === postId) || [];
+        const postComments = commentsData?.filter(c => c.post_id === postId) || [];
+        
+        stats[postId] = {
+          likes: postLikes.length,
+          isLiked: postLikes.some(like => like.user_id === session?.user?.id),
+          comments: postComments.length
+        };
+      });
+
+      console.log('Post stats fetched successfully:', Object.keys(stats).length, 'posts');
+      setPostStats(stats);
+    } catch (error) {
+      console.error('Error fetching post stats:', error);
+      toast.error("Unable to load post engagement data");
+    }
+  };
+
+  // Fetch post stats when posts change
+  useEffect(() => {
     fetchPostStats();
-  }, [posts, session?.user?.id, queryClient, retryCount]);
+  }, [posts, session?.user?.id]);
 
   const handlePostAction = async (postId: string, action: 'like' | 'bookmark' | 'delete' | 'repost') => {
     if (action === 'delete') {
@@ -126,6 +139,7 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
           return;
         }
 
+        // Optimistically update UI
         queryClient.setQueryData(['posts'], (old: any[]) => 
           old?.filter(post => post.id !== postId)
         );
@@ -142,6 +156,7 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
       } catch (error) {
         console.error('Error deleting post:', error);
         toast.error('Failed to delete post');
+        // Refetch data on error
         queryClient.invalidateQueries({ queryKey: ['posts'] });
       }
     }
@@ -169,6 +184,8 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
       </div>
     );
   }
+
+  console.log('Rendering PostList with', visiblePosts.length, 'visible posts');
 
   return (
     <>
@@ -215,12 +232,13 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
                   key={post.id}
                   post={{
                     ...post,
-                    user_id: post.profiles.id,
+                    user_id: post.profiles?.id || post.user_id,
                     author: {
-                      id: post.profiles.id,
-                      username: post.profiles.username,
-                      avatar_url: post.profiles.avatar_url,
-                      name: post.profiles.username
+                      id: post.profiles?.id || post.user_id,
+                      username: post.profiles?.username || 'Deleted User',
+                      avatar_url: post.profiles?.avatar_url,
+                      name: post.profiles?.username || 'Deleted User',
+                      subscription: post.author?.subscription
                     },
                     timestamp: new Date(post.created_at),
                     likes: postStats[post.id]?.likes || 0,
@@ -245,7 +263,7 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
                 </div>
               </div>
             </>
-          ) : !isLoading ? (
+          ) : (
             <div className="text-center py-12 bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50">
               <h3 className="text-lg font-medium text-foreground mb-2">No posts yet</h3>
               <p className="text-muted-foreground">
@@ -255,7 +273,7 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
                 }
               </p>
             </div>
-          ) : null}
+          )}
         </div>
       </div>
     </>

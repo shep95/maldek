@@ -1,7 +1,7 @@
 
 import { useState, useMemo } from "react";
 import { useSession } from '@supabase/auth-helpers-react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreatePostDialog } from "@/components/dashboard/CreatePostDialog";
@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [followingOnly, setFollowingOnly] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -60,48 +61,7 @@ const Dashboard = () => {
     },
     retry: 1,
     staleTime: 1000 * 60 * 5,
-    enabled: !!session?.user?.id, // Only run query if user exists
-  });
-
-  const { data: posts, isLoading: isPostsLoading } = useQuery({
-    queryKey: ['user-posts', session?.user?.id],
-    queryFn: async () => {
-      if (!session?.user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles!inner (
-            id,
-            username,
-            avatar_url
-          ),
-          post_likes (
-            id,
-            user_id
-          ),
-          bookmarks (
-            id,
-            user_id
-          ),
-          comments (
-            id
-          )
-        `)
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
-        .limit(20); // Limit to prevent excessive data loading
-
-      if (error) {
-        console.error('Error fetching user posts:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
     enabled: !!session?.user?.id,
-    staleTime: 1000 * 60 * 2, // 2 minute cache
   });
 
   // Memoize currentUser to prevent unnecessary re-renders
@@ -113,10 +73,20 @@ const Dashboard = () => {
   }), [session?.user?.id, profile?.username, profile?.avatar_url]);
 
   const handlePostCreated = (newPost: any) => {
-    console.log('New post created:', newPost);
+    console.log('New post created on dashboard:', newPost);
+    
+    // Invalidate and refetch posts to show the new post immediately
+    queryClient.invalidateQueries({ queryKey: ['posts'] });
+    
+    // Close the dialog
     setIsCreatingPost(false);
+    
+    // Navigate to dashboard if not already there
     navigate('/dashboard');
+    
+    // Scroll to top to show new post
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     toast.success('Post created successfully!');
   };
 

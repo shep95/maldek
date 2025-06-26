@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -59,9 +60,9 @@ export const usePostCreation = (
         .eq('user_id', currentUser.id)
         .eq('status', 'active')
         .gt('ends_at', new Date().toISOString())
-        .single();
+        .maybeSingle();
 
-      const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024; // Convert MB to bytes
+      const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024;
       const supportsGif = subscription?.subscription_tiers?.supports_gif_uploads || false;
 
       const validFiles = Array.from(files).filter(file => {
@@ -87,7 +88,6 @@ export const usePostCreation = (
         return true;
       });
 
-      // Ensure we don't exceed 6 files total
       const availableSlots = 6 - mediaFiles.length;
       const filesToAdd = validFiles.slice(0, availableSlots);
 
@@ -105,58 +105,43 @@ export const usePostCreation = (
   };
 
   const handlePaste = async (file: File) => {
-    // Check if adding this file would exceed the 6 file limit
     if (mediaFiles.length >= 6) {
       toast.error("Maximum of 6 media files allowed");
       return;
     }
 
-    const { data: subscription } = await supabase
-      .from('user_subscriptions')
-      .select('tier_id, subscription_tiers(max_upload_size_mb, supports_gif_uploads)')
-      .eq('user_id', currentUser.id)
-      .eq('status', 'active')
-      .gt('ends_at', new Date().toISOString())
-      .single();
+    try {
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, subscription_tiers(max_upload_size_mb, supports_gif_uploads)')
+        .eq('user_id', currentUser.id)
+        .eq('status', 'active')
+        .gt('ends_at', new Date().toISOString())
+        .maybeSingle();
 
-    const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024;
-    const supportsGif = subscription?.subscription_tiers?.supports_gif_uploads || false;
+      const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024;
+      const supportsGif = subscription?.subscription_tiers?.supports_gif_uploads || false;
 
-    if (file.size > maxSize) {
-      toast.error(`File too large. Maximum size is ${maxSize / (1024 * 1024)}MB`);
-      return;
+      if (file.size > maxSize) {
+        toast.error(`File too large. Maximum size is ${maxSize / (1024 * 1024)}MB`);
+        return;
+      }
+
+      if (file.type === 'image/gif' && !supportsGif) {
+        toast.error("Your subscription tier doesn't support GIF uploads");
+        return;
+      }
+
+      setMediaFiles(prev => [...prev, file]);
+    } catch (error) {
+      console.error('Error validating pasted file:', error);
+      toast.error("Failed to validate file");
     }
-
-    if (file.type === 'image/gif' && !supportsGif) {
-      toast.error("Your subscription tier doesn't support GIF uploads");
-      return;
-    }
-
-    setMediaFiles(prev => [...prev, file]);
   };
 
   const saveToDrafts = () => {
-    // Implementation for saving to drafts
     console.log('Saving to drafts:', { content, mediaFiles, scheduledDate });
   };
-
-  const moderateContent = async (mediaUrl: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('moderate-content', {
-        body: {
-          mediaUrl,
-          userId: currentUser.id
-        }
-      })
-
-      if (error) throw error
-
-      return data.is_safe
-    } catch (error) {
-      console.error('Content moderation failed:', error)
-      throw new Error('Content moderation failed')
-    }
-  }
 
   const handleCreatePost = async () => {
     if (!content.trim() && mediaFiles.length === 0) {
@@ -164,11 +149,19 @@ export const usePostCreation = (
       return;
     }
 
+    if (!currentUser?.id) {
+      toast.error("You must be logged in to create a post");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const mediaUrls: string[] = [];
+      setUploadProgress(0);
+      
+      console.log('Creating post with content:', content);
+      console.log('Media files:', mediaFiles.length);
 
-      // Check if user has premium subscription to bypass character limits
+      // Check user subscription for limits
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('tier_id, subscription_tiers(name), is_lifetime')
@@ -179,52 +172,52 @@ export const usePostCreation = (
       
       const hasPremium = !!subscription?.subscription_tiers?.name || subscription?.is_lifetime;
 
+      // Upload media files if any
+      const mediaUrls: string[] = [];
       if (mediaFiles.length > 0) {
+        let uploadedCount = 0;
         for (const file of mediaFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `${currentUser.id}/${fileName}`;
+          try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${crypto.randomUUID()}.${fileExt}`;
+            const filePath = `${currentUser.id}/${fileName}`;
 
-          const { error: uploadError } = await supabase.storage
-            .from('posts')
-            .upload(filePath, file);
+            console.log('Uploading file:', fileName);
 
-          if (uploadError) {
-            toast.error(`Failed to upload ${file.name}`);
-            throw uploadError;
-          }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('posts')
-            .getPublicUrl(filePath);
-
-          // Check content moderation before allowing the URL
-          const isSafe = await moderateContent(publicUrl);
-          if (!isSafe) {
-            // Delete the uploaded file
-            await supabase.storage
+            const { error: uploadError } = await supabase.storage
               .from('posts')
-              .remove([filePath]);
-            
-            toast.error("Your content was flagged as inappropriate and cannot be posted");
-            return;
-          }
+              .upload(filePath, file);
 
-          mediaUrls.push(publicUrl);
+            if (uploadError) {
+              console.error('Upload error:', uploadError);
+              toast.error(`Failed to upload ${file.name}`);
+              throw uploadError;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+              .from('posts')
+              .getPublicUrl(filePath);
+
+            mediaUrls.push(publicUrl);
+            uploadedCount++;
+            setUploadProgress((uploadedCount / mediaFiles.length) * 100);
+            console.log('Successfully uploaded:', publicUrl);
+          } catch (error) {
+            console.error('Error uploading file:', error);
+            throw error;
+          }
         }
       }
 
+      // Handle scheduling
       let scheduledForDate: string | undefined;
-      
       if (scheduledDate) {
-        // Convert the date to EST and format it as ISO string
         scheduledForDate = formatInTimeZone(
           scheduledDate,
           'America/New_York',
           "yyyy-MM-dd'T'HH:mm:ssXXX"
         );
 
-        // Validate the scheduled date is in the future
         const now = new Date();
         if (scheduledDate <= now) {
           toast.error("Scheduled date must be in the future");
@@ -234,7 +227,7 @@ export const usePostCreation = (
         console.log('Scheduling post for:', scheduledForDate);
       }
 
-      // Create the post data - IP address will be automatically logged by the database trigger
+      // Create the post
       const postData = {
         content: content.trim(),
         user_id: currentUser.id,
@@ -242,15 +235,32 @@ export const usePostCreation = (
         scheduled_for: scheduledForDate
       };
 
+      console.log('Inserting post data:', postData);
+
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert([postData])
-        .select('*, profiles(id, username, avatar_url)')
+        .select(`
+          *,
+          profiles!inner (
+            id,
+            username,
+            avatar_url,
+            user_subscriptions (
+              status,
+              subscription_tiers (
+                name,
+                checkmark_color
+              )
+            )
+          )
+        `)
         .single();
 
       if (postError) {
-        if (postError.message.includes('Cannot schedule posts')) {
-          toast.error("You need an active subscription to schedule posts", {
+        console.error('Post creation error:', postError);
+        if (postError.message.includes('can only post 3 times per hour')) {
+          toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
             duration: 5000,
             action: {
               label: "Upgrade",
@@ -262,38 +272,29 @@ export const usePostCreation = (
         throw postError;
       }
 
+      console.log('Post created successfully:', newPost);
+
+      // Update remaining posts count
       await checkPostsRemaining();
       
+      // Reset form
       setContent("");
       setMediaFiles([]);
       setUploadProgress(0);
       setScheduledDate(undefined);
       
-      onPostCreated(newPost);
+      // Notify parent components
+      if (onPostCreated) {
+        onPostCreated(newPost);
+      }
+      
       onOpenChange(false);
+      
       toast.success(scheduledDate ? "Post scheduled successfully!" : "Post created successfully!");
 
     } catch (error: any) {
       console.error('Post creation error:', error);
-      if (error.message.includes('can only post 3 times per hour')) {
-        toast.error("Free users can only post 3 times per hour. Upgrade your account to post more!", {
-          duration: 5000,
-          action: {
-            label: "Upgrade",
-            onClick: () => window.location.href = '/subscription'
-          }
-        });
-      } else if (error.message.includes('Post exceeds character limit')) {
-        toast.error("Your post exceeds the character limit for your subscription tier. Upgrade for longer posts!", {
-          duration: 5000,
-          action: {
-            label: "Upgrade",
-            onClick: () => window.location.href = '/subscription'
-          }
-        });
-      } else {
-        toast.error(error.message || "Failed to create post");
-      }
+      toast.error(error.message || "Failed to create post");
     } finally {
       setIsSubmitting(false);
       setUploadProgress(0);
