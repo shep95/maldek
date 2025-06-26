@@ -102,8 +102,11 @@ export const useAIOperations = ({
     if (!checkSubscription() || !onAudioGenerate) return;
     
     try {
-      const { audioData } = await synthesizeSpeech(value);
-      onAudioGenerate(audioData);
+      // The synthesizeSpeech function now uses Web Speech API directly
+      // and doesn't return audioData, so we don't need to destructure it
+      await synthesizeSpeech(value);
+      // Since Web Speech API plays directly, we don't need to pass audio data
+      onAudioGenerate(null);
       toast.success('Audio generated!');
     } catch (error) {
       console.error('Speech synthesis error:', error);
