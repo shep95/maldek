@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -52,6 +53,51 @@ const suspendUserAccount = async (userId: string, reason: string) => {
     }
   } catch (error) {
     console.error('Error in suspendUserAccount:', error);
+  }
+};
+
+const checkUserSuspension = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_suspended, suspension_end, suspension_reason')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error checking suspension:', error);
+      return { isSuspended: false };
+    }
+
+    if (data.is_suspended) {
+      const now = new Date();
+      const suspensionEnd = new Date(data.suspension_end);
+      
+      if (now >= suspensionEnd) {
+        // Suspension has expired, remove it
+        await supabase
+          .from('profiles')
+          .update({
+            is_suspended: false,
+            suspension_reason: null,
+            suspension_end: null
+          })
+          .eq('id', userId);
+        
+        return { isSuspended: false };
+      }
+      
+      return { 
+        isSuspended: true, 
+        reason: data.suspension_reason,
+        endsAt: suspensionEnd
+      };
+    }
+    
+    return { isSuspended: false };
+  } catch (error) {
+    console.error('Error checking suspension:', error);
+    return { isSuspended: false };
   }
 };
 
@@ -198,6 +244,14 @@ export const usePostCreation = (
     // Check network connectivity
     if (!navigator.onLine) {
       toast.error("No network connection. Please check your internet and try again.");
+      return;
+    }
+
+    // Check if user is suspended
+    const suspensionStatus = await checkUserSuspension(currentUser.id);
+    if (suspensionStatus.isSuspended) {
+      const timeRemaining = Math.ceil((suspensionStatus.endsAt.getTime() - new Date().getTime()) / (1000 * 60 * 60));
+      toast.error(`Your account is suspended for ${timeRemaining} more hours. Reason: ${suspensionStatus.reason}`);
       return;
     }
 
