@@ -21,10 +21,7 @@ export const usePosts = (followingOnly: boolean = false) => {
       console.log('Fetching posts with followingOnly:', followingOnly);
       
       try {
-        // Calculate the date 3 days ago
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-        
+        // Remove the 3-day filter to show all recent posts
         let query = supabase
           .from('posts')
           .select(`
@@ -53,9 +50,8 @@ export const usePosts = (followingOnly: boolean = false) => {
               id
             )
           `)
-          .gt('created_at', threeDaysAgo.toISOString())
           .order('created_at', { ascending: false })
-          .limit(50); // Limit to prevent memory issues with massive datasets
+          .limit(50); // Keep limit to prevent memory issues
 
         // If followingOnly is true and user is logged in, first get following IDs
         if (followingOnly && session?.user?.id) {
@@ -63,7 +59,7 @@ export const usePosts = (followingOnly: boolean = false) => {
             .from('followers')
             .select('following_id')
             .eq('follower_id', session.user.id)
-            .limit(5000); // Reasonable limit for following relationships
+            .limit(5000);
 
           if (followingError) {
             console.error('Error fetching following:', followingError);
@@ -72,7 +68,6 @@ export const usePosts = (followingOnly: boolean = false) => {
 
           const followingIds = followingData?.map(f => f.following_id) || [];
           
-          // Handle empty following list gracefully
           if (followingIds.length === 0) {
             return [];
           }
@@ -89,7 +84,6 @@ export const usePosts = (followingOnly: boolean = false) => {
 
         // Filter out posts with missing profiles and map the data
         const validPosts = data?.filter(post => post.profiles).map(post => {
-          // Ensure user_subscriptions is treated as an array
           const subscriptions = Array.isArray(post.profiles.user_subscriptions) 
             ? post.profiles.user_subscriptions 
             : [];
@@ -98,7 +92,6 @@ export const usePosts = (followingOnly: boolean = false) => {
             (sub: UserSubscription) => sub?.status === 'active'
           );
 
-          // Calculate the actual number of likes with safety checks
           const likeCount = Array.isArray(post.post_likes) ? post.post_likes.length : 0;
 
           return {
@@ -110,7 +103,7 @@ export const usePosts = (followingOnly: boolean = false) => {
               name: post.profiles.username || 'Deleted User',
               subscription: activeSubscription?.subscription_tiers || null
             },
-            likes: Math.max(0, likeCount) // Ensure non-negative
+            likes: Math.max(0, likeCount)
           };
         });
 
@@ -118,19 +111,17 @@ export const usePosts = (followingOnly: boolean = false) => {
         return validPosts || [];
       } catch (error) {
         console.error('Query error:', error);
-        // Don't show toast for network errors to avoid spam
         if (!error?.message?.includes('Failed to fetch')) {
           toast.error('Failed to load posts');
         }
         throw error;
       }
     },
-    staleTime: 1000 * 60, // Increased to 1 minute for better caching
-    gcTime: 1000 * 60 * 10, // Keep unused data for 10 minutes
-    retry: 2, // Reduced retries to prevent cascade failures
+    staleTime: 1000 * 30, // Reduced to 30 seconds for more frequent updates
+    gcTime: 1000 * 60 * 5, // Reduced cache time
+    retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
-    // Add circuit breaker pattern
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true, // Enable refetch on window focus
     refetchOnReconnect: 'always',
   });
 

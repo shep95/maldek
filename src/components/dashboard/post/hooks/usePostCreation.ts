@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Author } from "@/utils/postUtils";
 import { formatInTimeZone } from 'date-fns-tz';
+import { useQueryClient } from "@tanstack/react-query";
 
 export const usePostCreation = (
   currentUser: Author,
@@ -15,6 +16,7 @@ export const usePostCreation = (
   const [uploadProgress, setUploadProgress] = useState(0);
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
   const [postsRemaining, setPostsRemaining] = useState<number | null>(null);
+  const queryClient = useQueryClient();
 
   const checkPostsRemaining = useCallback(async () => {
     try {
@@ -61,7 +63,7 @@ export const usePostCreation = (
         .gt('ends_at', new Date().toISOString())
         .single();
 
-      const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024; // Convert MB to bytes
+      const maxSize = (subscription?.subscription_tiers?.max_upload_size_mb || 50) * 1024 * 1024;
       const supportsGif = subscription?.subscription_tiers?.supports_gif_uploads || false;
 
       const validFiles = Array.from(files).filter(file => {
@@ -87,7 +89,6 @@ export const usePostCreation = (
         return true;
       });
 
-      // Ensure we don't exceed 6 files total
       const availableSlots = 6 - mediaFiles.length;
       const filesToAdd = validFiles.slice(0, availableSlots);
 
@@ -105,7 +106,6 @@ export const usePostCreation = (
   };
 
   const handlePaste = async (file: File) => {
-    // Check if adding this file would exceed the 6 file limit
     if (mediaFiles.length >= 6) {
       toast.error("Maximum of 6 media files allowed");
       return;
@@ -136,7 +136,6 @@ export const usePostCreation = (
   };
 
   const saveToDrafts = () => {
-    // Implementation for saving to drafts
     console.log('Saving to drafts:', { content, mediaFiles, scheduledDate });
   };
 
@@ -168,7 +167,6 @@ export const usePostCreation = (
       setIsSubmitting(true);
       const mediaUrls: string[] = [];
 
-      // Check if user has premium subscription to bypass character limits
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('tier_id, subscription_tiers(name), is_lifetime')
@@ -198,10 +196,8 @@ export const usePostCreation = (
             .from('posts')
             .getPublicUrl(filePath);
 
-          // Check content moderation before allowing the URL
           const isSafe = await moderateContent(publicUrl);
           if (!isSafe) {
-            // Delete the uploaded file
             await supabase.storage
               .from('posts')
               .remove([filePath]);
@@ -217,14 +213,12 @@ export const usePostCreation = (
       let scheduledForDate: string | undefined;
       
       if (scheduledDate) {
-        // Convert the date to EST and format it as ISO string
         scheduledForDate = formatInTimeZone(
           scheduledDate,
           'America/New_York',
           "yyyy-MM-dd'T'HH:mm:ssXXX"
         );
 
-        // Validate the scheduled date is in the future
         const now = new Date();
         if (scheduledDate <= now) {
           toast.error("Scheduled date must be in the future");
@@ -234,7 +228,6 @@ export const usePostCreation = (
         console.log('Scheduling post for:', scheduledForDate);
       }
 
-      // Create the post data - IP address will be automatically logged by the database trigger
       const postData = {
         content: content.trim(),
         user_id: currentUser.id,
@@ -245,7 +238,21 @@ export const usePostCreation = (
       const { data: newPost, error: postError } = await supabase
         .from('posts')
         .insert([postData])
-        .select('*, profiles(id, username, avatar_url)')
+        .select(`
+          *,
+          profiles!inner (
+            id,
+            username,
+            avatar_url,
+            user_subscriptions (
+              status,
+              subscription_tiers (
+                name,
+                checkmark_color
+              )
+            )
+          )
+        `)
         .single();
 
       if (postError) {
@@ -261,6 +268,13 @@ export const usePostCreation = (
         }
         throw postError;
       }
+
+      // Immediately invalidate and refetch posts to show the new post
+      await queryClient.invalidateQueries({ queryKey: ['posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['user-posts'] });
+      
+      // Force a refetch to ensure the new post appears immediately
+      await queryClient.refetchQueries({ queryKey: ['posts'] });
 
       await checkPostsRemaining();
       
