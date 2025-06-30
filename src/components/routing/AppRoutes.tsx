@@ -2,7 +2,7 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from '@supabase/auth-helpers-react';
-import Auth from "@/pages/Auth";
+import Index from "@/pages/Index";
 import Dashboard from "@/pages/Dashboard";
 import Followers from "@/pages/Followers";
 import Notifications from "@/pages/Notifications";
@@ -26,7 +26,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
   
   if (!session) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
   
   return <>{children}</>;
@@ -35,24 +35,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 export const AppRoutes = () => {
   const session = useSession();
   
-  if (!session) {
-    return (
-      <Routes>
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/terms" element={<TermsOfService />} />
-        <Route path="*" element={<Navigate to="/auth" replace />} />
-      </Routes>
-    );
-  }
-  
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/auth" element={<Navigate to="/dashboard" replace />} />
+      {/* Public routes */}
+      <Route path="/" element={<Index />} />
+      <Route path="/terms" element={<TermsOfService />} />
       
-      <Route path="/" element={<DashboardLayout />}>
+      {/* Protected routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <DashboardLayout>
+            <Dashboard />
+          </DashboardLayout>
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/" element={
+        <ProtectedRoute>
+          <DashboardLayout />
+        </ProtectedRoute>
+      }>
         <Route path="/@:username" element={<Profiles />} />
-        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/followers" element={<Followers />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/videos" element={<Videos />} />
@@ -61,7 +64,6 @@ export const AppRoutes = () => {
         <Route path="/post/:postId" element={<PostDetail />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/analytics" element={<Analytics />} />
-        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
         <Route path="/daarp-ai" element={<DaarpAI />} />
         <Route path="/messages" element={<Messages />} />
@@ -72,7 +74,8 @@ export const AppRoutes = () => {
         <Route path="/spaces" element={<Spaces />} />
       </Route>
       
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
