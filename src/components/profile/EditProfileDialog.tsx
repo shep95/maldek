@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { handleImageUpload } from "@/components/ai/utils/imageUploadUtils";
-import { Pencil } from "lucide-react";
+import { Pencil, Camera } from "lucide-react";
 
 interface EditProfileDialogProps {
   profile: any;
@@ -21,6 +21,7 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
   const [bio, setBio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+  const [bannerUrl, setBannerUrl] = useState(profile?.banner_url || "");
 
   // Load saved bio from localStorage when dialog opens
   useEffect(() => {
@@ -68,6 +69,37 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
     }
   };
 
+  const handleBannerChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Show file size warning if over 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      toast.info(`Uploading a large image (${(file.size / (1024 * 1024)).toFixed(1)}MB). This might take a moment.`);
+    }
+
+    try {
+      console.log('Starting banner upload for user:', profile.id);
+      const imageUrl = await handleImageUpload(file, profile.id);
+      
+      if (imageUrl) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ banner_url: imageUrl })
+          .eq('id', profile.id);
+
+        if (error) throw error;
+
+        setBannerUrl(imageUrl);
+        onProfileUpdate();
+        toast.success("Banner updated successfully");
+      }
+    } catch (error) {
+      console.error('Error uploading banner:', error);
+      toast.error("Failed to upload banner");
+    }
+  };
+
   const handleBioSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -101,11 +133,43 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
           Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleBioSubmit} className="space-y-4">
+          {/* Banner Upload Section */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Banner</label>
+            <div className="relative">
+              <div 
+                className="h-32 w-full bg-cover bg-center rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors"
+                style={{ 
+                  backgroundImage: bannerUrl ? `url(${bannerUrl})` : 'none',
+                  backgroundColor: bannerUrl ? 'transparent' : 'rgba(44, 47, 63, 0.3)'
+                }}
+              >
+                <label 
+                  htmlFor="banner-upload" 
+                  className="absolute inset-0 flex items-center justify-center cursor-pointer hover:bg-black/20 transition-colors rounded-lg"
+                >
+                  <Camera className="h-8 w-8 text-white" />
+                </label>
+                <input
+                  id="banner-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerChange}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Recommended size: 1500x500px. Supports JPEG, PNG, GIF, WebP (up to 20MB)
+              </p>
+            </div>
+          </div>
+
+          {/* Avatar Upload Section */}
           <div className="flex flex-col items-center space-y-4">
             <div className="relative">
               <Avatar className="h-24 w-24">
@@ -130,6 +194,8 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
               Supports JPEG, PNG, GIF, WebP (up to 20MB)
             </p>
           </div>
+
+          {/* Username Field */}
           <div className="space-y-2">
             <label htmlFor="username" className="text-sm font-medium">
               Username
@@ -145,6 +211,8 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
               className="bg-muted"
             />
           </div>
+
+          {/* Bio Field */}
           <div className="space-y-2">
             <label htmlFor="bio" className="text-sm font-medium">
               Bio
@@ -157,6 +225,8 @@ export const EditProfileDialog = ({ profile, onProfileUpdate }: EditProfileDialo
               className="h-32"
             />
           </div>
+
+          {/* Action Buttons */}
           <div className="flex justify-end space-x-2">
             <Button
               type="button"

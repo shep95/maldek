@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -24,17 +23,17 @@ export const ProfileHeader = ({ profile, isLoading }: ProfileHeaderProps) => {
   };
 
   return (
-    <div className="relative bg-gradient-to-b from-black/30 to-transparent">
+    <div className="relative bg-gradient-to-b from-black/30 to-transparent pt-6 px-4">
       {/* Banner */}
       <div 
-        className="h-48 md:h-64 w-full bg-cover bg-center relative"
+        className="h-48 md:h-64 w-full bg-cover bg-center relative rounded-2xl"
         style={{ 
           backgroundImage: profile?.banner_url ? `url(${profile.banner_url})` : 'url(/bg-pattern.png)',
           backgroundColor: profile?.banner_url ? 'transparent' : 'rgba(44, 47, 63, 0.7)',
           backgroundBlendMode: 'overlay'
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/90 rounded-2xl"></div>
       </div>
       
       {/* Profile Info */}
