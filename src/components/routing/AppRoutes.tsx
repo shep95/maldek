@@ -22,7 +22,11 @@ import BosleyCoin from "@/pages/BosleyCoin";
 import Support from "@/pages/Support";
 import Spaces from "@/pages/Spaces";
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const session = useSession();
   
   if (!session) {
