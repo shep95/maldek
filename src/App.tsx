@@ -58,6 +58,18 @@ const App = () => {
       console.warn('Error setting autoplay:', error);
     }
 
+    // Mobile-specific optimizations
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      // Prevent iOS bounce
+      document.body.style.overscrollBehavior = 'none';
+      // Fix viewport on mobile
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+      }
+    }
+
     // Enhanced global error handling with security logging
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);

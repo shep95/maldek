@@ -8,8 +8,11 @@ import { toast } from "sonner";
 const Index = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    
     const checkSession = async () => {
       try {
         console.log("Checking session status...");
@@ -56,9 +59,10 @@ const Index = () => {
     checkSession();
   }, [navigate]);
 
-  if (isLoading) {
+  // Show loading skeleton while checking session or if not mounted
+  if (isLoading || !isMounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="min-h-screen min-h-screen-dynamic flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-4">
           <Skeleton className="h-8 w-3/4 mx-auto" />
           <Skeleton className="h-4 w-1/2 mx-auto" />
