@@ -49,24 +49,24 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;  /* Dark background instead of pure black */
+    --background: 0 0% 0%;  /* Pure black background */
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 0 0% 0%;  /* Pure black for cards */
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 0 0% 0%;  /* Pure black for popover */
     --popover-foreground: 0 0% 98%;
-    --primary: #171717;  /* Updated light color theme */
+    --primary: 0 0% 7%;  /* Very dark gray */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.1%;  /* Lighter than pure black */
+    --secondary: 0 0% 7%;  /* Very dark gray */
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
+    --muted: 0 0% 7%;  /* Very dark gray */
     --muted-foreground: 240 5% 64.9%;
     --accent: 24 95% 53%;  /* Orange in dark mode */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 0 0% 7%;  /* Very dark gray for borders */
+    --input: 0 0% 7%;  /* Very dark gray for inputs */
     --ring: 24 95% 53%;  /* Orange in dark mode */
   }
 }
