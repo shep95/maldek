@@ -1,4 +1,5 @@
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic, ExternalLink } from "lucide-react"
+
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic, ExternalLink, DollarSign } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -8,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMessageNotificationCount } from "@/hooks/useMessageNotificationCount";
 import { useState } from "react";
-import { PandoraDialog } from "./PandoraDialog";
+import { RothLordDialog } from "./RothLordDialog";
 
 interface NavItemsProps {
   subscription: any;
@@ -35,7 +36,7 @@ export const NavItems = ({
   const isMobile = useIsMobile();
   const session = useSession();
   const navigate = useNavigate();
-  const [isPandoraDialogOpen, setIsPandoraDialogOpen] = useState(false);
+  const [isRothLordDialogOpen, setIsRothLordDialogOpen] = useState(false);
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
@@ -59,12 +60,8 @@ export const NavItems = ({
     setIsCreatingPost(true);
   };
 
-  const handlePandoraClick = () => {
-    setIsPandoraDialogOpen(true);
-  };
-
-  const handleZukoClick = () => {
-    window.open('https://www.zukoi.app/', '_blank');
+  const handleRothLordClick = () => {
+    setIsRothLordDialogOpen(true);
   };
 
   // Check if today is August 26th
@@ -153,22 +150,13 @@ export const NavItems = ({
       description: "Access private posts",
       className: "text-accent hover:bg-accent/10"
     },
-    // Conditionally include PANDORA tab (hide on August 26th)
-    ...(isAugust26 ? [] : [{
-      icon: Bot,
-      label: "PANDORA",
-      onClick: handlePandoraClick,
-      description: "AI Assistant",
+    {
+      icon: DollarSign,
+      label: "RothLord",
+      onClick: handleRothLordClick,
+      description: "Financial AI Assistant",
       className: "text-accent hover:bg-accent/10"
-    }]),
-    // Conditionally include ZUKO tab (hide on August 26th)
-    ...(isAugust26 ? [] : [{
-      icon: ExternalLink,
-      label: "ZUKO",
-      onClick: handleZukoClick,
-      description: "Open ZUKO app",
-      className: "text-accent hover:bg-accent/10"
-    }]),
+    },
     { 
       icon: Mail, 
       label: "Support",
@@ -209,9 +197,9 @@ export const NavItems = ({
         ))}
       </nav>
       
-      <PandoraDialog 
-        open={isPandoraDialogOpen} 
-        onOpenChange={setIsPandoraDialogOpen} 
+      <RothLordDialog 
+        open={isRothLordDialogOpen} 
+        onOpenChange={setIsRothLordDialogOpen} 
       />
     </>
   );
