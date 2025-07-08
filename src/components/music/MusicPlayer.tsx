@@ -42,10 +42,15 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (audio) {
+    if (audio && currentTrack?.music_url) {
       audio.volume = localVolume / 100;
       audio.playbackRate = playbackSpeed;
       audio.loop = isLooping;
+      
+      // Set the audio source if it's different
+      if (audio.src !== currentTrack.music_url) {
+        audio.src = currentTrack.music_url;
+      }
 
       const updateTime = () => setCurrentTime(audio.currentTime);
       const updateDuration = () => setDuration(audio.duration);
@@ -58,7 +63,12 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
         audio.removeEventListener('loadedmetadata', updateDuration);
       };
     }
-  }, [localVolume, playbackSpeed, isLooping]);
+  }, [localVolume, playbackSpeed, isLooping, currentTrack?.music_url]);
+
+  // Sync local volume with global volume
+  useEffect(() => {
+    setLocalVolume(musicVolume * 100);
+  }, [musicVolume]);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -79,6 +89,19 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
     const currentIndex = speeds.indexOf(playbackSpeed);
     const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
     setPlaybackSpeed(nextSpeed);
+  };
+
+  const handleTogglePlay = () => {
+    const audio = audioRef.current;
+    if (audio && currentTrack?.music_url) {
+      if (audio.paused) {
+        audio.play().catch(console.error);
+      } else {
+        audio.pause();
+      }
+    } else {
+      togglePlay(); // Fallback to hook method
+    }
   };
 
   // Always show the music player interface
@@ -103,6 +126,16 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
           src={currentTrack?.music_url || ''}
           onPlay={() => !isPlaying && togglePlay()}
           onPause={() => isPlaying && togglePlay()}
+          onLoadedMetadata={() => {
+            if (audioRef.current) {
+              setDuration(audioRef.current.duration);
+            }
+          }}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              setCurrentTime(audioRef.current.currentTime);
+            }
+          }}
         />
       )}
       
@@ -148,7 +181,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
             <Button
               variant="default"
               size="icon"
-              onClick={togglePlay}
+              onClick={handleTogglePlay}
               className="h-9 w-9 bg-accent hover:bg-accent/80 text-white border-accent/20 rounded-lg"
               disabled={!currentTrack}
             >
@@ -200,7 +233,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               max={duration || 100}
               step={1}
               onValueChange={handleSeek}
-              className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg"
+              className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg [&>span:last-child]:rounded-full"
             />
             <span className="text-xs text-white/60 min-w-[35px]">
               {formatTime(duration)}
@@ -218,8 +251,11 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
             onValueChange={(value) => {
               setLocalVolume(value[0]);
               setMusicVolume(value[0] / 100);
+              if (audioRef.current) {
+                audioRef.current.volume = value[0] / 100;
+              }
             }}
-            className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg"
+            className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg [&>span:last-child]:rounded-full"
           />
         </div>
       </div>
