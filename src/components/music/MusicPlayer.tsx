@@ -59,9 +59,12 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
     setPlaybackSpeed(nextSpeed);
   };
 
-  if (!currentTrack) {
-    return null;
-  }
+  // Always show the music player interface
+  const displayTrack = currentTrack || {
+    title: 'No music loaded',
+    music_url: '',
+    duration: 0
+  };
 
   return (
     <div className={cn(
@@ -71,7 +74,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
     )}>
       <audio
         ref={audioRef}
-        src={currentTrack.music_url}
+        src={currentTrack?.music_url || ''}
         onPlay={() => !isPlaying && togglePlay()}
         onPause={() => isPlaying && togglePlay()}
       />
@@ -84,10 +87,10 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
           </div>
           <div className="min-w-0">
             <h4 className="font-medium text-foreground truncate">
-              {currentTrack.title || 'Unknown Track'}
+              {displayTrack.title}
             </h4>
             <p className="text-sm text-muted-foreground truncate">
-              Music Track
+              {currentTrack ? 'Music Track' : 'Upload music in your profile'}
             </p>
           </div>
         </div>
@@ -100,6 +103,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               size="icon"
               onClick={playPrevious}
               className="h-8 w-8"
+              disabled={!currentTrack}
             >
               <SkipBack className="h-4 w-4" />
             </Button>
@@ -109,6 +113,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               size="icon"
               onClick={togglePlay}
               className="h-10 w-10"
+              disabled={!currentTrack}
             >
               {isPlaying ? (
                 <Pause className="h-5 w-5" />
@@ -122,6 +127,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               size="icon"
               onClick={playNext}
               className="h-8 w-8"
+              disabled={!currentTrack}
             >
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -131,6 +137,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               size="icon"
               onClick={toggleLoop}
               className={cn("h-8 w-8", isLooping && "text-accent")}
+              disabled={!currentTrack}
             >
               <Repeat className="h-4 w-4" />
             </Button>
@@ -140,6 +147,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               size="sm"
               onClick={handleSpeedChange}
               className="text-xs px-2 h-8"
+              disabled={!currentTrack}
             >
               {playbackSpeed}x
             </Button>
