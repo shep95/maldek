@@ -82,6 +82,8 @@ export const useBackgroundMusic = () => {
   useEffect(() => {
     if (backgroundMusic?.music_url && !didInitialize.current) {
       didInitialize.current = true;
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
       audio.volume = volume;
       audio.loop = isLooping;
       audio.src = backgroundMusic.music_url;
@@ -148,44 +150,32 @@ export const useBackgroundMusic = () => {
         return;
       }
 
-      console.log('Current audio element:', audio);
-      console.log('Audio source before:', audio.src);
-      console.log('Track URL:', currentTrack.music_url);
+      if (isPlaying) {
+        audio.pause();
+        console.log('Paused:', currentTrack.title);
+        return;
+      }
 
-      // Always recreate the audio element to avoid "no supported sources" error
-      audio.pause();
-      audio.src = '';
-      audio.load(); // Reset the audio element
+      // Set audio properties with CORS enabled
+      audio.crossOrigin = 'anonymous';
+      audio.preload = 'auto';
       
-      // Set the new source
-      audio.src = currentTrack.music_url;
+      // Only set source if different or not set
+      if (audio.src !== currentTrack.music_url) {
+        audio.src = currentTrack.music_url;
+      }
+      
       audio.volume = volume;
       audio.loop = isLooping;
-      
-      // Wait for the audio to be ready
-      await new Promise((resolve, reject) => {
-        const timeoutId = setTimeout(() => reject(new Error('Audio load timeout')), 10000);
-        
-        audio.oncanplay = () => {
-          clearTimeout(timeoutId);
-          resolve(undefined);
-        };
-        
-        audio.onerror = (e) => {
-          clearTimeout(timeoutId);
-          reject(new Error(`Audio load error: ${audio.error?.message || 'Unknown error'}`));
-        };
-        
-        audio.load();
-      });
 
+      // Try to play directly
       await audio.play();
       console.log('Successfully playing:', currentTrack.title);
       
       localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
     } catch (error) {
       console.error('Error toggling play:', error);
-      toast.error('Failed to play music. Please check if the file is accessible.');
+      toast.error('Failed to play music. Try refreshing the page.');
     }
   };
 
