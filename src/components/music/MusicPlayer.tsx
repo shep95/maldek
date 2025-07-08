@@ -68,8 +68,11 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
 
   return (
     <div className={cn(
-      "fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border",
-      "hidden md:block",
+      "fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50",
+      "bg-background/20 backdrop-blur-xl border border-white/10",
+      "rounded-2xl shadow-2xl shadow-black/20",
+      "hidden md:block w-auto max-w-2xl mx-4",
+      "backdrop-saturate-150",
       className
     )}>
       <audio
@@ -79,30 +82,30 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
         onPause={() => isPlaying && togglePlay()}
       />
       
-      <div className="flex items-center justify-between px-6 py-3 max-w-full mx-auto">
+      <div className="flex items-center justify-between px-6 py-4 max-w-full mx-auto">
         {/* Song Info */}
-        <div className="flex items-center space-x-4 min-w-0 flex-1">
-          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-            <Volume2 className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center space-x-3 min-w-0 w-48">
+          <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">
+            <Volume2 className="h-4 w-4 text-white/70" />
           </div>
-          <div className="min-w-0">
-            <h4 className="font-medium text-foreground truncate">
+          <div className="min-w-0 flex-1">
+            <h4 className="font-medium text-white text-sm truncate">
               {displayTrack.title}
             </h4>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-xs text-white/60 truncate">
               {currentTrack ? 'Music Track' : 'Upload music in your profile'}
             </p>
           </div>
         </div>
 
         {/* Main Controls */}
-        <div className="flex flex-col items-center space-y-2 flex-1 max-w-md">
+        <div className="flex flex-col items-center space-y-2 w-80">
           <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={playPrevious}
-              className="h-8 w-8"
+              className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/10"
               disabled={!currentTrack}
             >
               <SkipBack className="h-4 w-4" />
@@ -112,7 +115,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               variant="default"
               size="icon"
               onClick={togglePlay}
-              className="h-10 w-10"
+              className="h-9 w-9 bg-white/20 hover:bg-white/30 text-white border-white/20"
               disabled={!currentTrack}
             >
               {isPlaying ? (
@@ -126,7 +129,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               variant="ghost"
               size="icon"
               onClick={playNext}
-              className="h-8 w-8"
+              className="h-7 w-7 text-white/80 hover:text-white hover:bg-white/10"
               disabled={!currentTrack}
             >
               <SkipForward className="h-4 w-4" />
@@ -136,7 +139,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               variant="ghost"
               size="icon"
               onClick={toggleLoop}
-              className={cn("h-8 w-8", isLooping && "text-accent")}
+              className={cn("h-7 w-7 text-white/80 hover:text-white hover:bg-white/10", isLooping && "text-accent")}
               disabled={!currentTrack}
             >
               <Repeat className="h-4 w-4" />
@@ -146,7 +149,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               variant="ghost"
               size="sm"
               onClick={handleSpeedChange}
-              className="text-xs px-2 h-8"
+              className="text-xs px-2 h-7 text-white/80 hover:text-white hover:bg-white/10"
               disabled={!currentTrack}
             >
               {playbackSpeed}x
@@ -155,7 +158,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
 
           {/* Progress Bar */}
           <div className="flex items-center space-x-2 w-full">
-            <span className="text-xs text-muted-foreground min-w-[35px]">
+            <span className="text-xs text-white/60 min-w-[35px]">
               {formatTime(currentTime)}
             </span>
             <Slider
@@ -163,17 +166,17 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               max={duration || 100}
               step={1}
               onValueChange={handleSeek}
-              className="flex-1"
+              className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-white [&>span:last-child]:bg-white [&>span:last-child]:border-white"
             />
-            <span className="text-xs text-muted-foreground min-w-[35px]">
+            <span className="text-xs text-white/60 min-w-[35px]">
               {formatTime(duration)}
             </span>
           </div>
         </div>
 
         {/* Volume Control */}
-        <div className="flex items-center space-x-2 flex-1 justify-end">
-          <Volume2 className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center space-x-2 w-32 justify-end">
+          <Volume2 className="h-4 w-4 text-white/60" />
           <Slider
             value={[localVolume]}
             max={100}
@@ -182,7 +185,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               setLocalVolume(value[0]);
               setMusicVolume(value[0] / 100);
             }}
-            className="w-24"
+            className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-white [&>span:last-child]:bg-white [&>span:last-child]:border-white"
           />
         </div>
       </div>
