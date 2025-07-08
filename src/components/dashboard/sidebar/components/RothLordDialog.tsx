@@ -14,8 +14,12 @@ interface RothLordDialogProps {
 }
 
 export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
-  const handleClick = () => {
+  const handleRothLordClick = () => {
     window.open('https://chatgpt.com/g/g-686c4ee18bc0819189f095327f118f49-rothlord-zorak-corp', '_blank');
+  };
+
+  const handleAlgroClick = () => {
+    window.open('https://chatgpt.com/g/g-6869a17e31ec819181609db91b61e1e8-algro-zorak-corp', '_blank');
   };
 
   return (
@@ -33,7 +37,7 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
               src="/lovable-uploads/bc911b69-87dc-40e6-8df5-56efb7a2e7ee.png" 
               alt="RothLord AI" 
               className="w-32 h-32 mx-auto rounded-lg object-cover mb-4 cursor-pointer hover:scale-105 transition-transform"
-              onClick={handleClick}
+              onClick={handleRothLordClick}
             />
           </div>
           
@@ -43,13 +47,30 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
             </p>
             
             <Button 
-              onClick={handleClick}
+              onClick={handleRothLordClick}
               className="w-full glass-morphism hover:bg-accent/20 border-accent/30"
               variant="outline"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               Access RothLord AI
             </Button>
+          </div>
+
+          <div className="border-t border-white/10 pt-4">
+            <div className="text-center space-y-3">
+              <p className="text-muted-foreground">
+                Trade with numerology and astrology
+              </p>
+              
+              <Button 
+                onClick={handleAlgroClick}
+                className="w-full glass-morphism hover:bg-accent/20 border-accent/30"
+                variant="outline"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Access Algro
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
