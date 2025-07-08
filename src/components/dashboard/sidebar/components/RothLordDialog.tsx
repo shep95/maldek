@@ -15,7 +15,7 @@ interface RothLordDialogProps {
 
 export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
   const handleClick = () => {
-    window.open('https://chatgpt.com/g/g-686c4ee18bc0819189f095327f118f49-rothlord', '_blank');
+    window.open('https://chatgpt.com/g/g-686c4ee18bc0819189f095327f118f49-rothlord-zorak-corp', '_blank');
   };
 
   return (
