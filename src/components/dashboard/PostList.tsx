@@ -260,21 +260,21 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
                   <CheckCircle2 className="h-6 w-6 text-accent" />
                   <p className="text-foreground font-medium">You're all caught up!</p>
                   <p className="text-muted-foreground text-sm">
-                    You've seen all {followingOnly ? "following" : ""} posts from the last {showOlderPosts ? "30 days" : "three days"}
+                    You've seen all {followingOnly ? "following" : ""} posts from the last {showOlderPosts ? "60 days" : "30 days"}
                   </p>
                   
                   {!showOlderPosts && (
                     <div className="mt-4">
                       <SlideButton 
                         onSlideComplete={() => setShowOlderPosts(true)}
-                        text="Slide to load past 30 days"
+                        text="Slide to load another 30 days"
                       />
                     </div>
                   )}
                   
                   {showOlderPosts && (
                     <p className="text-muted-foreground text-sm mt-2">
-                      Showing posts from the past 30 days
+                      Showing posts from the past 60 days
                     </p>
                   )}
                 </div>

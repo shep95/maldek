@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Music, Trash2, Play, Pause } from "lucide-react";
 import { MusicUpload } from "@/components/music/MusicUpload";
 import { useBackgroundMusic } from "@/hooks/useBackgroundMusic";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface MusicTrack {
   id: string;
@@ -23,6 +24,24 @@ export const ProfileMusicTab = () => {
   const queryClient = useQueryClient();
   const { currentTrack, isPlaying, togglePlay } = useBackgroundMusic();
   const [deletingTrack, setDeletingTrack] = useState<string | null>(null);
+
+  // Get user profile for avatar
+  const { data: profile } = useQuery({
+    queryKey: ['profile', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url, username')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id,
+  });
 
   const { data: musicTracks, isLoading } = useQuery({
     queryKey: ['user-music', session?.user?.id],
@@ -161,7 +180,12 @@ export const ProfileMusicTab = () => {
                       </Button>
                       
                       <div className="flex items-center space-x-3 flex-1 min-w-0">
-                        <Music className="h-8 w-8 text-accent flex-shrink-0" />
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={profile?.avatar_url || ''} alt={profile?.username || 'User'} />
+                          <AvatarFallback>
+                            <Music className="h-4 w-4 text-accent" />
+                          </AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium truncate">{track.title}</h4>
                           <p className="text-sm text-muted-foreground">

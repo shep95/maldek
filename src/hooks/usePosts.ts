@@ -51,7 +51,7 @@ export const usePosts = (followingOnly: boolean = false, includeOlderPosts: bool
       
       try {
         // Calculate the date range based on includeOlderPosts
-        const daysAgo = includeOlderPosts ? 30 : 3;
+        const daysAgo = includeOlderPosts ? 60 : 30;
         const dateThreshold = new Date();
         dateThreshold.setDate(dateThreshold.getDate() - daysAgo);
         

@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { useBackgroundMusic } from "@/hooks/useBackgroundMusic";
+import { useSession } from "@supabase/auth-helpers-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MusicPlayerProps {
   className?: string;
 }
 
 export const MusicPlayer = ({ className }: MusicPlayerProps) => {
+  const session = useSession();
   const { currentTrack, isPlaying, togglePlay, playNext, playPrevious, volume: musicVolume, setVolume: setMusicVolume, isLooping, toggleLoop } = useBackgroundMusic();
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -17,6 +21,24 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Get user profile for avatar
+  const { data: profile } = useQuery({
+    queryKey: ['profile', session?.user?.id],
+    queryFn: async () => {
+      if (!session?.user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('avatar_url, username')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id,
+  });
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -87,8 +109,18 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
       <div className="flex items-center justify-between px-6 py-4 max-w-full mx-auto">
         {/* Song Info */}
         <div className="flex items-center space-x-3 min-w-0 w-48">
-          <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">
-            <Volume2 className="h-4 w-4 text-white/70" />
+          <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/20">
+            {profile?.avatar_url ? (
+              <img 
+                src={profile.avatar_url} 
+                alt={profile.username || 'User'} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                <Volume2 className="h-4 w-4 text-white/70" />
+              </div>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <h4 className="font-medium text-white text-sm truncate">
@@ -117,7 +149,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               variant="default"
               size="icon"
               onClick={togglePlay}
-              className="h-9 w-9 bg-white/20 hover:bg-white/30 text-white border-white/20"
+              className="h-9 w-9 bg-accent hover:bg-accent/80 text-white border-accent/20 rounded-lg"
               disabled={!currentTrack}
             >
               {isPlaying ? (
@@ -168,7 +200,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               max={duration || 100}
               step={1}
               onValueChange={handleSeek}
-              className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-white [&>span:last-child]:bg-white [&>span:last-child]:border-white"
+              className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-accent"
             />
             <span className="text-xs text-white/60 min-w-[35px]">
               {formatTime(duration)}
@@ -179,16 +211,16 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
         {/* Volume Control */}
         <div className="flex items-center space-x-2 w-32 justify-end">
           <Volume2 className="h-4 w-4 text-white/60" />
-          <Slider
-            value={[localVolume]}
-            max={100}
-            step={1}
-            onValueChange={(value) => {
-              setLocalVolume(value[0]);
-              setMusicVolume(value[0] / 100);
-            }}
-            className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-white [&>span:last-child]:bg-white [&>span:last-child]:border-white"
-          />
+            <Slider
+              value={[localVolume]}
+              max={100}
+              step={1}
+              onValueChange={(value) => {
+                setLocalVolume(value[0]);
+                setMusicVolume(value[0] / 100);
+              }}
+              className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-accent"
+            />
         </div>
       </div>
     </div>
