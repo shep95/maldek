@@ -155,9 +155,9 @@ const Messages: React.FC = () => {
   }) : requestedConversations;
   
   return (
-    <div className="min-h-screen-dynamic w-full max-w-none ml-0 md:ml-72 p-2 sm:p-4 lg:p-6 overflow-x-hidden">
-      <div className="w-full max-w-full">
-        <h1 className="responsive-heading mb-4 lg:mb-6">Messages</h1>
+    <div className="min-h-screen-dynamic w-full ml-0 md:ml-72 p-2 sm:p-4 lg:p-6">
+      <div className="w-full">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 lg:mb-6">Messages</h1>
         
         {!isEncryptionInitialized && (
           <Alert className="mb-4 md:mb-6">
@@ -173,10 +173,10 @@ const Messages: React.FC = () => {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,400px)_1fr] gap-4 lg:gap-6 h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)] lg:h-[calc(100dvh-160px)]">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)] lg:h-[calc(100dvh-160px)]">
           {/* Conversations sidebar - responsive width */}
           {(!isMobile || showConversations) && (
-            <div className="bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
+            <div className="w-full lg:w-96 flex-shrink-0 bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
               {/* Conversations header */}
               <div className="flex items-center justify-between mb-4 flex-shrink-0">
                 <h2 className="font-semibold flex items-center gap-2">
@@ -262,7 +262,7 @@ const Messages: React.FC = () => {
           
           {/* Message thread - responsive width */}
           {(!isMobile || !showConversations) && (
-            <div className="bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
+            <div className="flex-1 bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
               {selectedConversationId && recipient && currentUserId ? (
                 <MessageThread 
                   messages={messages}
