@@ -173,10 +173,10 @@ const Messages: React.FC = () => {
           </Alert>
         )}
 
-        <div className="responsive-grid grid-cols-1 xl:grid-cols-[350px_1fr] 2xl:grid-cols-[400px_1fr] gap-3 sm:gap-4 lg:gap-6 h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)] lg:h-[calc(100dvh-160px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,400px)_1fr] gap-4 lg:gap-6 h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)] lg:h-[calc(100dvh-160px)]">
           {/* Conversations sidebar - responsive width */}
           {(!isMobile || showConversations) && (
-            <div className="bg-card rounded-lg border shadow-md responsive-padding flex flex-col h-full min-w-0">
+            <div className="bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
               {/* Conversations header */}
               <div className="flex items-center justify-between mb-4 flex-shrink-0">
                 <h2 className="font-semibold flex items-center gap-2">
@@ -262,7 +262,7 @@ const Messages: React.FC = () => {
           
           {/* Message thread - responsive width */}
           {(!isMobile || !showConversations) && (
-            <div className="bg-card rounded-lg border shadow-md flex flex-col h-full min-w-0">
+            <div className="bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
               {selectedConversationId && recipient && currentUserId ? (
                 <MessageThread 
                   messages={messages}
