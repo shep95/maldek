@@ -28,7 +28,7 @@ export const useBackgroundMusic = () => {
   const didInitialize = useRef(false);
 
   const { data: backgroundMusic, refetch: refetchMusic } = useQuery({
-    queryKey: ['background-music'],
+    queryKey: ['user-music'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
@@ -45,13 +45,14 @@ export const useBackgroundMusic = () => {
       }
 
       if (data && data.length > 0) {
-        setPlaylist(data || []);
-        return data[currentTrackIndex] || data[0];
+        setPlaylist(data);
+        return data[0]; // Always return the first track initially
       }
       
       return null;
     },
-    staleTime: 30000 // Cache for 30 seconds to allow for real-time updates
+    staleTime: 30000, // Cache for 30 seconds to allow for real-time updates
+    enabled: true // Ensure query runs
   });
 
   // Real-time subscription for music updates
@@ -185,7 +186,7 @@ export const useBackgroundMusic = () => {
 
       if (error) throw error;
 
-      await queryClient.invalidateQueries({ queryKey: ['background-music'] });
+      await queryClient.invalidateQueries({ queryKey: ['user-music'] });
       toast.success('Track deleted successfully');
 
       if (playlist[currentTrackIndex]?.id === trackId) {
@@ -211,7 +212,7 @@ export const useBackgroundMusic = () => {
     playNext,
     playPrevious,
     deleteTrack,
-    currentTrack: playlist[currentTrackIndex],
+    currentTrack: backgroundMusic || playlist[currentTrackIndex],
     updatePlaylistOrder,
     playlist
   };
