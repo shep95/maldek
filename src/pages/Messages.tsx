@@ -155,7 +155,7 @@ const Messages: React.FC = () => {
   }) : requestedConversations;
   
   return (
-    <div className="min-h-screen-dynamic w-full ml-0 md:ml-72 p-2 sm:p-4 lg:p-6">
+    <div className="min-h-screen-dynamic w-screen ml-0 md:ml-72 pr-0 md:pr-72 p-2 sm:p-4 lg:p-6">
       <div className="w-full">
         <h1 className="responsive-heading mb-4 lg:mb-6">Messages</h1>
         
