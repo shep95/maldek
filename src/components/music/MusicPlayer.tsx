@@ -75,12 +75,14 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
       "backdrop-saturate-150",
       className
     )}>
-      <audio
-        ref={audioRef}
-        src={currentTrack?.music_url || ''}
-        onPlay={() => !isPlaying && togglePlay()}
-        onPause={() => isPlaying && togglePlay()}
-      />
+      {currentTrack && (
+        <audio
+          ref={audioRef}
+          src={currentTrack?.music_url || ''}
+          onPlay={() => !isPlaying && togglePlay()}
+          onPause={() => isPlaying && togglePlay()}
+        />
+      )}
       
       <div className="flex items-center justify-between px-6 py-4 max-w-full mx-auto">
         {/* Song Info */}

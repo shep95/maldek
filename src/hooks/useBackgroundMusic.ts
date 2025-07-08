@@ -27,7 +27,7 @@ export const useBackgroundMusic = () => {
   const queryClient = useQueryClient();
   const didInitialize = useRef(false);
 
-  const { data: backgroundMusic } = useQuery({
+  const { data: backgroundMusic, refetch: refetchMusic } = useQuery({
     queryKey: ['background-music'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -44,11 +44,38 @@ export const useBackgroundMusic = () => {
         return null;
       }
 
-      setPlaylist(data || []);
-      return data?.[currentTrackIndex] || null;
+      if (data && data.length > 0) {
+        setPlaylist(data || []);
+        return data[currentTrackIndex] || data[0];
+      }
+      
+      return null;
     },
-    staleTime: Infinity
+    staleTime: 30000 // Cache for 30 seconds to allow for real-time updates
   });
+
+  // Real-time subscription for music updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('background-music-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_background_music'
+        },
+        () => {
+          console.log('Background music changed, refetching...');
+          refetchMusic();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchMusic]);
 
   // Initial setup and autoplay
   useEffect(() => {
