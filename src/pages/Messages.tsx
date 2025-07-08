@@ -155,8 +155,9 @@ const Messages: React.FC = () => {
   }) : requestedConversations;
   
   return (
-    <div className="min-h-screen w-full p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-[100dvh] bg-background">
+      <div className="flex justify-center w-full">
+        <main className="w-full px-4 sm:px-6 py-6 md:py-8 md:pl-28 lg:pl-32 animate-fade-in min-h-[100dvh]">
         <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Messages</h1>
         
         {!isEncryptionInitialized && (
@@ -314,6 +315,7 @@ const Messages: React.FC = () => {
           onOpenChange={setIsNewMessageDialogOpen}
           onSelectUser={handleSelectUser}
         />
+        </main>
       </div>
     </div>
   );
