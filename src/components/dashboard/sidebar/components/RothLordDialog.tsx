@@ -43,10 +43,6 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
           
           <div className="text-center space-y-3">
             <p className="text-muted-foreground">
-              Trade with pattern recognition without numerology or astrology
-            </p>
-            
-            <p className="text-muted-foreground">
               Don't be greedy, but here to help you make money with the stock and crypto market
             </p>
             
