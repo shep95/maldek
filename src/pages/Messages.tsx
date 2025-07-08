@@ -160,19 +160,7 @@ const Messages: React.FC = () => {
         <main className="w-full px-4 sm:px-6 py-6 md:py-8 md:pl-28 lg:pl-32 animate-fade-in min-h-[100dvh]">
         <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Messages</h1>
         
-        {!isEncryptionInitialized && (
-          <Alert className="mb-4 md:mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Encryption not enabled</AlertTitle>
-            <AlertDescription className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <span>Enable end-to-end encryption to view and send secure messages.</span>
-              <Button onClick={() => setIsSecurityDialogOpen(true)} size="sm" variant="outline">
-                <Shield className="h-4 w-4 mr-2" />
-                Enter Security Code
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+        {/* Security alert temporarily hidden */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-200px)]">
           {/* Conversations sidebar - responsive width */}
