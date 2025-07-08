@@ -13,7 +13,7 @@ interface UserSubscription {
   };
 }
 
-export const usePosts = (followingOnly: boolean = false) => {
+export const usePosts = (followingOnly: boolean = false, includeOlderPosts: boolean = false) => {
   const session = useSession();
   const queryClient = useQueryClient();
 
@@ -45,14 +45,15 @@ export const usePosts = (followingOnly: boolean = false) => {
   }, [queryClient]);
 
   const { data: posts, isLoading, error } = useQuery({
-    queryKey: ['posts', followingOnly, session?.user?.id],
+    queryKey: ['posts', followingOnly, includeOlderPosts, session?.user?.id],
     queryFn: async () => {
       console.log('Fetching posts with followingOnly:', followingOnly);
       
       try {
-        // Calculate the date 3 days ago
-        const threeDaysAgo = new Date();
-        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+        // Calculate the date range based on includeOlderPosts
+        const daysAgo = includeOlderPosts ? 30 : 3;
+        const dateThreshold = new Date();
+        dateThreshold.setDate(dateThreshold.getDate() - daysAgo);
         
         let query = supabase
           .from('posts')
@@ -82,7 +83,7 @@ export const usePosts = (followingOnly: boolean = false) => {
               id
             )
           `)
-          .gt('created_at', threeDaysAgo.toISOString())
+          .gt('created_at', dateThreshold.toISOString())
           .order('created_at', { ascending: false })
           .limit(50);
 

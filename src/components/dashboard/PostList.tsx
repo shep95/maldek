@@ -10,6 +10,7 @@ import { usePosts } from "@/hooks/usePosts";
 import { MediaPreviewDialog } from "./MediaPreviewDialog";
 import { CheckCircle2, Users } from "lucide-react";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import { SlideButton } from "@/components/ui/slide-button";
 
 interface PostListProps {
   followingOnly: boolean;
@@ -19,7 +20,8 @@ interface PostListProps {
 export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => {
   const session = useSession();
   const queryClient = useQueryClient();
-  const { posts, isLoading } = usePosts(followingOnly);
+  const [showOlderPosts, setShowOlderPosts] = useState(false);
+  const { posts, isLoading } = usePosts(followingOnly, showOlderPosts);
   const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
   const [postStats, setPostStats] = useState<Record<string, { likes: number, isLiked: boolean, comments: number }>>({});
   const { blockedUserIds, isLoadingBlocked } = useBlockedUsers();
@@ -254,12 +256,27 @@ export const PostList = ({ followingOnly, setFollowingOnly }: PostListProps) => 
               ))}
               
               <div className="text-center bg-card/50 backdrop-blur-sm rounded-xl border border-muted/50 py-8">
-                <div className="flex flex-col items-center gap-2 p-4">
+                <div className="flex flex-col items-center gap-4 p-4">
                   <CheckCircle2 className="h-6 w-6 text-accent" />
                   <p className="text-foreground font-medium">You're all caught up!</p>
                   <p className="text-muted-foreground text-sm">
-                    You've seen all {followingOnly ? "following" : ""} posts from the last three days
+                    You've seen all {followingOnly ? "following" : ""} posts from the last {showOlderPosts ? "30 days" : "three days"}
                   </p>
+                  
+                  {!showOlderPosts && (
+                    <div className="mt-4">
+                      <SlideButton 
+                        onSlideComplete={() => setShowOlderPosts(true)}
+                        text="Slide to load past 30 days"
+                      />
+                    </div>
+                  )}
+                  
+                  {showOlderPosts && (
+                    <p className="text-muted-foreground text-sm mt-2">
+                      Showing posts from the past 30 days
+                    </p>
+                  )}
                 </div>
               </div>
             </>
