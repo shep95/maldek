@@ -86,12 +86,10 @@ export const useBackgroundMusic = () => {
       audio.loop = isLooping;
       audio.src = backgroundMusic.music_url;
       
-      // Always try to autoplay when music is first loaded after sign in
-      audio.play().catch(() => {
-        console.log('Autoplay prevented by browser. User interaction required.');
-      });
+      // Don't autoplay immediately, wait for user interaction
+      console.log('Music loaded:', backgroundMusic.title);
     }
-  }, [backgroundMusic?.music_url]);
+  }, [backgroundMusic?.music_url, audio, volume, isLooping]);
 
   // Handle track ended
   useEffect(() => {
@@ -141,18 +139,35 @@ export const useBackgroundMusic = () => {
     localStorage.setItem(LOOP_STORAGE_KEY, isLooping.toString());
   }, [isLooping]);
 
-  const togglePlay = () => {
-    if (!audio.src && backgroundMusic?.music_url) {
-      audio.src = backgroundMusic.music_url;
-    }
+  const togglePlay = async () => {
+    try {
+      // Ensure we have a track and audio source
+      const currentTrack = backgroundMusic || playlist[currentTrackIndex];
+      if (!currentTrack?.music_url) {
+        toast.error('No music track available');
+        return;
+      }
 
-    if (audio.paused) {
-      audio.play();
-    } else {
-      audio.pause();
+      // Set audio source if not set or different
+      if (!audio.src || audio.src !== currentTrack.music_url) {
+        audio.src = currentTrack.music_url;
+        audio.volume = volume;
+        audio.loop = isLooping;
+      }
+
+      if (audio.paused) {
+        await audio.play();
+        console.log('Playing:', currentTrack.title);
+      } else {
+        audio.pause();
+        console.log('Paused:', currentTrack.title);
+      }
+      
+      localStorage.setItem(AUTOPLAY_STORAGE_KEY, audio.paused ? 'false' : 'true');
+    } catch (error) {
+      console.error('Error toggling play:', error);
+      toast.error('Failed to play music. Please try again.');
     }
-    
-    localStorage.setItem(AUTOPLAY_STORAGE_KEY, audio.paused ? 'false' : 'true');
   };
 
   const playNext = () => {

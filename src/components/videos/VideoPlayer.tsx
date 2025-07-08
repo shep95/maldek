@@ -5,7 +5,7 @@ import { VideoControls } from "./player/VideoControls";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { Download, ExternalLink, SkipBack, SkipForward, Play, Pause } from "lucide-react";
-import { useBackgroundMusicContext } from "@/components/providers/BackgroundMusicProvider";
+import { useBackgroundMusic } from "@/hooks/useBackgroundMusic";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,7 @@ export const VideoPlayer = ({
   const [isPiPActive, setIsPiPActive] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const backgroundMusic = useBackgroundMusicContext();
+  const backgroundMusic = useBackgroundMusic();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number>();
   const [ambientLightActive, setAmbientLightActive] = useState(true);

@@ -40,6 +40,16 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
     setLocalVolume(musicVolume * 100);
   }, [musicVolume]);
 
+  const handleTogglePlay = async () => {
+    console.log('Play button clicked, currentTrack:', currentTrack);
+    console.log('isPlaying:', isPlaying);
+    try {
+      await togglePlay();
+    } catch (error) {
+      console.error('Error in handleTogglePlay:', error);
+    }
+  };
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -104,7 +114,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
             <Button
               variant="default"
               size="icon"
-              onClick={togglePlay}
+              onClick={handleTogglePlay}
               className="h-9 w-9 bg-accent hover:bg-accent/80 text-white border-accent/20 rounded-lg"
               disabled={!currentTrack}
             >
