@@ -165,11 +165,18 @@ export const useBackgroundMusic = () => {
           throw new Error(`Failed to fetch audio: ${response.status}`);
         }
         
+        console.log('Response headers:', response.headers.get('content-type'));
         const audioBlob = await response.blob();
-        const blobUrl = URL.createObjectURL(audioBlob);
+        console.log('Audio blob type:', audioBlob.type, 'size:', audioBlob.size);
         
-        // Set up audio with blob URL
-        audio.src = blobUrl;
+        // Check if the blob is actually audio
+        if (!audioBlob.type.startsWith('audio/') && audioBlob.size === 0) {
+          throw new Error('Invalid audio file or empty response');
+        }
+        
+        // Try direct URL first as fallback
+        audio.src = currentTrack.music_url;
+        audio.crossOrigin = 'anonymous';
         audio.volume = volume;
         audio.loop = isLooping;
         
@@ -178,8 +185,9 @@ export const useBackgroundMusic = () => {
         
         localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
       } catch (fetchError) {
-        console.error('Fetch error:', fetchError);
-        throw new Error('Failed to load audio file');
+        console.error('Audio load error:', fetchError);
+        console.error('Failed URL:', currentTrack.music_url);
+        throw new Error(`Audio playback failed: ${fetchError.message}`);
       }
     } catch (error) {
       console.error('Error toggling play:', error);
