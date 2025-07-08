@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Play, Pause, SkipForward, SkipBack, Repeat, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -15,12 +15,7 @@ interface MusicPlayerProps {
 export const MusicPlayer = ({ className }: MusicPlayerProps) => {
   const session = useSession();
   const { currentTrack, isPlaying, togglePlay, playNext, playPrevious, volume: musicVolume, setVolume: setMusicVolume, isLooping, toggleLoop } = useBackgroundMusic();
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
   const [localVolume, setLocalVolume] = useState(musicVolume * 100);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get user profile for avatar
   const { data: profile } = useQuery({
@@ -40,31 +35,6 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
     enabled: !!session?.user?.id,
   });
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (audio && currentTrack?.music_url) {
-      audio.volume = localVolume / 100;
-      audio.playbackRate = playbackSpeed;
-      audio.loop = isLooping;
-      
-      // Set the audio source if it's different
-      if (audio.src !== currentTrack.music_url) {
-        audio.src = currentTrack.music_url;
-      }
-
-      const updateTime = () => setCurrentTime(audio.currentTime);
-      const updateDuration = () => setDuration(audio.duration);
-
-      audio.addEventListener('timeupdate', updateTime);
-      audio.addEventListener('loadedmetadata', updateDuration);
-
-      return () => {
-        audio.removeEventListener('timeupdate', updateTime);
-        audio.removeEventListener('loadedmetadata', updateDuration);
-      };
-    }
-  }, [localVolume, playbackSpeed, isLooping, currentTrack?.music_url]);
-
   // Sync local volume with global volume
   useEffect(() => {
     setLocalVolume(musicVolume * 100);
@@ -74,34 +44,6 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
-  const handleSeek = (value: number[]) => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.currentTime = value[0];
-      setCurrentTime(value[0]);
-    }
-  };
-
-  const handleSpeedChange = () => {
-    const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
-    const currentIndex = speeds.indexOf(playbackSpeed);
-    const nextSpeed = speeds[(currentIndex + 1) % speeds.length];
-    setPlaybackSpeed(nextSpeed);
-  };
-
-  const handleTogglePlay = () => {
-    const audio = audioRef.current;
-    if (audio && currentTrack?.music_url) {
-      if (audio.paused) {
-        audio.play().catch(console.error);
-      } else {
-        audio.pause();
-      }
-    } else {
-      togglePlay(); // Fallback to hook method
-    }
   };
 
   // Always show the music player interface
@@ -120,25 +62,6 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
       "backdrop-saturate-150",
       className
     )}>
-      {currentTrack && (
-        <audio
-          ref={audioRef}
-          src={currentTrack?.music_url || ''}
-          onPlay={() => !isPlaying && togglePlay()}
-          onPause={() => isPlaying && togglePlay()}
-          onLoadedMetadata={() => {
-            if (audioRef.current) {
-              setDuration(audioRef.current.duration);
-            }
-          }}
-          onTimeUpdate={() => {
-            if (audioRef.current) {
-              setCurrentTime(audioRef.current.currentTime);
-            }
-          }}
-        />
-      )}
-      
       <div className="flex items-center justify-between px-6 py-4 max-w-full mx-auto">
         {/* Song Info */}
         <div className="flex items-center space-x-3 min-w-0 w-48">
@@ -181,7 +104,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
             <Button
               variant="default"
               size="icon"
-              onClick={handleTogglePlay}
+              onClick={togglePlay}
               className="h-9 w-9 bg-accent hover:bg-accent/80 text-white border-accent/20 rounded-lg"
               disabled={!currentTrack}
             >
@@ -211,32 +134,23 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
             >
               <Repeat className="h-4 w-4" />
             </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSpeedChange}
-              className="text-xs px-2 h-7 text-white/80 hover:text-white hover:bg-white/10"
-              disabled={!currentTrack}
-            >
-              {playbackSpeed}x
-            </Button>
           </div>
 
           {/* Progress Bar */}
           <div className="flex items-center space-x-2 w-full">
             <span className="text-xs text-white/60 min-w-[35px]">
-              {formatTime(currentTime)}
+              0:00
             </span>
             <Slider
-              value={[currentTime]}
-              max={duration || 100}
+              value={[0]}
+              max={100}
               step={1}
-              onValueChange={handleSeek}
+              onValueChange={() => {}}
               className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg [&>span:last-child]:rounded-full"
+              disabled={!currentTrack}
             />
             <span className="text-xs text-white/60 min-w-[35px]">
-              {formatTime(duration)}
+              {formatTime(currentTrack?.duration || 0)}
             </span>
           </div>
         </div>
@@ -251,9 +165,6 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
             onValueChange={(value) => {
               setLocalVolume(value[0]);
               setMusicVolume(value[0] / 100);
-              if (audioRef.current) {
-                audioRef.current.volume = value[0] / 100;
-              }
             }}
             className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg [&>span:last-child]:rounded-full"
           />
