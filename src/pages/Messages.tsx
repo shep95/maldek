@@ -155,9 +155,9 @@ const Messages: React.FC = () => {
   }) : requestedConversations;
   
   return (
-    <div className="min-h-screen-dynamic w-full ml-0 md:ml-72 p-2 sm:p-4 lg:p-6">
-      <div className="w-full">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 lg:mb-6">Messages</h1>
+    <div className="min-h-screen w-full p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Messages</h1>
         
         {!isEncryptionInitialized && (
           <Alert className="mb-4 md:mb-6">
@@ -173,10 +173,10 @@ const Messages: React.FC = () => {
           </Alert>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)] lg:h-[calc(100dvh-160px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-200px)]">
           {/* Conversations sidebar - responsive width */}
           {(!isMobile || showConversations) && (
-            <div className="w-full lg:w-96 flex-shrink-0 bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
+            <div className="lg:col-span-1 bg-card rounded-lg border shadow-md p-4 flex flex-col h-full">
               {/* Conversations header */}
               <div className="flex items-center justify-between mb-4 flex-shrink-0">
                 <h2 className="font-semibold flex items-center gap-2">
@@ -262,7 +262,7 @@ const Messages: React.FC = () => {
           
           {/* Message thread - responsive width */}
           {(!isMobile || !showConversations) && (
-            <div className="flex-1 bg-card rounded-xl border shadow-lg p-4 lg:p-6 flex flex-col h-full min-w-0 overflow-hidden">
+            <div className="lg:col-span-2 bg-card rounded-lg border shadow-md flex flex-col h-full">
               {selectedConversationId && recipient && currentUserId ? (
                 <MessageThread 
                   messages={messages}
