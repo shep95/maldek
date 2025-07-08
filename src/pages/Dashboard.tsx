@@ -105,8 +105,19 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
+    <div 
+      className="min-h-[100dvh] bg-background relative"
+      style={{
+        backgroundImage: 'url(/lovable-uploads/64ba56de-32a0-4464-8b6a-8e0b70d909ff.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Dark overlay to ensure text readability */}
+      <div className="absolute inset-0 bg-black/30 z-0"></div>
+      <div className="fixed top-4 left-4 right-4 z-50 md:hidden relative">
         <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 shadow-lg">
           <button 
             onClick={scrollToTop}
@@ -140,7 +151,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="flex justify-center w-full">
+      <div className="flex justify-center w-full relative z-10">
         <main className={cn(
           "w-full max-w-3xl px-4 sm:px-6",
           "py-6 md:py-8 md:pl-28 lg:pl-32",
