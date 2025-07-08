@@ -9,7 +9,13 @@ export function isVideoFile(input?: string | File): boolean {
   }
   
   // If input is a string (URL)
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv'];
+  const videoExtensions = [
+    '.mp4', '.webm', '.ogg', '.mov', '.avi', '.wmv', '.flv', '.mkv', 
+    '.m4v', '.3gp', '.3g2', '.asf', '.rm', '.rmvb', '.vob', '.ts', 
+    '.mts', '.m2ts', '.divx', '.xvid', '.f4v', '.swf', '.mpg', 
+    '.mpeg', '.mpv', '.mp2', '.mpe', '.mpv2', '.m2v', '.svi', 
+    '.3gp2', '.mxf', '.roq', '.nsv', '.f4p', '.f4a', '.f4b'
+  ];
   return videoExtensions.some(ext => input.toLowerCase().endsWith(ext));
 }
 

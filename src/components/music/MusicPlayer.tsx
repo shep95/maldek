@@ -200,7 +200,7 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
               max={duration || 100}
               step={1}
               onValueChange={handleSeek}
-              className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-accent"
+              className="flex-1 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg"
             />
             <span className="text-xs text-white/60 min-w-[35px]">
               {formatTime(duration)}
@@ -211,16 +211,16 @@ export const MusicPlayer = ({ className }: MusicPlayerProps) => {
         {/* Volume Control */}
         <div className="flex items-center space-x-2 w-32 justify-end">
           <Volume2 className="h-4 w-4 text-white/60" />
-            <Slider
-              value={[localVolume]}
-              max={100}
-              step={1}
-              onValueChange={(value) => {
-                setLocalVolume(value[0]);
-                setMusicVolume(value[0] / 100);
-              }}
-              className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-accent"
-            />
+          <Slider
+            value={[localVolume]}
+            max={100}
+            step={1}
+            onValueChange={(value) => {
+              setLocalVolume(value[0]);
+              setMusicVolume(value[0] / 100);
+            }}
+            className="w-20 [&>span:first-child]:bg-white/20 [&>span:first-child>span]:bg-accent [&>span:last-child]:bg-accent [&>span:last-child]:border-0 [&>span:last-child]:shadow-lg"
+          />
         </div>
       </div>
     </div>

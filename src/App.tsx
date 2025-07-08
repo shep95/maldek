@@ -11,7 +11,6 @@ import { AppRoutes } from "@/components/routing/AppRoutes";
 import { useEffect } from "react";
 import { BackgroundMusicProvider } from "@/components/providers/BackgroundMusicProvider";
 import { EncryptionProvider } from "@/providers/EncryptionProvider";
-import { SecurityMonitor } from "@/components/security/SecurityMonitor";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 
 // Enhanced query client configuration with security measures
@@ -117,7 +116,6 @@ const App = () => {
   return (
     <>
       <SecurityHeaders />
-      <SecurityMonitor />
       <SessionContextProvider 
         supabaseClient={supabase} 
         initialSession={null}
