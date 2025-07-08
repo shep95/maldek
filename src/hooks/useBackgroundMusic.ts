@@ -156,23 +156,31 @@ export const useBackgroundMusic = () => {
         return;
       }
 
-      // Set audio properties with CORS enabled
-      audio.crossOrigin = 'anonymous';
-      audio.preload = 'auto';
+      // Load audio via fetch to avoid CORS issues
+      console.log('Loading audio from:', currentTrack.music_url);
       
-      // Only set source if different or not set
-      if (audio.src !== currentTrack.music_url) {
-        audio.src = currentTrack.music_url;
+      try {
+        const response = await fetch(currentTrack.music_url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audio: ${response.status}`);
+        }
+        
+        const audioBlob = await response.blob();
+        const blobUrl = URL.createObjectURL(audioBlob);
+        
+        // Set up audio with blob URL
+        audio.src = blobUrl;
+        audio.volume = volume;
+        audio.loop = isLooping;
+        
+        await audio.play();
+        console.log('Successfully playing:', currentTrack.title);
+        
+        localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
+      } catch (fetchError) {
+        console.error('Fetch error:', fetchError);
+        throw new Error('Failed to load audio file');
       }
-      
-      audio.volume = volume;
-      audio.loop = isLooping;
-
-      // Try to play directly
-      await audio.play();
-      console.log('Successfully playing:', currentTrack.title);
-      
-      localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
     } catch (error) {
       console.error('Error toggling play:', error);
       toast.error('Failed to play music. Try refreshing the page.');
