@@ -172,9 +172,25 @@ export const useBackgroundMusic = () => {
         return;
       }
 
+      // Test if the URL is accessible first
+      console.log('Testing URL accessibility:', currentTrackUrl);
+      try {
+        const response = await fetch(currentTrackUrl, { method: 'HEAD' });
+        if (!response.ok) {
+          throw new Error(`File not accessible: ${response.status} ${response.statusText}`);
+        }
+        console.log('URL is accessible, content-type:', response.headers.get('content-type'));
+      } catch (fetchError) {
+        console.error('URL accessibility test failed:', fetchError);
+        toast.error('Audio file is not accessible. Please check the file exists.');
+        return;
+      }
+
       // Use the proper public URL from the hook
       console.log('Using public URL:', currentTrackUrl);
       
+      // Reset audio element
+      audio.load(); // Force reload
       audio.src = currentTrackUrl;
       audio.crossOrigin = 'anonymous';
       audio.volume = volume;
