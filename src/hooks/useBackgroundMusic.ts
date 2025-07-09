@@ -174,71 +174,120 @@ export const useBackgroundMusic = () => {
         title: currentTrack?.title
       });
 
-      // Direct approach - skip compatibility test as it's causing false negatives
+      // Reset audio element completely
       audio.pause();
       audio.currentTime = 0;
       audio.volume = volume;
       audio.loop = isLooping;
       
-      // Remove crossOrigin to avoid CORS issues
-      audio.removeAttribute('crossOrigin');
-      
-      // Clear previous handlers
+      // Clear all event handlers
       audio.onerror = null;
       audio.oncanplaythrough = null;
       audio.onloadeddata = null;
+      audio.oncanplay = null;
+      
+      // Remove any attributes that might cause issues
+      audio.removeAttribute('crossOrigin');
+      audio.preload = 'auto';
 
-      // Enhanced error handler with blob conversion fallback
-      audio.onerror = async () => {
-        console.log('Direct play failed, trying blob conversion...');
-        
-        try {
-          // Convert to blob to bypass potential encoding issues
-          const response = await fetch(currentTrackUrl);
-          const blob = await response.blob();
-          const objectUrl = URL.createObjectURL(blob);
+      let playAttempts = 0;
+      const maxAttempts = 3;
+
+      const attemptPlay = async (url: string, attemptNumber: number) => {
+        return new Promise<boolean>((resolve, reject) => {
+          console.log(`Play attempt ${attemptNumber} with URL:`, url);
           
-          // Try with blob URL
-          audio.src = objectUrl;
-          
+          const timeoutId = setTimeout(() => {
+            reject(new Error(`Timeout on attempt ${attemptNumber}`));
+          }, 10000); // 10 second timeout
+
           audio.oncanplaythrough = async () => {
+            clearTimeout(timeoutId);
             try {
               await audio.play();
-              console.log('Blob conversion successful');
-              toast.success('Audio loaded successfully');
-            } catch (error) {
-              console.error('Blob play error:', error);
-              toast.error('Unable to play this audio file');
+              console.log(`Success on attempt ${attemptNumber}`);
+              localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
+              resolve(true);
+            } catch (playError) {
+              console.error(`Play error on attempt ${attemptNumber}:`, playError);
+              reject(playError);
             }
           };
-          
-          audio.onerror = () => {
-            toast.error('This MP3 file has encoding issues. Please try a different MP3 file.');
+
+          audio.onerror = (event) => {
+            clearTimeout(timeoutId);
+            console.error(`Audio error on attempt ${attemptNumber}:`, {
+              error: audio.error,
+              code: audio.error?.code,
+              message: audio.error?.message,
+              networkState: audio.networkState,
+              readyState: audio.readyState
+            });
+            reject(new Error(`Audio error code ${audio.error?.code}`));
           };
-          
+
+          // Set source and load
+          audio.src = url;
           audio.load();
-          
-        } catch (fetchError) {
-          console.error('Blob conversion failed:', fetchError);
-          toast.error('Failed to load audio file. Check your internet connection.');
-        }
+        });
       };
 
-      // Set up success handler for direct play
-      audio.oncanplaythrough = async () => {
+      // Attempt 1: Direct URL
+      try {
+        await attemptPlay(currentTrackUrl, 1);
+        return; // Success!
+      } catch (error) {
+        console.log('Attempt 1 failed:', error);
+        playAttempts++;
+      }
+
+      // Attempt 2: URL with cache busting
+      if (playAttempts < maxAttempts) {
         try {
-          await audio.play();
-          console.log('Successfully playing:', currentTrack?.title);
-          localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
-        } catch (playError) {
-          console.error('Play error:', playError);
-          toast.error('Browser blocked audio playback. Click to enable audio.');
+          const cacheBustUrl = currentTrackUrl + (currentTrackUrl.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+          await attemptPlay(cacheBustUrl, 2);
+          return; // Success!
+        } catch (error) {
+          console.log('Attempt 2 failed:', error);
+          playAttempts++;
         }
-      };
+      }
 
-      // Try direct play first
-      audio.src = currentTrackUrl;
-      audio.load();
+      // Attempt 3: Blob conversion
+      if (playAttempts < maxAttempts) {
+        try {
+          console.log('Attempting blob conversion...');
+          const response = await fetch(currentTrackUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'audio/*',
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          console.log('Blob created:', {
+            size: blob.size,
+            type: blob.type
+          });
+          
+          const blobUrl = URL.createObjectURL(blob);
+          await attemptPlay(blobUrl, 3);
+          
+          // Clean up blob URL after successful play
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+          return; // Success!
+          
+        } catch (error) {
+          console.error('Blob conversion failed:', error);
+        }
+      }
+
+      // All attempts failed
+      toast.error('Unable to play this audio file. Try uploading a different MP3 file.');
       
     } catch (error) {
       console.error('Error in togglePlay:', error);
