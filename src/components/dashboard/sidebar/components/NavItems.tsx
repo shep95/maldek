@@ -102,8 +102,8 @@ export const NavItems = ({
     {
       icon: Zap,
       label: "Zuko",
-      path: "/zuko",
-      active: location.pathname === "/zuko",
+      path: "https://www.zukoi.app/",
+      active: false,
       description: "Zuko AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
