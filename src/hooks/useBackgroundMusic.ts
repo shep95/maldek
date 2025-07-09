@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,8 +86,6 @@ export const useBackgroundMusic = () => {
   useEffect(() => {
     if (currentTrackUrl && !didInitialize.current) {
       didInitialize.current = true;
-      audio.crossOrigin = 'anonymous';
-      audio.preload = 'auto';
       audio.volume = volume;
       audio.loop = isLooping;
       audio.src = currentTrackUrl;
@@ -146,6 +143,31 @@ export const useBackgroundMusic = () => {
     localStorage.setItem(LOOP_STORAGE_KEY, isLooping.toString());
   }, [isLooping]);
 
+  // Enhanced audio format bypass function
+  const createCompatibleAudio = async (url: string): Promise<HTMLAudioElement> => {
+    const testAudio = new Audio();
+    
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Audio format test timeout'));
+      }, 5000);
+
+      testAudio.oncanplaythrough = () => {
+        clearTimeout(timeoutId);
+        resolve(testAudio);
+      };
+
+      testAudio.onerror = () => {
+        clearTimeout(timeoutId);
+        reject(new Error('Audio format not supported'));
+      };
+
+      // Configure for maximum compatibility
+      testAudio.preload = 'metadata';
+      testAudio.src = url;
+    });
+  };
+
   const togglePlay = async () => {
     try {
       // Check for URL loading error first
@@ -177,56 +199,91 @@ export const useBackgroundMusic = () => {
         title: currentTrack?.title
       });
 
-      // Simple and direct approach - just set the src and play
-      audio.pause();
-      audio.currentTime = 0;
-      audio.volume = volume;
-      audio.loop = isLooping;
-      audio.crossOrigin = 'anonymous';
-      
-      // Clear any previous error handlers
-      audio.onerror = null;
-      audio.oncanplaythrough = null;
-      audio.onloadeddata = null;
-
-      // Set up error handling with detailed logging
-      audio.onerror = (event) => {
-        console.error('Audio error details:', {
-          error: audio.error,
-          code: audio.error?.code,
-          message: audio.error?.message,
-          url: currentTrackUrl,
-          audioSrc: audio.src
-        });
+      try {
+        // Test audio compatibility first
+        const compatibleAudio = await createCompatibleAudio(currentTrackUrl);
         
-        const errorMessages = {
-          1: 'Media operation aborted',
-          2: 'Network error occurred', 
-          3: 'Media file is corrupted or unsupported format',
-          4: 'Media source not supported by browser'
+        // If test passed, configure main audio element
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = volume;
+        audio.loop = isLooping;
+        
+        // Remove crossOrigin to avoid CORS issues
+        audio.removeAttribute('crossOrigin');
+        
+        // Add cache busting to avoid format detection issues
+        const urlWithCacheBust = currentTrackUrl + (currentTrackUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+        audio.src = urlWithCacheBust;
+        
+        // Clear previous handlers
+        audio.onerror = null;
+        audio.oncanplaythrough = null;
+
+        // Set up success handler
+        audio.oncanplaythrough = async () => {
+          try {
+            await audio.play();
+            console.log('Successfully playing:', currentTrack?.title);
+            localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
+          } catch (playError) {
+            console.error('Play error:', playError);
+            toast.error('Browser blocked audio playback. Click to enable audio.');
+          }
+        };
+
+        // Enhanced error handler with format bypass
+        audio.onerror = () => {
+          console.error('Audio playback failed, trying alternative approach...');
+          
+          // Try direct blob conversion as last resort
+          fetch(currentTrackUrl)
+            .then(response => response.blob())
+            .then(blob => {
+              const objectUrl = URL.createObjectURL(blob);
+              audio.src = objectUrl;
+              audio.load();
+              
+              audio.oncanplaythrough = async () => {
+                try {
+                  await audio.play();
+                  toast.success('Audio format converted for compatibility');
+                } catch (error) {
+                  toast.error('Unable to play this audio format. Please convert to MP3.');
+                }
+              };
+            })
+            .catch(() => {
+              toast.error('Audio format not supported. Please convert to MP3 format.');
+            });
+        };
+
+        audio.load();
+        
+      } catch (compatibilityError) {
+        console.error('Audio compatibility test failed:', compatibilityError);
+        
+        // Fallback: try direct play with error handling
+        audio.pause();
+        audio.volume = volume;
+        audio.loop = isLooping;
+        audio.src = currentTrackUrl;
+        
+        audio.onerror = () => {
+          toast.error('Audio format not compatible. Please upload MP3 format.');
         };
         
-        const errorMsg = errorMessages[audio.error?.code] || 'Unknown audio error';
-        toast.error(`Audio Error: ${errorMsg}. Try uploading a different audio format.`);
-      };
-
-      // Set up success handler
-      audio.oncanplaythrough = async () => {
-        try {
-          console.log('Audio ready to play');
-          await audio.play();
-          console.log('Successfully playing:', currentTrack?.title);
-          localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
-        } catch (playError) {
-          console.error('Play error:', playError);
-          toast.error('Browser blocked audio playback. Click to enable audio.');
-        }
-      };
-
-      // Directly set the source URL
-      console.log('Setting audio source directly to:', currentTrackUrl);
-      audio.src = currentTrackUrl;
-      audio.load();
+        audio.oncanplaythrough = async () => {
+          try {
+            await audio.play();
+            console.log('Fallback play successful');
+          } catch (error) {
+            toast.error('Cannot play this audio format. Please use MP3.');
+          }
+        };
+        
+        audio.load();
+      }
       
     } catch (error) {
       console.error('Error in togglePlay:', error);
