@@ -177,79 +177,56 @@ export const useBackgroundMusic = () => {
         title: currentTrack?.title
       });
 
-      try {
-        // Try to fetch the file as a blob first to ensure it's valid
-        console.log('Fetching audio file as blob...');
-        const response = await fetch(currentTrackUrl);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
-        }
-        
-        const blob = await response.blob();
-        console.log('Audio blob info:', {
-          type: blob.type,
-          size: blob.size
+      // Simple and direct approach - just set the src and play
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = volume;
+      audio.loop = isLooping;
+      audio.crossOrigin = 'anonymous';
+      
+      // Clear any previous error handlers
+      audio.onerror = null;
+      audio.oncanplaythrough = null;
+      audio.onloadeddata = null;
+
+      // Set up error handling with detailed logging
+      audio.onerror = (event) => {
+        console.error('Audio error details:', {
+          error: audio.error,
+          code: audio.error?.code,
+          message: audio.error?.message,
+          url: currentTrackUrl,
+          audioSrc: audio.src
         });
-
-        // Create a blob URL for more reliable playback
-        const blobUrl = URL.createObjectURL(blob);
-        console.log('Created blob URL:', blobUrl);
-
-        // Reset and configure audio element
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = volume;
-        audio.loop = isLooping;
-        audio.preload = 'metadata';
-
-        // Set up error handling
-        audio.onerror = (event) => {
-          console.error('Audio error:', {
-            error: audio.error,
-            code: audio.error?.code,
-            message: audio.error?.message
-          });
-          
-          URL.revokeObjectURL(blobUrl); // Clean up blob URL
-          
-          const errorMessages = {
-            1: 'Media operation aborted',
-            2: 'Network error occurred', 
-            3: 'Media file is corrupted or unsupported format',
-            4: 'Media source not supported by browser'
-          };
-          
-          const errorMsg = errorMessages[audio.error?.code] || 'Unknown audio error';
-          toast.error(`Audio Error: ${errorMsg}`);
-        };
-
-        // Set up success handlers
-        audio.oncanplaythrough = async () => {
-          try {
-            console.log('Audio ready to play');
-            await audio.play();
-            console.log('Successfully playing:', currentTrack?.title);
-            localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
-          } catch (playError) {
-            console.error('Play error:', playError);
-            URL.revokeObjectURL(blobUrl);
-            toast.error('Browser blocked audio playback. Click to enable audio.');
-          }
-        };
-
-        // Clean up previous blob URL and set new source
-        if (audio.src.startsWith('blob:')) {
-          URL.revokeObjectURL(audio.src);
-        }
         
-        console.log('Setting audio source to blob URL');
-        audio.src = blobUrl;
-        audio.load();
+        const errorMessages = {
+          1: 'Media operation aborted',
+          2: 'Network error occurred', 
+          3: 'Media file is corrupted or unsupported format',
+          4: 'Media source not supported by browser'
+        };
+        
+        const errorMsg = errorMessages[audio.error?.code] || 'Unknown audio error';
+        toast.error(`Audio Error: ${errorMsg}. Try uploading a different audio format.`);
+      };
 
-      } catch (fetchError) {
-        console.error('Failed to fetch audio file:', fetchError);
-        toast.error('Failed to load audio file. The file may be corrupted or in an unsupported format.');
-      }
+      // Set up success handler
+      audio.oncanplaythrough = async () => {
+        try {
+          console.log('Audio ready to play');
+          await audio.play();
+          console.log('Successfully playing:', currentTrack?.title);
+          localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
+        } catch (playError) {
+          console.error('Play error:', playError);
+          toast.error('Browser blocked audio playback. Click to enable audio.');
+        }
+      };
+
+      // Directly set the source URL
+      console.log('Setting audio source directly to:', currentTrackUrl);
+      audio.src = currentTrackUrl;
+      audio.load();
       
     } catch (error) {
       console.error('Error in togglePlay:', error);
