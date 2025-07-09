@@ -1,5 +1,5 @@
 
-import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic, ExternalLink, DollarSign } from "lucide-react"
+import { Calendar, Home, Bell, Video, Settings, LogOut, Plus, TrendingUp, BrainCircuit, Users, User, BarChart2, Layers, Bot, Lock, MessagesSquare, WalletCards, Coins, Mail, Mic, ExternalLink, DollarSign, Zap } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom";
 import { NavItem } from "./NavItem";
 import { useNotificationCount } from "../hooks/useNotificationCount";
@@ -98,6 +98,14 @@ export const NavItems = ({
       active: location.pathname === "/messages",
       description: "View your messages",
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined
+    },
+    {
+      icon: Zap,
+      label: "Zuko",
+      path: "/zuko",
+      active: location.pathname === "/zuko",
+      description: "Zuko AI Assistant",
+      className: "text-accent hover:bg-accent/10"
     },
     { 
       icon: Video, 
