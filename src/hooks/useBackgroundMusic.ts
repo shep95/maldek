@@ -172,37 +172,40 @@ export const useBackgroundMusic = () => {
         return;
       }
 
-      // Test if the URL is accessible first
-      console.log('Testing URL accessibility:', currentTrackUrl);
-      try {
-        const response = await fetch(currentTrackUrl, { method: 'HEAD' });
-        if (!response.ok) {
-          throw new Error(`File not accessible: ${response.status} ${response.statusText}`);
+      // Create a completely fresh audio element for this play attempt
+      const newAudio = new Audio();
+      newAudio.volume = volume;
+      newAudio.loop = isLooping;
+      newAudio.preload = 'auto';
+      
+      // Set up the new audio with proper error handling
+      newAudio.onerror = (e) => {
+        console.error('Audio error:', e);
+        toast.error('Failed to load audio file');
+      };
+      
+      newAudio.oncanplaythrough = async () => {
+        try {
+          await newAudio.play();
+          // Replace the old audio instance with the new working one
+          audio.pause();
+          audio.src = '';
+          Object.assign(audio, newAudio);
+          console.log('Successfully playing:', currentTrack?.title);
+          localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
+        } catch (playError) {
+          console.error('Play error:', playError);
+          toast.error('Browser blocked audio playback');
         }
-        console.log('URL is accessible, content-type:', response.headers.get('content-type'));
-      } catch (fetchError) {
-        console.error('URL accessibility test failed:', fetchError);
-        toast.error('Audio file is not accessible. Please check the file exists.');
-        return;
-      }
-
-      // Use the proper public URL from the hook
-      console.log('Using public URL:', currentTrackUrl);
+      };
       
-      // Reset audio element
-      audio.load(); // Force reload
-      audio.src = currentTrackUrl;
-      audio.crossOrigin = 'anonymous';
-      audio.volume = volume;
-      audio.loop = isLooping;
+      // Set the source and start loading
+      newAudio.src = currentTrackUrl;
+      console.log('Loading fresh audio element with URL:', currentTrackUrl);
       
-      await audio.play();
-      console.log('Successfully playing:', currentTrack?.title);
-      
-      localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
     } catch (error) {
-      console.error('Error toggling play:', error);
-      toast.error('Failed to play music. Check if the audio file is accessible.');
+      console.error('Error in togglePlay:', error);
+      toast.error('Failed to initialize audio player');
     }
   };
 
