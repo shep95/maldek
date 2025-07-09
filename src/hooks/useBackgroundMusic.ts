@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { useMusicUrl } from './useMusicUrl';
 
 type BackgroundMusic = Database['public']['Tables']['user_background_music']['Row'];
 
@@ -55,6 +56,10 @@ export const useBackgroundMusic = () => {
     enabled: true // Ensure query runs
   });
 
+  // Use the music URL hook to get the proper public URL
+  const currentTrack = backgroundMusic || playlist[currentTrackIndex];
+  const { publicUrl: currentTrackUrl, error: urlError, isLoading: isUrlLoading } = useMusicUrl(currentTrack?.music_url || null);
+
   // Real-time subscription for music updates
   useEffect(() => {
     const channel = supabase
@@ -80,18 +85,18 @@ export const useBackgroundMusic = () => {
 
   // Initial setup and autoplay
   useEffect(() => {
-    if (backgroundMusic?.music_url && !didInitialize.current) {
+    if (currentTrackUrl && !didInitialize.current) {
       didInitialize.current = true;
       audio.crossOrigin = 'anonymous';
       audio.preload = 'auto';
       audio.volume = volume;
       audio.loop = isLooping;
-      audio.src = backgroundMusic.music_url;
+      audio.src = currentTrackUrl;
       
       // Don't autoplay immediately, wait for user interaction
-      console.log('Music loaded:', backgroundMusic.title);
+      console.log('Music loaded:', currentTrack?.title);
     }
-  }, [backgroundMusic?.music_url, audio, volume, isLooping]);
+  }, [currentTrackUrl, audio, volume, isLooping, currentTrack?.title]);
 
   // Handle track ended
   useEffect(() => {
@@ -143,55 +148,45 @@ export const useBackgroundMusic = () => {
 
   const togglePlay = async () => {
     try {
-      // Ensure we have a track and audio source
-      const currentTrack = backgroundMusic || playlist[currentTrackIndex];
-      if (!currentTrack?.music_url) {
-        toast.error('No music track available');
+      // Check for URL loading error first
+      if (urlError) {
+        toast.error(`Audio URL error: ${urlError}`);
+        return;
+      }
+
+      // Wait for URL to load if still loading
+      if (isUrlLoading) {
+        toast.error('Audio still loading, please wait...');
+        return;
+      }
+
+      // Ensure we have a proper URL
+      if (!currentTrackUrl) {
+        toast.error('No music URL available');
         return;
       }
 
       if (isPlaying) {
         audio.pause();
-        console.log('Paused:', currentTrack.title);
+        console.log('Paused:', currentTrack?.title);
         return;
       }
 
-      // Load audio via fetch to avoid CORS issues
-      console.log('Loading audio from:', currentTrack.music_url);
+      // Use the proper public URL from the hook
+      console.log('Using public URL:', currentTrackUrl);
       
-      try {
-        const response = await fetch(currentTrack.music_url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch audio: ${response.status}`);
-        }
-        
-        console.log('Response headers:', response.headers.get('content-type'));
-        const audioBlob = await response.blob();
-        console.log('Audio blob type:', audioBlob.type, 'size:', audioBlob.size);
-        
-        // Check if the blob is actually audio
-        if (!audioBlob.type.startsWith('audio/') && audioBlob.size === 0) {
-          throw new Error('Invalid audio file or empty response');
-        }
-        
-        // Try direct URL first as fallback
-        audio.src = currentTrack.music_url;
-        audio.crossOrigin = 'anonymous';
-        audio.volume = volume;
-        audio.loop = isLooping;
-        
-        await audio.play();
-        console.log('Successfully playing:', currentTrack.title);
-        
-        localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
-      } catch (fetchError) {
-        console.error('Audio load error:', fetchError);
-        console.error('Failed URL:', currentTrack.music_url);
-        throw new Error(`Audio playback failed: ${fetchError.message}`);
-      }
+      audio.src = currentTrackUrl;
+      audio.crossOrigin = 'anonymous';
+      audio.volume = volume;
+      audio.loop = isLooping;
+      
+      await audio.play();
+      console.log('Successfully playing:', currentTrack?.title);
+      
+      localStorage.setItem(AUTOPLAY_STORAGE_KEY, 'true');
     } catch (error) {
       console.error('Error toggling play:', error);
-      toast.error('Failed to play music. Try refreshing the page.');
+      toast.error('Failed to play music. Check if the audio file is accessible.');
     }
   };
 
