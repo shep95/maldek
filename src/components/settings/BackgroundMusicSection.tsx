@@ -70,21 +70,16 @@ export const BackgroundMusicSection = () => {
       return;
     }
 
-    // Check file type - support multiple audio/video formats
+    // Check file type - only allow web browser compatible audio formats
     const supportedTypes = [
-      'audio/mpeg',     // MP3
-      'audio/mp4',      // M4A
-      'video/mp4',      // MP4
-      'audio/wav',      // WAV
-      'audio/ogg',      // OGG
-      'audio/webm',     // WEBM audio
-      'video/webm',     // WEBM video
-      'audio/x-m4a',    // M4A alternative
-      'audio/aac'       // AAC
+      'audio/mpeg',     // MP3 - Most widely supported
+      'audio/wav',      // WAV - Universally supported  
+      'audio/ogg',      // OGG - Good modern browser support
+      'audio/mp4'       // M4A - Good browser support
     ];
     
     if (!supportedTypes.includes(file.type)) {
-      toast.error("Supported formats: MP3, MP4, WAV, OGG, WEBM, M4A, AAC");
+      toast.error("Only web-compatible formats supported: MP3, WAV, OGG, M4A");
       return;
     }
 
@@ -302,7 +297,7 @@ export const BackgroundMusicSection = () => {
               ref={fileInputRef}
               type="file"
               className="hidden"
-              accept="audio/*,video/mp4,video/webm"
+              accept=".mp3,.wav,.ogg,.m4a,audio/mpeg,audio/wav,audio/ogg,audio/mp4"
               onChange={handleFileUpload}
               disabled={isUploading}
             />
