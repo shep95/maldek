@@ -43,17 +43,18 @@ export async function validateMediaFile(
   isPrivateContent: boolean = false
 ): Promise<{ isValid: boolean; error?: string }> {
   // Different size limits for private vs public content
-  const MAX_PUBLIC_FILE_SIZE = 100 * 1024; // 100KB for public posts
+  // Allow larger files for public posts to support video uploads
+  const MAX_PUBLIC_FILE_SIZE = 500 * 1024 * 1024; // 500MB for public posts (videos need more space)
   const MAX_PRIVATE_FILE_SIZE = 4 * 1024 * 1024 * 1024; // 4GB for private content
   
   const maxSize = isPrivateContent ? MAX_PRIVATE_FILE_SIZE : MAX_PUBLIC_FILE_SIZE;
-  const sizeLabel = isPrivateContent ? '4GB' : '100KB';
+  const sizeLabel = isPrivateContent ? '4GB' : '500MB';
   
   // Check file size
   if (file.size > maxSize) {
     const actualSize = isPrivateContent 
       ? `${(file.size / (1024 * 1024 * 1024)).toFixed(2)}GB`
-      : `${(file.size / 1024).toFixed(2)}KB`;
+      : `${(file.size / (1024 * 1024)).toFixed(2)}MB`;
     
     return {
       isValid: false,

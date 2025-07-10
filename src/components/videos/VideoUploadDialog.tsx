@@ -134,6 +134,9 @@ export const VideoUploadDialog = ({
     console.log('Starting video upload process...');
 
     try {
+      // Get video duration before upload
+      const videoDuration = await getVideoDuration(videoFile);
+      
       // Upload files to Supabase Storage
       const { videoUrl, thumbnailUrl } = await uploadVideoToSupabase(
         videoFile,
@@ -150,7 +153,7 @@ export const VideoUploadDialog = ({
           description: description.trim(),
           video_url: videoUrl,
           thumbnail_url: thumbnailUrl,
-          duration: Math.round(videoRef.current?.duration || 0)
+          duration: Math.round(videoDuration)
         })
         .select()
         .single();
