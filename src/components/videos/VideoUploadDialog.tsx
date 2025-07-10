@@ -134,17 +134,24 @@ export const VideoUploadDialog = ({
     console.log('Starting video upload process...');
 
     try {
-      // Get video duration before upload
+      // Step 1: Get video duration (10%)
+      setUploadProgress(10);
       const videoDuration = await getVideoDuration(videoFile);
       
-      // Upload files to Supabase Storage
+      // Step 2: Upload files to Supabase Storage (10% - 80%)
+      setUploadProgress(20);
+      toast.info("Uploading video and thumbnail...");
+      
       const { videoUrl, thumbnailUrl } = await uploadVideoToSupabase(
         videoFile,
         thumbnailFile,
         session.user.id
       );
+      
+      setUploadProgress(80);
 
-      // Create video record in database
+      // Step 3: Create video record in database (80% - 100%)
+      toast.info("Creating video record...");
       const { error: dbError } = await supabase
         .from('videos')
         .insert({
@@ -163,6 +170,7 @@ export const VideoUploadDialog = ({
         throw dbError;
       }
 
+      setUploadProgress(100);
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       toast.success("Video uploaded successfully!");
       onOpenChange(false);
@@ -172,6 +180,7 @@ export const VideoUploadDialog = ({
       toast.error(error.message || "Failed to upload video");
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -237,6 +246,13 @@ export const VideoUploadDialog = ({
             progress={uploadProgress}
             isUploading={isUploading}
           />
+          
+          {isUploading && (
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Processing your video upload...</p>
+            </div>
+          )}
           
           <Button 
             onClick={handleUpload} 

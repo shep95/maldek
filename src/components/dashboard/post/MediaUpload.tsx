@@ -38,16 +38,24 @@ export const MediaUpload = ({
     const processedFiles = [];
 
     try {
-      for (const file of files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         console.log('Processing file:', {
           name: file.name,
           type: file.type,
           size: `${(file.size / (1024 * 1024)).toFixed(2)}MB`
         });
 
+        // Update progress for current file
+        const currentProgress = Math.round((i / files.length) * 50); // First 50% for processing
+        setUploadProgress(prev => ({ ...prev, [file.name]: currentProgress }));
+
         // Check video restrictions
         if (isVideoFile(file)) {
           console.log('Processing video file:', file.name);
+          
+          // Show processing message
+          toast.info(`Processing video: ${file.name}`);
           
           // Check if video meets restrictions
           const { allowed, message } = await checkVideoUploadRestrictions(file, currentUserId);
@@ -56,10 +64,17 @@ export const MediaUpload = ({
             continue;
           }
           
+          // Update progress during compression
+          setUploadProgress(prev => ({ ...prev, [file.name]: 75 }));
           const compressedVideo = await compressVideo(file);
           processedFiles.push(compressedVideo);
+          
+          // Complete processing for this file
+          setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
+          toast.success(`Video processed: ${file.name}`);
         } else {
           processedFiles.push(file);
+          setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
         }
       }
 
@@ -72,12 +87,17 @@ export const MediaUpload = ({
         } as unknown as React.ChangeEvent<HTMLInputElement>;
 
         onFileUpload(event);
+        toast.success("Media files ready for upload");
       }
     } catch (error) {
       console.error('Error processing files:', error);
       toast.error("Failed to process media. Please try again.");
     } finally {
       setIsProcessing(false);
+      // Clear progress after a delay
+      setTimeout(() => {
+        setUploadProgress({});
+      }, 2000);
     }
   };
 
@@ -141,14 +161,23 @@ export const MediaUpload = ({
           dragActive={dragActive}
           isProcessing={isProcessing}
         />
+        
+        {isProcessing && (
+          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full"></div>
+              <span className="text-sm text-muted-foreground">Processing media files...</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {mediaFiles.length > 0 && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <AlertCircle className="h-4 w-4" />
-            {mediaFiles.length} file(s) selected
-          </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <AlertCircle className="h-4 w-4" />
+              {isProcessing ? "Processing media files..." : `${mediaFiles.length} file(s) selected`}
+            </div>
           
           <div className="grid grid-cols-2 gap-2">
             {mediaPreviewUrls.map((url, index) => (

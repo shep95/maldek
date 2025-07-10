@@ -5,10 +5,12 @@ import { toast } from "sonner";
 export const uploadVideoToSupabase = async (
   videoFile: File,
   thumbnailFile: File,
-  userId: string
+  userId: string,
+  onProgress?: (progress: number) => void
 ) => {
   try {
-    // Upload video to videos bucket
+    // Step 1: Upload video (0-60%)
+    onProgress?.(0);
     const videoPath = `${userId}/${Date.now()}_${videoFile.name}`;
     console.log('Uploading video to path:', videoPath);
     
@@ -24,12 +26,13 @@ export const uploadVideoToSupabase = async (
       throw new Error(`Failed to upload video: ${videoError.message}`);
     }
 
+    onProgress?.(60);
     // Get video URL
     const { data: videoData } = supabase.storage
       .from('videos')
       .getPublicUrl(videoPath);
 
-    // Upload thumbnail to videos bucket
+    // Step 2: Upload thumbnail (60-100%)
     const thumbnailPath = `${userId}/thumbnails/${Date.now()}_${thumbnailFile.name}`;
     console.log('Uploading thumbnail to path:', thumbnailPath);
     
@@ -44,6 +47,8 @@ export const uploadVideoToSupabase = async (
       console.error('Thumbnail upload error:', thumbnailError);
       throw new Error(`Failed to upload thumbnail: ${thumbnailError.message}`);
     }
+
+    onProgress?.(100);
 
     // Get thumbnail URL
     const { data: thumbnailData } = supabase.storage
