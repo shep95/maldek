@@ -160,7 +160,7 @@ export const NavItems = ({
     },
     {
       icon: DollarSign,
-      label: "RothLord",
+      label: "Maldek",
       onClick: handleRothLordClick,
       description: "Financial AI Assistant",
       className: "text-accent hover:bg-accent/10"
