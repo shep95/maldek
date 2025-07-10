@@ -39,7 +39,7 @@ export const checkVideoUploadRestrictions = async (
     return { allowed: true }; // Not a video, so no restrictions apply
   }
 
-  // Check video duration
+  // Check video duration with fallback
   try {
     const duration = await getVideoDuration(file);
     
@@ -49,8 +49,14 @@ export const checkVideoUploadRestrictions = async (
         message: "Videos must be less than 15 minutes in length."
       };
     }
+  } catch (error) {
+    console.warn('Could not determine video duration, allowing upload:', error);
+    // Continue with upload if we can't determine duration
+    // This prevents blocking valid uploads due to metadata issues
+  }
 
-    // Check if user has already uploaded a video today
+  // Check if user has already uploaded a video today
+  try {
     const hasUploadedToday = await hasUploadedVideoToday(userId);
     if (hasUploadedToday) {
       return {
@@ -58,15 +64,12 @@ export const checkVideoUploadRestrictions = async (
         message: "You can only upload one video per day."
       };
     }
-
-    return { allowed: true };
   } catch (error) {
-    console.error('Error checking video restrictions:', error);
-    return { 
-      allowed: false, 
-      message: "There was an error processing your video. Please try again." 
-    };
+    console.warn('Could not check video upload history, allowing upload:', error);
+    // Continue with upload if we can't check history
   }
+
+  return { allowed: true };
 };
 
 // Helper function to get video duration - now exported
@@ -74,18 +77,38 @@ export const getVideoDuration = (file: File): Promise<number> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
+    video.muted = true; // Add muted to avoid autoplay issues
+    
+    // Add timeout to prevent hanging
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error("Video metadata loading timeout"));
+    }, 10000); // 10 second timeout
+    
+    const cleanup = () => {
+      if (video.src) {
+        window.URL.revokeObjectURL(video.src);
+      }
+      clearTimeout(timeout);
+    };
     
     video.onloadedmetadata = () => {
-      resolve(video.duration);
-      window.URL.revokeObjectURL(video.src);
+      cleanup();
+      resolve(video.duration || 0);
     };
     
-    video.onerror = () => {
-      reject("Error loading video metadata");
-      window.URL.revokeObjectURL(video.src);
+    video.onerror = (error) => {
+      cleanup();
+      console.error("Video metadata error:", error);
+      reject(new Error("Error loading video metadata"));
     };
     
-    video.src = URL.createObjectURL(file);
+    try {
+      video.src = URL.createObjectURL(file);
+    } catch (error) {
+      cleanup();
+      reject(new Error("Error creating video URL"));
+    }
   });
 };
 
