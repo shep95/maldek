@@ -36,18 +36,13 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
             <img 
               src="/lovable-uploads/bc911b69-87dc-40e6-8df5-56efb7a2e7ee.png" 
               alt="Maldek AI" 
-              className="w-32 h-32 mx-auto rounded-lg object-cover mb-4 cursor-pointer hover:scale-105 transition-transform"
-              onClick={handleRothLordClick}
+              className="w-32 h-32 mx-auto rounded-lg object-cover mb-4"
             />
           </div>
           
           <div className="text-center space-y-3">
             <p className="text-muted-foreground">
-              Trade with pattern recognition without numerology or astrology
-            </p>
-            
-            <p className="text-muted-foreground">
-              Don't be greedy, but here to help you make money with the stock and crypto market
+              Trade with pattern recognition without numerology or astrology on stocks, futures, & crypto
             </p>
             
             <Button 
