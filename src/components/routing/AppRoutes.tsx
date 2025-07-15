@@ -21,36 +21,45 @@ import Subscription from "@/pages/Subscription";
 import BosleyCoin from "@/pages/BosleyCoin";
 import Support from "@/pages/Support";
 import Spaces from "@/pages/Spaces";
+import { useEffect, useState } from "react";
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const session = useSession();
-  
-  if (!session) {
-    return <Navigate to="/auth" replace />;
-  }
-  
-  return <>{children}</>;
-};
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-full max-w-md space-y-4 text-center">
+      <h1 className="text-2xl font-bold text-foreground">Loading Maldek...</h1>
+      <div className="flex justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    </div>
+  </div>
+);
 
 export const AppRoutes = () => {
   const session = useSession();
   const { isLoading } = useSessionContext();
-  
-  // Show loading screen while session is being determined
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-full max-w-md space-y-4 text-center">
-          <h1 className="text-2xl font-bold text-foreground">Loading Maldek...</h1>
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </div>
-    );
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        setLoadingTimeout(true);
+        console.warn("Session loading timed out, redirecting to auth");
+      }, 8000); // 8 second timeout
+      
+      return () => clearTimeout(timer);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [isLoading]);
+
+  // Show loading screen while session is being determined (with timeout)
+  if (isLoading && !loadingTimeout) {
+    return <LoadingScreen />;
   }
-  
-  if (!session) {
+
+  // If loading timed out or no session, show auth routes
+  if (!session || loadingTimeout) {
     return (
       <Routes>
         <Route path="/auth" element={<Auth />} />
