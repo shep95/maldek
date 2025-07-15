@@ -74,7 +74,32 @@ const Index = () => {
     );
   }
 
-  return null;
+  // Fallback UI in case navigation fails
+  return (
+    <div className="min-h-screen min-h-screen-dynamic flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md space-y-4 text-center">
+        <h1 className="text-2xl font-bold text-foreground">Welcome to Maldek</h1>
+        <p className="text-muted-foreground">Redirecting you to the app...</p>
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        </div>
+        <div className="space-y-2">
+          <button 
+            onClick={() => navigate("/auth", { replace: true })}
+            className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+          >
+            Go to Login
+          </button>
+          <button 
+            onClick={() => navigate("/dashboard", { replace: true })}
+            className="w-full bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90 transition-colors"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Index;
