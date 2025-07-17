@@ -147,7 +147,8 @@ const Dashboard = () => {
           "py-6 md:py-8 md:pl-28 lg:pl-32",
           "animate-fade-in",
           "mt-20 md:mt-0",
-          "min-h-[100dvh]"
+          "min-h-[100dvh]",
+          "overflow-y-auto scrollbar-modern"
         )}>
           <PostList 
             followingOnly={followingOnly} 
