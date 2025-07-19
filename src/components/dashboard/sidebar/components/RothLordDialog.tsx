@@ -18,9 +18,6 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
     window.open('https://chatgpt.com/g/g-686c4ee18bc0819189f095327f118f49-rothlord-zorak-corp', '_blank');
   };
 
-  const handleAlgroClick = () => {
-    window.open('https://chatgpt.com/g/g-6869a17e31ec819181609db91b61e1e8-algro-zorak-corp', '_blank');
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,7 +39,7 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
           
           <div className="text-center space-y-3">
             <p className="text-muted-foreground">
-              Trade with pattern recognition without numerology or astrology on stocks, futures, & crypto
+              🜍 wealth from the unseen 🜍
             </p>
             
             <Button 
@@ -55,22 +52,6 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
             </Button>
           </div>
 
-          <div className="border-t border-white/10 pt-4">
-            <div className="text-center space-y-3">
-              <p className="text-muted-foreground">
-                Trade with numerology and astrology
-              </p>
-              
-              <Button 
-                onClick={handleAlgroClick}
-                className="w-full glass-morphism hover:bg-accent/20 border-accent/30"
-                variant="outline"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Access Algro
-              </Button>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
