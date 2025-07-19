@@ -66,8 +66,8 @@
 .scrollbar-modern::-webkit-scrollbar-thumb {
   background: linear-gradient(
     135deg,
-    hsl(var(--primary) / 0.8),
-    hsl(var(--primary) / 0.6)
+    hsl(24 100% 58% / 0.8),
+    hsl(24 100% 58% / 0.6)
   );
   border-radius: 4px;
   border: 1px solid hsl(var(--border));
@@ -77,18 +77,18 @@
 .scrollbar-modern::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     135deg,
-    hsl(var(--primary)),
-    hsl(var(--primary) / 0.8)
+    hsl(24 100% 58%),
+    hsl(24 100% 58% / 0.8)
   );
-  border-color: hsl(var(--primary) / 0.5);
+  border-color: hsl(24 100% 58% / 0.5);
   transform: scale(1.1);
 }
 
 .scrollbar-modern::-webkit-scrollbar-thumb:active {
   background: linear-gradient(
     135deg,
-    hsl(var(--primary) / 0.9),
-    hsl(var(--primary) / 0.7)
+    hsl(24 100% 58% / 0.9),
+    hsl(24 100% 58% / 0.7)
   );
 }
 
