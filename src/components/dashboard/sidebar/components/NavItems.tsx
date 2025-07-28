@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMessageNotificationCount } from "@/hooks/useMessageNotificationCount";
 import { useState } from "react";
 import { RothLordDialog } from "./RothLordDialog";
+import { PandoraDialog } from "./PandoraDialog";
 
 interface NavItemsProps {
   subscription: any;
@@ -37,6 +38,7 @@ export const NavItems = ({
   const session = useSession();
   const navigate = useNavigate();
   const [isRothLordDialogOpen, setIsRothLordDialogOpen] = useState(false);
+  const [isPandoraDialogOpen, setIsPandoraDialogOpen] = useState(false);
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
@@ -62,6 +64,10 @@ export const NavItems = ({
 
   const handleRothLordClick = () => {
     setIsRothLordDialogOpen(true);
+  };
+
+  const handlePandoraClick = () => {
+    setIsPandoraDialogOpen(true);
   };
 
   // Check if today is August 26th
@@ -100,11 +106,10 @@ export const NavItems = ({
       badge: unreadMessageCount > 0 ? unreadMessageCount : undefined
     },
     {
-      icon: Zap,
-      label: "Zuko",
-      path: "https://www.zukoi.app/",
-      active: false,
-      description: "Zuko AI Assistant",
+      icon: Bot,
+      label: "PANDORA",
+      onClick: handlePandoraClick,
+      description: "Next Gen AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
     { 
@@ -208,6 +213,11 @@ export const NavItems = ({
       <RothLordDialog 
         open={isRothLordDialogOpen} 
         onOpenChange={setIsRothLordDialogOpen} 
+      />
+      
+      <PandoraDialog 
+        open={isPandoraDialogOpen} 
+        onOpenChange={setIsPandoraDialogOpen} 
       />
     </>
   );
