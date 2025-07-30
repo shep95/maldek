@@ -18,14 +18,14 @@ export const PandoraDialog = ({ open, onOpenChange }: PandoraDialogProps) => {
         <DialogHeader>
           <DialogTitle className="text-gradient text-xl font-bold text-center flex items-center justify-center gap-2">
             <Bot className="h-6 w-6" />
-            ZUKO
+            PANDORA
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
           <div className="text-center space-y-3">
             <p className="text-muted-foreground text-lg">
-              Zuko Is The Next Gen Of AI Being Built
+              Pandora Is The Next Gen Of AI Being Built
             </p>
           </div>
         </div>

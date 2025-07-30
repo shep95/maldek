@@ -107,7 +107,7 @@ export const NavItems = ({
     },
     {
       icon: Bot,
-      label: "ZUKO",
+      label: "PANDORA",
       onClick: handlePandoraClick,
       description: "Next Gen AI Assistant",
       className: "text-accent hover:bg-accent/10"
@@ -161,13 +161,6 @@ export const NavItems = ({
       path: "/privacy",
       active: location.pathname === "/privacy",
       description: "Access private posts",
-      className: "text-accent hover:bg-accent/10"
-    },
-    {
-      icon: DollarSign,
-      label: "HADES",
-      onClick: handleRothLordClick,
-      description: "Financial AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
     { 
