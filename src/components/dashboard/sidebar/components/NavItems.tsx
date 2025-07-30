@@ -107,7 +107,7 @@ export const NavItems = ({
     },
     {
       icon: Bot,
-      label: "PANDORA",
+      label: "ZUKO",
       onClick: handlePandoraClick,
       description: "Next Gen AI Assistant",
       className: "text-accent hover:bg-accent/10"
