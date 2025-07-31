@@ -11,6 +11,7 @@ import { useMessageNotificationCount } from "@/hooks/useMessageNotificationCount
 import { useState } from "react";
 import { RothLordDialog } from "./RothLordDialog";
 import { PandoraDialog } from "./PandoraDialog";
+import { BosleyCoinDialog } from "./BosleyCoinDialog";
 
 interface NavItemsProps {
   subscription: any;
@@ -39,6 +40,7 @@ export const NavItems = ({
   const navigate = useNavigate();
   const [isRothLordDialogOpen, setIsRothLordDialogOpen] = useState(false);
   const [isPandoraDialogOpen, setIsPandoraDialogOpen] = useState(false);
+  const [isBosleyCoinDialogOpen, setIsBosleyCoinDialogOpen] = useState(false);
 
   const handleNavigation = (path?: string) => {
     if (isMobile) {
@@ -68,6 +70,10 @@ export const NavItems = ({
 
   const handlePandoraClick = () => {
     setIsPandoraDialogOpen(true);
+  };
+
+  const handleBosleyCoinClick = () => {
+    setIsBosleyCoinDialogOpen(true);
   };
 
   // Check if today is August 26th
@@ -142,9 +148,8 @@ export const NavItems = ({
     {
       icon: Coins,
       label: "Bosley Coin",
-      path: "/bosley-coin",
-      active: location.pathname === "/bosley-coin",
-      description: "Meme coin analytics",
+      onClick: handleBosleyCoinClick,
+      description: "Official app cryptocurrency",
       className: "text-accent hover:bg-accent/10"
     },
     {
@@ -218,6 +223,11 @@ export const NavItems = ({
       <PandoraDialog 
         open={isPandoraDialogOpen} 
         onOpenChange={setIsPandoraDialogOpen} 
+      />
+      
+      <BosleyCoinDialog 
+        open={isBosleyCoinDialogOpen} 
+        onOpenChange={setIsBosleyCoinDialogOpen} 
       />
     </>
   );
