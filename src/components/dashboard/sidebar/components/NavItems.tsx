@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMessageNotificationCount } from "@/hooks/useMessageNotificationCount";
 import { useState } from "react";
 import { RothLordDialog } from "./RothLordDialog";
-import { PandoraDialog } from "./PandoraDialog";
+import { LibraDialog } from "./LibraDialog";
 import { BosleyCoinDialog } from "./BosleyCoinDialog";
 
 interface NavItemsProps {
@@ -39,7 +39,7 @@ export const NavItems = ({
   const session = useSession();
   const navigate = useNavigate();
   const [isRothLordDialogOpen, setIsRothLordDialogOpen] = useState(false);
-  const [isPandoraDialogOpen, setIsPandoraDialogOpen] = useState(false);
+  const [isLibraDialogOpen, setIsLibraDialogOpen] = useState(false);
   const [isBosleyCoinDialogOpen, setIsBosleyCoinDialogOpen] = useState(false);
 
   const handleNavigation = (path?: string) => {
@@ -68,8 +68,8 @@ export const NavItems = ({
     setIsRothLordDialogOpen(true);
   };
 
-  const handlePandoraClick = () => {
-    setIsPandoraDialogOpen(true);
+  const handleLibraClick = () => {
+    setIsLibraDialogOpen(true);
   };
 
   const handleBosleyCoinClick = () => {
@@ -113,8 +113,8 @@ export const NavItems = ({
     },
     {
       icon: Bot,
-      label: "PANDORA",
-      onClick: handlePandoraClick,
+      label: "LIBRA",
+      onClick: handleLibraClick,
       description: "Next Gen AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
@@ -220,9 +220,9 @@ export const NavItems = ({
         onOpenChange={setIsRothLordDialogOpen} 
       />
       
-      <PandoraDialog 
-        open={isPandoraDialogOpen} 
-        onOpenChange={setIsPandoraDialogOpen} 
+      <LibraDialog 
+        open={isLibraDialogOpen} 
+        onOpenChange={setIsLibraDialogOpen} 
       />
       
       <BosleyCoinDialog 
