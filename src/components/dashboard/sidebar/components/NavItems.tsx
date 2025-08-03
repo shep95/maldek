@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMessageNotificationCount } from "@/hooks/useMessageNotificationCount";
 import { useState } from "react";
 import { RothLordDialog } from "./RothLordDialog";
-import { LibraDialog } from "./LibraDialog";
 import { BosleyCoinDialog } from "./BosleyCoinDialog";
 
 interface NavItemsProps {
@@ -39,7 +38,7 @@ export const NavItems = ({
   const session = useSession();
   const navigate = useNavigate();
   const [isRothLordDialogOpen, setIsRothLordDialogOpen] = useState(false);
-  const [isLibraDialogOpen, setIsLibraDialogOpen] = useState(false);
+  
   const [isBosleyCoinDialogOpen, setIsBosleyCoinDialogOpen] = useState(false);
 
   const handleNavigation = (path?: string) => {
@@ -68,9 +67,6 @@ export const NavItems = ({
     setIsRothLordDialogOpen(true);
   };
 
-  const handleLibraClick = () => {
-    setIsLibraDialogOpen(true);
-  };
 
   const handleBosleyCoinClick = () => {
     setIsBosleyCoinDialogOpen(true);
@@ -113,8 +109,8 @@ export const NavItems = ({
     },
     {
       icon: Bot,
-      label: "LIBRA",
-      onClick: handleLibraClick,
+      label: "ZUKO",
+      path: "https://www.zukoi.app/",
       description: "Next Gen AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
@@ -220,10 +216,6 @@ export const NavItems = ({
         onOpenChange={setIsRothLordDialogOpen} 
       />
       
-      <LibraDialog 
-        open={isLibraDialogOpen} 
-        onOpenChange={setIsLibraDialogOpen} 
-      />
       
       <BosleyCoinDialog 
         open={isBosleyCoinDialogOpen} 
