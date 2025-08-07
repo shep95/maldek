@@ -24,7 +24,7 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
       <DialogContent className="glass-morphism border-white/10 max-w-md">
         <DialogHeader>
           <DialogTitle className="text-gradient text-xl font-bold text-center">
-            🜍 HADES 🜍
+            🜍 ALGRO 🜍
           </DialogTitle>
         </DialogHeader>
         
@@ -32,7 +32,7 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
           <div className="text-center">
             <img 
               src="/lovable-uploads/d12fb3e9-d450-4243-8348-23a0def30642.png" 
-              alt="HADES AI" 
+              alt="ALGRO AI" 
               className="w-32 h-32 mx-auto rounded-lg object-cover mb-4"
             />
           </div>
@@ -48,7 +48,7 @@ export const RothLordDialog = ({ open, onOpenChange }: RothLordDialogProps) => {
               variant="outline"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
-              Access HADES AI
+              Access ALGRO AI
             </Button>
           </div>
 
