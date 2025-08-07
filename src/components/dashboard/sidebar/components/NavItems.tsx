@@ -109,6 +109,13 @@ export const NavItems = ({
     },
     {
       icon: Bot,
+      label: "ALGRO",
+      onClick: handleRothLordClick,
+      description: "🜍 wealth from the unseen 🜍",
+      className: "text-accent hover:bg-accent/10"
+    },
+    {
+      icon: Bot,
       label: "ZUKO",
       path: "https://www.zukoi.app/",
       description: "Next Gen AI Assistant",
