@@ -15,7 +15,7 @@ export const useFollowStatus = () => {
       .select('*')
       .eq('follower_id', targetUserId)
       .eq('following_id', currentUserId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error checking follow status:', error);

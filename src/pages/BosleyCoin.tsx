@@ -208,7 +208,7 @@ const BosleyCoin = () => {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-4 mt-4 sm:mt-6">
         {isLoading ? (
           Array(4).fill(0).map((_, index) => (
-            <div key={index} className="bg-background/50 rounded-lg p-2 sm:p-3 md:p-4 border border-border/50 animate-pulse">
+            <div key={`skeleton-${index}`} className="bg-background/50 rounded-lg p-2 sm:p-3 md:p-4 border border-border/50 animate-pulse">
               <div className="h-3 sm:h-4 w-12 sm:w-16 md:w-20 bg-muted rounded mb-2"></div>
               <div className="h-4 sm:h-5 md:h-6 w-10 sm:w-12 md:w-16 bg-muted rounded"></div>
             </div>

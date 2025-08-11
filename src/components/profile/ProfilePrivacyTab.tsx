@@ -475,7 +475,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                   {files.length > 0 && (
                     <div className="mt-2 space-y-2">
                       {files.map((file, index) => (
-                        <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div key={`file-${index}`} className="flex items-center gap-2 text-sm text-muted-foreground">
                           <ImageIcon className="w-4 h-4" />
                           {file.name}
                         </div>
@@ -521,7 +521,7 @@ export const ProfilePrivacyTab = ({ userId }: ProfilePrivacyTabProps) => {
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         {post.media_urls.map((url, index) => (
                           <div 
-                            key={index} 
+                            key={`media-${index}`} 
                             className="relative aspect-video cursor-pointer group"
                             onClick={() => setSelectedMedia(url)}
                           >

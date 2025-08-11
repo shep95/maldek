@@ -11,7 +11,7 @@ export const fetchRelevantAd = async () => {
     .gt('campaign_start_time', new Date().toISOString())
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error fetching ad:', error);

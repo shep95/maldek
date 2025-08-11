@@ -69,7 +69,7 @@ export const PostText = ({
       if (part.startsWith('```') && part.endsWith('```')) {
         const code = part.slice(3, -3).trim();
         return (
-          <div key={index} className="my-4">
+          <div key={`code-${index}`} className="my-4">
             <SyntaxHighlighter
               language="typescript"
               style={oneDark}

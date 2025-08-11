@@ -68,7 +68,7 @@ export const PricingCard = ({
       </div>
       <div className="space-y-4 py-9">
         {benefits.map((benefit, index) => (
-          <Benefit key={index} {...benefit} />
+          <Benefit key={`benefit-${index}`} {...benefit} />
         ))}
       </div>
     </Card>

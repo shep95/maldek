@@ -39,7 +39,7 @@ export const AnalyticsChart = ({ data }: AnalyticsChartProps) => {
         <div className="bg-black/90 border border-accent/20 p-4 rounded-lg shadow-xl">
           <p className="text-white font-medium mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center gap-2 text-sm">
+            <div key={`entry-${index}`} className="flex items-center gap-2 text-sm">
               <div 
                 className="w-3 h-3 rounded-full" 
                 style={{ backgroundColor: entry.color }}

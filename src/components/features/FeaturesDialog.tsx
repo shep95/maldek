@@ -78,7 +78,7 @@ export const FeaturesDialog = ({ isOpen, onClose }: FeaturesDialogProps) => {
             <div className="grid gap-6 sm:grid-cols-2">
               {features.map((feature, index) => (
                 <div
-                  key={index}
+                  key={`feature-${index}`}
                   className="group flex items-start gap-3 p-4 rounded-lg bg-background/40 backdrop-blur-sm border border-border/50 hover:bg-background/50 transition-colors"
                 >
                   <div className="relative">

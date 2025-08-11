@@ -19,7 +19,7 @@ export const checkForUpdate = async (): Promise<AppVersion | null> => {
       .select('*')
       .eq('platform', platform)
       .eq('is_latest', true)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error checking for updates:', error);

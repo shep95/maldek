@@ -309,7 +309,7 @@ export const EnhancedAuthForm = ({ isLogin, onSubmit, isSubmitting = false }: En
           {securityWarnings.length > 0 && (
             <div className="text-xs text-red-500 mt-1">
               {securityWarnings.map((warning, index) => (
-                <div key={index}>{warning}</div>
+                <div key={`warning-${index}`}>{warning}</div>
               ))}
             </div>
           )}
