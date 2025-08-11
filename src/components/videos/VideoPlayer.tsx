@@ -334,10 +334,12 @@ export const VideoPlayer = ({
               onPause={handlePause}
               onEnded={handleEnded}
               playsInline
+              muted={autoPlay}
               loop
-              preload="auto"
+              preload="metadata"
               crossOrigin="anonymous"
               autoPlay={autoPlay}
+              webkit-playsinline="true"
             />
             
             <Button
@@ -367,7 +369,6 @@ export const VideoPlayer = ({
 
       <div className={`pip-container ${isPiPActive ? 'active' : ''}`}>
         <video
-          ref={videoRef}
           src={publicUrl}
           className="w-full h-full object-contain"
           controls={controls}
@@ -377,10 +378,12 @@ export const VideoPlayer = ({
           onPause={handlePause}
           onEnded={handleEnded}
           playsInline
+          muted={autoPlay}
           loop
-          preload="auto"
+          preload="metadata"
           crossOrigin="anonymous"
           autoPlay={autoPlay}
+          webkit-playsinline="true"
         />
         <div className="pip-controls">
           <Button

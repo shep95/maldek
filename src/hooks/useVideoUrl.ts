@@ -39,8 +39,13 @@ export const useVideoUrl = (videoUrl: string | null) => {
           throw new Error('Failed to generate video URL');
         }
 
-        console.log('useVideoUrl: Generated public URL:', data.publicUrl);
-        setPublicUrl(data.publicUrl);
+        // Add cache-busting parameter for mobile compatibility
+        const url = new URL(data.publicUrl);
+        url.searchParams.set('t', Date.now().toString());
+        const finalUrl = url.toString();
+
+        console.log('useVideoUrl: Generated public URL:', finalUrl);
+        setPublicUrl(finalUrl);
       } catch (err) {
         console.error('useVideoUrl: Error getting video URL:', {
           error: err,

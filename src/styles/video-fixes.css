@@ -1,0 +1,56 @@
+/* Video player mobile fixes */
+video {
+  -webkit-playsinline: true;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* Fix for iOS video black screen */
+video::-webkit-media-controls-start-playback-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
+/* Ensure video containers have proper dimensions on mobile */
+.video-container {
+  width: 100%;
+  height: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fix video aspect ratio on mobile */
+video {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+  video {
+    /* Prevent video zoom on double tap */
+    touch-action: manipulation;
+  }
+  
+  /* Ensure video controls are touch-friendly */
+  video::-webkit-media-controls {
+    padding: 8px;
+  }
+  
+  video::-webkit-media-controls-panel {
+    min-height: 44px;
+  }
+}
+
+/* Fix for Android video playback */
+video {
+  background-color: #000;
+}
+
+/* Prevent video flickering on mobile */
+video {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}

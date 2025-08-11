@@ -254,6 +254,10 @@ const VideoPlayer = ({ src }: { src: string }) => {
         onTimeUpdate={handleTimeUpdate}
         src={src}
         onClick={togglePlay}
+        playsInline
+        muted={false}
+        preload="metadata"
+        webkit-playsinline="true"
       />
 
       <Button
