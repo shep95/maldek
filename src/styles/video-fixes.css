@@ -3,6 +3,7 @@ video {
   -webkit-playsinline: true;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
+  background-color: #000 !important;
 }
 
 /* Fix for iOS video black screen */
@@ -11,20 +12,33 @@ video::-webkit-media-controls-start-playback-button {
   -webkit-appearance: none;
 }
 
+/* iOS specific video fixes */
+video::-webkit-media-controls {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+video::-webkit-media-controls-panel {
+  background: rgba(0, 0, 0, 0.8);
+}
+
 /* Ensure video containers have proper dimensions on mobile */
-.video-container {
+.video-container, 
+.relative:has(video),
+[class*="aspect-ratio"] video {
   width: 100%;
   height: auto;
   position: relative;
   overflow: hidden;
+  background-color: #000;
 }
 
 /* Fix video aspect ratio on mobile */
 video {
-  width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: auto !important;
   max-width: 100%;
   object-fit: contain;
+  background-color: #000 !important;
 }
 
 /* Mobile touch improvements */
@@ -32,25 +46,46 @@ video {
   video {
     /* Prevent video zoom on double tap */
     touch-action: manipulation;
+    /* Force hardware acceleration */
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    /* Ensure black background */
+    background: #000 !important;
   }
   
   /* Ensure video controls are touch-friendly */
   video::-webkit-media-controls {
     padding: 8px;
+    background: rgba(0, 0, 0, 0.8);
   }
   
   video::-webkit-media-controls-panel {
     min-height: 44px;
+    background: rgba(0, 0, 0, 0.8);
+  }
+  
+  /* Fix for Safari mobile */
+  video::-webkit-media-controls-play-button {
+    background-color: rgba(255, 255, 255, 0.8);
   }
 }
 
 /* Fix for Android video playback */
 video {
-  background-color: #000;
+  background-color: #000 !important;
 }
 
 /* Prevent video flickering on mobile */
 video {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  /* Ensure proper rendering */
+  will-change: transform;
+}
+
+/* Additional iOS fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  video {
+    -webkit-optimize-contrast: auto;
+  }
 }

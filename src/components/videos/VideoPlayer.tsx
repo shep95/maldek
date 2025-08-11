@@ -326,7 +326,7 @@ export const VideoPlayer = ({
             <video
               ref={videoRef}
               src={publicUrl}
-              className={`w-full h-full object-contain ${className}`}
+              className={`w-full h-full object-contain bg-black ${className}`}
               controls={controls}
               onError={handleVideoError}
               onLoadedData={handleVideoLoaded}
@@ -337,8 +337,8 @@ export const VideoPlayer = ({
               muted={autoPlay}
               loop
               preload="metadata"
-              crossOrigin="anonymous"
-              autoPlay={autoPlay}
+              style={{ backgroundColor: '#000000' }}
+              x-webkit-airplay="allow"
               webkit-playsinline="true"
             />
             
