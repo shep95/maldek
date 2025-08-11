@@ -190,9 +190,6 @@ export const TelegramMediaViewer = ({
               src={mediaUrl}
               controls
               autoPlay
-              playsInline
-              preload="metadata"
-              webkit-playsinline="true"
               className="rounded-lg max-h-[70vh] max-w-full object-contain"
             />
           ) : (

@@ -250,15 +250,10 @@ const VideoPlayer = ({ src }: { src: string }) => {
       
       <video
         ref={videoRef}
-        className="w-full bg-black"
-        style={{ backgroundColor: '#000000' }}
+        className="w-full"
         onTimeUpdate={handleTimeUpdate}
         src={src}
         onClick={togglePlay}
-        playsInline
-        preload="metadata"
-        x-webkit-airplay="allow"
-        webkit-playsinline="true"
       />
 
       <Button

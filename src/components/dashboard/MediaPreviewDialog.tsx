@@ -119,8 +119,6 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
               src={selectedMedia}
               controls
               playsInline
-              preload="metadata"
-              webkit-playsinline="true"
               loop
               className="max-h-full max-w-full rounded-lg"
               onLoadStart={() => {
@@ -136,6 +134,7 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
                 setIsLoading(false);
                 setError('Failed to load media');
               }}
+              preload="metadata"
             />
           ) : (
             <AspectRatio ratio={16 / 9} className="w-full max-h-[90vh]">

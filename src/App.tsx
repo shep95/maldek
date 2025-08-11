@@ -42,16 +42,9 @@ const App = () => {
     // Enhanced security initialization
     try {
       const theme = localStorage.getItem('theme') || 'dark';
-      // Remove any existing theme classes first
-      document.documentElement.classList.remove('dark', 'light');
-      // Add the current theme
       document.documentElement.classList.add(theme);
-      // Ensure the body has proper styling for mobile
-      document.body.style.minHeight = '100vh';
-      document.body.style.minHeight = '100dvh';
     } catch (error) {
       console.warn('Error setting theme:', error);
-      document.documentElement.classList.remove('dark', 'light');
       document.documentElement.classList.add('dark');
     }
 

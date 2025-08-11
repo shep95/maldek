@@ -24,11 +24,9 @@ export const useSpaceAudio = (spaceId: string, userId: string) => {
       const reconnectTimer = setTimeout(async () => {
         try {
           await leaveChannel();
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait before reconnecting
           await joinChannel(userId);
           setIsReconnecting(false);
           setReconnectAttempts(0);
-          toast.success('Reconnected to audio');
         } catch (err) {
           console.error('Reconnection failed:', err);
           setReconnectAttempts(prev => prev + 1);
@@ -41,12 +39,11 @@ export const useSpaceAudio = (spaceId: string, userId: string) => {
 
       return () => clearTimeout(reconnectTimer);
     }
-  }, [audioError, reconnectAttempts, spaceId, userId, joinChannel, leaveChannel]);
+  }, [audioError, reconnectAttempts, spaceId, userId]);
 
   const handleMuteToggle = () => {
     try {
       toggleMute();
-      toast.success(isMuted ? 'Microphone unmuted' : 'Microphone muted');
     } catch (error) {
       console.error('Error toggling mute:', error);
       toast.error('Failed to toggle microphone. Please check your permissions.');
