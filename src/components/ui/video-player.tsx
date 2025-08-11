@@ -256,7 +256,6 @@ const VideoPlayer = ({ src }: { src: string }) => {
         src={src}
         onClick={togglePlay}
         playsInline
-        muted={false}
         preload="metadata"
         x-webkit-airplay="allow"
         webkit-playsinline="true"

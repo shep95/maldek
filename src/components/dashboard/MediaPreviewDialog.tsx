@@ -119,7 +119,6 @@ export const MediaPreviewDialog = ({ selectedMedia, onClose }: MediaPreviewDialo
               src={selectedMedia}
               controls
               playsInline
-              muted={true}
               preload="metadata"
               webkit-playsinline="true"
               loop

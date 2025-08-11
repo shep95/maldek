@@ -334,7 +334,6 @@ export const VideoPlayer = ({
               onPause={handlePause}
               onEnded={handleEnded}
               playsInline
-              muted={autoPlay}
               loop
               preload="metadata"
               style={{ backgroundColor: '#000000' }}
