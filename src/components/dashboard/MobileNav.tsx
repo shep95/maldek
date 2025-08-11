@@ -108,8 +108,9 @@ export const MobileNav = () => {
         className="fixed inset-0 md:hidden pointer-events-none"
       />
 
-      <nav className="fixed bottom-6 left-4 right-4 md:hidden z-[100] pb-safe">
-        <div className="flex justify-around items-center bg-black/60 backdrop-blur-xl rounded-xl border border-white/20 p-3 shadow-2xl">
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 md:hidden z-[200] bg-black/80 backdrop-blur-xl border-t border-white/20">
+        <div className="flex justify-around items-center p-4 safe-area-bottom">
           {navItems.map((item, index) => (
             <Button
               key={item.label}
@@ -120,16 +121,16 @@ export const MobileNav = () => {
                 "text-white/80 hover:text-white",
                 "active:scale-95 transition-all duration-200",
                 "touch-manipulation select-none",
-                "min-w-[44px] min-h-[44px]",
-                "hover:bg-white/10",
+                "min-w-[48px] min-h-[48px]",
+                "hover:bg-white/10 rounded-lg",
                 item.path && location.pathname === item.path && "text-accent bg-accent/20"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className="h-6 w-6" />
             </Button>
           ))}
         </div>
-      </nav>
+      </div>
     </>
   );
 };
