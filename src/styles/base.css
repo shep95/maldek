@@ -49,24 +49,24 @@
   }
 
   .dark {
-    --background: 0 0% 0%;  /* Pure black background */
+    --background: 0 0% 3%;  /* Very dark gray instead of pure black */
     --foreground: 0 0% 98%;
-    --card: 0 0% 0%;  /* Pure black for cards */
+    --card: 0 0% 5%;  /* Slightly lighter for cards */
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 0%;  /* Pure black for popover */
+    --popover: 0 0% 5%;  /* Slightly lighter for popover */
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 7%;  /* Very dark gray */
+    --primary: 0 0% 9%;  /* Darker gray */
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 7%;  /* Very dark gray */
+    --secondary: 0 0% 9%;  /* Darker gray */
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 7%;  /* Very dark gray */
+    --muted: 0 0% 9%;  /* Darker gray */
     --muted-foreground: 240 5% 64.9%;
     --accent: 24 95% 53%;  /* Orange in dark mode */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 7%;  /* Very dark gray for borders */
-    --input: 0 0% 7%;  /* Very dark gray for inputs */
+    --border: 0 0% 14%;  /* Lighter border for visibility */
+    --input: 0 0% 14%;  /* Lighter input for visibility */
     --ring: 24 95% 53%;  /* Orange in dark mode */
   }
 }
@@ -102,6 +102,12 @@
     /* Improve mobile performance */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Force repaint to prevent black screen */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    /* Ensure proper rendering on mobile */
+    position: relative;
+    width: 100%;
   }
 
   /* Ensure mobile viewport fills screen properly */
@@ -130,6 +136,17 @@
       -webkit-text-size-adjust: 100%;
       /* Better touch handling */
       touch-action: manipulation;
+      /* Force GPU acceleration to prevent black screen */
+      -webkit-transform: translate3d(0, 0, 0);
+      transform: translate3d(0, 0, 0);
+      /* Ensure proper background rendering */
+      background-color: hsl(var(--background));
+    }
+    
+    html {
+      /* Force reflow on mobile to prevent rendering issues */
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
     }
     
     /* Ensure elements don't cause horizontal scroll */
