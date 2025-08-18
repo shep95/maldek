@@ -101,11 +101,11 @@ export const NavItems = ({
     },
     { 
       icon: MessagesSquare, 
-      label: "Messages", 
-      path: "/messages", 
-      active: location.pathname === "/messages",
-      description: "View your messages",
-      badge: unreadMessageCount > 0 ? unreadMessageCount : undefined
+      label: "Messages | ROME", 
+      path: "https://therome.app/", 
+      active: false,
+      description: "Visit Rome app for messaging",
+      badge: undefined
     },
     {
       icon: Bot,
