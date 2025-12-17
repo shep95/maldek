@@ -21,15 +21,17 @@ export const Sidebar = ({ setIsCreatingPost }: SidebarProps) => {
       isCollapsed ? "w-24" : "w-72"
     )}>
       <Card className={cn(
-        "h-full flex flex-col bg-background/20 border-border/50 backdrop-blur-md relative",
-        "rounded-xl shadow-lg hover:shadow-xl transition-all",
-        isCollapsed && "shadow-lg hover:shadow-xl hover:shadow-accent/5",
+        "h-full flex flex-col border-border/30 backdrop-blur-xl relative",
+        "rounded-2xl transition-all duration-300",
+        "bg-card/50 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.3)]",
+        "hover:bg-card/60 hover:shadow-[0_12px_48px_-12px_hsl(0_0%_0%/0.4)]",
+        isCollapsed && "hover:shadow-[0_12px_48px_-12px_hsl(var(--accent)/0.15)]",
         "py-6"
       )}>
         <Button 
           variant="ghost" 
           size="icon"
-          className="absolute -right-3 top-6 z-50 bg-background border shadow-md"
+          className="absolute -right-3 top-6 z-50 bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg hover:bg-card hover:shadow-xl transition-all"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}

@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { debounce } from "lodash";
 import { SearchResults } from "./sidebar/SearchResults";
 import { TrendingPosts } from "./sidebar/TrendingPosts";
+import { cn } from "@/lib/utils";
 
 export const RightSidebar = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -192,14 +193,18 @@ export const RightSidebar = () => {
 
   return (
     <div className="hidden lg:block fixed right-0 h-screen p-4 w-80">
-      <Card className="h-[90vh] flex flex-col bg-black/20 border-border/50 backdrop-blur-md p-4 rounded-xl">
+      <Card className={cn(
+        "h-[90vh] flex flex-col p-5 rounded-2xl transition-all duration-300",
+        "bg-card/50 backdrop-blur-xl border-border/30",
+        "shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.3)]"
+      )}>
         <div className="relative mb-6">
           <Input 
             placeholder="Search @users, #hashtags, or posts" 
-            className="pl-10 border-accent/20 bg-background/50 focus:border-accent transition-colors rounded-lg"
+            className="pl-10 border-border/50 bg-background/30 focus:border-accent/50 focus:bg-background/50 transition-all rounded-xl h-11"
             onChange={(e) => handleSearch(e.target.value)}
           />
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         </div>
 
         {searchQuery && (

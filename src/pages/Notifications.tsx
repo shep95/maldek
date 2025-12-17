@@ -62,7 +62,9 @@ const Notifications = () => {
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8 animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Notifications</h1>
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+          Notifications
+        </h1>
         <p className="text-muted-foreground mt-2">
           Stay updated with interactions on your content
         </p>
@@ -71,13 +73,31 @@ const Notifications = () => {
       <NotificationFilters onFilterChange={setFilters} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start mb-6">
-          <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-          <TabsTrigger value="unread" className="flex-1">
+        <TabsList className="w-full justify-start mb-6 bg-card/50 backdrop-blur-sm border border-border/30 p-1 rounded-xl">
+          <TabsTrigger 
+            value="all" 
+            className="flex-1 rounded-lg data-[state=active]:bg-accent/15 data-[state=active]:text-accent transition-all"
+          >
+            All
+          </TabsTrigger>
+          <TabsTrigger 
+            value="unread" 
+            className="flex-1 rounded-lg data-[state=active]:bg-accent/15 data-[state=active]:text-accent transition-all"
+          >
             Unread {unreadNotifications.length > 0 && `(${unreadNotifications.length})`}
           </TabsTrigger>
-          <TabsTrigger value="archived" className="flex-1">Archived</TabsTrigger>
-          <TabsTrigger value="preferences" className="flex-1">Preferences</TabsTrigger>
+          <TabsTrigger 
+            value="archived" 
+            className="flex-1 rounded-lg data-[state=active]:bg-accent/15 data-[state=active]:text-accent transition-all"
+          >
+            Archived
+          </TabsTrigger>
+          <TabsTrigger 
+            value="preferences" 
+            className="flex-1 rounded-lg data-[state=active]:bg-accent/15 data-[state=active]:text-accent transition-all"
+          >
+            Preferences
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="all">

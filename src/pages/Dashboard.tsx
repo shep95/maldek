@@ -106,22 +106,27 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background pb-28">{/* Added bottom padding for floating music player */}
+    <div className="min-h-[100dvh] bg-background pb-28">
+      {/* Modern mobile header with glass morphism */}
       <div className="fixed top-4 left-4 right-4 z-50 md:hidden">
-        <div className="flex items-center justify-between bg-black/40 backdrop-blur-md rounded-lg border border-white/10 p-4 shadow-lg">
+        <div className="flex items-center justify-between bg-card/60 backdrop-blur-xl rounded-2xl border border-border/30 p-4 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.3)]">
           <button 
             onClick={scrollToTop}
             className="flex items-center gap-3 text-foreground hover:text-accent transition-colors"
           >
-            <Grid className="h-6 w-6 text-accent" />
+            <div className="p-2 rounded-xl bg-accent/10">
+              <Grid className="h-5 w-5 text-accent" />
+            </div>
             <span className="text-lg font-bold">Home</span>
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/30">
             <button
               onClick={() => setFollowingOnly(false)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors",
-                !followingOnly ? "text-accent bg-accent/10" : "text-muted-foreground"
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all",
+                !followingOnly 
+                  ? "text-accent bg-accent/15 shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <CheckCircle2 className="h-4 w-4" />
@@ -130,8 +135,10 @@ const Dashboard = () => {
             <button
               onClick={() => setFollowingOnly(true)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors",
-                followingOnly ? "text-accent bg-accent/10" : "text-muted-foreground"
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all",
+                followingOnly 
+                  ? "text-accent bg-accent/15 shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Users className="h-4 w-4" />
