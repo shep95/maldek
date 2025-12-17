@@ -110,7 +110,11 @@ export const compressVideo = async (file: File): Promise<File> => {
       console.warn('Cleanup warning:', cleanupError);
     }
     
-    const processedBlob = new Blob([data], { type: 'video/mp4' });
+    // Convert FileData to proper BlobPart
+    const blobData = data instanceof Uint8Array 
+      ? new Uint8Array(data) 
+      : data;
+    const processedBlob = new Blob([blobData], { type: 'video/mp4' });
     
     // Keep original filename but change extension to .mp4
     const newFileName = file.name.replace(/\.[^/.]+$/, '') + '.mp4';

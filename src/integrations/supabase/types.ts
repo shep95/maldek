@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -2296,86 +2296,62 @@ export type Database = {
     Functions: {
       calculate_post_engagement_score: {
         Args: {
-          views: number
-          likes: number
-          comments: number
-          reposts: number
           age_hours: number
+          comments: number
+          likes: number
+          reposts: number
+          views: number
         }
         Returns: number
       }
       calculate_video_engagement_score: {
-        Args: { views: number; watch_time_seconds: number; age_hours: number }
+        Args: { age_hours: number; views: number; watch_time_seconds: number }
         Returns: number
       }
       check_username_availability: {
         Args: { username_to_check: string }
         Returns: boolean
       }
-      delete_inactive_accounts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      delete_user_account: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      delete_inactive_accounts: { Args: never; Returns: undefined }
+      delete_user_account: { Args: never; Returns: undefined }
       delete_user_account_with_code: {
         Args: { code: string }
         Returns: undefined
       }
-      delete_user_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      delete_user_data_with_code: {
-        Args: { code: string }
-        Returns: undefined
-      }
+      delete_user_data: { Args: never; Returns: undefined }
+      delete_user_data_with_code: { Args: { code: string }; Returns: undefined }
       get_private_data_with_code: {
         Args: { code: string }
         Returns: {
-          id: string
-          user_id: string
           content: string
-          media_urls: string[]
           created_at: string
           encrypted_title: string
+          id: string
+          media_urls: string[]
+          user_id: string
         }[]
       }
       grant_manual_subscription: {
         Args: {
+          duration_months?: number
           target_user_id: string
           tier_name: string
-          duration_months?: number
         }
         Returns: undefined
       }
-      increment_ad_click: {
-        Args: { ad_id: string }
-        Returns: undefined
-      }
-      increment_ad_view: {
-        Args: { ad_id: string }
-        Returns: undefined
-      }
-      increment_post_view: {
-        Args: { post_id: string }
-        Returns: undefined
-      }
-      mark_expired_stories: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      increment_ad_click: { Args: { ad_id: string }; Returns: undefined }
+      increment_ad_view: { Args: { ad_id: string }; Returns: undefined }
+      increment_post_view: { Args: { post_id: string }; Returns: undefined }
+      mark_expired_stories: { Args: never; Returns: undefined }
       mute_all_speakers: {
-        Args: { space_id: string; admin_user_id: string }
+        Args: { admin_user_id: string; space_id: string }
         Returns: boolean
       }
       mute_participant: {
         Args: {
+          admin_user_id: string
           space_id: string
           target_user_id: string
-          admin_user_id: string
         }
         Returns: boolean
       }
@@ -2383,20 +2359,14 @@ export type Database = {
         Args: { post_id: string; watch_seconds: number }
         Returns: undefined
       }
-      update_app_analytics: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_app_analytics: { Args: never; Returns: undefined }
       update_security_code: {
-        Args: { old_code: string; new_code: string }
+        Args: { new_code: string; old_code: string }
         Returns: boolean
       }
-      update_trending_scores: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      update_trending_scores: { Args: never; Returns: undefined }
       verify_security_code: {
-        Args: { user_uuid: string; code: string }
+        Args: { code: string; user_uuid: string }
         Returns: boolean
       }
     }

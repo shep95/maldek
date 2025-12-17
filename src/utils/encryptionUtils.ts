@@ -83,7 +83,8 @@ export const encryptData = async (
     let dataBuffer: ArrayBuffer;
     
     if (typeof data === "string") {
-      dataBuffer = encoder.encode(data);
+      const encoded = encoder.encode(data);
+      dataBuffer = encoded.buffer.slice(encoded.byteOffset, encoded.byteOffset + encoded.byteLength) as ArrayBuffer;
     } else {
       dataBuffer = await data.arrayBuffer();
     }
@@ -120,7 +121,7 @@ export const decryptData = async (
     return await window.crypto.subtle.decrypt(
       {
         name: "AES-GCM",
-        iv
+        iv: iv as BufferSource
       },
       key,
       encryptedData
@@ -185,7 +186,7 @@ export const encryptFile = async (
       name: file.name,
       type: file.type,
       size: file.size,
-      iv: bufferToBase64(iv)
+      iv: bufferToBase64(iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) as ArrayBuffer)
     });
     
     return {
@@ -277,7 +278,8 @@ export const secureKeyWithPassword = async (
 ): Promise<{ encryptedKey: string; salt: string }> => {
   try {
     // Generate a random salt for this encryption
-    const salt = bufferToBase64(window.crypto.getRandomValues(new Uint8Array(16)));
+    const saltArray = window.crypto.getRandomValues(new Uint8Array(16));
+    const salt = bufferToBase64(saltArray.buffer.slice(saltArray.byteOffset, saltArray.byteOffset + saltArray.byteLength) as ArrayBuffer);
     
     // Derive a key from the password
     const passwordBuffer = encoder.encode(password);
@@ -318,7 +320,7 @@ export const secureKeyWithPassword = async (
     
     // Return the encrypted key and metadata
     return {
-      encryptedKey: bufferToBase64(encryptedKeyBuffer) + '.' + bufferToBase64(iv),
+      encryptedKey: bufferToBase64(encryptedKeyBuffer) + '.' + bufferToBase64(iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) as ArrayBuffer),
       salt
     };
   } catch (error) {

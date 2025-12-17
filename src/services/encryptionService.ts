@@ -149,8 +149,12 @@ class EncryptionService {
     try {
       const { encryptedData, iv } = await encryptData(text, this.masterKey);
       
+      // Helper to convert Uint8Array to ArrayBuffer for base64 encoding
+      const toArrayBuffer = (arr: Uint8Array): ArrayBuffer => 
+        arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer;
+      
       // Format: base64(iv) + '.' + base64(encryptedData)
-      return bufferToBase64(iv) + '.' + bufferToBase64(encryptedData);
+      return bufferToBase64(toArrayBuffer(iv)) + '.' + bufferToBase64(encryptedData);
     } catch (error) {
       console.error("Error encrypting text:", error);
       toast.error("Failed to encrypt data");

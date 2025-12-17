@@ -8,13 +8,17 @@ export const useMusicUrl = (musicUrl: string | null) => {
 
   useEffect(() => {
     const getPublicUrl = async () => {
+      // Gracefully handle null/undefined URLs without throwing errors
+      if (!musicUrl) {
+        setPublicUrl(null);
+        setError(null);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
-
-        if (!musicUrl) {
-          throw new Error('Invalid music URL');
-        }
 
         console.log('useMusicUrl: Processing URL:', musicUrl);
 

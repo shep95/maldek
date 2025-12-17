@@ -58,7 +58,7 @@ export const deriveKeyFromPasswordEnhanced = async (
   return await crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: salt,
+      salt: salt as BufferSource,
       iterations: ENCRYPTION_CONFIG.iterations,
       hash: "SHA-256"
     },
@@ -83,7 +83,8 @@ export const encryptDataEnhanced = async (
   
   let dataBuffer: ArrayBuffer;
   if (typeof data === "string") {
-    dataBuffer = encoder.encode(data);
+    const encoded = encoder.encode(data);
+    dataBuffer = encoded.buffer.slice(encoded.byteOffset, encoded.byteOffset + encoded.byteLength) as ArrayBuffer;
   } else {
     dataBuffer = data;
   }
@@ -91,7 +92,7 @@ export const encryptDataEnhanced = async (
   const encryptedData = await crypto.subtle.encrypt(
     {
       name: ENCRYPTION_CONFIG.algorithm,
-      iv: iv,
+      iv: iv as BufferSource,
       tagLength: ENCRYPTION_CONFIG.tagLength
     },
     key,
@@ -127,7 +128,7 @@ export const decryptDataEnhanced = async (
     const decryptedData = await crypto.subtle.decrypt(
       {
         name: ENCRYPTION_CONFIG.algorithm,
-        iv: iv,
+        iv: iv as BufferSource,
         tagLength: ENCRYPTION_CONFIG.tagLength
       },
       key,
@@ -153,17 +154,21 @@ export const secureKeyWithPasswordEnhanced = async (
   const keyData = await crypto.subtle.exportKey("raw", key);
   const { encryptedData, iv, tag } = await encryptDataEnhanced(keyData, derivedKey);
   
+  // Helper to convert Uint8Array to ArrayBuffer for base64 encoding
+  const toArrayBuffer = (arr: Uint8Array): ArrayBuffer => 
+    arr.buffer.slice(arr.byteOffset, arr.byteOffset + arr.byteLength) as ArrayBuffer;
+  
   // Create versioned storage format
   const storageData = {
     encryptedKey: bufferToBase64(encryptedData),
-    iv: bufferToBase64(iv),
-    tag: bufferToBase64(tag),
+    iv: bufferToBase64(toArrayBuffer(iv)),
+    tag: bufferToBase64(toArrayBuffer(tag)),
     version: "2.0" // Version for future upgrades
   };
   
   return {
     encryptedKey: btoa(JSON.stringify(storageData)),
-    salt: bufferToBase64(salt),
+    salt: bufferToBase64(toArrayBuffer(salt)),
     version: "2.0"
   };
 };
