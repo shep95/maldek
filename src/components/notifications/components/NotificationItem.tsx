@@ -163,9 +163,11 @@ export const NotificationItem = ({ notification, isSelected, onSelect }: Notific
   return (
     <Card
       className={cn(
-        "p-4 transition-all duration-200 hover:bg-accent/5 cursor-pointer",
-        !notification.read && "bg-accent/5",
-        isSelected && "border-accent"
+        "p-4 transition-all duration-300 cursor-pointer rounded-xl",
+        "bg-card/50 backdrop-blur-sm border-border/30",
+        "hover:bg-card/70 hover:border-border/50 hover:shadow-lg",
+        !notification.read && "bg-accent/5 border-accent/20",
+        isSelected && "border-accent/50 bg-accent/10"
       )}
       onClick={handleNotificationClick}
     >

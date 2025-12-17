@@ -103,8 +103,11 @@ export const PostCard = ({ post, currentUserId, onPostAction, onMediaClick }: Po
       <div 
         id={`post-${post.id}`}
         className={cn(
-          "p-6 rounded-lg border border-muted bg-card/50 backdrop-blur-sm space-y-4 transition-all duration-300 relative",
-          !isEditing && "cursor-pointer hover:bg-accent/5 transition-colors duration-200"
+          "p-6 rounded-xl border border-border/50 space-y-4 transition-all duration-300 relative",
+          "bg-card/60 backdrop-blur-md",
+          "shadow-[0_4px_24px_-4px_hsl(0_0%_0%/0.15)]",
+          "hover:bg-card/80 hover:border-border/70 hover:shadow-[0_8px_32px_-4px_hsl(0_0%_0%/0.25)]",
+          !isEditing && "cursor-pointer"
         )}
         onClick={handlePostClick}
         style={{ transformStyle: 'preserve-3d' }}
