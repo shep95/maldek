@@ -55,31 +55,31 @@
   }
 
   .dark {
-    --background: 225 20% 6%;  /* Deep navy-black instead of pure black */
-    --foreground: 210 40% 98%;
-    --card: 225 18% 10%;  /* Elevated surface color */
-    --card-foreground: 210 40% 98%;
-    --popover: 225 18% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 225 16% 14%;  /* Subtle blue-tinted dark */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 225 14% 12%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 225 12% 16%;
-    --muted-foreground: 215 20% 65%;
+    --background: 0 0% 0%;  /* Pure black */
+    --foreground: 0 0% 98%;
+    --card: 0 0% 6%;  /* Slightly elevated surface */
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 64%;
     --accent: 24 95% 53%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 225 15% 18%;
-    --input: 225 15% 14%;
+    --border: 0 0% 14%;
+    --input: 0 0% 9%;
     --ring: 24 95% 53%;
     
     /* Modern dark theme tokens */
-    --gradient-start: 225 20% 8%;
-    --gradient-end: 240 20% 4%;
+    --gradient-start: 0 0% 2%;
+    --gradient-end: 0 0% 0%;
     --glow-color: 24 95% 53%;
-    --surface-elevated: 225 18% 12%;
+    --surface-elevated: 0 0% 8%;
   }
 }
 
