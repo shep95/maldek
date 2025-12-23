@@ -18,11 +18,6 @@ const DISPOSABLE_EMAIL_DOMAINS = [
   "instantemailaddress.com", "tempmail.ninja", "fakemail.net"
 ];
 
-// List of allowed email domains
-const ALLOWED_EMAIL_DOMAINS = [
-  "gmail.com", "yahoo.com", "outlook.com", "hotmail.com", 
-  "live.com", "msn.com", "icloud.com", "me.com", "mac.com", "aol.com"
-];
 
 interface AuthFormProps {
   isLogin: boolean;
@@ -56,23 +51,10 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
     
     const domain = email.split('@')[1].toLowerCase();
     
-    // Check if it's a disposable email
+    // Only check for disposable emails, allow all other domains
     const isDisposable = DISPOSABLE_EMAIL_DOMAINS.includes(domain);
     setIsDisposableEmail(isDisposable);
-    
-    // If not disposable, check if it's in the allowed list or looks like a business email
-    if (!isDisposable) {
-      // Business emails typically have domains that aren't common consumer domains
-      const isAllowedDomain = ALLOWED_EMAIL_DOMAINS.includes(domain);
-      const isDomainLikelyBusiness = domain.includes('.') && 
-        !domain.endsWith('.ru') && 
-        !domain.endsWith('.cn') && 
-        domain.length > 4;
-      
-      setIsValidEmailDomain(isAllowedDomain || isDomainLikelyBusiness);
-    } else {
-      setIsValidEmailDomain(false);
-    }
+    setIsValidEmailDomain(!isDisposable);
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -222,7 +204,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
             placeholder="Email"
             value={email}
             onChange={handleEmailChange}
-            className={`bg-muted/50 w-full ${isDisposableEmail || !isValidEmailDomain ? "border-red-500" : ""}`}
+            className={`bg-muted/50 w-full ${isDisposableEmail ? "border-red-500" : ""}`}
             required
             disabled={effectiveIsSubmitting}
             autoComplete="email"
@@ -230,11 +212,6 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
           {isDisposableEmail && (
             <div className="text-xs text-red-500 mt-1">
               Temporary email addresses are not allowed.
-            </div>
-          )}
-          {!isDisposableEmail && !isValidEmailDomain && email.includes('@') && (
-            <div className="text-xs text-red-500 mt-1">
-              Please use Gmail, Yahoo, Outlook, or a business email.
             </div>
           )}
         </div>
