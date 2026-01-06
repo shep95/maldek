@@ -114,10 +114,6 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
       return;
     }
 
-    if (!isLogin && !isValidEmailDomain) {
-      toast.error("Please use a Gmail, Yahoo, Outlook, or business email address.");
-      return;
-    }
 
     setLocalIsSubmitting(true);
     console.log("Starting form submission with username:", username);
@@ -235,7 +231,7 @@ export const AuthForm = ({ isLogin, onSubmit, isSubmitting = false }: AuthFormPr
         <Button 
           type="submit" 
           className="w-full bg-accent hover:bg-accent/90 text-white"
-          disabled={effectiveIsSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail || !isValidEmailDomain))}
+          disabled={effectiveIsSubmitting || (!isLogin && (isCheckingUsername || isUsernameTaken || isDisposableEmail))}
         >
           {effectiveIsSubmitting ? "Securing..." : (isLogin ? "Sign in" : "Create account")}
         </Button>
