@@ -116,8 +116,8 @@ export const NavItems = ({
     },
     {
       icon: Bot,
-      label: "ZUKO",
-      path: "https://www.zukoi.app/",
+      label: "AUREON",
+      path: "https://aureonai.app/",
       description: "Next Gen AI Assistant",
       className: "text-accent hover:bg-accent/10"
     },
