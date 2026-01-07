@@ -73,11 +73,11 @@ const Dashboard = () => {
     name: profile?.username || ''
   }), [session?.user?.id, profile?.username, profile?.avatar_url]);
 
-  const handlePostCreated = (newPost: any) => {
+  const handlePostCreated = async (newPost: any) => {
     console.log('New post created on dashboard:', newPost);
     
-    // Invalidate and refetch posts to show the new post immediately
-    queryClient.invalidateQueries({ queryKey: ['posts'] });
+    // Immediately refetch posts to show the new post
+    await queryClient.refetchQueries({ queryKey: ['posts'] });
     
     // Close the dialog
     setIsCreatingPost(false);
@@ -87,8 +87,6 @@ const Dashboard = () => {
     
     // Scroll to top to show new post
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    toast.success('Post created successfully!');
   };
 
   // Early returns for loading and error states

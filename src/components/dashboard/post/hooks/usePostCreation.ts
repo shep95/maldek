@@ -283,14 +283,10 @@ export const usePostCreation = (
       setUploadProgress(0);
       setScheduledDate(undefined);
       
-      // Notify parent components
+      // Notify parent components - do NOT close dialog here, let the success animation handle it
       if (onPostCreated) {
         onPostCreated(newPost);
       }
-      
-      onOpenChange(false);
-      
-      toast.success(scheduledDate ? "Post scheduled successfully!" : "Post created successfully!");
 
     } catch (error: any) {
       console.error('Post creation error:', error);
