@@ -76,8 +76,10 @@ const Dashboard = () => {
   const handlePostCreated = async (newPost: any) => {
     console.log('New post created on dashboard:', newPost);
     
-    // Immediately refetch posts to show the new post
-    await queryClient.refetchQueries({ queryKey: ['posts'] });
+    // Immediately refetch ALL posts queries (matching any query that starts with 'posts')
+    await queryClient.refetchQueries({ 
+      predicate: (query) => query.queryKey[0] === 'posts'
+    });
     
     // Close the dialog
     setIsCreatingPost(false);

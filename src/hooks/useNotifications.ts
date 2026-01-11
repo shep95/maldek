@@ -88,10 +88,9 @@ export const useNotifications = (userId: string | null) => {
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => {
             if (mounted) {
-              // Only invalidate the notifications query, not the count
+              // Invalidate notifications query (use predicate to match all variants)
               queryClient.invalidateQueries({ 
-                queryKey: ['notifications'],
-                exact: true
+                predicate: (query) => query.queryKey[0] === 'notifications'
               });
               
               toast.success("You have a new notification!", {
