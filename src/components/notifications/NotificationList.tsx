@@ -71,15 +71,13 @@ export const NotificationList = ({ notifications, isLoading }: NotificationListP
         return;
       }
 
-      // Invalidate both queries after successful update
+      // Invalidate both queries after successful update (use predicate to match all variants)
       await Promise.all([
         queryClient.invalidateQueries({ 
-          queryKey: ['notifications'],
-          exact: true 
+          predicate: (query) => query.queryKey[0] === 'notifications'
         }),
         queryClient.invalidateQueries({ 
-          queryKey: ['unread-notifications-count'],
-          exact: true 
+          predicate: (query) => query.queryKey[0] === 'unread-notifications-count'
         })
       ]);
 
