@@ -1,12 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 
 export const useNotificationCount = (userId: string | null) => {
-  const location = useLocation();
   const queryClient = useQueryClient();
-  const isNotificationsRoute = location.pathname === "/notifications";
 
   // Fetch unread notifications count
   const { data: unreadCount } = useQuery({
@@ -15,16 +12,13 @@ export const useNotificationCount = (userId: string | null) => {
       try {
         if (!userId) return 0;
 
-        // If we're on the notifications route, return 0 immediately
-        if (isNotificationsRoute) {
-          return 0;
-        }
-
         const { count, error } = await supabase
           .from('notifications')
           .select('*', { count: 'exact', head: true })
           .eq('recipient_id', userId)
-          .eq('read', false);
+          .eq('read', false)
+          .is('deleted_at', null)
+          .is('archived', false);
 
         if (error) throw error;
         return count || 0;
@@ -33,16 +27,38 @@ export const useNotificationCount = (userId: string | null) => {
         return 0;
       }
     },
-    enabled: !!userId
+    enabled: !!userId,
+    staleTime: 30000,
+    gcTime: 60000
   });
 
-  // Reset notification count when on notifications page
+  // Subscribe to realtime changes for accurate count
   useEffect(() => {
-    if (isNotificationsRoute) {
-      // Set the count to 0 in the cache immediately
-      queryClient.setQueryData(['unread-notifications-count', userId], 0);
-    }
-  }, [isNotificationsRoute, queryClient, userId]);
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('notification-count-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${userId}`
+        },
+        () => {
+          // Refetch count when notifications change
+          queryClient.invalidateQueries({
+            predicate: (query) => query.queryKey[0] === 'unread-notifications-count'
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
 
   return unreadCount || 0;
 };
